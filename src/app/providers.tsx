@@ -3,7 +3,7 @@ import { CssBaseline } from '@mui/material';
 import { Provider as ReduxProvider } from 'react-redux';
 import { theme } from './styles/theme';
 import { store } from './store'; // Will create this next
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 interface AppProviderProps {
     children: ReactNode;
