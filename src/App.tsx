@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { CreateItemPage } from './pages/CreateItemPage';
+import { CreateRemitoPage } from './pages/CreateRemitoPage';
 import { LoginPage } from './pages/login/LoginPage';
 import { PrivateRoute } from './app/routes/PrivateRoute';
 import './App.css';
@@ -14,6 +15,7 @@ function App() {
         <Route element={<PrivateRoute />}>
           <Route path="/" element={<Navigate to="/create-item" replace />} />
           <Route path="/create-item" element={<CreateItemPage />} />
+          <Route path="/remitos/new" element={<CreateRemitoPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
