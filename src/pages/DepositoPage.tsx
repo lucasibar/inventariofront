@@ -26,23 +26,37 @@ export default function DepositoPage() {
     const [showDepotForm, setShowDepotForm] = useState(false);
     const [editDepot, setEditDepot] = useState<any>(null);
     const [depotForm, setDepotForm] = useState({ nombre: '', planta: '', tipo: 'STORAGE' });
+    const [depotError, setDepotError] = useState('');
+    const [depotSaving, setDepotSaving] = useState(false);
 
     // Position form
     const [showPosForm, setShowPosForm] = useState(false);
     const [editPos, setEditPos] = useState<any>(null);
     const [posForm, setPosForm] = useState({ codigo: '', tipo: 'STORAGE' });
+    const [posError, setPosError] = useState('');
+    const [posSaving, setPosSaving] = useState(false);
 
     const saveDepot = async () => {
-        if (editDepot) await updateDepot({ id: editDepot.id, data: depotForm });
-        else await createDepot(depotForm);
-        setShowDepotForm(false); setEditDepot(null); setDepotForm({ nombre: '', planta: '', tipo: 'STORAGE' });
+        if (!depotForm.nombre.trim()) { setDepotError('El nombre es obligatorio'); return; }
+        setDepotSaving(true); setDepotError('');
+        try {
+            if (editDepot) await updateDepot({ id: editDepot.id, data: depotForm }).unwrap();
+            else await createDepot(depotForm).unwrap();
+            setShowDepotForm(false); setEditDepot(null); setDepotForm({ nombre: '', planta: '', tipo: 'STORAGE' });
+        } catch (e: any) { setDepotError(e?.data?.message ?? 'Error al guardar el depósito'); }
+        setDepotSaving(false);
     };
 
     const savePosition = async () => {
         if (!activeDepotId) return;
-        if (editPos) await updatePosition({ id: editPos.id, data: posForm });
-        else await createPosition({ depotId: activeDepotId, data: posForm });
-        setShowPosForm(false); setEditPos(null); setPosForm({ codigo: '', tipo: 'STORAGE' });
+        if (!posForm.codigo.trim()) { setPosError('El código es obligatorio'); return; }
+        setPosSaving(true); setPosError('');
+        try {
+            if (editPos) await updatePosition({ id: editPos.id, data: posForm }).unwrap();
+            else await createPosition({ depotId: activeDepotId, data: posForm }).unwrap();
+            setShowPosForm(false); setEditPos(null); setPosForm({ codigo: '', tipo: 'STORAGE' });
+        } catch (e: any) { setPosError(e?.data?.message ?? 'Error al guardar la posición'); }
+        setPosSaving(false);
     };
 
     // Unique suppliers for filter from stock
@@ -138,29 +152,31 @@ export default function DepositoPage() {
             </div>
 
             {showDepotForm && (
-                <Modal title={editDepot ? 'Editar Depósito' : 'Nuevo Depósito'} onClose={() => setShowDepotForm(false)}>
+                <Modal title={editDepot ? 'Editar Depósito' : 'Nuevo Depósito'} onClose={() => { setShowDepotForm(false); setDepotError(''); }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <Input label="Nombre" value={depotForm.nombre} onChange={v => setDepotForm(p => ({ ...p, nombre: v }))} />
-                        <Input label="Planta" value={depotForm.planta} onChange={v => setDepotForm(p => ({ ...p, planta: v }))} />
+                        <Input label="Nombre *" value={depotForm.nombre} onChange={v => setDepotForm(p => ({ ...p, nombre: v }))} placeholder="Ej: Depósito Central" />
+                        <Input label="Planta (opcional)" value={depotForm.planta} onChange={v => setDepotForm(p => ({ ...p, planta: v }))} placeholder="Ej: Planta 1" />
                         <Select label="Tipo" value={depotForm.tipo} onChange={v => setDepotForm(p => ({ ...p, tipo: v }))}
                             options={[{ value: 'STORAGE', label: 'Almacenamiento' }, { value: 'PICKING', label: 'Picking' }, { value: 'MIXED', label: 'Mixto' }]} />
+                        {depotError && <p style={{ color: '#f87171', margin: 0, fontSize: '13px' }}>{depotError}</p>}
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                            <Btn variant="secondary" onClick={() => setShowDepotForm(false)}>Cancelar</Btn>
-                            <Btn onClick={saveDepot}>Guardar</Btn>
+                            <Btn variant="secondary" onClick={() => { setShowDepotForm(false); setDepotError(''); }}>Cancelar</Btn>
+                            <Btn onClick={saveDepot} disabled={depotSaving}>{depotSaving ? 'Guardando...' : 'Guardar'}</Btn>
                         </div>
                     </div>
                 </Modal>
             )}
 
             {showPosForm && (
-                <Modal title={editPos ? 'Editar Posición' : 'Nueva Posición'} onClose={() => setShowPosForm(false)}>
+                <Modal title={editPos ? 'Editar Posición' : 'Nueva Posición'} onClose={() => { setShowPosForm(false); setPosError(''); }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <Input label="Código de posición" value={posForm.codigo} onChange={v => setPosForm(p => ({ ...p, codigo: v }))} placeholder="Ej: R1-F2-A" />
+                        <Input label="Código de posición *" value={posForm.codigo} onChange={v => setPosForm(p => ({ ...p, codigo: v }))} placeholder="Ej: R1-F2-A" />
                         <Select label="Tipo" value={posForm.tipo} onChange={v => setPosForm(p => ({ ...p, tipo: v }))}
                             options={[{ value: 'STORAGE', label: 'Almacenamiento' }, { value: 'PICKING', label: 'Picking' }]} />
+                        {posError && <p style={{ color: '#f87171', margin: 0, fontSize: '13px' }}>{posError}</p>}
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                            <Btn variant="secondary" onClick={() => setShowPosForm(false)}>Cancelar</Btn>
-                            <Btn onClick={savePosition}>Guardar</Btn>
+                            <Btn variant="secondary" onClick={() => { setShowPosForm(false); setPosError(''); }}>Cancelar</Btn>
+                            <Btn onClick={savePosition} disabled={posSaving}>{posSaving ? 'Guardando...' : 'Guardar'}</Btn>
                         </div>
                     </div>
                 </Modal>
