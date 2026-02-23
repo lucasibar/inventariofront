@@ -21,7 +21,7 @@ export function Card({ children, style }: { children: React.ReactNode; style?: R
 }
 
 export function Btn({ children, onClick, variant = 'primary', small, disabled, style }: {
-    children: React.ReactNode; onClick?: () => void; variant?: 'primary' | 'secondary' | 'danger';
+    children: React.ReactNode; onClick?: (e: React.MouseEvent) => void; variant?: 'primary' | 'secondary' | 'danger';
     small?: boolean; disabled?: boolean; style?: React.CSSProperties;
 }) {
     const colors = {

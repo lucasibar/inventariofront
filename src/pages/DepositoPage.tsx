@@ -4,6 +4,8 @@ import { useGetDepotsQuery, useCreateDepotMutation, useUpdateDepotMutation, useD
 import { PageHeader, Card, Btn, Input, Select, Modal, Table, Badge, SearchBar } from './common/ui';
 
 const ROTACION_COLORS: Record<string, string> = { ALTA: '#34d399', MEDIA: '#fbbf24', BAJA: '#6b7280' };
+// Used in sub-components if needed in future
+
 
 export default function DepositoPage() {
     const { data: depots = [], isLoading: loadingDepots } = useGetDepotsQuery();
@@ -40,8 +42,12 @@ export default function DepositoPage() {
         if (!depotForm.nombre.trim()) { setDepotError('El nombre es obligatorio'); return; }
         setDepotSaving(true); setDepotError('');
         try {
-            if (editDepot) await updateDepot({ id: editDepot.id, data: depotForm }).unwrap();
-            else await createDepot(depotForm).unwrap();
+            if (editDepot) {
+                await updateDepot({ id: editDepot.id, data: depotForm }).unwrap();
+            } else {
+                const newDepot = await createDepot(depotForm).unwrap();
+                if (newDepot?.id) setActiveDepotId(newDepot.id);
+            }
             setShowDepotForm(false); setEditDepot(null); setDepotForm({ nombre: '', planta: '', tipo: 'STORAGE' });
         } catch (e: any) { setDepotError(e?.data?.message ?? 'Error al guardar el depósito'); }
         setDepotSaving(false);
@@ -92,8 +98,8 @@ export default function DepositoPage() {
                                         <div style={{ color: '#6b7280', fontSize: '11px' }}>{d.planta} · {d.tipo}</div>
                                     </div>
                                     <div style={{ display: 'flex', gap: '4px' }}>
-                                        <Btn small variant="secondary" onClick={e => { e.stopPropagation(); setEditDepot(d); setDepotForm({ nombre: d.nombre, planta: d.planta, tipo: d.tipo }); setShowDepotForm(true); }}>✏️</Btn>
-                                        <Btn small variant="danger" onClick={e => { e.stopPropagation(); deleteDepot(d.id); }}>🗑</Btn>
+                                        <Btn small variant="secondary" onClick={(e: React.MouseEvent) => { e.stopPropagation(); setEditDepot(d); setDepotForm({ nombre: d.nombre, planta: d.planta ?? '', tipo: d.tipo }); setShowDepotForm(true); }}>✏️</Btn>
+                                        <Btn small variant="danger" onClick={(e: React.MouseEvent) => { e.stopPropagation(); deleteDepot(d.id); }}>🗑</Btn>
                                     </div>
                                 </div>
                             ))}
