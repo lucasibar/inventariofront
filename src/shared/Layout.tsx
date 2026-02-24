@@ -10,6 +10,8 @@ const navItems = [
     { to: '/pedidos', label: '📋 Pedidos' },
     { to: '/remitos-salida', label: '🚚 Remitos Salida' },
     { to: '/dashboard', label: '📊 Dashboard Compras' },
+    { to: '/movimientos', label: '🔄 Movimientos' },
+    { to: '/consultas', label: '🔍 Consultas Intel' },
     { to: '/items', label: '🗂 Materiales' },
     { to: '/socios', label: '🤝 Proveedores/Clientes' },
 ];

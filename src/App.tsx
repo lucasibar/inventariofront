@@ -12,6 +12,8 @@ import DashboardComprasPage from './pages/DashboardComprasPage';
 import MaterialesPage from './pages/MaterialesPage';
 import SociosPage from './pages/SociosPage';
 import SettingsPage from './pages/SettingsPage';
+import MovimientosPage from './pages/MovimientosPage';
+import StockQueryPage from './pages/StockQueryPage';
 
 import './App.css';
 
@@ -30,6 +32,8 @@ function App() {
             <Route path="/dashboard" element={<DashboardComprasPage />} />
             <Route path="/items" element={<MaterialesPage />} />
             <Route path="/socios" element={<SociosPage />} />
+            <Route path="/movimientos" element={<MovimientosPage />} />
+            <Route path="/consultas" element={<StockQueryPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Route>
