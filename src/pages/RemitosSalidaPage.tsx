@@ -66,21 +66,20 @@ export default function RemitosSalidaPage() {
                 <Btn onClick={() => { setStep('form'); setError(''); }}>+ Nuevo Remito</Btn>
             </PageHeader>
 
-            {isLoading ? <p style={{ color: '#9ca3af' }}>Cargando...</p> : (
-                <Card>
-                    <Table
-                        cols={['Número', 'Fecha', 'Cliente', 'Pedido asociado', 'Líneas', '']}
-                        rows={remitos.map((r: any) => [
-                            <span style={{ color: '#a5b4fc', fontWeight: 600 }}>{r.numero}</span>,
-                            new Date(r.fecha).toLocaleDateString('es-AR'),
-                            r.client?.name ?? '—',
-                            r.order?.numero ?? '—',
-                            <Badge>{r.lines?.length ?? 0} ítems</Badge>,
-                            <Btn small variant="danger" onClick={() => deleteRemito(r.id)}>🗑</Btn>,
-                        ])}
-                    />
-                </Card>
-            )}
+            <Card>
+                <Table
+                    loading={isLoading}
+                    cols={['Número', 'Fecha', 'Cliente', 'Pedido asociado', 'Líneas', '']}
+                    rows={remitos.map((r: any) => [
+                        <span style={{ color: '#a5b4fc', fontWeight: 600 }}>{r.numero}</span>,
+                        new Date(r.fecha).toLocaleDateString('es-AR'),
+                        r.client?.name ?? '—',
+                        r.order?.numero ?? '—',
+                        <Badge>{r.lines?.length ?? 0} ítems</Badge>,
+                        <Btn small variant="danger" onClick={() => deleteRemito(r.id)}>🗑</Btn>,
+                    ])}
+                />
+            </Card>
 
             {/* Step 1: Form */}
             {step === 'form' && (

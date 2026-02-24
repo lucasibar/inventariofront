@@ -3,7 +3,7 @@ import { useGetOrdersQuery, useGetOrderQuery, useCreateOrderMutation, useDeleteO
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
 import { useGetItemsQuery } from '../features/items/api/items.api';
 import { useGetAlertsQuery } from '../features/stock/api/stock.api';
-import { PageHeader, Card, Btn, Input, Select, Modal, Table, Badge } from './common/ui';
+import { PageHeader, Card, Btn, Input, Select, Modal, Table, Badge, Spinner } from './common/ui';
 
 export default function PedidosPage() {
     const { data: orders = [], isLoading } = useGetOrdersQuery();
@@ -74,7 +74,9 @@ export default function PedidosPage() {
                 </div>
             )}
 
-            {isLoading ? <p style={{ color: '#9ca3af' }}>Cargando...</p> : grouped.map(group => (
+            {isLoading ? <Spinner /> : grouped.length === 0 ? (
+                <p style={{ color: '#4b5563', textAlign: 'center', padding: '32px', fontSize: '14px' }}>Todavía no hay datos cargados</p>
+            ) : grouped.map(group => (
                 <div key={group.clientName} style={{ marginBottom: '24px' }}>
                     <h3 style={{ color: '#a5b4fc', fontSize: '14px', fontWeight: 700, margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         🤝 {group.clientName}

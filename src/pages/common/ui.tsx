@@ -82,6 +82,32 @@ export function Select({ label, value, onChange, options, style }: {
     );
 }
 
+export function GroupedSelect({ label, value, onChange, groups, style }: {
+    label?: string; value: string; onChange: (v: string) => void;
+    groups: { groupLabel: string; options: { value: string; label: string }[] }[];
+    style?: React.CSSProperties;
+}) {
+    return (
+        <div style={style}>
+            {label && <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>{label}</label>}
+            <select
+                value={value} onChange={e => onChange(e.target.value)}
+                style={{
+                    width: '100%', background: '#0f1117', border: '1px solid #374151', borderRadius: '8px',
+                    padding: '8px 10px', color: '#f3f4f6', fontSize: '13px', outline: 'none', boxSizing: 'border-box',
+                }}
+            >
+                <option value="">— Sin posición —</option>
+                {groups.map(g => (
+                    <optgroup key={g.groupLabel} label={`📦 ${g.groupLabel}`}>
+                        {g.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </optgroup>
+                ))}
+            </select>
+        </div>
+    );
+}
+
 export function Modal({ title, children, onClose, wide }: { title: string; children: React.ReactNode; onClose: () => void; wide?: boolean }) {
     return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
@@ -100,7 +126,22 @@ export function Modal({ title, children, onClose, wide }: { title: string; child
     );
 }
 
-export function Table({ cols, rows }: { cols: (string | React.ReactNode)[]; rows: (string | React.ReactNode)[][] }) {
+export function Spinner() {
+    return (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
+            <div className="spinner" style={{
+                width: '24px', height: '24px', border: '3px solid rgba(99, 102, 241, 0.1)',
+                borderTop: '3px solid #6366f1', borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite'
+            }}></div>
+            <style>{`
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            `}</style>
+        </div>
+    );
+}
+
+export function Table({ cols, rows, loading }: { cols: (string | React.ReactNode)[]; rows: (string | React.ReactNode)[][]; loading?: boolean }) {
     return (
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
@@ -111,8 +152,11 @@ export function Table({ cols, rows }: { cols: (string | React.ReactNode)[]; rows
                 </tr>
             </thead>
             <tbody>
-                {rows.length === 0 && (
-                    <tr><td colSpan={cols.length} style={{ padding: '32px', textAlign: 'center', color: '#4b5563' }}>Sin registros</td></tr>
+                {rows.length === 0 && !loading && (
+                    <tr><td colSpan={cols.length} style={{ padding: '32px', textAlign: 'center', color: '#4b5563', fontSize: '14px' }}>Todavía no hay datos cargados</td></tr>
+                )}
+                {loading && (
+                    <tr><td colSpan={cols.length}><Spinner /></td></tr>
                 )}
                 {rows.map((row, i) => (
                     <tr key={i} style={{ borderBottom: '1px solid #1e2133' }}>

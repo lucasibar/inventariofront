@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { useGetAlertsQuery } from '../features/stock/api/stock.api';
-import '../features/stock/api/stock.api'; // ensure endpoint injected
+import { logout } from '../entities/auth/model/authSlice';
 
 const navItems = [
     { to: '/remitos-entrada', label: '📦 Remitos Entrada' },
@@ -13,9 +14,26 @@ const navItems = [
     { to: '/socios', label: '🤝 Proveedores/Clientes' },
 ];
 
+const navStyle = (isActive: boolean): React.CSSProperties => ({
+    display: 'flex', alignItems: 'center', gap: '10px',
+    padding: '10px 14px', textDecoration: 'none',
+    color: isActive ? '#a5b4fc' : '#9ca3af',
+    background: isActive ? 'rgba(165,180,252,0.08)' : 'transparent',
+    borderLeft: isActive ? '3px solid #a5b4fc' : '3px solid transparent',
+    fontSize: '13px', whiteSpace: 'nowrap',
+    transition: 'all 0.15s',
+});
+
 export default function Layout() {
     const [collapsed, setCollapsed] = useState(false);
     const { data: alerts = [] } = useGetAlertsQuery();
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        dispatch(logout());
+        navigate('/login', { replace: true });
+    };
 
     return (
         <div style={{ display: 'flex', height: '100vh', fontFamily: 'Inter, sans-serif', background: '#0f1117' }}>
@@ -39,20 +57,13 @@ export default function Layout() {
                     </button>
                 </div>
 
+                {/* Main nav */}
                 <nav style={{ flex: 1, paddingTop: '8px' }}>
                     {navItems.map(({ to, label }) => (
                         <NavLink
                             key={to}
                             to={to}
-                            style={({ isActive }) => ({
-                                display: 'flex', alignItems: 'center', gap: '10px',
-                                padding: '10px 14px', textDecoration: 'none',
-                                color: isActive ? '#a5b4fc' : '#9ca3af',
-                                background: isActive ? 'rgba(165,180,252,0.08)' : 'transparent',
-                                borderLeft: isActive ? '3px solid #a5b4fc' : '3px solid transparent',
-                                fontSize: '13px', whiteSpace: 'nowrap',
-                                transition: 'all 0.15s',
-                            })}
+                            style={({ isActive }) => navStyle(isActive)}
                         >
                             <span style={{ fontSize: '16px', minWidth: '20px' }}>{label.split(' ')[0]}</span>
                             {!collapsed && <span>{label.split(' ').slice(1).join(' ')}</span>}
@@ -60,6 +71,7 @@ export default function Layout() {
                     ))}
                 </nav>
 
+                {/* Stock alert */}
                 {alerts.length > 0 && (
                     <div style={{
                         padding: collapsed ? '12px 8px' : '12px 14px',
@@ -75,6 +87,31 @@ export default function Layout() {
                         )}
                     </div>
                 )}
+
+                {/* Bottom actions */}
+                <div style={{ borderTop: '1px solid #2a2d3e', paddingBottom: '8px', paddingTop: '4px' }}>
+                    <NavLink to="/settings" style={({ isActive }) => navStyle(isActive)}>
+                        <span style={{ fontSize: '16px', minWidth: '20px' }}>⚙️</span>
+                        {!collapsed && <span>Configuración</span>}
+                    </NavLink>
+                    <button
+                        onClick={handleLogout}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: '10px',
+                            padding: '10px 14px', width: '100%',
+                            background: 'transparent', border: 'none',
+                            borderLeft: '3px solid transparent',
+                            color: '#9ca3af', fontSize: '13px',
+                            cursor: 'pointer', whiteSpace: 'nowrap',
+                            transition: 'all 0.15s',
+                        }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#f87171'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#9ca3af'; }}
+                    >
+                        <span style={{ fontSize: '16px', minWidth: '20px' }}>🚪</span>
+                        {!collapsed && <span>Cerrar Sesión</span>}
+                    </button>
+                </div>
             </aside>
 
             {/* Main content */}
@@ -84,3 +121,4 @@ export default function Layout() {
         </div>
     );
 }
+

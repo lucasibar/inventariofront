@@ -45,26 +45,25 @@ export default function MaterialesPage() {
                 <Btn onClick={openCreate}>+ Material</Btn>
             </PageHeader>
 
-            {isLoading ? <p style={{ color: '#9ca3af' }}>Cargando...</p> : (
-                <Card>
-                    <Table
-                        cols={['Código', 'Descripción', 'Categoría', 'Rotación', 'Alerta kg', 'Unidad', 'Lote', '']}
-                        rows={items.map((it: any) => [
-                            <code style={{ color: '#a5b4fc', fontSize: '11px' }}>{it.codigoInterno}</code>,
-                            it.descripcion,
-                            <Badge>{it.categoria}</Badge>,
-                            <Badge color={ROT_COLORS[it.rotacion] ?? '#6b7280'}>{it.rotacion}</Badge>,
-                            it.alertaKilos ? `${it.alertaKilos} kg` : '—',
-                            it.unidadPrincipal,
-                            it.trackLot ? <Badge color="#34d399">Sí</Badge> : <Badge color="#6b7280">No</Badge>,
-                            <div style={{ display: 'flex', gap: '4px' }}>
-                                <Btn small variant="secondary" onClick={() => openEdit(it)}>✏️</Btn>
-                                <Btn small variant="danger" onClick={() => deleteItem(it.id)}>🗑</Btn>
-                            </div>,
-                        ])}
-                    />
-                </Card>
-            )}
+            <Card>
+                <Table
+                    loading={isLoading}
+                    cols={['Código', 'Descripción', 'Categoría', 'Rotación', 'Alerta kg', 'Unidad', 'Lote', '']}
+                    rows={items.map((it: any) => [
+                        <code style={{ color: '#a5b4fc', fontSize: '11px' }}>{it.codigoInterno}</code>,
+                        it.descripcion,
+                        <Badge>{it.categoria}</Badge>,
+                        <Badge color={ROT_COLORS[it.rotacion] ?? '#6b7280'}>{it.rotacion}</Badge>,
+                        it.alertaKilos ? `${it.alertaKilos} kg` : '—',
+                        it.unidadPrincipal,
+                        it.trackLot ? <Badge color="#34d399">Sí</Badge> : <Badge color="#6b7280">No</Badge>,
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                            <Btn small variant="secondary" onClick={() => openEdit(it)}>✏️</Btn>
+                            <Btn small variant="danger" onClick={() => deleteItem(it.id)}>🗑</Btn>
+                        </div>,
+                    ])}
+                />
+            </Card>
 
             {modal && (
                 <Modal title={modal === 'edit' ? 'Editar Material' : 'Nuevo Material'} onClose={() => setModal(null)}>

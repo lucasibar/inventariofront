@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
 import { useGetStockQuery } from '../features/stock/api/stock.api';
 import { useGetDepotsQuery, useCreateDepotMutation, useUpdateDepotMutation, useDeleteDepotMutation, useCreatePositionMutation, useUpdatePositionMutation, useDeletePositionMutation } from '../features/depots/api/depots.api';
+import { useCreateRemitoEntradaMutation } from '../features/remitosEntrada/api/remitos-entrada.api';
+import { useGetItemsQuery } from '../features/items/api/items.api';
+import { useGetPartnersQuery } from '../features/partners/api/partners.api';
 import { PageHeader, Card, Btn, Input, Select, Modal, Table, Badge, SearchBar } from './common/ui';
 
-const ROTACION_COLORS: Record<string, string> = { ALTA: '#34d399', MEDIA: '#fbbf24', BAJA: '#6b7280' };
-// Used in sub-components if needed in future
-
+const emptyQuickLine = () => ({ itemId: '', codigoInterno: '', descripcion: '', supplierId: '', supplierName: '', newSupplier: false, lotNumber: '', posicionId: '', kilos: '', unidades: '' });
 
 export default function DepositoPage() {
     const { data: depots = [], isLoading: loadingDepots } = useGetDepotsQuery();
@@ -15,6 +16,9 @@ export default function DepositoPage() {
     const [createPosition] = useCreatePositionMutation();
     const [updatePosition] = useUpdatePositionMutation();
     const [deletePosition] = useDeletePositionMutation();
+    const [createRemito] = useCreateRemitoEntradaMutation();
+    const { data: items = [] } = useGetItemsQuery({});
+    const { data: suppliers = [] } = useGetPartnersQuery({ type: 'SUPPLIER' });
 
     const [activeDepotId, setActiveDepotId] = useState<string>('');
     const activeDepot = depots.find((d: any) => d.id === activeDepotId);
@@ -37,6 +41,15 @@ export default function DepositoPage() {
     const [posForm, setPosForm] = useState({ codigo: '', tipo: 'STORAGE' });
     const [posError, setPosError] = useState('');
     const [posSaving, setPosSaving] = useState(false);
+
+    // Quick load form
+    const [showQuick, setShowQuick] = useState(false);
+    const [quickLines, setQuickLines] = useState([emptyQuickLine()]);
+    const [quickError, setQuickError] = useState('');
+    const [quickSaving, setQuickSaving] = useState(false);
+
+    const positions: any[] = activeDepot?.positions ?? [];
+    const entradaPos = positions.find((p: any) => p.codigo === 'ENTRADA');
 
     const saveDepot = async () => {
         if (!depotForm.nombre.trim()) { setDepotError('El nombre es obligatorio'); return; }
@@ -65,98 +78,139 @@ export default function DepositoPage() {
         setPosSaving(false);
     };
 
+    const saveQuick = async () => {
+        setQuickSaving(true); setQuickError('');
+        try {
+            const dto: any = {
+                numero: `CRR-${Date.now()}`,
+                fecha: new Date().toISOString().split('T')[0],
+                lines: quickLines.filter(l => l.itemId || l.codigoInterno).map(l => ({
+                    itemId: l.itemId || undefined,
+                    codigoInterno: l.codigoInterno || undefined,
+                    descripcion: l.descripcion || undefined,
+                    lotNumber: l.lotNumber || undefined,
+                    posicionId: l.posicionId || entradaPos?.id || undefined,
+                    kilos: Number(l.kilos),
+                    unidades: l.unidades ? Number(l.unidades) : undefined,
+                })),
+            };
+            // Resolve supplier – if any line has a supplier, use first one
+            const firstLine = quickLines[0];
+            if (firstLine.newSupplier && firstLine.supplierName) dto.supplierName = firstLine.supplierName;
+            else if (firstLine.supplierId) dto.supplierId = firstLine.supplierId;
+            else dto.supplierName = 'Sin proveedor';
+
+            await createRemito(dto).unwrap();
+            setShowQuick(false); setQuickLines([emptyQuickLine()]);
+        } catch (e: any) { setQuickError(e?.data?.message ?? 'Error al guardar'); }
+        setQuickSaving(false);
+    };
+
+    const updateQL = (i: number, field: string, val: string) =>
+        setQuickLines(prev => prev.map((l, idx) => idx === i ? { ...l, [field]: val } : l));
+
     // Unique suppliers for filter from stock
-    const suppliers = useMemo(() => {
+    const stockSuppliers = useMemo(() => {
         const map = new Map<string, string>();
         stock.forEach((s: any) => { if (s.batch?.supplier) map.set(s.batch.supplier.id, s.batch.supplier.name); });
         return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
     }, [stock]);
 
+    // Merge positions + stock so empty positions still appear as rows
+    const tableRows = useMemo(() => {
+        if (!activeDepot) {
+            // No depot selected: show raw stock rows
+            return stock.map((s: any) => ({ pos: s.posicion, stock: s, empty: false }));
+        }
+        const rows: { pos: any; stock: any; empty: boolean }[] = [];
+        const usedStockIds = new Set<string>();
+
+        positions.forEach((pos: any) => {
+            const posStock = stock.filter((s: any) => s.posicionId === pos.id && !usedStockIds.has(`${s.posicionId}-${s.lotId}`));
+            if (posStock.length > 0) {
+                posStock.forEach((s: any) => {
+                    usedStockIds.add(`${s.posicionId}-${s.lotId}`);
+                    rows.push({ pos, stock: s, empty: false });
+                });
+            } else {
+                rows.push({ pos, stock: null, empty: true });
+            }
+        });
+        // Any stock not matched to a know position (shouldn't happen but just in case)
+        stock.forEach((s: any) => {
+            if (!usedStockIds.has(`${s.posicionId}-${s.lotId}`)) rows.push({ pos: s.posicion, stock: s, empty: false });
+        });
+        return rows;
+    }, [activeDepot, positions, stock]);
+
+    const depotSelectorOptions = [
+        { value: '', label: '— Todos los depósitos —' },
+        ...depots.map((d: any) => ({ value: d.id, label: `${d.nombre}${d.planta ? ` · ${d.planta}` : ''}` })),
+        { value: '__new__', label: '+ Nuevo Depósito' },
+    ];
+
+    const handleDepotSelect = (v: string) => {
+        if (v === '__new__') {
+            setEditDepot(null); setDepotForm({ nombre: '', planta: '', tipo: 'STORAGE' }); setShowDepotForm(true);
+        } else {
+            setActiveDepotId(v);
+        }
+    };
+
     return (
         <div style={{ padding: '24px' }}>
-            <PageHeader title="Depósito" subtitle="Gestión de depósitos, posiciones y stock">
-                <Btn small variant="secondary" onClick={() => { setEditDepot(null); setDepotForm({ nombre: '', planta: '', tipo: 'STORAGE' }); setShowDepotForm(true); }}>+ Depósito</Btn>
-                {activeDepotId && <Btn small onClick={() => { setEditPos(null); setPosForm({ codigo: '', tipo: 'STORAGE' }); setShowPosForm(true); }}>+ Posición</Btn>}
+            {/* Header */}
+            <PageHeader title="Depósito" subtitle="Gestión de posiciones y stock">
+                <Select
+                    value={activeDepotId || ''}
+                    onChange={handleDepotSelect}
+                    options={loadingDepots ? [{ value: '', label: 'Cargando...' }] : depotSelectorOptions}
+                    style={{ minWidth: '220px' }}
+                />
+                {activeDepotId && (
+                    <>
+                        <Btn small variant="secondary" onClick={() => { setEditDepot(activeDepot); setDepotForm({ nombre: activeDepot.nombre, planta: activeDepot.planta ?? '', tipo: activeDepot.tipo }); setShowDepotForm(true); }}>✏️</Btn>
+                        <Btn small variant="danger" onClick={() => { deleteDepot(activeDepotId); setActiveDepotId(''); }}>🗑</Btn>
+                        <Btn small variant="secondary" onClick={() => { setEditPos(null); setPosForm({ codigo: '', tipo: 'STORAGE' }); setShowPosForm(true); }}>+ Posición</Btn>
+                        <Btn small onClick={() => setShowQuick(true)}>⚡ Carga Rápida</Btn>
+                    </>
+                )}
             </PageHeader>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: '16px' }}>
-                {/* Depot list */}
-                <Card style={{ padding: '8px' }}>
-                    {loadingDepots ? <p style={{ color: '#9ca3af', padding: '12px' }}>Cargando...</p> : (
-                        <>
-                            <div
-                                onClick={() => setActiveDepotId('')}
-                                style={{ padding: '10px 12px', borderRadius: '8px', cursor: 'pointer', background: !activeDepotId ? 'rgba(165,180,252,0.1)' : 'transparent', color: !activeDepotId ? '#a5b4fc' : '#9ca3af', fontSize: '13px', marginBottom: '4px' }}
-                            >
-                                📦 Todos los depósitos
-                            </div>
-                            {depots.map((d: any) => (
-                                <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: '8px', cursor: 'pointer', background: activeDepotId === d.id ? 'rgba(165,180,252,0.1)' : 'transparent', marginBottom: '2px' }}
-                                    onClick={() => setActiveDepotId(d.id)}>
-                                    <div>
-                                        <div style={{ color: activeDepotId === d.id ? '#a5b4fc' : '#d1d5db', fontSize: '13px', fontWeight: 600 }}>{d.nombre}</div>
-                                        <div style={{ color: '#6b7280', fontSize: '11px' }}>{d.planta} · {d.tipo}</div>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '4px' }}>
-                                        <Btn small variant="secondary" onClick={(e: React.MouseEvent) => { e.stopPropagation(); setEditDepot(d); setDepotForm({ nombre: d.nombre, planta: d.planta ?? '', tipo: d.tipo }); setShowDepotForm(true); }}>✏️</Btn>
-                                        <Btn small variant="danger" onClick={(e: React.MouseEvent) => { e.stopPropagation(); deleteDepot(d.id); }}>🗑</Btn>
-                                    </div>
-                                </div>
-                            ))}
-                        </>
-                    )}
-                </Card>
+            {/* Positions chips removed — positions are now shown inline in the table */}
 
-                {/* Stock view */}
-                <div>
-                    {/* Positions panel if depot selected */}
-                    {activeDepot && (
-                        <Card style={{ marginBottom: '16px', padding: '12px' }}>
-                            <div style={{ color: '#9ca3af', fontSize: '11px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Posiciones de {activeDepot.nombre}</div>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                                {(activeDepot.positions ?? []).map((p: any) => (
-                                    <div key={p.id} style={{ background: '#0f1117', border: '1px solid #2a2d3e', borderRadius: '8px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <div>
-                                            <div style={{ color: '#d1d5db', fontSize: '13px', fontWeight: 600 }}>{p.codigo}</div>
-                                            <Badge color={p.tipo === 'PICKING' ? '#34d399' : '#a5b4fc'}>{p.tipo}</Badge>
-                                        </div>
-                                        <div style={{ display: 'flex', gap: '4px' }}>
-                                            <Btn small variant="secondary" onClick={() => { setEditPos(p); setPosForm({ codigo: p.codigo, tipo: p.tipo }); setShowPosForm(true); }}>✏️</Btn>
-                                            <Btn small variant="danger" onClick={() => deletePosition(p.id)}>🗑</Btn>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </Card>
-                    )}
-
-                    {/* Stock table */}
-                    <Card>
-                        <div style={{ padding: '12px 16px', borderBottom: '1px solid #2a2d3e', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                            <SearchBar value={q} onChange={setQ} placeholder="Material, código, proveedor, partida..." />
-                            <Select value={filterSupplier} onChange={setFilterSupplier}
-                                options={[{ value: '', label: 'Todos los proveedores' }, ...suppliers.map(s => ({ value: s.id, label: s.name }))]}
-                                style={{ width: '200px' }} />
-                        </div>
-                        {loadingStock ? <p style={{ color: '#9ca3af', padding: '24px' }}>Cargando stock...</p> : (
-                            <Table
-                                cols={['Depósito', 'Posición', 'Material', 'Código', 'Partida', 'Proveedor', 'Kilos', 'Unidades']}
-                                rows={stock.map((s: any) => [
-                                    s.posicion?.depot?.nombre ?? '—',
-                                    <Badge color={s.posicion?.tipo === 'PICKING' ? '#34d399' : '#a5b4fc'}>{s.posicion?.codigo ?? '—'}</Badge>,
-                                    s.batch?.item?.descripcion ?? '—',
-                                    <code style={{ color: '#a5b4fc', fontSize: '11px' }}>{s.batch?.item?.codigoInterno ?? '—'}</code>,
-                                    <code style={{ fontSize: '11px', color: '#fbbf24' }}>{s.batch?.lotNumber ?? '—'}</code>,
-                                    s.batch?.supplier?.name ?? '—',
-                                    <strong style={{ color: '#34d399' }}>{Number(s.qtyPrincipal).toFixed(2)} kg</strong>,
-                                    s.qtySecundaria != null ? s.qtySecundaria : '—',
-                                ])}
-                            />
-                        )}
-                    </Card>
+            {/* Stock table */}
+            <Card>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #2a2d3e', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    <SearchBar value={q} onChange={setQ} placeholder="Material, código, proveedor, partida..." />
+                    <Select value={filterSupplier} onChange={setFilterSupplier}
+                        options={[{ value: '', label: 'Todos los proveedores' }, ...stockSuppliers.map(s => ({ value: s.id, label: s.name }))]}
+                        style={{ width: '200px' }} />
                 </div>
-            </div>
+                <Table
+                    loading={loadingStock}
+                    cols={['Posición', 'Material', 'Código', 'Partida', 'Proveedor', 'Kilos', 'Unidades', '']}
+                    rows={tableRows.map(({ pos, stock: s, empty }) => [
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Badge color={pos?.tipo === 'PICKING' ? '#34d399' : '#a5b4fc'}>{pos?.codigo ?? '—'}</Badge>
+                        </div>,
+                        empty ? <span style={{ color: '#4b5563', fontStyle: 'italic' }}>Vacía</span> : (s?.batch?.item?.descripcion ?? '—'),
+                        empty ? '—' : <code style={{ color: '#a5b4fc', fontSize: '11px' }}>{s?.batch?.item?.codigoInterno ?? '—'}</code>,
+                        empty ? '—' : <code style={{ fontSize: '11px', color: '#fbbf24' }}>{s?.batch?.lotNumber ?? '—'}</code>,
+                        empty ? '—' : (s?.batch?.supplier?.name ?? '—'),
+                        empty ? <span style={{ color: '#374151' }}>—</span> : <strong style={{ color: '#34d399' }}>{Number(s?.qtyPrincipal).toFixed(2)} kg</strong>,
+                        empty ? '—' : (s?.qtySecundaria != null ? s.qtySecundaria : '—'),
+                        pos ? (
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                                <Btn small variant="secondary" onClick={() => { setEditPos(pos); setPosForm({ codigo: pos.codigo, tipo: pos.tipo }); setShowPosForm(true); }}>✏️</Btn>
+                                <Btn small variant="danger" onClick={() => deletePosition(pos.id)}>🗑</Btn>
+                            </div>
+                        ) : null,
+                    ])}
+                />
+            </Card>
 
+            {/* Depot modal */}
             {showDepotForm && (
                 <Modal title={editDepot ? 'Editar Depósito' : 'Nuevo Depósito'} onClose={() => { setShowDepotForm(false); setDepotError(''); }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -173,6 +227,7 @@ export default function DepositoPage() {
                 </Modal>
             )}
 
+            {/* Position modal */}
             {showPosForm && (
                 <Modal title={editPos ? 'Editar Posición' : 'Nueva Posición'} onClose={() => { setShowPosForm(false); setPosError(''); }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -184,6 +239,72 @@ export default function DepositoPage() {
                             <Btn variant="secondary" onClick={() => { setShowPosForm(false); setPosError(''); }}>Cancelar</Btn>
                             <Btn onClick={savePosition} disabled={posSaving}>{posSaving ? 'Guardando...' : 'Guardar'}</Btn>
                         </div>
+                    </div>
+                </Modal>
+            )}
+
+            {/* Quick load modal */}
+            {showQuick && (
+                <Modal title="⚡ Carga Rápida de Stock" onClose={() => { setShowQuick(false); setQuickLines([emptyQuickLine()]); setQuickError(''); }} wide>
+                    <p style={{ color: '#6b7280', fontSize: '12px', marginBottom: '16px', marginTop: 0 }}>
+                        Cargá stock directamente al depósito <strong style={{ color: '#a5b4fc' }}>{activeDepot?.nombre}</strong> sin generar un remito formal.
+                    </p>
+
+                    {/* Global supplier for all lines */}
+                    <div style={{ marginBottom: '16px' }}>
+                        <label style={{ color: '#9ca3af', fontSize: '12px' }}>Proveedor (aplica a todas las líneas)</label>
+                        <Select
+                            value={quickLines[0].newSupplier ? '__new__' : quickLines[0].supplierId}
+                            onChange={v => {
+                                const isNew = v === '__new__';
+                                setQuickLines(prev => prev.map((l, i) => i === 0 ? { ...l, supplierId: isNew ? '' : v, newSupplier: isNew } : l));
+                            }}
+                            options={[{ value: '', label: 'Seleccionar...' }, { value: '__new__', label: '+ Nuevo proveedor' }, ...suppliers.map((s: any) => ({ value: s.id, label: s.name }))]}
+                            style={{ marginTop: '6px' }}
+                        />
+                        {quickLines[0].newSupplier && (
+                            <Input style={{ marginTop: '8px' }} label="Nombre del proveedor" value={quickLines[0].supplierName} onChange={v => updateQL(0, 'supplierName', v)} />
+                        )}
+                    </div>
+
+                    {/* Lines */}
+                    <div style={{ marginBottom: '16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <label style={{ color: '#9ca3af', fontSize: '12px' }}>Líneas de material</label>
+                            <Btn small onClick={() => setQuickLines(p => [...p, emptyQuickLine()])}>+ Línea</Btn>
+                        </div>
+                        {quickLines.map((line, i) => (
+                            <div key={i} style={{ background: '#0f1117', borderRadius: '8px', padding: '12px', marginBottom: '8px', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr auto', gap: '8px', alignItems: 'end' }}>
+                                <Select
+                                    label="Material"
+                                    value={line.itemId}
+                                    onChange={v => {
+                                        const it = items.find((x: any) => x.id === v);
+                                        setQuickLines(prev => prev.map((l, j) => j === i ? { ...l, itemId: v, codigoInterno: '', descripcion: it ? it.descripcion : l.descripcion } : l));
+                                    }}
+                                    options={[{ value: '', label: 'Seleccionar o tipear...' }, ...items.map((it: any) => ({ value: it.id, label: `${it.codigoInterno} - ${it.descripcion}` }))]}
+                                />
+                                <Select
+                                    label="Posición"
+                                    value={line.posicionId}
+                                    onChange={v => updateQL(i, 'posicionId', v)}
+                                    options={[
+                                        { value: '', label: entradaPos ? `ENTRADA (def.)` : '—' },
+                                        ...positions.map((p: any) => ({ value: p.id, label: `${p.codigo} (${p.tipo})` })),
+                                    ]}
+                                />
+                                <Input label="Partida / Lote" value={line.lotNumber} onChange={v => updateQL(i, 'lotNumber', v)} />
+                                <Input label="Kilos" type="number" value={line.kilos} onChange={v => updateQL(i, 'kilos', v)} />
+                                <Input label="Unidades" type="number" value={line.unidades} onChange={v => updateQL(i, 'unidades', v)} />
+                                <Btn small variant="danger" onClick={() => setQuickLines(p => p.filter((_, j) => j !== i))} style={{ alignSelf: 'flex-end' }}>✕</Btn>
+                            </div>
+                        ))}
+                    </div>
+
+                    {quickError && <p style={{ color: '#f87171', marginBottom: '8px' }}>{quickError}</p>}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                        <Btn variant="secondary" onClick={() => { setShowQuick(false); setQuickLines([emptyQuickLine()]); }}>Cancelar</Btn>
+                        <Btn onClick={saveQuick} disabled={quickSaving}>{quickSaving ? 'Guardando...' : '⚡ Cargar Stock'}</Btn>
                     </div>
                 </Modal>
             )}

@@ -1,5 +1,5 @@
 import { useGetDashboardComprasQuery, useGetAlertsQuery } from '../features/stock/api/stock.api';
-import { PageHeader, Card, Badge, SearchBar } from './common/ui';
+import { PageHeader, Card, Badge, SearchBar, Spinner } from './common/ui';
 import { useState } from 'react';
 
 export default function DashboardComprasPage() {
@@ -54,7 +54,7 @@ export default function DashboardComprasPage() {
                 </div>
             )}
 
-            {isLoading ? <p style={{ color: '#9ca3af' }}>Cargando...</p> : (
+            {isLoading ? <Spinner /> : (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
@@ -63,7 +63,7 @@ export default function DashboardComprasPage() {
                             <Badge color="#ef4444">{alta.length}</Badge>
                         </div>
                         <Card style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            {alta.length === 0 ? <p style={{ color: '#4b5563', fontSize: '13px' }}>Sin materiales</p> : alta.map((item: any) => <StockBar key={item.itemId} item={item} />)}
+                            {alta.length === 0 ? <p style={{ color: '#4b5563', fontSize: '13px' }}>Todavía no hay datos cargados</p> : alta.map((item: any) => <StockBar key={item.itemId} item={item} />)}
                         </Card>
                     </div>
                     <div>
@@ -73,7 +73,7 @@ export default function DashboardComprasPage() {
                             <Badge color="#f59e0b">{media.length}</Badge>
                         </div>
                         <Card style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            {media.length === 0 ? <p style={{ color: '#4b5563', fontSize: '13px' }}>Sin materiales</p> : media.map((item: any) => <StockBar key={item.itemId} item={item} />)}
+                            {media.length === 0 ? <p style={{ color: '#4b5563', fontSize: '13px' }}>Todavía no hay datos cargados</p> : media.map((item: any) => <StockBar key={item.itemId} item={item} />)}
                         </Card>
                     </div>
                 </div>

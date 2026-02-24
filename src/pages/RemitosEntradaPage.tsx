@@ -3,7 +3,7 @@ import { useGetRemitosEntradaQuery, useCreateRemitoEntradaMutation, useDeleteRem
 import { useGetPartnersQuery, useCreatePartnerMutation } from '../features/partners/api/partners.api';
 import { useGetItemsQuery, useCreateItemMutation } from '../features/items/api/items.api';
 import { useGetDepotsQuery } from '../features/depots/api/depots.api';
-import { PageHeader, Card, Btn, Input, Select, Modal, Table, Badge } from './common/ui';
+import { PageHeader, Card, Btn, Input, Select, GroupedSelect, Modal, Table, Badge } from './common/ui';
 
 interface LineForm { itemId: string; codigoInterno: string; descripcion: string; lotNumber: string; posicionId: string; kilos: string; unidades: string; }
 
@@ -31,7 +31,10 @@ export default function RemitosEntradaPage() {
     const [error, setError] = useState('');
     const [saving, setSaving] = useState(false);
 
-    const positions = depots.flatMap((d: any) => (d.positions ?? []).map((p: any) => ({ ...p, depotNombre: d.nombre })));
+    const positionGroups = depots.map((d: any) => ({
+        groupLabel: d.nombre + (d.planta ? ` · ${d.planta}` : ''),
+        options: (d.positions ?? []).map((p: any) => ({ value: p.id, label: `${p.codigo} (${p.tipo})` })),
+    })).filter((g: any) => g.options.length > 0);
 
     const updateLine = (i: number, field: keyof LineForm, val: string) => {
         setLines(prev => prev.map((l, idx) => idx === i ? { ...l, [field]: val } : l));
@@ -68,20 +71,19 @@ export default function RemitosEntradaPage() {
                 <Btn onClick={() => setShowForm(true)}>+ Nuevo Remito</Btn>
             </PageHeader>
 
-            {isLoading ? <p style={{ color: '#9ca3af' }}>Cargando...</p> : (
-                <Card>
-                    <Table
-                        cols={['Número', 'Fecha', 'Proveedor', 'Líneas', '']}
-                        rows={remitos.map((r: any) => [
-                            <span style={{ color: '#a5b4fc', fontWeight: 600 }}>{r.numero}</span>,
-                            new Date(r.fecha).toLocaleDateString('es-AR'),
-                            r.supplier?.name ?? '—',
-                            <Badge>{r.lines?.length ?? 0} ítems</Badge>,
-                            <Btn variant="danger" small onClick={() => deleteRemito(r.id)}>🗑</Btn>,
-                        ])}
-                    />
-                </Card>
-            )}
+            <Card>
+                <Table
+                    loading={isLoading}
+                    cols={['Número', 'Fecha', 'Proveedor', 'Líneas', '']}
+                    rows={remitos.map((r: any) => [
+                        <span style={{ color: '#a5b4fc', fontWeight: 600 }}>{r.numero}</span>,
+                        new Date(r.fecha).toLocaleDateString('es-AR'),
+                        r.supplier?.name ?? '—',
+                        <Badge>{r.lines?.length ?? 0} ítems</Badge>,
+                        <Btn variant="danger" small onClick={() => deleteRemito(r.id)}>🗑</Btn>,
+                    ])}
+                />
+            </Card>
 
             {showForm && (
                 <Modal title="Nuevo Remito de Entrada" onClose={() => setShowForm(false)} wide>
@@ -114,8 +116,8 @@ export default function RemitosEntradaPage() {
                                     options={[{ value: '', label: 'Seleccionar o tipear...' }, ...items.map((it: any) => ({ value: it.id, label: `${it.codigoInterno} - ${it.descripcion}` }))]} />
                                 <Input label="Cód interno / Alt" value={line.codigoInterno} onChange={v => updateLine(i, 'codigoInterno', v)} placeholder="Si no existe en lista" />
                                 <Input label="Partida / Lote" value={line.lotNumber} onChange={v => updateLine(i, 'lotNumber', v)} />
-                                <Select label="Posición" value={line.posicionId} onChange={v => updateLine(i, 'posicionId', v)}
-                                    options={[{ value: '', label: '—' }, ...positions.map((p: any) => ({ value: p.id, label: `${p.depotNombre} › ${p.codigo} (${p.tipo})` }))]} />
+                                <GroupedSelect label="Depósito › Posición" value={line.posicionId} onChange={v => updateLine(i, 'posicionId', v)}
+                                    groups={positionGroups} />
                                 <Input label="Kilos" type="number" value={line.kilos} onChange={v => updateLine(i, 'kilos', v)} />
                                 <Input label="Unidades" type="number" value={line.unidades} onChange={v => updateLine(i, 'unidades', v)} />
                                 <Btn variant="danger" small onClick={() => setLines(p => p.filter((_, j) => j !== i))} style={{ alignSelf: 'flex-end' }}>✕</Btn>

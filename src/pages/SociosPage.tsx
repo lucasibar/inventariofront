@@ -47,24 +47,23 @@ export default function SociosPage() {
                 <Btn onClick={openCreate}>+ Socio</Btn>
             </PageHeader>
 
-            {isLoading ? <p style={{ color: '#9ca3af' }}>Cargando...</p> : (
-                <Card>
-                    <Table
-                        cols={['Nombre', 'Tipo', 'CUIT/CUIL', 'Email', 'Teléfono', '']}
-                        rows={partners.map((p: any) => [
-                            <span style={{ color: '#d1d5db', fontWeight: 600 }}>{p.name}</span>,
-                            <Badge color={TYPE_COLORS[p.type]}>{TYPES.find(t => t.value === p.type)?.label ?? p.type}</Badge>,
-                            p.taxId ?? '—',
-                            p.email ?? '—',
-                            p.phone ?? '—',
-                            <div style={{ display: 'flex', gap: '4px' }}>
-                                <Btn small variant="secondary" onClick={() => openEdit(p)}>✏️</Btn>
-                                <Btn small variant="danger" onClick={() => deletePartner(p.id)}>🗑</Btn>
-                            </div>,
-                        ])}
-                    />
-                </Card>
-            )}
+            <Card>
+                <Table
+                    loading={isLoading}
+                    cols={['Nombre', 'Tipo', 'CUIT/CUIL', 'Email', 'Teléfono', '']}
+                    rows={partners.map((p: any) => [
+                        <span style={{ color: '#d1d5db', fontWeight: 600 }}>{p.name}</span>,
+                        <Badge color={TYPE_COLORS[p.type]}>{TYPES.find(t => t.value === p.type)?.label ?? p.type}</Badge>,
+                        p.taxId ?? '—',
+                        p.email ?? '—',
+                        p.phone ?? '—',
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                            <Btn small variant="secondary" onClick={() => openEdit(p)}>✏️</Btn>
+                            <Btn small variant="danger" onClick={() => deletePartner(p.id)}>🗑</Btn>
+                        </div>,
+                    ])}
+                />
+            </Card>
 
             {modal && (
                 <Modal title={modal === 'edit' ? 'Editar Socio' : 'Nuevo Socio'} onClose={() => setModal(null)}>

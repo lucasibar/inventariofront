@@ -6,6 +6,10 @@ export const depotsApi = api.injectEndpoints({
             query: () => 'depots',
             providesTags: ['Depots'],
         }),
+        getArchivedDepots: builder.query<any[], void>({
+            query: () => 'depots/archived',
+            providesTags: ['Depots'],
+        }),
         createDepot: builder.mutation<any, any>({
             query: (body) => ({ url: 'depots', method: 'POST', body }),
             invalidatesTags: ['Depots'],
@@ -16,6 +20,10 @@ export const depotsApi = api.injectEndpoints({
         }),
         deleteDepot: builder.mutation<void, string>({
             query: (id) => ({ url: `depots/${id}`, method: 'DELETE' }),
+            invalidatesTags: ['Depots'],
+        }),
+        restoreDepot: builder.mutation<any, string>({
+            query: (id) => ({ url: `depots/${id}/restore`, method: 'PATCH' }),
             invalidatesTags: ['Depots'],
         }),
         createPosition: builder.mutation<any, { depotId: string; data: any }>({
@@ -35,10 +43,13 @@ export const depotsApi = api.injectEndpoints({
 
 export const {
     useGetDepotsQuery,
+    useGetArchivedDepotsQuery,
     useCreateDepotMutation,
     useUpdateDepotMutation,
     useDeleteDepotMutation,
+    useRestoreDepotMutation,
     useCreatePositionMutation,
     useUpdatePositionMutation,
     useDeletePositionMutation,
 } = depotsApi;
+
