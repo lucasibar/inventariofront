@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useGetRemitosEntradaQuery, useCreateRemitoEntradaMutation, useDeleteRemitoEntradaMutation } from '../features/remitosEntrada/api/remitos-entrada.api';
-import { useGetPartnersQuery, useCreatePartnerMutation } from '../features/partners/api/partners.api';
-import { useGetItemsQuery, useCreateItemMutation } from '../features/items/api/items.api';
+import { useGetPartnersQuery } from '../features/partners/api/partners.api';
+import { useGetItemsQuery } from '../features/items/api/items.api';
 import { useGetDepotsQuery } from '../features/depots/api/depots.api';
-import { PageHeader, Card, Btn, Input, Select, GroupedSelect, Modal, Table, Badge } from './common/ui';
+import { PageHeader, Card, Btn, Input, Select, Modal, Table, Badge } from './common/ui';
 
-interface LineForm { itemId: string; codigoInterno: string; descripcion: string; lotNumber: string; posicionId: string; kilos: string; unidades: string; }
+interface LineForm { itemId: string; codigoInterno: string; descripcion: string; lotNumber: string; depositoId: string; posicionId: string; kilos: string; unidades: string; }
 
-const emptyLine = (): LineForm => ({ itemId: '', codigoInterno: '', descripcion: '', lotNumber: '', posicionId: '', kilos: '', unidades: '' });
+const emptyLine = (): LineForm => ({ itemId: '', codigoInterno: '', descripcion: '', lotNumber: '', depositoId: '', posicionId: '', kilos: '', unidades: '' });
 
 export default function RemitosEntradaPage() {
     const { data: remitos = [], isLoading } = useGetRemitosEntradaQuery();
@@ -17,8 +17,6 @@ export default function RemitosEntradaPage() {
 
     const [createRemito] = useCreateRemitoEntradaMutation();
     const [deleteRemito] = useDeleteRemitoEntradaMutation();
-    const [createPartner] = useCreatePartnerMutation();
-    const [createItem] = useCreateItemMutation();
 
     const [showForm, setShowForm] = useState(false);
     const [numero, setNumero] = useState('');
@@ -27,17 +25,21 @@ export default function RemitosEntradaPage() {
     const [supplierName, setSupplierName] = useState('');
     const [newSupplier, setNewSupplier] = useState(false);
     const [lines, setLines] = useState<LineForm[]>([emptyLine()]);
-    const [preview, setPreview] = useState<any>(null);
     const [error, setError] = useState('');
     const [saving, setSaving] = useState(false);
 
-    const positionGroups = depots.map((d: any) => ({
-        groupLabel: d.nombre + (d.planta ? ` · ${d.planta}` : ''),
-        options: (d.positions ?? []).map((p: any) => ({ value: p.id, label: `${p.codigo} (${p.tipo})` })),
-    })).filter((g: any) => g.options.length > 0);
-
     const updateLine = (i: number, field: keyof LineForm, val: string) => {
         setLines(prev => prev.map((l, idx) => idx === i ? { ...l, [field]: val } : l));
+    };
+
+    const handleDepotChange = (i: number, depId: string) => {
+        const depot = depots.find((d: any) => d.id === depId);
+        let posId = '';
+        if (depot && depot.positions) {
+            const entradaPos = depot.positions.find((p: any) => p.codigo === 'ENTRADA');
+            if (entradaPos) posId = entradaPos.id;
+        }
+        setLines(prev => prev.map((l, idx) => idx === i ? { ...l, depositoId: depId, posicionId: posId } : l));
     };
 
     const save = async () => {
@@ -111,15 +113,24 @@ export default function RemitosEntradaPage() {
                             <Btn small onClick={() => setLines(p => [...p, emptyLine()])}>+ Línea</Btn>
                         </div>
                         {lines.map((line, i) => (
-                            <div key={i} style={{ background: '#1a1d2e', borderRadius: '8px', padding: '12px', marginBottom: '8px', display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1fr 1fr 1fr auto', gap: '8px', alignItems: 'end' }}>
+                            <div key={i} style={{ background: '#1a1d2e', borderRadius: '8px', padding: '12px', marginBottom: '8px', display: 'grid', gridTemplateColumns: '1.8fr 1.5fr 1fr 1.2fr 1.2fr 0.8fr 0.8fr auto', gap: '8px', alignItems: 'end' }}>
                                 <Select label="Material" value={line.itemId} onChange={v => { updateLine(i, 'itemId', v); const it = items.find((x: any) => x.id === v); if (it) updateLine(i, 'descripcion', (it as any).descripcion); }}
-                                    options={[{ value: '', label: 'Seleccionar o tipear...' }, ...items.map((it: any) => ({ value: it.id, label: `${it.codigoInterno} - ${it.descripcion}` }))]} />
-                                <Input label="Cód interno / Alt" value={line.codigoInterno} onChange={v => updateLine(i, 'codigoInterno', v)} placeholder="Si no existe en lista" />
-                                <Input label="Partida / Lote" value={line.lotNumber} onChange={v => updateLine(i, 'lotNumber', v)} />
-                                <GroupedSelect label="Depósito › Posición" value={line.posicionId} onChange={v => updateLine(i, 'posicionId', v)}
-                                    groups={positionGroups} />
-                                <Input label="Kilos" type="number" value={line.kilos} onChange={v => updateLine(i, 'kilos', v)} />
-                                <Input label="Unidades" type="number" value={line.unidades} onChange={v => updateLine(i, 'unidades', v)} />
+                                    options={[{ value: '', label: 'Mat...' }, ...items.map((it: any) => ({ value: it.id, label: `${it.codigoInterno} - ${it.descripcion}` }))]} />
+                                <Input label="Cód / Alt" value={line.codigoInterno} onChange={v => updateLine(i, 'codigoInterno', v)} placeholder="Manual" />
+                                <Input label="Partida" value={line.lotNumber} onChange={v => updateLine(i, 'lotNumber', v)} />
+
+                                <Select label="Depósito" value={line.depositoId} onChange={v => handleDepotChange(i, v)}
+                                    options={[{ value: '', label: 'Dep...' }, ...depots.map((d: any) => ({ value: d.id, label: d.nombre }))]} />
+
+                                <Select label="Posición" value={line.posicionId} onChange={v => updateLine(i, 'posicionId', v)}
+                                    options={[
+                                        { value: '', label: 'Pos...' },
+                                        ...(depots.find((d: any) => d.id === line.depositoId)?.positions ?? [])
+                                            .map((p: any) => ({ value: p.id, label: p.codigo }))
+                                    ]} />
+
+                                <Input label="Kg" type="number" value={line.kilos} onChange={v => updateLine(i, 'kilos', v)} />
+                                <Input label="Unid" type="number" value={line.unidades} onChange={v => updateLine(i, 'unidades', v)} />
                                 <Btn variant="danger" small onClick={() => setLines(p => p.filter((_, j) => j !== i))} style={{ alignSelf: 'flex-end' }}>✕</Btn>
                             </div>
                         ))}
