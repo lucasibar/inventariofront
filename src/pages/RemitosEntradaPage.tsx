@@ -1,148 +1,127 @@
+
 import { useState } from 'react';
-import { useGetRemitosEntradaQuery, useCreateRemitoEntradaMutation, useDeleteRemitoEntradaMutation } from '../features/remitosEntrada/api/remitos-entrada.api';
-import { useGetPartnersQuery } from '../features/partners/api/partners.api';
-import { useGetItemsQuery } from '../features/items/api/items.api';
-import { useGetDepotsQuery } from '../features/depots/api/depots.api';
-import { PageHeader, Card, Btn, Input, Select, Modal, Table, Badge } from './common/ui';
-
-interface LineForm { itemId: string; codigoInterno: string; descripcion: string; lotNumber: string; depositoId: string; posicionId: string; kilos: string; unidades: string; }
-
-const emptyLine = (): LineForm => ({ itemId: '', codigoInterno: '', descripcion: '', lotNumber: '', depositoId: '', posicionId: '', kilos: '', unidades: '' });
+import {
+    Box, Typography, Button, IconButton, Chip,
+    Table, TableBody, TableCell, TableHead, TableRow,
+    Skeleton, Stack, Tooltip
+} from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
+import { useGetRemitosEntradaQuery, useDeleteRemitoMutation } from '../features/remitos/api/remito.api';
+import { CreateRemitoForm } from '../features/remitos/ui/CreateRemitoForm';
 
 export default function RemitosEntradaPage() {
-    const { data: remitos = [], isLoading } = useGetRemitosEntradaQuery();
-    const { data: suppliers = [] } = useGetPartnersQuery({ type: 'SUPPLIER' });
-    const { data: items = [] } = useGetItemsQuery({});
-    const { data: depots = [] } = useGetDepotsQuery();
-
-    const [createRemito] = useCreateRemitoEntradaMutation();
-    const [deleteRemito] = useDeleteRemitoEntradaMutation();
-
+    const { data: remitos = [], isLoading, isError } = useGetRemitosEntradaQuery();
+    const [deleteRemito] = useDeleteRemitoMutation();
     const [showForm, setShowForm] = useState(false);
-    const [numero, setNumero] = useState('');
-    const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
-    const [supplierId, setSupplierId] = useState('');
-    const [supplierName, setSupplierName] = useState('');
-    const [newSupplier, setNewSupplier] = useState(false);
-    const [lines, setLines] = useState<LineForm[]>([emptyLine()]);
-    const [error, setError] = useState('');
-    const [saving, setSaving] = useState(false);
 
-    const updateLine = (i: number, field: keyof LineForm, val: string) => {
-        setLines(prev => prev.map((l, idx) => idx === i ? { ...l, [field]: val } : l));
-    };
-
-    const handleDepotChange = (i: number, depId: string) => {
-        const depot = depots.find((d: any) => d.id === depId);
-        let posId = '';
-        if (depot && depot.positions) {
-            const entradaPos = depot.positions.find((p: any) => p.codigo === 'ENTRADA');
-            if (entradaPos) posId = entradaPos.id;
-        }
-        setLines(prev => prev.map((l, idx) => idx === i ? { ...l, depositoId: depId, posicionId: posId } : l));
-    };
-
-    const save = async () => {
-        setSaving(true); setError('');
-        try {
-            const dto: any = {
-                numero: numero || `RE-${Date.now()}`,
-                fecha,
-                lines: lines.map(l => ({
-                    itemId: l.itemId || undefined,
-                    codigoInterno: l.codigoInterno || undefined,
-                    descripcion: l.descripcion || undefined,
-                    lotNumber: l.lotNumber || undefined,
-                    posicionId: l.posicionId || undefined,
-                    kilos: Number(l.kilos),
-                    unidades: l.unidades ? Number(l.unidades) : undefined,
-                })),
-            };
-            if (newSupplier) { dto.supplierName = supplierName; }
-            else { dto.supplierId = supplierId; }
-            await createRemito(dto).unwrap();
-            setShowForm(false);
-            setLines([emptyLine()]); setNumero(''); setSupplierId(''); setSupplierName('');
-        } catch (e: any) { setError(e?.data?.message ?? 'Error al guardar'); }
-        setSaving(false);
-    };
+    if (showForm) {
+        return (
+            <Box sx={{ p: { xs: 2, sm: 4 } }}>
+                <Box sx={{ mb: 3 }}>
+                    <Button
+                        onClick={() => setShowForm(false)}
+                        color="inherit"
+                        size="small"
+                        sx={{ fontWeight: 600, mb: 2 }}
+                    >
+                        ← Volver al Listado
+                    </Button>
+                </Box>
+                <CreateRemitoForm />
+            </Box>
+        );
+    }
 
     return (
-        <div style={{ padding: '24px' }}>
-            <PageHeader title="Remitos de Entrada" subtitle="Ingreso de mercadería">
-                <Btn onClick={() => setShowForm(true)}>+ Nuevo Remito</Btn>
-            </PageHeader>
+        <Box sx={{ p: { xs: 2, sm: 4 } }}>
+            {/* Header: No Card, just layout */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+                <Box>
+                    <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-1px' }}>
+                        Remitos de Entrada
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                        Listado y gestión de ingresos de mercadería
+                    </Typography>
+                </Box>
+                <Tooltip title="Nuevo Ingreso">
+                    <IconButton
+                        color="primary"
+                        onClick={() => setShowForm(true)}
+                        sx={{
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            borderRadius: 2
+                        }}
+                    >
+                        <AddIcon />
+                    </IconButton>
+                </Tooltip>
+            </Box>
 
-            <Card>
-                <Table
-                    loading={isLoading}
-                    cols={['Número', 'Fecha', 'Proveedor', 'Líneas', '']}
-                    rows={remitos.map((r: any) => [
-                        <span style={{ color: '#a5b4fc', fontWeight: 600 }}>{r.numero}</span>,
-                        new Date(r.fecha).toLocaleDateString('es-AR'),
-                        r.supplier?.name ?? '—',
-                        <Badge>{r.lines?.length ?? 0} ítems</Badge>,
-                        <Btn variant="danger" small onClick={() => deleteRemito(r.id)}>🗑</Btn>,
-                    ])}
-                />
-            </Card>
-
-            {showForm && (
-                <Modal title="Nuevo Remito de Entrada" onClose={() => setShowForm(false)} wide>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                        <Input label="Número" value={numero} onChange={setNumero} placeholder="RE-001" />
-                        <Input label="Fecha" type="date" value={fecha} onChange={setFecha} />
-                    </div>
-
-                    <div style={{ marginBottom: '16px' }}>
-                        <label style={{ color: '#9ca3af', fontSize: '12px' }}>Proveedor</label>
-                        <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-                            <Select value={newSupplier ? '__new__' : supplierId} onChange={v => { if (v === '__new__') setNewSupplier(true); else { setNewSupplier(false); setSupplierId(v); } }}
-                                options={[
-                                    { value: '', label: 'Seleccionar...' },
-                                    { value: '__new__', label: '+ Nuevo proveedor' },
-                                    ...suppliers.map((s: any) => ({ value: s.id, label: s.name })),
-                                ]} />
-                        </div>
-                        {newSupplier && <Input style={{ marginTop: '8px' }} label="Nombre del proveedor" value={supplierName} onChange={setSupplierName} />}
-                    </div>
-
-                    <div style={{ marginBottom: '16px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                            <label style={{ color: '#9ca3af', fontSize: '12px' }}>Líneas</label>
-                            <Btn small onClick={() => setLines(p => [...p, emptyLine()])}>+ Línea</Btn>
-                        </div>
-                        {lines.map((line, i) => (
-                            <div key={i} style={{ background: '#1a1d2e', borderRadius: '8px', padding: '12px', marginBottom: '8px', display: 'grid', gridTemplateColumns: '1.8fr 1.5fr 1fr 1.2fr 1.2fr 0.8fr 0.8fr auto', gap: '8px', alignItems: 'end' }}>
-                                <Select label="Material" value={line.itemId} onChange={v => { updateLine(i, 'itemId', v); const it = items.find((x: any) => x.id === v); if (it) updateLine(i, 'descripcion', (it as any).descripcion); }}
-                                    options={[{ value: '', label: 'Mat...' }, ...items.map((it: any) => ({ value: it.id, label: `${it.codigoInterno} - ${it.descripcion}` }))]} />
-                                <Input label="Cód / Alt" value={line.codigoInterno} onChange={v => updateLine(i, 'codigoInterno', v)} placeholder="Manual" />
-                                <Input label="Partida" value={line.lotNumber} onChange={v => updateLine(i, 'lotNumber', v)} />
-
-                                <Select label="Depósito" value={line.depositoId} onChange={v => handleDepotChange(i, v)}
-                                    options={[{ value: '', label: 'Dep...' }, ...depots.map((d: any) => ({ value: d.id, label: d.nombre }))]} />
-
-                                <Select label="Posición" value={line.posicionId} onChange={v => updateLine(i, 'posicionId', v)}
-                                    options={[
-                                        { value: '', label: 'Pos...' },
-                                        ...(depots.find((d: any) => d.id === line.depositoId)?.positions ?? [])
-                                            .map((p: any) => ({ value: p.id, label: p.codigo }))
-                                    ]} />
-
-                                <Input label="Kg" type="number" value={line.kilos} onChange={v => updateLine(i, 'kilos', v)} />
-                                <Input label="Unid" type="number" value={line.unidades} onChange={v => updateLine(i, 'unidades', v)} />
-                                <Btn variant="danger" small onClick={() => setLines(p => p.filter((_, j) => j !== i))} style={{ alignSelf: 'flex-end' }}>✕</Btn>
-                            </div>
+            {/* List Section: No outer Card/Paper backgrounnd */}
+            {isLoading ? (
+                <Stack spacing={2}>
+                    {[1, 2, 3].map(i => <Skeleton key={i} variant="rounded" height={60} />)}
+                </Stack>
+            ) : isError ? (
+                <Typography color="error" variant="body2" align="center" sx={{ py: 8 }}>
+                    Error al cargar los remitos. Intente nuevamente.
+                </Typography>
+            ) : remitos.length === 0 ? (
+                <Box sx={{
+                    py: 12,
+                    textAlign: 'center',
+                    border: '1px dashed',
+                    borderColor: 'divider',
+                    borderRadius: 3,
+                    backgroundColor: 'transparent'
+                }}>
+                    <Typography variant="h5" sx={{ color: 'text.primary', fontWeight: 800, mb: 1.5, letterSpacing: '-0.5px' }}>
+                        Todavía no hay ningún remito cargado en este depósito
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: 'text.secondary', fontWeight: 500, maxWidth: 400, mx: 'auto' }}>
+                        Inicie una nueva recepción de materiales presionando el botón "+" arriba a la derecha.
+                    </Typography>
+                </Box>
+            ) : (
+                <Table sx={{ minWidth: 650 }} aria-label="remitos list">
+                    <TableHead>
+                        <TableRow>
+                            <TableCell sx={{ color: 'primary.main', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Número</TableCell>
+                            <TableCell sx={{ color: 'primary.main', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Fecha</TableCell>
+                            <TableCell sx={{ color: 'primary.main', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Proveedor</TableCell>
+                            <TableCell sx={{ color: 'primary.main', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Items</TableCell>
+                            <TableCell align="right"></TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {remitos.map((r: any) => (
+                            <TableRow key={r.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                                <TableCell sx={{ fontWeight: 600 }}>{r.numero || r.documentId}</TableCell>
+                                <TableCell color="text.secondary">
+                                    {new Date(r.fecha || r.date).toLocaleDateString()}
+                                </TableCell>
+                                <TableCell>{r.supplier?.name || r.provider?.name || '—'}</TableCell>
+                                <TableCell>
+                                    <Chip
+                                        label={`${r.lines?.length || r.items?.length || 0} ítems`}
+                                        size="small"
+                                        variant="outlined"
+                                        sx={{ fontWeight: 600, border: '1px solid rgba(0,0,0,0.08)' }}
+                                    />
+                                </TableCell>
+                                <TableCell align="right">
+                                    <IconButton size="small" color="error" onClick={() => deleteRemito(r.id)}>
+                                        <DeleteIcon fontSize="inherit" />
+                                    </IconButton>
+                                </TableCell>
+                            </TableRow>
                         ))}
-                    </div>
-
-                    {error && <p style={{ color: '#f87171', marginBottom: '8px' }}>{error}</p>}
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                        <Btn variant="secondary" onClick={() => setShowForm(false)}>Cancelar</Btn>
-                        <Btn onClick={save} disabled={saving}>{saving ? 'Guardando...' : 'Guardar Remito'}</Btn>
-                    </div>
-                </Modal>
+                    </TableBody>
+                </Table>
             )}
-        </div>
+        </Box>
     );
 }

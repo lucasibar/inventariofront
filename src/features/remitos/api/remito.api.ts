@@ -1,18 +1,25 @@
-
-import { api } from '../../shared/api';
-import { CreateRemitoDto } from '../../entities/remito/create-remito.dto'; // Need to create this DTO on frontend
+import { api } from '../../../shared/api';
+import type { CreateRemitoDto } from '../model/create-remito.dto';
 
 export const remitoApi = api.injectEndpoints({
     endpoints: (builder) => ({
+        getRemitosEntrada: builder.query<any[], void>({
+            query: () => 'remitos-entrada',
+            providesTags: ['RemitosEntrada'],
+        }),
         createRemito: builder.mutation<void, CreateRemitoDto>({
             query: (body) => ({
-                url: 'remitos',
+                url: 'remitos-entrada', // Correct endpoint based on legacy code
                 method: 'POST',
                 body,
             }),
-            invalidatesTags: ['Inventory', 'Items'],
+            invalidatesTags: ['RemitosEntrada', 'Stock'],
         }),
-        getDepots: builder.query<any[], void>({ // Type weak for now
+        deleteRemito: builder.mutation<void, string>({
+            query: (id) => ({ url: `remitos-entrada/${id}`, method: 'DELETE' }),
+            invalidatesTags: ['RemitosEntrada'],
+        }),
+        getDepots: builder.query<any[], void>({
             query: () => 'depots',
         }),
         searchPartners: builder.query<any[], string>({
@@ -21,4 +28,10 @@ export const remitoApi = api.injectEndpoints({
     }),
 });
 
-export const { useCreateRemitoMutation, useGetDepotsQuery, useLazySearchPartnersQuery } = remitoApi;
+export const {
+    useCreateRemitoMutation,
+    useGetDepotsQuery,
+    useLazySearchPartnersQuery,
+    useGetRemitosEntradaQuery,
+    useDeleteRemitoMutation
+} = remitoApi;

@@ -14,7 +14,9 @@ const baseQuery = fetchBaseQuery({
 
 const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (args, api, extraOptions) => {
     const result = await baseQuery(args, api, extraOptions);
-    if (result.error && result.error.status === 401) {
+    const isLoginRequest = typeof args === 'string' ? args.includes('auth/login') : args.url.includes('auth/login');
+
+    if (result.error && result.error.status === 401 && !isLoginRequest) {
         localStorage.removeItem('token');
         window.location.href = '/login';
     }

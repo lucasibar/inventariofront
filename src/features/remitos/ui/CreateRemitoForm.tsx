@@ -1,94 +1,243 @@
 
-import { useForm, FormProvider } from 'react-hook-form';
-import { Box, Button, TextField, Typography, Paper, Grid, MenuItem } from '@mui/material';
-import { useCreateRemitoMutation, useGetDepotsQuery } from '../api/remito.api';
-import { ProviderField } from './ProviderField';
+import { useForm, FormProvider, Controller } from 'react-hook-form';
+import { Box, Button, TextField, Typography, MenuItem, Divider, IconButton, Tooltip, Autocomplete } from '@mui/material';
+import { useCreateRemitoMutation, useGetDepotsQuery, useLazySearchPartnersQuery } from '../api/remito.api';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { ItemsField } from './ItemsField';
-import { CreateRemitoDto } from '../model/create-remito.dto';
+import { CreatePartnerDialog } from './CreatePartnerDialog';
+import type { CreateRemitoDto } from '../model/create-remito.dto';
+import { useState, useMemo, useEffect } from 'react';
 
 export const CreateRemitoForm = () => {
     const methods = useForm<CreateRemitoDto>({
         defaultValues: {
-            // userId and documentId handled here or backend? 
-            // documentId is usually the Remito Number input by user.
-            documentId: '',
-            items: [],
-            provider: { name: '' } // Init
+            numero: '',
+            fecha: new Date().toISOString().split('T')[0],
+            lines: []
         }
     });
 
+    const [isPartnerDialogOpen, setIsPartnerDialogOpen] = useState(false);
     const [createRemito, { isLoading }] = useCreateRemitoMutation();
-    const { data: depots = [] } = useGetDepotsQuery();
+    const { data: allDepots = [] } = useGetDepotsQuery();
+    const [selectedPlanta, setSelectedPlanta] = useState<string>('');
+    const [triggerSearch, { data: partners = [], isFetching }] = useLazySearchPartnersQuery();
+
+    useEffect(() => {
+        triggerSearch('');
+    }, [triggerSearch]);
+
+    const plants = useMemo(() => {
+        const unique = new Set(allDepots.map((d: any) => d.planta).filter(Boolean));
+        return Array.from(unique);
+    }, [allDepots]);
+
+    const filteredDepots = useMemo(() => {
+        if (!selectedPlanta) return [];
+        return allDepots.filter((d: any) => d.planta === selectedPlanta);
+    }, [allDepots, selectedPlanta]);
+
+    const selectedSupplierId = methods.watch('supplierId');
 
     const onSubmit = async (data: CreateRemitoDto) => {
         try {
-            // Enrich data if needed
-            const payload = {
+            if (!data.depotId) {
+                alert('Debe seleccionar un depósito');
+                return;
+            }
+
+            const payload: CreateRemitoDto = {
                 ...data,
-                userId: '7f90df3e-2de1-4f10-912f-90e1f7253573', // HARDCODED USER FOR NOW (Admin)
-                items: data.items.map(i => ({
-                    ...i,
-                    quantity: Number(i.quantity)
+                lines: data.lines.map(line => ({
+                    ...line,
+                    depositoId: data.depotId!,
+                    posicionId: line.posicionId || ''
                 }))
             };
 
             await createRemito(payload).unwrap();
-            alert('Remito creado con éxito');
+            alert('Remito registrado exitosamente');
             methods.reset();
         } catch (err) {
             console.error(err);
-            alert('Error al crear remito');
+            alert('Error al registrar el remito');
         }
     };
 
     return (
-        <Paper sx={{ p: 4, maxWidth: 1000, mx: 'auto', mt: 4 }}>
-            <Typography variant="h5" color="primary" gutterBottom>Ingreso de Remito</Typography>
+        <Box sx={{ maxWidth: 900, mx: 'auto' }}>
+            <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, letterSpacing: '-1px', color: 'text.primary' }}>
+                Registrar Remito
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 4, color: 'text.secondary', fontWeight: 500 }}>
+                Ingrese los datos del documento y los materiales recibidos.
+            </Typography>
 
             <FormProvider {...methods}>
                 <Box component="form" onSubmit={methods.handleSubmit(onSubmit)}>
-                    <Grid container spacing={2} sx={{ mb: 3 }}>
-                        <Grid item xs={12} sm={6}>
-                            <TextField
-                                label="Número de Remito"
-                                fullWidth
-                                required
-                                {...methods.register('documentId', { required: true })}
+                    {/* Section: Datos Generales */}
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: 'primary.main' }}>
+                        Datos Generales
+                    </Typography>
+                    <Box sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', sm: '1.2fr 1fr 1fr 1fr' },
+                        gap: 2,
+                        mb: 4
+                    }}>
+                        <TextField
+                            label="Número de Remito"
+                            fullWidth
+                            required
+                            variant="filled"
+                            {...methods.register('numero', { required: true })}
+                        />
+                        <TextField
+                            type="date"
+                            label="Fecha de Emisión"
+                            fullWidth
+                            required
+                            variant="filled"
+                            InputLabelProps={{ shrink: true }}
+                            {...methods.register('fecha', { required: true })}
+                        />
+
+                        <TextField
+                            select
+                            label="Planta"
+                            fullWidth
+                            required
+                            variant="filled"
+                            value={selectedPlanta}
+                            onChange={(e) => {
+                                setSelectedPlanta(e.target.value);
+                                methods.setValue('depotId', '');
+                            }}
+                        >
+                            <MenuItem disabled value=""><em>Seleccione Planta...</em></MenuItem>
+                            {plants.map((p: any) => (
+                                <MenuItem key={p} value={p}>{p}</MenuItem>
+                            ))}
+                        </TextField>
+
+                        <TextField
+                            select
+                            label="Depósito Destino"
+                            fullWidth
+                            required
+                            disabled={!selectedPlanta}
+                            variant="filled"
+                            {...methods.register('depotId', { required: true })}
+                            value={methods.watch('depotId') || ''}
+                            onChange={(e) => methods.setValue('depotId', e.target.value)}
+                        >
+                            <MenuItem disabled value=""><em>{selectedPlanta ? 'Seleccione Depósito...' : 'Primero seleccione planta'}</em></MenuItem>
+                            {filteredDepots.map((d: any) => (
+                                <MenuItem key={d.id} value={d.id}>
+                                    {d.nombre}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+                    </Box>
+
+                    {/* Section: Proveedor Integrada */}
+                    <Box sx={{ mb: 4 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main', mb: 0 }}>
+                                Proveedor
+                            </Typography>
+                            <Tooltip title="Nuevo Proveedor">
+                                <IconButton size="small" color="primary" onClick={() => setIsPartnerDialogOpen(true)}>
+                                    <AddCircleOutlineIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+
+                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '2fr 1fr' }, gap: 2 }}>
+                            <Controller
+                                name="supplierId"
+                                control={methods.control}
+                                render={({ field: { onChange, value } }) => (
+                                    <Autocomplete
+                                        options={partners}
+                                        getOptionLabel={(option: any) => `${option.name} ${option.taxId ? `(${option.taxId})` : ''}`}
+                                        value={partners.find((p: any) => p.id === value) || null}
+                                        isOptionEqualToValue={(option, val) => option.id === val?.id}
+                                        loading={isFetching}
+                                        onInputChange={(_, newInputValue) => triggerSearch(newInputValue)}
+                                        filterOptions={(options, params) => {
+                                            const filtered = options.filter((option: any) =>
+                                                option.name.toLowerCase().includes(params.inputValue.toLowerCase()) ||
+                                                (option.taxId && option.taxId.includes(params.inputValue))
+                                            );
+                                            return filtered;
+                                        }}
+                                        onChange={(_, newValue) => {
+                                            if (newValue) {
+                                                onChange(newValue.id);
+                                                methods.setValue('supplierName', newValue.name);
+                                                methods.setValue('taxId', newValue.taxId || '');
+                                            } else {
+                                                onChange(undefined);
+                                                methods.setValue('supplierName', '');
+                                                methods.setValue('taxId', '');
+                                            }
+                                        }}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                label="Buscar Proveedor"
+                                                placeholder="Escriba para filtrar..."
+                                                variant="filled"
+                                                fullWidth
+                                            />
+                                        )}
+                                    />
+                                )}
                             />
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
                             <TextField
-                                select
-                                label="Depósito Destino"
+                                label="CUIT / Identificación"
                                 fullWidth
-                                required
-                                defaultValue=""
-                                {...methods.register('depotId', { required: true })}
-                            >
-                                {depots.map((d: any) => (
-                                    <MenuItem key={d.id} value={d.id}>
-                                        {d.nombre || d.id}
-                                    </MenuItem>
-                                ))}
-                            </TextField>
-                        </Grid>
-                    </Grid>
+                                variant="filled"
+                                {...methods.register('taxId')}
+                                InputProps={{ readOnly: true }}
+                            />
+                        </Box>
+                    </Box>
 
-                    <ProviderField />
-                    <ItemsField />
+                    <Divider sx={{ mb: 4 }} />
 
-                    <Button
-                        type="submit"
-                        variant="contained"
-                        size="large"
-                        fullWidth
-                        sx={{ mt: 4 }}
-                        disabled={isLoading}
-                    >
-                        {isLoading ? 'Procesando...' : 'Registrar Ingreso'}
-                    </Button>
+                    <ItemsField supplierId={selectedSupplierId} />
+
+                    <CreatePartnerDialog
+                        open={isPartnerDialogOpen}
+                        onClose={() => setIsPartnerDialogOpen(false)}
+                        onSuccess={(partner) => {
+                            methods.setValue('supplierId', partner.id);
+                            methods.setValue('supplierName', partner.name);
+                            methods.setValue('taxId', partner.taxId || '');
+                            triggerSearch(''); // Update the local partners list
+                        }}
+                    />
+
+                    <Box sx={{ mt: 6, display: 'flex', justifyContent: 'flex-end' }}>
+                        <Button
+                            type="submit"
+                            variant="text"
+                            size="large"
+                            disabled={isLoading}
+                            sx={{
+                                fontWeight: 800,
+                                px: 4,
+                                color: 'primary.main',
+                                '&:hover': { background: 'rgba(0,0,0,0.04)' }
+                            }}
+                        >
+                            {isLoading ? 'PROCESANDO...' : 'REGISTRAR INGRESO'}
+                        </Button>
+                    </Box>
                 </Box>
             </FormProvider>
-        </Paper>
+        </Box>
     );
 };

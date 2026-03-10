@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useGetAlertsQuery } from '../features/stock/api/stock.api';
-import { logout } from '../entities/auth/model/authSlice';
+import { logout, selectCurrentUser } from '../entities/auth/model/authSlice';
 
 const navItems = [
     { to: '/remitos-entrada', label: '📦 Remitos Entrada' },
@@ -27,6 +27,9 @@ const navStyle = (isActive: boolean): React.CSSProperties => ({
 });
 
 export default function Layout() {
+    const user = useSelector(selectCurrentUser);
+    const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+
     const [collapsed, setCollapsed] = useState(false);
     const { data: alerts = [] } = useGetAlertsQuery();
     const dispatch = useDispatch();
@@ -61,16 +64,18 @@ export default function Layout() {
 
                 {/* Main nav */}
                 <nav style={{ flex: 1, paddingTop: '8px' }}>
-                    {navItems.map(({ to, label }) => (
-                        <NavLink
-                            key={to}
-                            to={to}
-                            style={({ isActive }) => navStyle(isActive)}
-                        >
-                            <span style={{ fontSize: '16px', minWidth: '20px' }}>{label.split(' ')[0]}</span>
-                            {!collapsed && <span>{label.split(' ').slice(1).join(' ')}</span>}
-                        </NavLink>
-                    ))}
+                    {navItems
+                        .filter(item => item.to !== '/deposito' || isAdmin)
+                        .map(({ to, label }) => (
+                            <NavLink
+                                key={to}
+                                to={to}
+                                style={({ isActive }) => navStyle(isActive)}
+                            >
+                                <span style={{ fontSize: '16px', minWidth: '20px' }}>{label.split(' ')[0]}</span>
+                                {!collapsed && <span>{label.split(' ').slice(1).join(' ')}</span>}
+                            </NavLink>
+                        ))}
                 </nav>
 
                 {/* Stock alert */}

@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { useGetItemsQuery, useCreateItemMutation, useUpdateItemMutation, useDeleteItemMutation } from '../features/items/api/items.api';
 import { PageHeader, Card, Btn, Input, Select, Modal, Table, Badge, SearchBar } from './common/ui';
 
-const CATEGORIAS = ['MATERIA PRIMA', 'INSUMO', 'PRODUCTO TERMINADO', 'REPUESTO', 'GENERAL'];
 const ROTACIONES = [{ value: 'ALTA', label: '🔴 Alta' }, { value: 'MEDIA', label: '🟡 Media' }, { value: 'BAJA', label: '⚫ Baja' }];
 const ROT_COLORS: Record<string, string> = { ALTA: '#ef4444', MEDIA: '#f59e0b', BAJA: '#6b7280' };
 
-const emptyForm = () => ({ codigoInterno: '', descripcion: '', categoria: 'GENERAL', rotacion: 'MEDIA', alertaKilos: '', unidadPrincipal: 'KG', unidadSecundaria: '', trackLot: false });
+const emptyForm = () => ({ codigoInterno: '', descripcion: '', categoria: 'MATERIA PRIMA', rotacion: 'MEDIA', alertaKilos: '', unidadPrincipal: 'KG', unidadSecundaria: '', trackLot: false });
 
 export default function MaterialesPage() {
     const [q, setQ] = useState('');
@@ -68,9 +67,8 @@ export default function MaterialesPage() {
             {modal && (
                 <Modal title={modal === 'edit' ? 'Editar Material' : 'Nuevo Material'} onClose={() => setModal(null)}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
                             <Input label="Código interno" value={form.codigoInterno} onChange={v => setForm(p => ({ ...p, codigoInterno: v }))} />
-                            <Select label="Categoría" value={form.categoria} onChange={v => setForm(p => ({ ...p, categoria: v }))} options={CATEGORIAS.map(c => ({ value: c, label: c }))} />
                         </div>
                         <Input label="Descripción" value={form.descripcion} onChange={v => setForm(p => ({ ...p, descripcion: v }))} />
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -81,10 +79,6 @@ export default function MaterialesPage() {
                             <Input label="Unidad principal" value={form.unidadPrincipal} onChange={v => setForm(p => ({ ...p, unidadPrincipal: v }))} placeholder="KG" />
                             <Input label="Unidad secundaria" value={form.unidadSecundaria} onChange={v => setForm(p => ({ ...p, unidadSecundaria: v }))} placeholder="Unidades, bolsas..." />
                         </div>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#9ca3af', fontSize: '13px', cursor: 'pointer' }}>
-                            <input type="checkbox" checked={form.trackLot} onChange={e => setForm(p => ({ ...p, trackLot: e.target.checked }))} />
-                            Seguimiento por lote / partida
-                        </label>
                         {error && <p style={{ color: '#f87171' }}>{error}</p>}
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                             <Btn variant="secondary" onClick={() => setModal(null)}>Cancelar</Btn>

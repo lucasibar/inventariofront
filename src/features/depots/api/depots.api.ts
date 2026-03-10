@@ -38,6 +38,10 @@ export const depotsApi = api.injectEndpoints({
             query: (id) => ({ url: `positions/${id}`, method: 'DELETE' }),
             invalidatesTags: ['Depots', 'Positions'],
         }),
+        renamePlant: builder.mutation<void, { oldName: string; newName: string }>({
+            query: (body) => ({ url: 'depots/plants/rename', method: 'PATCH', body }),
+            invalidatesTags: ['Depots'],
+        }),
     }),
 });
 
@@ -51,5 +55,6 @@ export const {
     useCreatePositionMutation,
     useUpdatePositionMutation,
     useDeletePositionMutation,
+    useRenamePlantMutation,
 } = depotsApi;
 

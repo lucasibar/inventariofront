@@ -1,9 +1,11 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useGetStockQuery, useAdjustStockMutation, useMoveStockMutation, useDeleteStockMutation, useUpdateBatchNumberMutation } from '../features/stock/api/stock.api';
-import { useGetDepotsQuery, useCreateDepotMutation, useUpdateDepotMutation, useDeleteDepotMutation, useCreatePositionMutation, useUpdatePositionMutation, useDeletePositionMutation } from '../features/depots/api/depots.api';
+import { useGetDepotsQuery, useCreateDepotMutation, useUpdateDepotMutation, useDeleteDepotMutation, useCreatePositionMutation, useUpdatePositionMutation, useRenamePlantMutation } from '../features/depots/api/depots.api';
 import { useCreateRemitoEntradaMutation } from '../features/remitosEntrada/api/remitos-entrada.api';
 import { useGetItemsQuery } from '../features/items/api/items.api';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
+import { useSelector } from 'react-redux';
+import { selectCurrentUser } from '../entities/auth/model/authSlice';
 import { PageHeader, Card, Btn, Input, Select, Modal, Badge, SearchBar } from './common/ui';
 
 const TODAY = new Date().toISOString().split('T')[0];
@@ -113,13 +115,16 @@ function ColFilter({ label, options, selected, onChange }: {
 }
 
 export default function DepositoPage() {
+    const user = useSelector(selectCurrentUser);
+    const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+
     const { data: depots = [], isLoading: loadingDepots } = useGetDepotsQuery();
     const [createDepot] = useCreateDepotMutation();
     const [updateDepot] = useUpdateDepotMutation();
     const [deleteDepot] = useDeleteDepotMutation();
+    const [renamePlant] = useRenamePlantMutation();
     const [createPosition] = useCreatePositionMutation();
     const [updatePosition] = useUpdatePositionMutation();
-    const [deletePosition] = useDeletePositionMutation();
     const [createRemito] = useCreateRemitoEntradaMutation();
     const [adjustStock] = useAdjustStockMutation();
     const [moveStock] = useMoveStockMutation();
@@ -127,6 +132,15 @@ export default function DepositoPage() {
     const [updateBatch] = useUpdateBatchNumberMutation();
     const { data: items = [] } = useGetItemsQuery({});
     const { data: suppliers = [] } = useGetPartnersQuery({ type: 'SUPPLIER' });
+
+    if (!isAdmin) {
+        return (
+            <div style={{ padding: '48px', textAlign: 'center', color: '#9ca3af' }}>
+                <h2 style={{ color: '#f3f4f6', marginBottom: '8px' }}>Acceso Restringido</h2>
+                <p>Solo los administradores registrados pueden gestionar la infraestructura de plantas y depósitos.</p>
+            </div>
+        );
+    }
 
     const [activeDepotId, setActiveDepotId] = useState<string>('');
     const activeDepot = depots.find((d: any) => d.id === activeDepotId);
@@ -171,6 +185,12 @@ export default function DepositoPage() {
     const [moveDest, setMoveDest] = useState('');
     const [moveError, setMoveError] = useState('');
     const [moveSaving, setMoveSaving] = useState(false);
+
+    // Plant management
+    const [showPlantManager, setShowPlantManager] = useState(false);
+    const [plantToRename, setPlantToRename] = useState<string | null>(null);
+    const [newName, setNewName] = useState('');
+    const [renaming, setRenaming] = useState(false);
 
     // Codes popup
     const [showCodesPopup, setShowCodesPopup] = useState(false);
@@ -321,9 +341,25 @@ export default function DepositoPage() {
 
     const depotSelectorOptions = [
         { value: '', label: '— Todos los depósitos —' },
-        ...depots.map((d: any) => ({ value: d.id, label: `${d.nombre}${d.planta ? ` · ${d.planta}` : ''}` })),
+        ...depots.map((d: any) => ({ value: d.id, label: `${d.nombre}${d.planta ? ` [${d.planta}]` : ''}` })),
         { value: '__new__', label: '+ Nuevo Depósito' },
     ];
+
+    const plants = useMemo(() => {
+        const unique = new Set(depots.map((d: any) => d.planta).filter(Boolean));
+        return Array.from(unique) as string[];
+    }, [depots]);
+
+    const handleRenamePlant = async () => {
+        if (!plantToRename || !newName.trim()) return;
+        setRenaming(true);
+        try {
+            await renamePlant({ oldName: plantToRename, newName: newName.trim() }).unwrap();
+            setPlantToRename(null);
+            setNewName('');
+        } catch (e: any) { alert(e?.data?.message ?? 'Error al renombrar planta'); }
+        setRenaming(false);
+    };
 
     const handleDepotSelect = (v: string) => {
         if (v === '__new__') { setEditDepot(null); setDepotForm({ nombre: '', planta: '', tipo: 'STORAGE' }); setShowDepotForm(true); }
@@ -366,6 +402,7 @@ export default function DepositoPage() {
                         <Btn small onClick={() => setShowQuick(true)}>⚡ Carga Rápida</Btn>
                     </>
                 )}
+                <Btn small variant="secondary" onClick={() => setShowPlantManager(true)}>🏭 Plantas</Btn>
             </PageHeader>
 
             {/* Metrics bar */}
@@ -415,17 +452,13 @@ export default function DepositoPage() {
                                     onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#1e2133'}
                                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
                                 >
-                                    {/* Posición */}
                                     <td style={{ padding: '11px 16px' }}>
                                         <Badge color={s.posicion?.tipo === 'PICKING' ? '#34d399' : '#a5b4fc'}>{s.posicion?.codigo ?? '—'}</Badge>
                                     </td>
-                                    {/* Material */}
                                     <td style={{ padding: '11px 16px', color: '#d1d5db', fontSize: '13px' }}>{s.batch?.item?.descripcion ?? '—'}</td>
-                                    {/* Código */}
                                     <td style={{ padding: '11px 16px' }}>
                                         <code style={{ color: '#a5b4fc', fontSize: '11px' }}>{s.batch?.item?.codigoInterno ?? '—'}</code>
                                     </td>
-                                    {/* Partida — editable inline */}
                                     <td style={{ padding: '11px 16px' }}>
                                         <code style={{ color: '#fbbf24', fontSize: '11px' }}>
                                             <EditableCell
@@ -434,9 +467,7 @@ export default function DepositoPage() {
                                             />
                                         </code>
                                     </td>
-                                    {/* Proveedor */}
                                     <td style={{ padding: '11px 16px', color: '#9ca3af', fontSize: '12px' }}>{s.batch?.supplier?.name ?? '—'}</td>
-                                    {/* Kilos — editable inline */}
                                     <td style={{ padding: '11px 16px' }}>
                                         <strong style={{ color: '#34d399' }}>
                                             <EditableCell
@@ -447,7 +478,6 @@ export default function DepositoPage() {
                                         </strong>
                                         <span style={{ color: '#6b7280', fontSize: '11px', marginLeft: '4px' }}>kg</span>
                                     </td>
-                                    {/* Unidades — editable inline */}
                                     <td style={{ padding: '11px 16px', color: '#d1d5db', fontSize: '13px' }}>
                                         {s.qtySecundaria != null ? (
                                             <EditableCell
@@ -457,7 +487,6 @@ export default function DepositoPage() {
                                             />
                                         ) : '—'}
                                     </td>
-                                    {/* Acciones */}
                                     <td style={{ padding: '11px 16px' }}>
                                         <div style={{ display: 'flex', gap: '4px' }}>
                                             <button
@@ -656,6 +685,37 @@ export default function DepositoPage() {
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                         <Btn variant="secondary" onClick={() => { setShowQuick(false); setQuickLines([emptyQuickLine()]); }}>Cancelar</Btn>
                         <Btn onClick={saveQuick} disabled={quickSaving}>{quickSaving ? 'Guardando...' : '⚡ Cargar Stock'}</Btn>
+                    </div>
+                </Modal>
+            )}
+
+            {/* ─── Plant manager modal ─── */}
+            {showPlantManager && (
+                <Modal title="Gestión de Plantas" onClose={() => setShowPlantManager(false)}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>Listado de plantas detectadas. Renombrar una planta actualizará todos sus depósitos vinculados.</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflow: 'auto' }}>
+                            {plants.length === 0 && <p style={{ color: '#4b5563', textAlign: 'center', padding: '10px' }}>No hay plantas registradas aún.</p>}
+                            {plants.map(p => (
+                                <div key={p} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#0f1117', padding: '10px 14px', borderRadius: '8px', border: '1px solid #2a2d3e' }}>
+                                    {plantToRename === p ? (
+                                        <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                                            <Input style={{ flex: 1 }} value={newName} onChange={setNewName} placeholder="Nuevo nombre..." />
+                                            <Btn small onClick={handleRenamePlant} disabled={renaming}>✅</Btn>
+                                            <Btn small variant="secondary" onClick={() => setPlantToRename(null)}>✕</Btn>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <span style={{ color: '#f3f4f6', fontWeight: 600, fontSize: '14px' }}>{p}</span>
+                                            <Btn small variant="secondary" onClick={() => { setPlantToRename(p); setNewName(p); }}>✏️</Btn>
+                                        </>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        <div style={{ borderTop: '1px solid #2a2d3e', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+                            <Btn variant="secondary" onClick={() => setShowPlantManager(false)}>Cerrar</Btn>
+                        </div>
                     </div>
                 </Modal>
             )}

@@ -1,37 +1,31 @@
 
-export enum ItemCategory {
-    YARN = 'YARN',
-    WIP_BAG = 'WIP_BAG',
-    FINISHED_BOX = 'FINISHED_BOX',
-    SUPPLY = 'SUPPLY',
-    SPARE_PART = 'SPARE_PART',
-}
+export type ItemCategory = 'YARN' | 'WIP_BAG' | 'FINISHED_BOX' | 'SUPPLY' | 'SPARE_PART';
 
 export interface CreateRemitoDto {
-    provider: RemitoProviderDto;
-    items: RemitoItemDto[];
-    documentId: string;
-    userId: string;
-    depotId: string;
+    numero: string;
+    fecha: string;
+    plantaId?: string;
+    depotId?: string;
+    supplierId?: string;
+    supplierName?: string;
+    taxId?: string; // Moving CUIT here
+    lines: RemitoLineDto[];
 }
 
 export interface RemitoProviderDto {
     id?: string;
     name: string;
-    taxId?: string;
-    email?: string;
-    phone?: string;
-    address?: string;
 }
 
-export interface RemitoItemDto {
+export interface RemitoLineDto {
     itemId?: string;
     codigoInterno: string;
     descripcion: string;
-    categoria: ItemCategory;
-    unidadPrincipal: string; // If creating new
-    unidadSecundaria?: string; // If creating new
-    trackLot: boolean;
-    quantity: number;
-    lotId?: string;
+    lotNumber?: string;
+    depositoId: string;
+    posicionId: string;
+    kilos: number;
+    unidades?: number;
+    categoria?: ItemCategory;
+    trackLot?: boolean;
 }
