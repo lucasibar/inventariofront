@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useGetItemsQuery, useCreateItemMutation, useUpdateItemMutation, useDeleteItemMutation } from '../features/items/api/items.api';
-import { PageHeader, Card, Btn, Input, Select, Modal, Table, Badge, SearchBar } from './common/ui';
+import { PageHeader, Card, Btn, Input, Select, Modal, Table, Badge, SearchBar, Spinner } from './common/ui';
 
 const ROTACIONES = [{ value: 'ALTA', label: '🔴 Alta' }, { value: 'MEDIA', label: '🟡 Media' }, { value: 'BAJA', label: '⚫ Baja' }];
 const ROT_COLORS: Record<string, string> = { ALTA: '#ef4444', MEDIA: '#f59e0b', BAJA: '#6b7280' };
@@ -38,55 +38,127 @@ export default function MaterialesPage() {
     };
 
     return (
-        <div style={{ padding: '24px' }}>
-            <PageHeader title="Materiales" subtitle="Catálogo de ítems">
-                <SearchBar value={q} onChange={setQ} />
-                <Btn onClick={openCreate}>+ Material</Btn>
-            </PageHeader>
+        <div className="materiales-container" style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+            <style>{`
+                .materiales-container { font-family: 'Inter', sans-serif; }
+                .mobile-card-grid { display: none; grid-template-columns: 1fr; gap: 16px; }
+                .desktop-table { display: table; width: 100%; border-collapse: collapse; }
+                
+                @media (max-width: 900px) {
+                    .desktop-table { display: none; }
+                    .mobile-card-grid { display: grid; }
+                    .header-top { flex-direction: column; align-items: stretch !important; gap: 16px !important; }
+                    .materiales-container { padding: 16px !important; }
+                }
 
-            <Card>
+                .material-card {
+                    background: #1a1d2e;
+                    border: 1px solid #2a2d3e;
+                    border-radius: 12px;
+                    padding: 16px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                    transition: transform 0.2s, border-color 0.2s;
+                }
+                .material-card:hover { border-color: #6366f1; transform: translateY(-2px); }
+            `}</style>
+
+            <div className="header-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <PageHeader title="Materiales" subtitle="Catálogo y gestión de ítems" />
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <SearchBar value={q} onChange={setQ} />
+                    <Btn onClick={openCreate} style={{ whiteSpace: 'nowrap' }}>+ Nuevo Ítem</Btn>
+                </div>
+            </div>
+
+            {/* Desktop View */}
+            <div className="desktop-table">
+                <Card>
                 <Table
                     loading={isLoading}
-                    cols={['Código', 'Descripción', 'Categoría', 'Rotación', 'Alerta kg', 'Unidad', 'Lote', '']}
+                    cols={['Material', 'Categoría', 'Rotación', 'Min. Stock', 'Unid.', 'Lote', '']}
                     rows={items.map((it: any) => [
-                        <code style={{ color: '#a5b4fc', fontSize: '11px' }}>{it.codigoInterno}</code>,
-                        it.descripcion,
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ color: '#f3f4f6', fontWeight: 600 }}>{it.descripcion}</span>
+                            <code style={{ color: '#a5b4fc', fontSize: '11px' }}>{it.codigoInterno}</code>
+                        </div>,
                         <Badge>{it.categoria}</Badge>,
                         <Badge color={ROT_COLORS[it.rotacion] ?? '#6b7280'}>{it.rotacion}</Badge>,
-                        it.alertaKilos ? `${it.alertaKilos} kg` : '—',
-                        it.unidadPrincipal,
-                        it.trackLot ? <Badge color="#34d399">Sí</Badge> : <Badge color="#6b7280">No</Badge>,
-                        <div style={{ display: 'flex', gap: '4px' }}>
+                        it.alertaKilos ? <span style={{ color: '#ef4444', fontWeight: 600 }}>{it.alertaKilos} kg</span> : <span style={{ color: '#4b5563' }}>—</span>,
+                        <div style={{ fontSize: '12px', color: '#9ca3af' }}>
+                            {it.unidadPrincipal}
+                            {it.unidadSecundaria && <span style={{ opacity: 0.6 }}> / {it.unidadSecundaria}</span>}
+                        </div>,
+                        it.trackLot ? <Badge color="#34d399">SÍ</Badge> : <Badge color="#4b5563">NO</Badge>,
+                        <div style={{ display: 'flex', gap: '8px' }}>
                             <Btn small variant="secondary" onClick={() => openEdit(it)}>✏️</Btn>
-                            <Btn small variant="danger" onClick={() => deleteItem(it.id)}>🗑</Btn>
+                            <Btn small variant="danger" onClick={() => { if (window.confirm('¿Eliminar material?')) deleteItem(it.id); }}>🗑</Btn>
                         </div>,
                     ])}
                 />
-            </Card>
+                </Card>
+            </div>
+
+            {/* Mobile View */}
+            <div className="mobile-card-grid">
+                {isLoading ? <Spinner /> : items.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '48px', color: '#4b5563' }}>No se encontraron materiales.</div>
+                ) : items.map((it: any) => (
+                    <div key={it.id} className="material-card">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ color: '#f3f4f6', fontWeight: 600, fontSize: '15px' }}>{it.descripcion}</span>
+                                <code style={{ color: '#a5b4fc', fontSize: '12px' }}>{it.codigoInterno}</code>
+                            </div>
+                            <Badge color={ROT_COLORS[it.rotacion] ?? '#6b7280'}>{it.rotacion}</Badge>
+                        </div>
+                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                            <Badge>{it.categoria}</Badge>
+                            <span style={{ fontSize: '12px', color: '#9ca3af' }}>{it.unidadPrincipal} {it.unidadSecundaria ? ` / ${it.unidadSecundaria}` : ''}</span>
+                        </div>
+                        <div style={{ borderTop: '1px solid #1e2133', paddingTop: '12px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ fontSize: '12px' }}>
+                                <span style={{ color: '#6b7280' }}>Alerta: </span>
+                                {it.alertaKilos ? <span style={{ color: '#ef4444', fontWeight: 600 }}>{it.alertaKilos} kg</span> : '—'}
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <Btn small variant="secondary" onClick={() => openEdit(it)}>✏️ Editar</Btn>
+                                <Btn small variant="danger" onClick={() => { if (window.confirm('¿Eliminar?')) deleteItem(it.id); }}>🗑</Btn>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
 
             {modal && (
                 <Modal title={modal === 'edit' ? 'Editar Material' : 'Nuevo Material'} onClose={() => setModal(null)}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
-                            <Input label="Código interno" value={form.codigoInterno} onChange={v => setForm(p => ({ ...p, codigoInterno: v }))} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <Input label="Código interno" value={form.codigoInterno} onChange={v => setForm(p => ({ ...p, codigoInterno: v }))} placeholder="Ej: MAT-001" />
+                            <Input label="Descripción" value={form.descripcion} onChange={v => setForm(p => ({ ...p, descripcion: v }))} placeholder="Ej: Adhesivo Vinílico" />
                         </div>
-                        <Input label="Descripción" value={form.descripcion} onChange={v => setForm(p => ({ ...p, descripcion: v }))} />
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                             <Select label="Rotación" value={form.rotacion} onChange={v => setForm(p => ({ ...p, rotacion: v }))} options={ROTACIONES} />
-                            <Input label="Alerta en kilos" type="number" value={String(form.alertaKilos)} onChange={v => setForm(p => ({ ...p, alertaKilos: v }))} placeholder="Ej: 100" />
+                            <Input label="Mínimo Stock (kg)" type="number" value={String(form.alertaKilos)} onChange={v => setForm(p => ({ ...p, alertaKilos: v }))} placeholder="0" />
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                            <Input label="Unidad principal" value={form.unidadPrincipal} onChange={v => setForm(p => ({ ...p, unidadPrincipal: v }))} placeholder="KG" />
-                            <Input label="Unidad secundaria" value={form.unidadSecundaria} onChange={v => setForm(p => ({ ...p, unidadSecundaria: v }))} placeholder="Unidades, bolsas..." />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <Input label="Unid. Principal" value={form.unidadPrincipal} onChange={v => setForm(p => ({ ...p, unidadPrincipal: v }))} placeholder="KG" />
+                            <Input label="Unid. Secundaria" value={form.unidadSecundaria} onChange={v => setForm(p => ({ ...p, unidadSecundaria: v }))} placeholder="Opcional: Unidades" />
                         </div>
-                        {error && <p style={{ color: '#f87171' }}>{error}</p>}
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#d1d5db', cursor: 'pointer' }}>
+                            <input type="checkbox" checked={form.trackLot} onChange={e => setForm(p => ({ ...p, trackLot: e.target.checked }))} style={{ accentColor: '#6366f1' }} />
+                            Trazabilidad obligatoria (Lotes)
+                        </label>
+                        {error && <p style={{ color: '#f87171', fontSize: '13px', margin: 0 }}>⚠️ {error}</p>}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #2a2d3e', paddingTop: '16px' }}>
                             <Btn variant="secondary" onClick={() => setModal(null)}>Cancelar</Btn>
-                            <Btn onClick={save} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</Btn>
+                            <Btn onClick={save} disabled={saving}>{saving ? '...' : 'Guardar Material'}</Btn>
                         </div>
                     </div>
                 </Modal>
             )}
         </div>
     );
+
 }

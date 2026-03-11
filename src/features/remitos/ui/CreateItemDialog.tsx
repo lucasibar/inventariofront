@@ -103,6 +103,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                             fullWidth
                             variant="filled"
                             value={form.codigoInterno}
+                            InputLabelProps={{ shrink: true }}
                             onChange={(e) => setForm({ ...form, codigoInterno: e.target.value })}
                         />
                     </Box>
@@ -113,6 +114,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                             required
                             variant="filled"
                             value={form.descripcion}
+                            InputLabelProps={{ shrink: true }}
                             onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
                         />
                     </Box>

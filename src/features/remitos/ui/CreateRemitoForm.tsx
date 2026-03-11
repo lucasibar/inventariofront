@@ -46,21 +46,35 @@ export const CreateRemitoForm = () => {
                 return;
             }
 
-            const payload: CreateRemitoDto = {
+            // Simplified payload: the backend now resolves "ENTRADA" position automatically via depotId
+            const payload: any = {
                 ...data,
+                // Ensure numbers are sent as numbers
                 lines: data.lines.map(line => ({
                     ...line,
-                    depositoId: data.depotId!,
-                    posicionId: line.posicionId || ''
+                    kilos: Number(line.kilos),
+                    unidades: line.unidades ? Number(line.unidades) : undefined
                 }))
             };
 
+            // Leaner payload: don't send name/taxId if we have the ID
+            if (payload.supplierId) {
+                delete payload.supplierName;
+                delete payload.taxId;
+            }
+
             await createRemito(payload).unwrap();
             alert('Remito registrado exitosamente');
-            methods.reset();
-        } catch (err) {
-            console.error(err);
-            alert('Error al registrar el remito');
+            methods.reset({
+                numero: '',
+                fecha: new Date().toISOString().split('T')[0],
+                lines: []
+            });
+            setSelectedPlanta('');
+        } catch (err: any) {
+            console.error('Error submitting remito:', err);
+            const msg = err?.data?.message || 'Error al registrar el remito';
+            alert(msg);
         }
     };
 

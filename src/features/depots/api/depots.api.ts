@@ -42,6 +42,10 @@ export const depotsApi = api.injectEndpoints({
             query: (body) => ({ url: 'depots/plants/rename', method: 'PATCH', body }),
             invalidatesTags: ['Depots'],
         }),
+        togglePlantStatus: builder.mutation<void, { planta: string; activo: boolean }>({
+            query: (body) => ({ url: 'depots/plants/toggle', method: 'PATCH', body }),
+            invalidatesTags: ['Depots'],
+        }),
     }),
 });
 
@@ -52,6 +56,7 @@ export const {
     useUpdateDepotMutation,
     useDeleteDepotMutation,
     useRestoreDepotMutation,
+    useTogglePlantStatusMutation,
     useCreatePositionMutation,
     useUpdatePositionMutation,
     useDeletePositionMutation,

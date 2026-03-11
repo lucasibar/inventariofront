@@ -37,47 +37,78 @@ export default function DashboardComprasPage() {
     };
 
     return (
-        <div style={{ padding: '24px' }}>
-            <PageHeader title="Dashboard de Compras" subtitle="Stock de materiales de alta y media rotación">
+        <div className="dashboard-container" style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+            <style>{`
+                .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+                @media (max-width: 900px) {
+                    .dashboard-grid { grid-template-columns: 1fr; }
+                    .dashboard-container { padding: 16px !important; }
+                    .header-top { flex-direction: column; align-items: stretch !important; gap: 16px !important; }
+                }
+                .stock-bar-container {
+                    padding: 16px;
+                    border-bottom: 1px solid #1e2133;
+                    transition: background 0.2s;
+                }
+                .stock-bar-container:last-child { border-bottom: none; }
+                .stock-bar-container:hover { background: rgba(255,255,255,0.02); }
+            `}</style>
+
+            <div className="header-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <PageHeader title="Abastecimiento" subtitle="Estado de stock y alertas de reposición" />
                 <SearchBar value={q} onChange={setQ} />
-            </PageHeader>
+            </div>
 
             {alerts.length > 0 && (
-                <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <span style={{ color: '#f87171', fontWeight: 700, fontSize: '13px' }}>🔴 {alerts.length} material{alerts.length !== 1 ? 'es' : ''} bajo mínimo</span>
-                    {alerts.slice(0, 4).map((a: any) => (
-                        <span key={a.itemId} style={{ color: '#fca5a5', fontSize: '12px', background: 'rgba(239,68,68,0.1)', padding: '2px 8px', borderRadius: '6px' }}>
-                            {a.descripcion}: {Number(a.stockActual).toFixed(1)} kg
-                        </span>
-                    ))}
-                    {alerts.length > 4 && <span style={{ color: '#f87171', fontSize: '12px' }}>+{alerts.length - 4} más</span>}
+                <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '12px', padding: '16px', marginBottom: '24px', animation: 'pulse 2s infinite' }}>
+                    <style>{`@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.2); } 70% { box-shadow: 0 0 0 10px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }`}</style>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
+                        <span style={{ fontSize: '18px' }}>⚠️</span>
+                        <span style={{ color: '#f87171', fontWeight: 700, fontSize: '15px' }}>Materiales por debajo del mínimo crítico ({alerts.length})</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        {alerts.map((a: any) => (
+                            <span key={a.itemId} style={{ color: '#fca5a5', fontSize: '12px', background: 'rgba(239,68,68,0.15)', padding: '4px 10px', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.1)' }}>
+                                <strong>{a.descripcion}</strong>: {Number(a.stockActual).toFixed(1)} kg
+                            </span>
+                        ))}
+                    </div>
                 </div>
             )}
 
             {isLoading ? <Spinner /> : (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                <div className="dashboard-grid">
                     <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ef4444' }} />
-                            <h3 style={{ color: '#f3f4f6', fontSize: '15px', fontWeight: 700, margin: 0 }}>Alta Rotación</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 10px rgba(239,68,68,0.4)' }} />
+                            <h3 style={{ color: '#f3f4f6', fontSize: '16px', fontWeight: 700, margin: 0 }}>Alta Rotación</h3>
                             <Badge color="#ef4444">{alta.length}</Badge>
                         </div>
-                        <Card style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            {alta.length === 0 ? <p style={{ color: '#4b5563', fontSize: '13px' }}>Todavía no hay datos cargados</p> : alta.map((item: any) => <StockBar key={item.itemId} item={item} />)}
+                        <Card style={{ overflow: 'hidden' }}>
+                            {alta.length === 0 ? <p style={{ padding: '32px', textAlign: 'center', color: '#4b5563' }}>Sin datos</p> : alta.map((item: any) => (
+                                <div key={item.itemId} className="stock-bar-container">
+                                    <StockBar item={item} />
+                                </div>
+                            ))}
                         </Card>
                     </div>
                     <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#f59e0b' }} />
-                            <h3 style={{ color: '#f3f4f6', fontSize: '15px', fontWeight: 700, margin: 0 }}>Media Rotación</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#f59e0b', boxShadow: '0 0 10px rgba(245,158,11,0.4)' }} />
+                            <h3 style={{ color: '#f3f4f6', fontSize: '16px', fontWeight: 700, margin: 0 }}>Media Rotación</h3>
                             <Badge color="#f59e0b">{media.length}</Badge>
                         </div>
-                        <Card style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            {media.length === 0 ? <p style={{ color: '#4b5563', fontSize: '13px' }}>Todavía no hay datos cargados</p> : media.map((item: any) => <StockBar key={item.itemId} item={item} />)}
+                        <Card style={{ overflow: 'hidden' }}>
+                            {media.length === 0 ? <p style={{ padding: '32px', textAlign: 'center', color: '#4b5563' }}>Sin datos</p> : media.map((item: any) => (
+                                <div key={item.itemId} className="stock-bar-container">
+                                    <StockBar item={item} />
+                                </div>
+                            ))}
                         </Card>
                     </div>
                 </div>
             )}
         </div>
     );
+
 }

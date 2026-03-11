@@ -11,7 +11,7 @@ import RemitosSalidaPage from './pages/RemitosSalidaPage';
 import DashboardComprasPage from './pages/DashboardComprasPage';
 import MaterialesPage from './pages/MaterialesPage';
 import SociosPage from './pages/SociosPage';
-import SettingsPage from './pages/SettingsPage';
+
 import MovimientosPage from './pages/MovimientosPage';
 import StockQueryPage from './pages/StockQueryPage';
 
@@ -34,7 +34,7 @@ function App() {
             <Route path="/socios" element={<SociosPage />} />
             <Route path="/movimientos" element={<MovimientosPage />} />
             <Route path="/consultas" element={<StockQueryPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
+
           </Route>
         </Route>
       </Routes>

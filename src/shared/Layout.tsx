@@ -97,10 +97,7 @@ export default function Layout() {
 
                 {/* Bottom actions */}
                 <div style={{ borderTop: '1px solid #2a2d3e', paddingBottom: '8px', paddingTop: '4px' }}>
-                    <NavLink to="/settings" style={({ isActive }) => navStyle(isActive)}>
-                        <span style={{ fontSize: '16px', minWidth: '20px' }}>⚙️</span>
-                        {!collapsed && <span>Configuración</span>}
-                    </NavLink>
+
                     <button
                         onClick={handleLogout}
                         style={{

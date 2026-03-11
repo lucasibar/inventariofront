@@ -80,28 +80,36 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                         alignItems: 'flex-start'
                     }}>
                         <Box>
-                            <Autocomplete
-                                options={availableItems}
-                                getOptionLabel={(option: any) => `${option.codigoInterno} - ${option.descripcion}`}
-                                onChange={(_, newValue: any) => {
-                                    if (newValue) {
-                                        setValue(`lines.${index}.codigoInterno`, newValue.codigoInterno);
-                                        setValue(`lines.${index}.descripcion`, newValue.descripcion);
-                                        setValue(`lines.${index}.categoria`, newValue.categoria);
-                                        setValue(`lines.${index}.itemId`, newValue.id);
-                                    }
-                                }}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        label="Material"
-                                        variant="filled"
-                                        size="small"
-                                        placeholder="Buscar..."
-                                        {...register(`lines.${index}.codigoInterno` as const, { required: true })}
-                                    />
-                                )}
-                            />
+                                <Autocomplete
+                                    options={availableItems}
+                                    getOptionLabel={(option: any) => `${option.codigoInterno} - ${option.descripcion}`}
+                                    filterOptions={(options, { inputValue }) => {
+                                        const search = inputValue.toLowerCase();
+                                        return options.filter(option => 
+                                            option.codigoInterno.toLowerCase().includes(search) || 
+                                            option.descripcion.toLowerCase().includes(search)
+                                        );
+                                    }}
+                                    onChange={(_, newValue: any) => {
+                                        if (newValue) {
+                                            setValue(`lines.${index}.codigoInterno`, newValue.codigoInterno);
+                                            setValue(`lines.${index}.descripcion`, newValue.descripcion);
+                                            setValue(`lines.${index}.categoria`, newValue.categoria);
+                                            setValue(`lines.${index}.itemId`, newValue.id);
+                                        }
+                                    }}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            label="Material"
+                                            variant="filled"
+                                            size="small"
+                                            placeholder="Buscar por código o nombre..."
+                                            InputLabelProps={{ shrink: true }}
+                                            {...register(`lines.${index}.codigoInterno` as const, { required: true })}
+                                        />
+                                    )}
+                                />
                         </Box>
                         <Box>
                             <TextField
@@ -110,6 +118,7 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                 variant="filled"
                                 size="small"
                                 InputProps={{ readOnly: true }}
+                                InputLabelProps={{ shrink: true }}
                                 {...register(`lines.${index}.descripcion` as const)}
                             />
                         </Box>

@@ -192,3 +192,57 @@ export function SearchBar({ value, onChange, placeholder }: { value: string; onC
         </div>
     );
 }
+
+export function EditableCell({ value, onSave, numeric }: { value: string; onSave: (v: string) => Promise<void>; numeric?: boolean }) {
+    const [editing, setEditing] = React.useState(false);
+    const [draft, setDraft] = React.useState(value);
+    const [saving, setSaving] = React.useState(false);
+    const ref = React.useRef<HTMLInputElement>(null);
+
+    React.useEffect(() => { if (editing) ref.current?.focus(); }, [editing]);
+
+    const commit = async () => {
+        if (draft === value) { setEditing(false); return; }
+        setSaving(true);
+        try { 
+            await onSave(draft); 
+            setEditing(false); 
+        } catch (e) { 
+            console.error("Error saving cell:", e);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (!editing) return (
+        <span
+            onClick={() => { setDraft(value); setEditing(true); }}
+            title="Click para editar"
+            style={{ 
+                cursor: 'pointer', 
+                borderBottom: '1px dashed #4b5563', 
+                paddingBottom: '1px',
+                transition: 'color 0.2s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = '#6366f1'}
+            onMouseLeave={e => e.currentTarget.style.color = 'inherit'}
+        >{value || '—'}</span>
+    );
+
+    return (
+        <input
+            ref={ref}
+            type={numeric ? 'number' : 'text'}
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false); }}
+            disabled={saving}
+            style={{
+                width: '100%', minWidth: '80px', background: '#0f1117', border: '1px solid #6366f1',
+                borderRadius: '6px', padding: '3px 8px', color: '#f3f4f6',
+                fontSize: '13px', outline: 'none',
+            }}
+        />
+    );
+}
