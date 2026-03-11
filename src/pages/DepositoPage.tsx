@@ -52,7 +52,7 @@ export default function DepositoPage() {
     const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
 
     // API Hooks
-    const { data: depots = [], isLoading: loadingDepots, isError: errorDepots, error: depotErrorDetail } = useGetDepotsQuery();
+    const { data: depots = [], isLoading: loadingDepots, isError: errorDepots, error: depotErrorDetail, refetch, isFetching } = useGetDepotsQuery();
     const [createDepot] = useCreateDepotMutation();
     const [updateDepot] = useUpdateDepotMutation();
     const [deleteDepot] = useDeleteDepotMutation();
@@ -77,18 +77,21 @@ export default function DepositoPage() {
     const handleToggleDepotStatus = async (depot: any) => {
         try {
             await updateDepot({ id: depot.id, data: { activo: !depot.activo } }).unwrap();
+            refetch();
         } catch (e) { console.error(e); }
     };
 
     const handleUpdateDepot = async (id: string, field: string, value: string) => {
         try {
             await updateDepot({ id, data: { [field]: value } }).unwrap();
+            refetch();
         } catch (e) { console.error(e); }
     };
 
     const handleTogglePosStatus = async (pos: any) => {
         try {
             await updatePosition({ id: pos.id, data: { activo: !pos.activo } }).unwrap();
+            refetch();
         } catch (e) { console.error(e); }
     };
 
@@ -124,17 +127,17 @@ export default function DepositoPage() {
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
                             <tr style={{ borderBottom: '1px solid #2a2d3e' }}>
-                                {['Deposito / Nombre', 'Planta', 'Estado', 'Posiciones', 'Acciones'].map(h => (
+                                {['Deposito / Nombre', 'Planta', 'Estado', 'Posiciones'].map(h => (
                                     <th key={h} style={{ padding: '12px 16px', color: '#6b7280', fontSize: '11px', fontWeight: 600, textAlign: 'left', textTransform: 'uppercase' }}>{h}</th>
                                 ))}
                             </tr>
                         </thead>
                         <tbody>
                             {loadingDepots && (
-                                <tr><td colSpan={5} style={{ padding: '32px', textAlign: 'center', color: '#6b7280' }}>Cargando infraestructura...</td></tr>
+                                <tr><td colSpan={4} style={{ padding: '32px', textAlign: 'center', color: '#6b7280' }}>Cargando infraestructura...</td></tr>
                             )}
                             {errorDepots && (
-                                <tr><td colSpan={5} style={{ padding: '32px', textAlign: 'center', color: '#f87171' }}>
+                                <tr><td colSpan={4} style={{ padding: '32px', textAlign: 'center', color: '#f87171' }}>
                                     Error al cargar infraestructura: {JSON.stringify(depotErrorDetail)}
                                 </td></tr>
                             )}
@@ -160,16 +163,13 @@ export default function DepositoPage() {
                                         </button>
                                     </td>
                                     <td style={{ padding: '12px 16px' }}>
-                                        <Badge 
+                                        <div 
                                             onClick={() => setSelectedDepotForPos(d)}
-                                            color="#a5b4fc" 
-                                            style={{ cursor: 'pointer' }}
+                                            style={{ cursor: 'pointer', padding: '4px 0' }}
                                         >
-                                            {d.positions?.length || 0} posiciones
-                                        </Badge>
-                                    </td>
-                                    <td style={{ padding: '12px 16px' }}>
-                                        <Btn small variant="secondary" title="Deshabilitar depósito" onClick={() => { if(confirm('¿Deshabilitar depósito?')) deleteDepot(d.id); }}>✕</Btn>
+                                            <div style={{ fontSize: '10px', color: '#6b7280', textTransform: 'uppercase', marginBottom: '2px' }}>Gestión</div>
+                                            <Badge color="#a5b4fc">{d.positions?.length || 0} posiciones</Badge>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -185,14 +185,14 @@ export default function DepositoPage() {
                         wide
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                            <div style={{ color: '#9ca3af', fontSize: '13px' }}>Habilitá, deshabilitá o añadí posiciones físicas.</div>
+                            <div style={{ color: '#9ca3af', fontSize: '13px' }}>Habilitá, deshabilitá o hacé clic en el código para editar.</div>
                             <Btn small onClick={() => handleAddPosition(selectedDepotForPos.id)}>+ Añadir Posición</Btn>
                         </div>
                         <div style={{ maxHeight: '400px', overflow: 'auto', border: '1px solid #2a2d3e', borderRadius: '8px' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead style={{ position: 'sticky', top: 0, background: '#1a1d2e', zIndex: 1 }}>
                                     <tr style={{ borderBottom: '1px solid #2a2d3e' }}>
-                                        <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', color: '#6b7280' }}>CÓDIGO</th>
+                                        <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', color: '#6b7280' }}>CÓDIGO (EDITABLE)</th>
                                         <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', color: '#6b7280' }}>TIPO</th>
                                         <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: '11px', color: '#6b7280' }}>ESTADO</th>
                                     </tr>
@@ -200,7 +200,16 @@ export default function DepositoPage() {
                                 <tbody>
                                     {(depots.find((x:any) => x.id === selectedDepotForPos.id)?.positions || []).map((p: any) => (
                                         <tr key={p.id} style={{ borderBottom: '1px solid #1e2133', opacity: p.activo ? 1 : 0.5 }}>
-                                            <td style={{ padding: '8px 16px', color: '#f3f4f6', fontSize: '13px' }}>{p.codigo}</td>
+                                            <td style={{ padding: '8px 16px' }}>
+                                                <EditableCell 
+                                                    value={p.codigo} 
+                                                    onSave={async (v) => {
+                                                        try {
+                                                            await updatePosition({ id: p.id, data: { codigo: v } }).unwrap();
+                                                        } catch (e) { console.error(e); }
+                                                    }} 
+                                                />
+                                            </td>
                                             <td style={{ padding: '8px 16px', color: '#9ca3af', fontSize: '12px' }}>{p.tipo}</td>
                                             <td style={{ padding: '8px 16px', textAlign: 'center' }}>
                                                 <input 

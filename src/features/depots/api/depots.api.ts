@@ -4,35 +4,38 @@ export const depotsApi = api.injectEndpoints({
     endpoints: (builder) => ({
         getDepots: builder.query<any[], void>({
             query: () => 'depots',
-            providesTags: ['Depots'],
+            providesTags: (result) => 
+                result 
+                    ? [...result.map(({ id }) => ({ type: 'Depots' as const, id })), { type: 'Depots', id: 'LIST' }]
+                    : [{ type: 'Depots', id: 'LIST' }],
         }),
         getArchivedDepots: builder.query<any[], void>({
             query: () => 'depots/archived',
-            providesTags: ['Depots'],
+            providesTags: [{ type: 'Depots', id: 'LIST' }],
         }),
         createDepot: builder.mutation<any, any>({
             query: (body) => ({ url: 'depots', method: 'POST', body }),
-            invalidatesTags: ['Depots'],
+            invalidatesTags: [{ type: 'Depots', id: 'LIST' }],
         }),
         updateDepot: builder.mutation<any, { id: string; data: any }>({
             query: ({ id, data }) => ({ url: `depots/${id}`, method: 'PUT', body: data }),
-            invalidatesTags: ['Depots'],
+            invalidatesTags: (result, error, { id }) => [{ type: 'Depots', id }, { type: 'Depots', id: 'LIST' }],
         }),
         deleteDepot: builder.mutation<void, string>({
             query: (id) => ({ url: `depots/${id}`, method: 'DELETE' }),
-            invalidatesTags: ['Depots'],
+            invalidatesTags: (result, error, id) => [{ type: 'Depots', id }, { type: 'Depots', id: 'LIST' }],
         }),
         restoreDepot: builder.mutation<any, string>({
             query: (id) => ({ url: `depots/${id}/restore`, method: 'PATCH' }),
-            invalidatesTags: ['Depots'],
+            invalidatesTags: (result, error, id) => [{ type: 'Depots', id }, { type: 'Depots', id: 'LIST' }],
         }),
         createPosition: builder.mutation<any, { depotId: string; data: any }>({
             query: ({ depotId, data }) => ({ url: `depots/${depotId}/positions`, method: 'POST', body: data }),
-            invalidatesTags: ['Depots', 'Positions'],
+            invalidatesTags: [{ type: 'Depots', id: 'LIST' }],
         }),
         updatePosition: builder.mutation<any, { id: string; data: any }>({
             query: ({ id, data }) => ({ url: `positions/${id}`, method: 'PUT', body: data }),
-            invalidatesTags: ['Depots', 'Positions'],
+            invalidatesTags: (result, error, { id }) => [{ type: 'Depots', id: 'LIST' }],
         }),
         deletePosition: builder.mutation<void, string>({
             query: (id) => ({ url: `positions/${id}`, method: 'DELETE' }),
