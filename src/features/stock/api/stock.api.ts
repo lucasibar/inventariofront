@@ -4,7 +4,7 @@ export const stockApi = api.injectEndpoints({
     endpoints: (builder) => ({
         getStock: builder.query<any[], {
             depotId?: string; positionId?: string; supplierId?: string;
-            itemId?: string; lotNumber?: string; q?: string;
+            itemId?: string; lotNumber?: string; q?: string; categoria?: string;
         }>({
             query: (f = {}) => {
                 const p = new URLSearchParams();
@@ -58,6 +58,13 @@ export const stockApi = api.injectEndpoints({
             },
             providesTags: ['Stock'],
         }),
+        submitPickingAudit: builder.mutation<any, {
+            items: { depositoId: string; posicionId: string; itemId: string; lotId: string | null; faltanteKilos: number }[];
+            fecha: string; observaciones?: string;
+        }>({
+            query: (body) => ({ url: 'auditoria-picking', method: 'POST', body }),
+            invalidatesTags: ['Stock'],
+        }),
     }),
 });
 
@@ -70,6 +77,7 @@ export const {
     useDeleteStockMutation,
     useUpdateBatchNumberMutation,
     useGetStockSummaryQuery,
+    useSubmitPickingAuditMutation,
 } = stockApi;
 
 

@@ -1,113 +1,246 @@
-import { useState, useMemo } from 'react';
-import { useGetMovimientosQuery } from '../features/movimientos/api/movimientos.api';
+import { useState } from 'react';
 import { useGetDepotsQuery } from '../features/depots/api/depots.api';
-import { PageHeader, Card, Table, Badge, Select, Input } from './common/ui';
-
-const TIPO_LABELS: Record<string, string> = {
-    REMITO_ENTRADA: 'Entrada',
-    REMITO_SALIDA: 'Salida',
-    AJUSTE_SUMA: 'Ajuste (+)',
-    AJUSTE_RESTA: 'Ajuste (-)',
-    MOVE_ENTRADA: 'Reubicación (E)',
-    MOVE_SALIDA: 'Reubicación (S)',
-};
-
-const TIPO_COLORS: Record<string, string> = {
-    REMITO_ENTRADA: '#34d399',
-    REMITO_SALIDA: '#f87171',
-    AJUSTE_SUMA: '#6366f1',
-    AJUSTE_RESTA: '#fbbf24',
-    MOVE_ENTRADA: '#a5b4fc',
-    MOVE_SALIDA: '#6b7280',
-};
+import { 
+    useGetStockQuery, 
+    useMoveStockMutation, 
+    useAdjustStockMutation, 
+    useUpdateBatchNumberMutation 
+} from '../features/stock/api/stock.api';
+import { useUpdateItemMutation } from '../features/items/api/items.api';
+import { PageHeader, Card, Table, Select, Input, Btn, Modal, EditableCell } from './common/ui';
 
 export default function MovimientosPage() {
     const { data: depots = [] } = useGetDepotsQuery();
 
-    // Filters
-    const [depositoId, setDepositoId] = useState('');
-    const [tipo, setTipo] = useState('');
-    const [desde, setDesde] = useState('');
-    const [hasta, setHasta] = useState('');
+    // Left Panel State
+    const [depositoIdLeft, setDepositoIdLeft] = useState('');
+    const [posicionIdLeft, setPosicionIdLeft] = useState('');
 
-    const { data: movimientos = [], isLoading } = useGetMovimientosQuery({
-        depositoId: depositoId || undefined,
-        tipo: tipo || undefined,
-        desde: desde || undefined,
-        hasta: hasta || undefined,
-    });
+    // Right Panel State
+    const [depositoIdRight, setDepositoIdRight] = useState('');
+    const [posicionIdRight, setPosicionIdRight] = useState('');
 
-    const rows = useMemo(() => {
-        return [...movimientos].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()).map(m => [
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ color: '#f3f4f6', fontSize: '13px' }}>{new Date(m.fecha).toLocaleDateString('es-AR')}</span>
-                <span style={{ color: '#6b7280', fontSize: '11px' }}>{new Date(m.fecha).toLocaleTimeString('es-AR', { hour: '2xl', minute: '2xl' })}</span>
-            </div>,
-            <Badge color={TIPO_COLORS[m.tipo]}>{TIPO_LABELS[m.tipo] || m.tipo}</Badge>,
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ color: '#f3f4f6' }}>{m.item?.descripcion || '—'}</span>
-                <code style={{ color: '#a5b4fc', fontSize: '11px' }}>{m.item?.codigoInterno || '—'}</code>
-            </div>,
-            <code style={{ color: '#fbbf24', fontSize: '12px' }}>{m.batch?.lotNumber || '—'}</code>,
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ color: '#d1d5db' }}>{m.deposito?.nombre || '—'}</span>
-                <Badge color="#4b5563">{m.posicion?.codigo || '—'}</Badge>
-            </div>,
-            <span style={{
-                color: m.deltaKilos > 0 ? '#34d399' : m.deltaKilos < 0 ? '#f87171' : '#d1d5db',
-                fontWeight: 600
-            }}>
-                {m.deltaKilos > 0 ? '+' : ''}{Number(m.deltaKilos).toFixed(2)} kg
-            </span>,
-            <span style={{ color: '#9ca3af' }}>{m.deltaUnidades != null ? `${m.deltaUnidades > 0 ? '+' : ''}${m.deltaUnidades} un.` : '—'}</span>,
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ color: '#6b7280', fontSize: '11px' }}>{m.userId || 'Sistema'}</span>
-                {m.observaciones && <span style={{ color: '#9ca3af', fontSize: '11px', fontStyle: 'italic' }}>{m.observaciones}</span>}
-            </div>
-        ]);
-    }, [movimientos]);
+    const { data: stockLeft = [], isLoading: loadingLeft } = useGetStockQuery({ 
+        depotId: depositoIdLeft, positionId: posicionIdLeft 
+    }, { skip: !depositoIdLeft || !posicionIdLeft });
+
+    const { data: stockRight = [], isLoading: loadingRight } = useGetStockQuery({ 
+        depotId: depositoIdRight, positionId: posicionIdRight 
+    }, { skip: !depositoIdRight || !posicionIdRight });
+
+    const [moveStock] = useMoveStockMutation();
+    const [adjustStock] = useAdjustStockMutation();
+    const [updateBatchNumber] = useUpdateBatchNumberMutation();
+    const [updateItem] = useUpdateItemMutation();
+
+    // Transfer Modal State
+    const [transferModal, setTransferModal] = useState<{ source: 'left' | 'right', item: any } | null>(null);
+    const [transferKilos, setTransferKilos] = useState('');
+    const [transferUnidades, setTransferUnidades] = useState('');
+
+    const handleTransferClick = (item: any, source: 'left' | 'right') => {
+        const destDepot = source === 'left' ? depositoIdRight : depositoIdLeft;
+        const destPos = source === 'left' ? posicionIdRight : posicionIdLeft;
+
+        if (!destDepot || !destPos) {
+            alert('Seleccioná un depósito y posición de destino en el otro panel.');
+            return;
+        }
+
+        setTransferModal({ source, item });
+        setTransferKilos(String(item.kilos));
+        setTransferUnidades(item.unidades ? String(item.unidades) : '');
+    };
+
+    const confirmTransfer = async () => {
+        if (!transferModal) return;
+        const { source, item } = transferModal;
+        const destDepot = source === 'left' ? depositoIdRight : depositoIdLeft;
+        const destPos = source === 'left' ? posicionIdRight : posicionIdLeft;
+
+        try {
+            await moveStock({
+                depositoId: destDepot,
+                posicionIdOrigen: item.posicion.id,
+                posicionIdDestino: destPos,
+                itemId: item.item.id,
+                lotId: item.batch.id,
+                kilos: Number(transferKilos),
+                unidades: transferUnidades ? Number(transferUnidades) : null,
+                fecha: new Date().toISOString()
+            }).unwrap();
+            setTransferModal(null);
+        } catch (err: any) {
+            alert(err?.data?.message || 'Error al mover stock');
+        }
+    };
+
+    // Inline edit handlers
+    const handleEditKilos = async (val: string, row: any) => {
+        const newKilos = Number(val);
+        const delta = newKilos - row.kilos;
+        if (delta === 0) return;
+        await adjustStock({
+            depositoId: row.deposito.id,
+            posicionId: row.posicion.id,
+            itemId: row.item.id,
+            lotId: row.batch.id,
+            deltaKilos: delta,
+            deltaUnidades: 0,
+            fecha: new Date().toISOString(),
+            observaciones: 'Ajuste rápido desde Movimientos'
+        }).unwrap();
+    };
+
+    const handleEditUnidades = async (val: string, row: any) => {
+        const newUnidades = Number(val);
+        const oldUnidades = row.unidades || 0;
+        const delta = newUnidades - oldUnidades;
+        if (delta === 0) return;
+        await adjustStock({
+            depositoId: row.deposito.id,
+            posicionId: row.posicion.id,
+            itemId: row.item.id,
+            lotId: row.batch.id,
+            deltaKilos: 0,
+            deltaUnidades: delta,
+            fecha: new Date().toISOString(),
+            observaciones: 'Ajuste rápido desde Movimientos'
+        }).unwrap();
+    };
+
+    const handleEditLotNumber = async (val: string, row: any) => {
+        if (val === row.batch.lotNumber) return;
+        await updateBatchNumber({ batchId: row.batch.id, newLotNumber: val }).unwrap();
+    };
+
+    const handleEditItemName = async (val: string, row: any) => {
+        if (val === row.item.descripcion) return;
+        if (!window.confirm(`¿Estás seguro que querés cambiar el nombre del material para todo el sistema a "${val}"?`)) return;
+        await updateItem({ id: row.item.id, data: { descripcion: val } }).unwrap();
+    };
+
+    // Columns builder
+    const buildCols = () => [
+        'Material', 'Partida', 'Kilos', 'Unidades', ''
+    ];
+
+    const buildRows = (stock: any[], source: 'left' | 'right') => stock.map(m => [
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ color: '#f3f4f6', fontWeight: 600 }}>
+                <EditableCell value={m.item?.descripcion || ''} onSave={val => handleEditItemName(val, m)} />
+            </span>
+            <code style={{ color: '#a5b4fc', fontSize: '11px' }}>{m.item?.codigoInterno || '—'}</code>
+        </div>,
+        <div style={{ color: '#fbbf24', fontWeight: 600 }}>
+            <EditableCell value={m.batch?.lotNumber || ''} onSave={val => handleEditLotNumber(val, m)} />
+        </div>,
+        <div style={{ color: '#34d399', fontWeight: 600 }}>
+            <EditableCell numeric value={String(m.kilos)} onSave={val => handleEditKilos(val, m)} /> kg
+        </div>,
+        <div style={{ color: '#9ca3af' }}>
+            {m.item?.trackLot ? (
+                <><EditableCell numeric value={String(m.unidades || 0)} onSave={val => handleEditUnidades(val, m)} /> un.</>
+            ) : '—'}
+        </div>,
+        <Btn small onClick={() => handleTransferClick(m, source)} style={{ padding: '4px 8px' }}>
+            {source === 'left' ? 'Mover ➔' : '⬅ Mover'}
+        </Btn>
+    ]);
+
+    const posOptionsLeft = depots.find((d: any) => d.id === depositoIdLeft)?.positions?.map((p: any) => ({ value: p.id, label: p.codigo })) || [];
+    const posOptionsRight = depots.find((d: any) => d.id === depositoIdRight)?.positions?.map((p: any) => ({ value: p.id, label: p.codigo })) || [];
 
     return (
         <div style={{ padding: '24px' }}>
-            <PageHeader title="Historial de Movimientos" subtitle="Registro completo e inmutable de todas las transacciones de stock" />
+            <PageHeader title="Manejo de Movimientos" subtitle="Transferencias entre posiciones y edición rápida" />
 
-            {/* Filters Bar */}
-            <Card style={{ marginBottom: '20px' }}>
-                <div style={{ padding: '16px', display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'end' }}>
-                    <Select
-                        label="Depósito"
-                        value={depositoId}
-                        onChange={setDepositoId}
-                        options={[{ value: '', label: 'Todos los depósitos' }, ...depots.map((d: any) => ({ value: d.id, label: d.nombre }))]}
-                        style={{ width: '200px' }}
-                    />
-                    <Select
-                        label="Tipo de Movimiento"
-                        value={tipo}
-                        onChange={setTipo}
-                        options={[
-                            { value: '', label: 'Todos los tipos' },
-                            ...Object.entries(TIPO_LABELS).map(([k, v]) => ({ value: k, label: v }))
-                        ]}
-                        style={{ width: '180px' }}
-                    />
-                    <Input label="Desde" type="date" value={desde} onChange={setDesde} style={{ width: '150px' }} />
-                    <Input label="Hasta" type="date" value={hasta} onChange={setHasta} style={{ width: '150px' }} />
-                    <Btn variant="secondary" onClick={() => { setDepositoId(''); setTipo(''); setDesde(''); setHasta(''); }}>Limpiar</Btn>
-                </div>
-            </Card>
+            <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+                {/* Left Panel */}
+                <Card style={{ flex: 1 }}>
+                    <div style={{ padding: '16px', background: '#1e2133', borderBottom: '1px solid #2a2d3e', display: 'flex', gap: '12px' }}>
+                        <Select
+                            value={depositoIdLeft}
+                            onChange={val => { setDepositoIdLeft(val); setPosicionIdLeft(''); }}
+                            options={[{ value: '', label: 'Seleccionar depósito' }, ...depots.map((d: any) => ({ value: d.id, label: d.nombre }))]}
+                            style={{ flex: 1 }}
+                        />
+                        <Select
+                            value={posicionIdLeft}
+                            onChange={setPosicionIdLeft}
+                            options={[{ value: '', label: 'Seleccionar posición' }, ...posOptionsLeft]}
+                            style={{ flex: 1 }}
+                        />
+                    </div>
+                    {depositoIdLeft && posicionIdLeft ? (
+                        <Table
+                            loading={loadingLeft}
+                            cols={buildCols()}
+                            rows={buildRows(stockLeft, 'left')}
+                        />
+                    ) : (
+                        <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>Seleccioná depósito y posición</div>
+                    )}
+                </Card>
 
-            {/* Results Table */}
-            <Card>
-                <div style={{ padding: '12px 16px', borderBottom: '1px solid #2a2d3e', color: '#9ca3af', fontSize: '13px' }}>
-                    {isLoading ? 'Cargando movimientos...' : `Mostrando ${movimientos.length} registros`}
-                </div>
-                <Table
-                    loading={isLoading}
-                    cols={['Fecha', 'Tipo', 'Material', 'Partida', 'Depósito / Pos', 'Δ Kilos', 'Δ Unid.', 'Usuario / Obs.']}
-                    rows={rows}
-                />
-            </Card>
+                {/* Right Panel */}
+                <Card style={{ flex: 1 }}>
+                    <div style={{ padding: '16px', background: '#1e2133', borderBottom: '1px solid #2a2d3e', display: 'flex', gap: '12px' }}>
+                        <Select
+                            value={depositoIdRight}
+                            onChange={val => { setDepositoIdRight(val); setPosicionIdRight(''); }}
+                            options={[{ value: '', label: 'Seleccionar depósito' }, ...depots.map((d: any) => ({ value: d.id, label: d.nombre }))]}
+                            style={{ flex: 1 }}
+                        />
+                        <Select
+                            value={posicionIdRight}
+                            onChange={setPosicionIdRight}
+                            options={[{ value: '', label: 'Seleccionar posición' }, ...posOptionsRight]}
+                            style={{ flex: 1 }}
+                        />
+                    </div>
+                    {depositoIdRight && posicionIdRight ? (
+                        <Table
+                            loading={loadingRight}
+                            cols={buildCols()}
+                            rows={buildRows(stockRight, 'right')}
+                        />
+                    ) : (
+                        <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>Seleccioná depósito y posición</div>
+                    )}
+                </Card>
+            </div>
+
+            {/* Transfer Modal */}
+            {transferModal && (
+                <Modal title="Transferir Mercadería" onClose={() => setTransferModal(null)}>
+                    <div style={{ marginBottom: '20px', color: '#9ca3af', fontSize: '14px' }}>
+                        Moviendo <strong>{transferModal.item.item.descripcion}</strong> (Partida {transferModal.item.batch.lotNumber})
+                    </div>
+                    <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+                        <Input 
+                            label={`Kilos a transferir (Disp: ${transferModal.item.kilos}kg)`}
+                            type="number" 
+                            value={transferKilos} 
+                            onChange={setTransferKilos} 
+                            style={{ flex: 1 }}
+                        />
+                        {transferModal.item.item.trackLot && (
+                            <Input 
+                                label={`Unidades a transferir (Disp: ${transferModal.item.unidades || 0})`}
+                                type="number" 
+                                value={transferUnidades} 
+                                onChange={setTransferUnidades} 
+                                style={{ flex: 1 }}
+                            />
+                        )}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                        <Btn variant="secondary" onClick={() => setTransferModal(null)}>Cancelar</Btn>
+                        <Btn onClick={confirmTransfer}>Confirmar Transferencia</Btn>
+                    </div>
+                </Modal>
+            )}
         </div>
     );
 }

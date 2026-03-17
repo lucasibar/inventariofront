@@ -109,8 +109,10 @@ export default function DepositoPage() {
     const handleAddPosition = async (depotId: string) => {
         const codigo = prompt('Ingrese el código de la nueva posición:');
         if (!codigo) return;
+        const categoria = prompt('Ingrese categoría (stock, picking, entrada):', 'stock');
         try {
-            await createPosition({ depotId, data: { codigo, tipo: 'STORAGE' } }).unwrap();
+            await createPosition({ depotId, data: { codigo, tipo: 'STORAGE', categoria: categoria || 'stock' } }).unwrap();
+            refetch();
         } catch (e) { console.error(e); }
     };
 
@@ -194,6 +196,7 @@ export default function DepositoPage() {
                                     <tr style={{ borderBottom: '1px solid #2a2d3e' }}>
                                         <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', color: '#6b7280' }}>CÓDIGO (EDITABLE)</th>
                                         <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', color: '#6b7280' }}>TIPO</th>
+                                        <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', color: '#6b7280' }}>CATEGORÍA</th>
                                         <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: '11px', color: '#6b7280' }}>ESTADO</th>
                                     </tr>
                                 </thead>
@@ -206,11 +209,28 @@ export default function DepositoPage() {
                                                     onSave={async (v) => {
                                                         try {
                                                             await updatePosition({ id: p.id, data: { codigo: v } }).unwrap();
+                                                            refetch();
                                                         } catch (e) { console.error(e); }
                                                     }} 
                                                 />
                                             </td>
                                             <td style={{ padding: '8px 16px', color: '#9ca3af', fontSize: '12px' }}>{p.tipo}</td>
+                                            <td style={{ padding: '8px 16px', color: '#9ca3af', fontSize: '12px' }}>
+                                                <select 
+                                                    value={p.categoria || 'stock'} 
+                                                    onChange={async (e) => {
+                                                        try { 
+                                                            await updatePosition({ id: p.id, data: { categoria: e.target.value } }).unwrap(); 
+                                                            refetch();
+                                                        } catch(err) { console.error(err); }
+                                                    }}
+                                                    style={{ background: 'transparent', border: '1px solid #4b5563', color: '#f3f4f6', borderRadius: '4px', padding: '2px 4px', fontSize: '11px' }}
+                                                >
+                                                    <option style={{color:'#000'}} value="stock">Stock</option>
+                                                    <option style={{color:'#000'}} value="picking">Picking</option>
+                                                    <option style={{color:'#000'}} value="entrada">Entrada</option>
+                                                </select>
+                                            </td>
                                             <td style={{ padding: '8px 16px', textAlign: 'center' }}>
                                                 <input 
                                                     type="checkbox" 
@@ -232,7 +252,7 @@ export default function DepositoPage() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             <Input label="Nombre del Depósito" value={newDepotForm.nombre} onChange={v => setNewDepotForm(p => ({...p, nombre: v}))} />
                             <Input label="Planta" value={newDepotForm.planta} onChange={v => setNewDepotForm(p => ({...p, planta: v}))} />
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', mt: '10px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
                                 <Btn variant="secondary" onClick={() => setShowNewDepot(false)}>Cancelar</Btn>
                                 <Btn onClick={handleCreateDepot} disabled={isSavingDepot}>{isSavingDepot ? 'Guardando...' : 'Crear Depósito'}</Btn>
                             </div>

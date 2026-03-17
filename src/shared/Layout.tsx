@@ -7,6 +7,7 @@ import { logout, selectCurrentUser } from '../entities/auth/model/authSlice';
 const navItems = [
     { to: '/remitos-entrada', label: '📦 Remitos Entrada' },
     { to: '/deposito', label: '🏭 Depósito' },
+    { to: '/deposito/auditoria-picking', label: '✅ Auditoría Picking' },
     { to: '/pedidos', label: '📋 Pedidos' },
     { to: '/remitos-salida', label: '🚚 Remitos Salida' },
     { to: '/dashboard', label: '📊 Dashboard Compras' },

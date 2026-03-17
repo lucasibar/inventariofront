@@ -11,6 +11,7 @@ import RemitosSalidaPage from './pages/RemitosSalidaPage';
 import DashboardComprasPage from './pages/DashboardComprasPage';
 import MaterialesPage from './pages/MaterialesPage';
 import SociosPage from './pages/SociosPage';
+import AuditoriaPickingPage from './pages/AuditoriaPickingPage';
 
 import MovimientosPage from './pages/MovimientosPage';
 import StockQueryPage from './pages/StockQueryPage';
@@ -27,6 +28,7 @@ function App() {
             <Route path="/" element={<Navigate to="/remitos-entrada" replace />} />
             <Route path="/remitos-entrada" element={<RemitosEntradaPage />} />
             <Route path="/deposito" element={<DepositoPage />} />
+            <Route path="/deposito/auditoria-picking" element={<AuditoriaPickingPage />} />
             <Route path="/pedidos" element={<PedidosPage />} />
             <Route path="/remitos-salida" element={<RemitosSalidaPage />} />
             <Route path="/dashboard" element={<DashboardComprasPage />} />

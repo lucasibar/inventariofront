@@ -19,23 +19,56 @@ export const depotsApi = api.injectEndpoints({
         }),
         updateDepot: builder.mutation<any, { id: string; data: any }>({
             query: ({ id, data }) => ({ url: `depots/${id}`, method: 'PUT', body: data }),
-            invalidatesTags: (result, error, { id }) => [{ type: 'Depots', id }, { type: 'Depots', id: 'LIST' }],
+            invalidatesTags: (_result, _error, { id }) => [{ type: 'Depots', id }, { type: 'Depots', id: 'LIST' }],
+            async onQueryStarted({ id, data }, { dispatch, queryFulfilled }) {
+                const patchResult = dispatch(
+                    depotsApi.util.updateQueryData('getDepots', undefined, (draft) => {
+                        const depot = draft.find((d) => d.id === id);
+                        if (depot) {
+                            Object.assign(depot, data);
+                        }
+                    })
+                );
+                try {
+                    await queryFulfilled;
+                } catch {
+                    patchResult.undo();
+                }
+            },
         }),
         deleteDepot: builder.mutation<void, string>({
             query: (id) => ({ url: `depots/${id}`, method: 'DELETE' }),
-            invalidatesTags: (result, error, id) => [{ type: 'Depots', id }, { type: 'Depots', id: 'LIST' }],
+            invalidatesTags: (_result, _error, id) => [{ type: 'Depots', id }, { type: 'Depots', id: 'LIST' }],
         }),
         restoreDepot: builder.mutation<any, string>({
             query: (id) => ({ url: `depots/${id}/restore`, method: 'PATCH' }),
-            invalidatesTags: (result, error, id) => [{ type: 'Depots', id }, { type: 'Depots', id: 'LIST' }],
+            invalidatesTags: (_result, _error, id) => [{ type: 'Depots', id }, { type: 'Depots', id: 'LIST' }],
         }),
         createPosition: builder.mutation<any, { depotId: string; data: any }>({
             query: ({ depotId, data }) => ({ url: `depots/${depotId}/positions`, method: 'POST', body: data }),
-            invalidatesTags: [{ type: 'Depots', id: 'LIST' }],
+            invalidatesTags: ['Depots'],
         }),
         updatePosition: builder.mutation<any, { id: string; data: any }>({
             query: ({ id, data }) => ({ url: `positions/${id}`, method: 'PUT', body: data }),
-            invalidatesTags: (result, error, { id }) => [{ type: 'Depots', id: 'LIST' }],
+            invalidatesTags: ['Depots'],
+            async onQueryStarted({ id, data }, { dispatch, queryFulfilled }) {
+                const patchResult = dispatch(
+                    depotsApi.util.updateQueryData('getDepots', undefined, (draft) => {
+                        for (const depot of draft) {
+                            const pos = depot.positions?.find((p: any) => p.id === id);
+                            if (pos) {
+                                Object.assign(pos, data);
+                                break;
+                            }
+                        }
+                    })
+                );
+                try {
+                    await queryFulfilled;
+                } catch {
+                    patchResult.undo();
+                }
+            },
         }),
         deletePosition: builder.mutation<void, string>({
             query: (id) => ({ url: `positions/${id}`, method: 'DELETE' }),

@@ -11,7 +11,8 @@ import { Autocomplete } from '@mui/material';
 const ROTACIONES = [
     { value: 'ALTA', label: '🔴 Alta' },
     { value: 'MEDIA', label: '🟡 Media' },
-    { value: 'BAJA', label: '⚫ Baja' }
+    { value: 'BAJA', label: '⚫ Baja' },
+    { value: 'TEMPORAL', label: '⏳ Temporal' },
 ];
 
 interface CreateItemDialogProps {
