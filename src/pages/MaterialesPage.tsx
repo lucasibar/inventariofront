@@ -2,10 +2,31 @@ import { useState } from 'react';
 import { useGetItemsQuery, useCreateItemMutation, useUpdateItemMutation, useDeleteItemMutation } from '../features/items/api/items.api';
 import { PageHeader, Card, Btn, Input, Select, Modal, Table, Badge, SearchBar, Spinner } from './common/ui';
 
-const ROTACIONES = [{ value: 'ALTA', label: '🔴 Alta' }, { value: 'MEDIA', label: '🟡 Media' }, { value: 'BAJA', label: '⚫ Baja' }];
-const ROT_COLORS: Record<string, string> = { ALTA: '#ef4444', MEDIA: '#f59e0b', BAJA: '#6b7280' };
+const ROTACIONES = [
+    { value: 'ALTA', label: '🔴 Alta' },
+    { value: 'MEDIA', label: '🟡 Media' },
+    { value: 'BAJA', label: '⚫ Baja' },
+    { value: 'TEMPORAL', label: '⏳ Temporal' },
+];
+const ROT_COLORS: Record<string, string> = { ALTA: '#ef4444', MEDIA: '#f59e0b', BAJA: '#6b7280', TEMPORAL: '#a855f7' };
 
-const emptyForm = () => ({ codigoInterno: '', descripcion: '', categoria: 'MATERIA PRIMA', rotacion: 'MEDIA', alertaKilos: '', unidadPrincipal: 'KG', unidadSecundaria: '', trackLot: false });
+const TONOS = [
+    { value: '', label: '— Sin tono —' },
+    { value: 'AMARILLO', label: '🟡 Amarillo' },
+    { value: 'NARANJA', label: '🟠 Naranja' },
+    { value: 'AZUL', label: '🔵 Azul' },
+    { value: 'ROJO', label: '🔴 Rojo' },
+    { value: 'VERDE', label: '🟢 Verde' },
+    { value: 'MARRÓN', label: '🟫 Marrón' },
+    { value: 'GRIS', label: '🔘 Gris' },
+    { value: 'VIOLETA', label: '🟣 Violeta' },
+    { value: 'ROSA', label: '🌸 Rosa' },
+    { value: 'CELESTE', label: '🩵 Celeste' },
+    { value: 'BLANCO', label: '⬜ Blanco' },
+    { value: 'NEGRO', label: '⬛ Negro' },
+];
+
+const emptyForm = () => ({ codigoInterno: '', descripcion: '', categoria: 'MATERIA PRIMA', rotacion: 'MEDIA', alertaKilos: '', unidadPrincipal: 'KG', unidadSecundaria: '', tono: '' });
 
 export default function MaterialesPage() {
     const [q, setQ] = useState('');
@@ -22,13 +43,13 @@ export default function MaterialesPage() {
 
     const openCreate = () => { setForm(emptyForm()); setEditTarget(null); setModal('create'); };
     const openEdit = (item: any) => {
-        setForm({ codigoInterno: item.codigoInterno, descripcion: item.descripcion, categoria: item.categoria, rotacion: item.rotacion, alertaKilos: item.alertaKilos ?? '', unidadPrincipal: item.unidadPrincipal, unidadSecundaria: item.unidadSecundaria ?? '', trackLot: item.trackLot });
+        setForm({ codigoInterno: item.codigoInterno, descripcion: item.descripcion, categoria: item.categoria, rotacion: item.rotacion, alertaKilos: item.alertaKilos ?? '', unidadPrincipal: item.unidadPrincipal, unidadSecundaria: item.unidadSecundaria ?? '', tono: item.tono ?? '' });
         setEditTarget(item); setModal('edit');
     };
 
     const save = async () => {
         setSaving(true); setError('');
-        const dto = { ...form, alertaKilos: form.alertaKilos ? Number(form.alertaKilos) : undefined };
+        const dto = { ...form, alertaKilos: form.alertaKilos ? Number(form.alertaKilos) : undefined, tono: form.tono || null };
         try {
             if (modal === 'edit') await updateItem({ id: editTarget.id, data: dto }).unwrap();
             else await createItem(dto).unwrap();
@@ -77,7 +98,7 @@ export default function MaterialesPage() {
                 <Card>
                 <Table
                     loading={isLoading}
-                    cols={['Material', 'Categoría', 'Rotación', 'Min. Stock', 'Unid.', 'Lote', '']}
+                    cols={['Material', 'Categoría', 'Rotación', 'Min. Stock', 'Unid.', 'Tono', '']}
                     rows={items.map((it: any) => [
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span style={{ color: '#f3f4f6', fontWeight: 600 }}>{it.descripcion}</span>
@@ -90,7 +111,7 @@ export default function MaterialesPage() {
                             {it.unidadPrincipal}
                             {it.unidadSecundaria && <span style={{ opacity: 0.6 }}> / {it.unidadSecundaria}</span>}
                         </div>,
-                        it.trackLot ? <Badge color="#34d399">SÍ</Badge> : <Badge color="#4b5563">NO</Badge>,
+                        it.tono ? <Badge color="#7c3aed">{it.tono}</Badge> : <span style={{ color: '#4b5563' }}>—</span>,
                         <div style={{ display: 'flex', gap: '8px' }}>
                             <Btn small variant="secondary" onClick={() => openEdit(it)}>✏️</Btn>
                             <Btn small variant="danger" onClick={() => { if (window.confirm('¿Eliminar material?')) deleteItem(it.id); }}>🗑</Btn>
@@ -146,10 +167,7 @@ export default function MaterialesPage() {
                             <Input label="Unid. Principal" value={form.unidadPrincipal} onChange={v => setForm(p => ({ ...p, unidadPrincipal: v }))} placeholder="KG" />
                             <Input label="Unid. Secundaria" value={form.unidadSecundaria} onChange={v => setForm(p => ({ ...p, unidadSecundaria: v }))} placeholder="Opcional: Unidades" />
                         </div>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#d1d5db', cursor: 'pointer' }}>
-                            <input type="checkbox" checked={form.trackLot} onChange={e => setForm(p => ({ ...p, trackLot: e.target.checked }))} style={{ accentColor: '#6366f1' }} />
-                            Trazabilidad obligatoria (Lotes)
-                        </label>
+                        <Select label="Tono (opcional)" value={form.tono} onChange={v => setForm(p => ({ ...p, tono: v }))} options={TONOS} />
                         {error && <p style={{ color: '#f87171', fontSize: '13px', margin: 0 }}>⚠️ {error}</p>}
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #2a2d3e', paddingTop: '16px' }}>
                             <Btn variant="secondary" onClick={() => setModal(null)}>Cancelar</Btn>
