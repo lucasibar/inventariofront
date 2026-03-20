@@ -26,7 +26,7 @@ const TONOS = [
     { value: 'NEGRO', label: '⬛ Negro' },
 ];
 
-const emptyForm = () => ({ codigoInterno: '', descripcion: '', categoria: 'MATERIA PRIMA', rotacion: 'MEDIA', alertaKilos: '', unidadPrincipal: 'KG', unidadSecundaria: '', tono: '' });
+const emptyForm = () => ({ codigoInterno: '', descripcion: '', categoria: 'MATERIA PRIMA', rotacion: 'MEDIA', stockMinimo: '', unidadPrincipal: 'KG', unidadSecundaria: '', tono: '' });
 
 export default function MaterialesPage() {
     const [q, setQ] = useState('');
@@ -43,13 +43,13 @@ export default function MaterialesPage() {
 
     const openCreate = () => { setForm(emptyForm()); setEditTarget(null); setModal('create'); };
     const openEdit = (item: any) => {
-        setForm({ codigoInterno: item.codigoInterno, descripcion: item.descripcion, categoria: item.categoria, rotacion: item.rotacion, alertaKilos: item.alertaKilos ?? '', unidadPrincipal: item.unidadPrincipal, unidadSecundaria: item.unidadSecundaria ?? '', tono: item.tono ?? '' });
+        setForm({ codigoInterno: item.codigoInterno, descripcion: item.descripcion, categoria: item.categoria, rotacion: item.rotacion, stockMinimo: item.stockMinimo ?? '', unidadPrincipal: item.unidadPrincipal, unidadSecundaria: item.unidadSecundaria ?? '', tono: item.tono ?? '' });
         setEditTarget(item); setModal('edit');
     };
 
     const save = async () => {
         setSaving(true); setError('');
-        const dto = { ...form, alertaKilos: form.alertaKilos ? Number(form.alertaKilos) : undefined, tono: form.tono || null };
+        const dto = { ...form, stockMinimo: form.stockMinimo ? Number(form.stockMinimo) : undefined, tono: form.tono || null };
         try {
             if (modal === 'edit') await updateItem({ id: editTarget.id, data: dto }).unwrap();
             else await createItem(dto).unwrap();
@@ -106,7 +106,7 @@ export default function MaterialesPage() {
                         </div>,
                         <Badge>{it.categoria}</Badge>,
                         <Badge color={ROT_COLORS[it.rotacion] ?? '#6b7280'}>{it.rotacion}</Badge>,
-                        it.alertaKilos ? <span style={{ color: '#ef4444', fontWeight: 600 }}>{it.alertaKilos} kg</span> : <span style={{ color: '#4b5563' }}>—</span>,
+                        it.stockMinimo ? <span style={{ color: '#ef4444', fontWeight: 600 }}>{it.stockMinimo}</span> : <span style={{ color: '#4b5563' }}>—</span>,
                         <div style={{ fontSize: '12px', color: '#9ca3af' }}>
                             {it.unidadPrincipal}
                             {it.unidadSecundaria && <span style={{ opacity: 0.6 }}> / {it.unidadSecundaria}</span>}
@@ -140,8 +140,8 @@ export default function MaterialesPage() {
                         </div>
                         <div style={{ borderTop: '1px solid #1e2133', paddingTop: '12px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ fontSize: '12px' }}>
-                                <span style={{ color: '#6b7280' }}>Alerta: </span>
-                                {it.alertaKilos ? <span style={{ color: '#ef4444', fontWeight: 600 }}>{it.alertaKilos} kg</span> : '—'}
+                                <span style={{ color: '#6b7280' }}>Mín. Stock: </span>
+                                {it.stockMinimo ? <span style={{ color: '#ef4444', fontWeight: 600 }}>{it.stockMinimo}</span> : '—'}
                             </div>
                             <div style={{ display: 'flex', gap: '8px' }}>
                                 <Btn small variant="secondary" onClick={() => openEdit(it)}>✏️ Editar</Btn>
@@ -161,7 +161,7 @@ export default function MaterialesPage() {
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                             <Select label="Rotación" value={form.rotacion} onChange={v => setForm(p => ({ ...p, rotacion: v }))} options={ROTACIONES} />
-                            <Input label="Mínimo Stock (kg)" type="number" value={String(form.alertaKilos)} onChange={v => setForm(p => ({ ...p, alertaKilos: v }))} placeholder="0" />
+                            <Input label="Stock Mínimo" type="number" value={String(form.stockMinimo)} onChange={v => setForm(p => ({ ...p, stockMinimo: v }))} placeholder="0" />
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                             <Input label="Unid. Principal" value={form.unidadPrincipal} onChange={v => setForm(p => ({ ...p, unidadPrincipal: v }))} placeholder="KG" />

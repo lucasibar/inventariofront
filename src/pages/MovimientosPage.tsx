@@ -139,9 +139,7 @@ export default function MovimientosPage() {
             <EditableCell numeric value={String(m.kilos)} onSave={val => handleEditKilos(val, m)} /> kg
         </div>,
         <div style={{ color: '#9ca3af' }}>
-            {m.item?.trackLot ? (
-                <><EditableCell numeric value={String(m.unidades || 0)} onSave={val => handleEditUnidades(val, m)} /> un.</>
-            ) : '—'}
+            <EditableCell numeric value={String(m.unidades || 0)} onSave={val => handleEditUnidades(val, m)} /> un.
         </div>,
         <Btn small onClick={() => handleTransferClick(m, source)} style={{ padding: '4px 8px' }}>
             {source === 'left' ? 'Mover ➔' : '⬅ Mover'}
@@ -225,15 +223,13 @@ export default function MovimientosPage() {
                             onChange={setTransferKilos} 
                             style={{ flex: 1 }}
                         />
-                        {transferModal.item.item.trackLot && (
-                            <Input 
+                        <Input 
                                 label={`Unidades a transferir (Disp: ${transferModal.item.unidades || 0})`}
                                 type="number" 
                                 value={transferUnidades} 
                                 onChange={setTransferUnidades} 
                                 style={{ flex: 1 }}
                             />
-                        )}
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                         <Btn variant="secondary" onClick={() => setTransferModal(null)}>Cancelar</Btn>

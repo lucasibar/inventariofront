@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
-    Button, TextField, MenuItem, FormControlLabel, Typography, Box
+    Button, TextField, MenuItem, Typography, Box
 } from '@mui/material';
 import { useCreateItemMutation } from '../../items/api/items.api';
 import { useLazySearchPartnersQuery } from '../api/remito.api';
@@ -31,10 +31,9 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
         descripcion: '',
         categoria: 'MATERIA PRIMA',
         rotacion: 'MEDIA',
-        alertaKilos: '',
+        stockMinimo: '',
         unidadPrincipal: 'KG',
         unidadSecundaria: '',
-        trackLot: false,
         supplierId: initialSupplierId || '',
         supplierName: initialSupplierName || ''
     });
@@ -55,7 +54,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
         try {
             const newItem = await createItem({
                 ...form,
-                alertaKilos: form.alertaKilos ? Number(form.alertaKilos) : undefined
+                stockMinimo: form.stockMinimo ? Number(form.stockMinimo) : undefined
             }).unwrap();
             if (onSuccess) onSuccess(newItem);
             onClose();
@@ -64,10 +63,9 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                 descripcion: '',
                 categoria: 'MATERIA PRIMA',
                 rotacion: 'MEDIA',
-                alertaKilos: '',
+                stockMinimo: '',
                 unidadPrincipal: 'KG',
                 unidadSecundaria: '',
-                trackLot: false,
                 supplierId: '',
                 supplierName: ''
             });
@@ -140,8 +138,8 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                             fullWidth
                             variant="filled"
                             placeholder="Ej: 100"
-                            value={form.alertaKilos}
-                            onChange={(e) => setForm({ ...form, alertaKilos: e.target.value })}
+                            value={form.stockMinimo}
+                            onChange={(e) => setForm({ ...form, stockMinimo: e.target.value })}
                         />
                     </Box>
                     <Box>

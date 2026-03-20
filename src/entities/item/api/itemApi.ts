@@ -19,7 +19,6 @@ export interface Item {
     cantidadPrincipal: number;
     unidadSecundaria: string | null;
     cantidadSecundaria: number | null;
-    trackLot: boolean;
     activo: boolean;
 }
 
@@ -31,7 +30,6 @@ export interface CreateItemDto {
     cantidadPrincipal: number;
     unidadSecundaria: string | null;
     cantidadSecundaria: number | null;
-    trackLot: boolean;
 }
 
 export const itemApi = api.injectEndpoints({

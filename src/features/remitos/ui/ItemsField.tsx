@@ -1,7 +1,7 @@
 
 import {
     Box, Button, Typography, IconButton, TextField,
-    Divider, Tooltip, Autocomplete
+    Divider, Autocomplete, ListItem, ListItemText
 } from '@mui/material';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -11,6 +11,8 @@ import type { ItemCategory } from '../model/create-remito.dto';
 import { useState, useMemo } from 'react';
 import { CreateItemDialog } from './CreateItemDialog';
 import { useGetItemsQuery } from '../../items/api/items.api';
+
+const CREATE_OPTION = { __isCreateOption: true, codigoInterno: '', descripcion: '+ Agregar nuevo material', id: '__CREATE__' };
 
 export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
     const { control, register, setValue, watch } = useFormContext();
@@ -26,16 +28,11 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
     const { data: allItems = [] } = useGetItemsQuery({});
 
     const availableItems = useMemo(() => {
-        if (!supplierId) return allItems;
-        // Filter items by supplier if the item object contains supplier info
-        // Or show all if no specific field exists, but the user implies a relation
-        return allItems.filter((it: any) => !it.supplierId || it.supplierId === supplierId);
+        const base = !supplierId
+            ? allItems
+            : allItems.filter((it: any) => !it.supplierId || it.supplierId === supplierId);
+        return [...base, CREATE_OPTION];
     }, [allItems, supplierId]);
-
-    const handleNewMaterial = (index: number) => {
-        setActiveItemIndex(index);
-        setIsDialogOpen(true);
-    };
 
     const handleMaterialCreated = (newItem: any) => {
         if (activeItemIndex !== null) {
@@ -62,7 +59,6 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                         kilos: 0,
                         unidades: 0,
                         categoria: 'SUPPLY',
-                        trackLot: false,
                         lotNumber: ''
                     })}
                     sx={{ fontWeight: 600 }}
@@ -75,41 +71,79 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                 <Box key={field.id} sx={{ mb: 3, p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', position: 'relative' }}>
                     <Box sx={{
                         display: 'grid',
-                        gridTemplateColumns: { xs: '1fr', sm: '2.5fr 3.5fr 1fr 1fr 2fr 1.2fr' },
+                        gridTemplateColumns: { xs: '1fr', sm: '2.5fr 3.5fr 1fr 1fr 2fr auto' },
                         gap: 1.5,
                         alignItems: 'flex-start'
                     }}>
                         <Box>
-                                <Autocomplete
-                                    options={availableItems}
-                                    getOptionLabel={(option: any) => `${option.codigoInterno} - ${option.descripcion}`}
-                                    filterOptions={(options, { inputValue }) => {
-                                        const search = inputValue.toLowerCase();
-                                        return options.filter(option => 
-                                            option.codigoInterno.toLowerCase().includes(search) || 
+                            <Autocomplete
+                                options={availableItems}
+                                getOptionLabel={(option: any) => {
+                                    if (option.__isCreateOption) return option.descripcion;
+                                    return `${option.codigoInterno} - ${option.descripcion}`;
+                                }}
+                                filterOptions={(options, { inputValue }) => {
+                                    const search = inputValue.toLowerCase();
+                                    const filtered = options.filter((option: any) => {
+                                        if (option.__isCreateOption) return true;
+                                        return (
+                                            option.codigoInterno.toLowerCase().includes(search) ||
                                             option.descripcion.toLowerCase().includes(search)
                                         );
-                                    }}
-                                    onChange={(_, newValue: any) => {
-                                        if (newValue) {
-                                            setValue(`lines.${index}.codigoInterno`, newValue.codigoInterno);
-                                            setValue(`lines.${index}.descripcion`, newValue.descripcion);
-                                            setValue(`lines.${index}.categoria`, newValue.categoria);
-                                            setValue(`lines.${index}.itemId`, newValue.id);
-                                        }
-                                    }}
-                                    renderInput={(params) => (
-                                        <TextField
-                                            {...params}
-                                            label="Material"
-                                            variant="filled"
-                                            size="small"
-                                            placeholder="Buscar por código o nombre..."
-                                            InputLabelProps={{ shrink: true }}
-                                            {...register(`lines.${index}.codigoInterno` as const, { required: true })}
-                                        />
-                                    )}
-                                />
+                                    });
+                                    return filtered;
+                                }}
+                                renderOption={(props, option: any) => {
+                                    if (option.__isCreateOption) {
+                                        return (
+                                            <ListItem
+                                                {...props}
+                                                key="__CREATE__"
+                                                sx={{
+                                                    borderTop: '1px solid',
+                                                    borderColor: 'divider',
+                                                    color: 'primary.main',
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                <AddCircleOutlineIcon fontSize="small" sx={{ mr: 1 }} />
+                                                <ListItemText primary="Agregar nuevo material" />
+                                            </ListItem>
+                                        );
+                                    }
+                                    return (
+                                        <ListItem {...props} key={option.id}>
+                                            <ListItemText
+                                                primary={option.codigoInterno}
+                                                secondary={option.descripcion}
+                                            />
+                                        </ListItem>
+                                    );
+                                }}
+                                onChange={(_, newValue: any) => {
+                                    if (!newValue) return;
+                                    if (newValue.__isCreateOption) {
+                                        setActiveItemIndex(index);
+                                        setIsDialogOpen(true);
+                                        return;
+                                    }
+                                    setValue(`lines.${index}.codigoInterno`, newValue.codigoInterno);
+                                    setValue(`lines.${index}.descripcion`, newValue.descripcion);
+                                    setValue(`lines.${index}.categoria`, newValue.categoria);
+                                    setValue(`lines.${index}.itemId`, newValue.id);
+                                }}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Material"
+                                        variant="filled"
+                                        size="small"
+                                        placeholder="Buscar o agregar..."
+                                        InputLabelProps={{ shrink: true }}
+                                        {...register(`lines.${index}.codigoInterno` as const, { required: true })}
+                                    />
+                                )}
+                            />
                         </Box>
                         <Box>
                             <TextField
@@ -152,12 +186,7 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                 {...register(`lines.${index}.lotNumber` as const)}
                             />
                         </Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: { xs: 0, sm: 1 } }}>
-                            <Tooltip title="Nuevo Material">
-                                <IconButton size="small" color="primary" onClick={() => handleNewMaterial(index)}>
-                                    <AddCircleOutlineIcon fontSize="small" />
-                                </IconButton>
-                            </Tooltip>
+                        <Box sx={{ display: 'flex', alignItems: 'center', pt: { xs: 0, sm: 0.5 } }}>
                             <IconButton size="small" color="error" onClick={() => remove(index)}>
                                 <DeleteIcon fontSize="small" />
                             </IconButton>

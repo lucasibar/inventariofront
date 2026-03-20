@@ -27,5 +27,4 @@ export interface RemitoLineDto {
     kilos: number;
     unidades?: number;
     categoria?: ItemCategory;
-    trackLot?: boolean;
 }

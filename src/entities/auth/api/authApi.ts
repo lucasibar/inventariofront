@@ -13,7 +13,7 @@ export interface LoginResponse {
 
 export interface LoginRequest {
     username: string;
-    pass: string; // Matching backend expectation (though usually password)
+    pass: string;
 }
 
 export const authApi = api.injectEndpoints({
@@ -25,7 +25,11 @@ export const authApi = api.injectEndpoints({
                 body: { username: credentials.username, password: credentials.pass },
             }),
         }),
+        verifySession: build.query<User, void>({
+            query: () => 'auth/me',
+        }),
     }),
 });
 
-export const { useLoginMutation } = authApi;
+export const { useLoginMutation, useVerifySessionQuery } = authApi;
+

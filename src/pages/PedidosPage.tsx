@@ -69,7 +69,7 @@ export default function PedidosPage() {
                 <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                     <span style={{ color: '#f87171', fontWeight: 700, fontSize: '13px' }}>⚠️ Alertas de stock bajo:</span>
                     {alerts.map((a: any) => (
-                        <span key={a.itemId} style={{ color: '#fca5a5', fontSize: '12px' }}>{a.descripcion}: {Number(a.stockActual).toFixed(1)} / {Number(a.alertaKilos).toFixed(1)} kg</span>
+                        <span key={a.itemId} style={{ color: '#fca5a5', fontSize: '12px' }}>{a.descripcion}: {Number(a.stockActual).toFixed(1)} / {Number(a.stockMinimo).toFixed(1)}</span>
                     ))}
                 </div>
             )}

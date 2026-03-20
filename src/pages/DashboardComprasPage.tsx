@@ -14,7 +14,7 @@ export default function DashboardComprasPage() {
     const media = filtered.filter((c: any) => c.rotacion === 'MEDIA');
 
     const StockBar = ({ item }: { item: any }) => {
-        const pct = item.alertaKilos ? Math.min(100, (item.stockActual / item.alertaKilos) * 100) : 100;
+        const pct = item.stockMinimo ? Math.min(100, (item.stockActual / item.stockMinimo) * 100) : 100;
         const color = pct < 50 ? '#ef4444' : pct < 80 ? '#f59e0b' : '#34d399';
         return (
             <div>
@@ -30,7 +30,7 @@ export default function DashboardComprasPage() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#6b7280' }}>
                     <span style={{ color }}>{Number(item.stockActual).toFixed(1)} kg</span>
-                    {item.alertaKilos && <span>mín: {Number(item.alertaKilos).toFixed(1)} kg</span>}
+                    {item.stockMinimo && <span>mín: {Number(item.stockMinimo).toFixed(1)}</span>}
                 </div>
             </div>
         );
