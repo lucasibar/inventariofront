@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useGetItemsQuery, useCreateItemMutation, useUpdateItemMutation, useDeleteItemMutation } from '../features/items/api/items.api';
 import { PageHeader, Card, Btn, Input, Select, Modal, Table, Badge, SearchBar, Spinner } from './common/ui';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
+import { useGetBoxTypesQuery } from '../features/items/api/box-types.api';
 
 const ROTACIONES = [
     { value: 'ALTA', label: '🔴 Alta' },
@@ -27,12 +28,32 @@ const TONOS = [
     { value: 'NEGRO', label: '⬛ Negro' },
 ];
 
-const emptyForm = () => ({ codigoInterno: '', descripcion: '', categoria: 'MATERIA PRIMA', rotacion: 'MEDIA', stockMinimo: '', unidadPrincipal: 'KG', unidadSecundaria: '', tono: '', supplierId: '' });
+const CATEGORIAS = [
+    { value: 'MATERIA PRIMA', label: '📦 Materia Prima' },
+    { value: 'PRODUCTO TERMINADO', label: '🏭 Producto Terminado' },
+    { value: 'INSUMO', label: '🛠 Insumo' },
+    { value: 'REPUESTO', label: '⚙️ Repuesto' },
+    { value: 'OTROS', label: '✨ Otros' },
+];
+
+const emptyForm = () => ({ 
+    codigoInterno: '', 
+    descripcion: '', 
+    categoria: 'MATERIA PRIMA', 
+    rotacion: 'MEDIA', 
+    stockMinimo: '', 
+    unidadPrincipal: 'KG', 
+    unidadSecundaria: '', 
+    tono: '', 
+    supplierId: '', 
+    boxTypeId: '' 
+});
 
 export default function MaterialesPage() {
     const [q, setQ] = useState('');
     const { data: items = [], isLoading } = useGetItemsQuery({ q: q || undefined });
     const { data: suppliers = [] } = useGetPartnersQuery({ type: 'SUPPLIER' });
+    const { data: boxTypes = [] } = useGetBoxTypesQuery();
     const [createItem] = useCreateItemMutation();
     const [updateItem] = useUpdateItemMutation();
     const [deleteItem] = useDeleteItemMutation();
@@ -45,13 +66,29 @@ export default function MaterialesPage() {
 
     const openCreate = () => { setForm(emptyForm()); setEditTarget(null); setModal('create'); };
     const openEdit = (item: any) => {
-        setForm({ codigoInterno: item.codigoInterno, descripcion: item.descripcion, categoria: item.categoria, rotacion: item.rotacion, stockMinimo: item.stockMinimo ?? '', unidadPrincipal: item.unidadPrincipal, unidadSecundaria: item.unidadSecundaria ?? '', tono: item.tono ?? '', supplierId: item.supplierId ?? '' });
+        setForm({ 
+            codigoInterno: item.codigoInterno, 
+            descripcion: item.descripcion, 
+            categoria: item.categoria, 
+            rotacion: item.rotacion, 
+            stockMinimo: item.stockMinimo ?? '', 
+            unidadPrincipal: item.unidadPrincipal, 
+            unidadSecundaria: item.unidadSecundaria ?? '', 
+            tono: item.tono ?? '', 
+            supplierId: item.supplierId ?? '',
+            boxTypeId: item.boxTypeId ?? ''
+        });
         setEditTarget(item); setModal('edit');
     };
 
     const save = async () => {
         setSaving(true); setError('');
-        const dto = { ...form, stockMinimo: form.stockMinimo ? Number(form.stockMinimo) : undefined, tono: form.tono || null };
+        const dto = { 
+            ...form, 
+            stockMinimo: form.stockMinimo ? Number(form.stockMinimo) : undefined, 
+            tono: form.tono || null,
+            boxTypeId: form.boxTypeId || null
+        };
         try {
             if (modal === 'edit') await updateItem({ id: editTarget.id, data: dto }).unwrap();
             else await createItem(dto).unwrap();
@@ -61,13 +98,13 @@ export default function MaterialesPage() {
     };
 
     return (
-        <div className="materiales-container" style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+        <div className="materiales-container" style={{ padding: '24px', maxWidth: '1240px', margin: '0 auto' }}>
             <style>{`
                 .materiales-container { font-family: 'Inter', sans-serif; }
                 .mobile-card-grid { display: none; grid-template-columns: 1fr; gap: 16px; }
-                .desktop-table { display: table; width: 100%; border-collapse: collapse; }
+                .desktop-table { display: table; width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 12px; }
                 
-                @media (max-width: 900px) {
+                @media (max-width: 1000px) {
                     .desktop-table { display: none; }
                     .mobile-card-grid { display: grid; }
                     .header-top { flex-direction: column; align-items: stretch !important; gap: 16px !important; }
@@ -100,14 +137,16 @@ export default function MaterialesPage() {
                 <Card>
                 <Table
                     loading={isLoading}
-                    cols={['Material', 'Proveedor', 'Rotación', 'Min. Stock', 'Unid.', 'Tono', '']}
+                    cols={['Material', 'Proveedor', 'Categoría', 'Rotación', 'Caja', 'Mínimo', 'Unid.', 'Tono', '']}
                     rows={items.map((it: any) => [
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span style={{ color: '#f3f4f6', fontWeight: 600 }}>{it.descripcion}</span>
                             <code style={{ color: '#a5b4fc', fontSize: '11px' }}>{it.codigoInterno}</code>
                         </div>,
                         <div style={{ fontSize: '12px', color: '#9ca3af' }}>{it.supplier?.name || <span style={{ opacity: 0.5 }}>S/P</span>}</div>,
+                        <div style={{ fontSize: '12px', color: '#9ca3af' }}>{it.categoria}</div>,
                         <Badge color={ROT_COLORS[it.rotacion] ?? '#6b7280'}>{it.rotacion}</Badge>,
+                        <div style={{ fontSize: '12px', color: '#a5b4fc' }}>{it.boxType?.nombre || <span style={{ opacity: 0.4 }}>Sin asignar</span>}</div>,
                         it.stockMinimo ? <span style={{ color: '#ef4444', fontWeight: 600 }}>{it.stockMinimo}</span> : <span style={{ color: '#4b5563' }}>—</span>,
                         <div style={{ fontSize: '12px', color: '#9ca3af' }}>
                             {it.unidadPrincipal}
@@ -139,7 +178,7 @@ export default function MaterialesPage() {
                         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                             <Badge color="#34d399">{it.supplier?.name || 'Sin Proveedor'}</Badge>
                             <Badge>{it.categoria}</Badge>
-                            <span style={{ fontSize: '12px', color: '#9ca3af' }}>{it.unidadPrincipal} {it.unidadSecundaria ? ` / ${it.unidadSecundaria}` : ''}</span>
+                            {it.boxType && <Badge color="#6366f1">📦 {it.boxType.nombre}</Badge>}
                         </div>
                         <div style={{ borderTop: '1px solid #1e2133', paddingTop: '12px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ fontSize: '12px' }}>
@@ -157,38 +196,45 @@ export default function MaterialesPage() {
 
             {modal && (
                 <Modal title={modal === 'edit' ? 'Editar Material' : 'Nuevo Material'} onClose={() => setModal(null)}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                            <Input label="Código interno" value={form.codigoInterno} onChange={v => setForm(p => ({ ...p, codigoInterno: v }))} placeholder="Ej: MAT-001" />
-                            <Input label="Descripción" value={form.descripcion} onChange={v => setForm(p => ({ ...p, descripcion: v }))} placeholder="Ej: Adhesivo Vinílico" />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <Input label="Código interno" value={form.codigoInterno} onChange={v => setForm(p => ({ ...p, codigoInterno: v }))} />
+                            <Input label="Descripción" value={form.descripcion} onChange={v => setForm(p => ({ ...p, descripcion: v }))} />
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <Select label="Categoría" value={form.categoria} onChange={v => setForm(p => ({ ...p, categoria: v }))} options={CATEGORIAS} />
                             <Select label="Rotación" value={form.rotacion} onChange={v => setForm(p => ({ ...p, rotacion: v }))} options={ROTACIONES} />
-                            <Input label="Stock Mínimo" type="number" value={String(form.stockMinimo)} onChange={v => setForm(p => ({ ...p, stockMinimo: v }))} placeholder="0" />
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                            <Input label="Unid. Principal" value={form.unidadPrincipal} onChange={v => setForm(p => ({ ...p, unidadPrincipal: v }))} placeholder="KG" />
-                            <Input label="Unid. Secundaria" value={form.unidadSecundaria} onChange={v => setForm(p => ({ ...p, unidadSecundaria: v }))} placeholder="Opcional: Unidades" />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <Input label="Stock Mínimo" type="number" value={String(form.stockMinimo)} onChange={v => setForm(p => ({ ...p, stockMinimo: v }))} />
+                            <Select label="Tono (Opcional)" value={form.tono} onChange={v => setForm(p => ({ ...p, tono: v }))} options={TONOS} />
                         </div>
-                        <Select label="Tono (opcional)" value={form.tono} onChange={v => setForm(p => ({ ...p, tono: v }))} options={TONOS} />
-                        <Select 
-                            label="Proveedor (opcional)" 
-                            value={form.supplierId} 
-                            onChange={v => setForm(p => ({ ...p, supplierId: v }))} 
-                            options={[
-                                { value: '', label: '— Sin proveedor —' },
-                                ...suppliers.map((s: any) => ({ value: s.id, label: s.name }))
-                            ]} 
-                        />
-                        {error && <p style={{ color: '#f87171', fontSize: '13px', margin: 0 }}>⚠️ {error}</p>}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <Input label="Unid. Principal" value={form.unidadPrincipal} onChange={v => setForm(p => ({ ...p, unidadPrincipal: v }))} />
+                            <Input label="Unid. Secundaria" value={form.unidadSecundaria} onChange={v => setForm(p => ({ ...p, unidadSecundaria: v }))} />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <Select 
+                                label="Proveedor" 
+                                value={form.supplierId} 
+                                onChange={v => setForm(p => ({ ...p, supplierId: v }))} 
+                                options={[{ value: '', label: '— Sin proveedor —' }, ...suppliers.map((s: any) => ({ value: s.id, label: s.name }))]} 
+                            />
+                            <Select 
+                                label="Caja (Opcional)" 
+                                value={form.boxTypeId} 
+                                onChange={v => setForm(p => ({ ...p, boxTypeId: v }))} 
+                                options={[{ value: '', label: '— Por definir —' }, ...boxTypes.map((b: any) => ({ value: b.id, label: b.nombre }))]} 
+                            />
+                        </div>
+                        {error && <p style={{ color: '#f87171', fontSize: '12px' }}>⚠️ {error}</p>}
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #2a2d3e', paddingTop: '16px' }}>
                             <Btn variant="secondary" onClick={() => setModal(null)}>Cancelar</Btn>
-                            <Btn onClick={save} disabled={saving}>{saving ? '...' : 'Guardar Material'}</Btn>
+                            <Btn onClick={save} disabled={saving}>{saving ? 'Guardando...' : 'Guardar Material'}</Btn>
                         </div>
                     </div>
                 </Modal>
             )}
         </div>
     );
-
 }

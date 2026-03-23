@@ -12,6 +12,9 @@ import DashboardComprasPage from './pages/DashboardComprasPage';
 import MaterialesPage from './pages/MaterialesPage';
 import SociosPage from './pages/SociosPage';
 import AuditoriaPickingPage from './pages/AuditoriaPickingPage';
+import BoxTypesPage from './pages/BoxTypesPage';
+import CapacityDashboardPage from './pages/CapacityDashboardPage';
+import WorkspaceTasksPage from './pages/WorkspaceTasksPage';
 
 import MovimientosPage from './pages/MovimientosPage';
 import StockQueryPage from './pages/StockQueryPage';
@@ -33,9 +36,12 @@ function App() {
             <Route path="/remitos-salida" element={<RemitosSalidaPage />} />
             <Route path="/dashboard" element={<DashboardComprasPage />} />
             <Route path="/items" element={<MaterialesPage />} />
+            <Route path="/items/box-types" element={<BoxTypesPage />} />
             <Route path="/socios" element={<SociosPage />} />
             <Route path="/movimientos" element={<MovimientosPage />} />
             <Route path="/consultas" element={<StockQueryPage />} />
+            <Route path="/dashboard/capacity" element={<CapacityDashboardPage />} />
+            <Route path="/tasks" element={<WorkspaceTasksPage />} />
 
           </Route>
         </Route>

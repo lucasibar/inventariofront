@@ -109,9 +109,8 @@ export default function DepositoPage() {
     const handleAddPosition = async (depotId: string) => {
         const codigo = prompt('Ingrese el código de la nueva posición:');
         if (!codigo) return;
-        const categoria = prompt('Ingrese categoría (stock, picking, entrada):', 'stock');
         try {
-            await createPosition({ depotId, data: { codigo, tipo: 'STORAGE', categoria: categoria || 'stock' } }).unwrap();
+            await createPosition({ depotId, data: { codigo, tipo: 'STORAGE', categoriaPrincipal: 'stock' } }).unwrap();
             refetch();
         } catch (e) { console.error(e); }
     };
@@ -194,9 +193,10 @@ export default function DepositoPage() {
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead style={{ position: 'sticky', top: 0, background: '#1a1d2e', zIndex: 1 }}>
                                     <tr style={{ borderBottom: '1px solid #2a2d3e' }}>
-                                        <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', color: '#6b7280' }}>CÓDIGO (EDITABLE)</th>
-                                        <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', color: '#6b7280' }}>TIPO</th>
-                                        <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', color: '#6b7280' }}>CATEGORÍA</th>
+                                        <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', color: '#6b7280' }}>CÓDIGO</th>
+                                        <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', color: '#6b7280' }}>CAPACIDAD (m3)</th>
+                                        <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', color: '#6b7280' }}>Cat. Principal</th>
+                                        <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', color: '#6b7280' }}>Cat. Secundaria</th>
                                         <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: '11px', color: '#6b7280' }}>ESTADO</th>
                                     </tr>
                                 </thead>
@@ -214,21 +214,54 @@ export default function DepositoPage() {
                                                     }} 
                                                 />
                                             </td>
-                                            <td style={{ padding: '8px 16px', color: '#9ca3af', fontSize: '12px' }}>{p.tipo}</td>
-                                            <td style={{ padding: '8px 16px', color: '#9ca3af', fontSize: '12px' }}>
+                                            <td style={{ padding: '8px 16px' }}>
+                                                <EditableCell 
+                                                    value={p.metrosCubicos?.toString() || ''} 
+                                                    label="Volumen"
+                                                    onSave={async (v) => {
+                                                        try {
+                                                            await updatePosition({ id: p.id, data: { metrosCubicos: parseFloat(v) || null } }).unwrap();
+                                                            refetch();
+                                                        } catch (e) { console.error(e); }
+                                                    }} 
+                                                />
+                                            </td>
+                                            <td style={{ padding: '8px 16px' }}>
                                                 <select 
-                                                    value={p.categoria || 'stock'} 
+                                                    value={p.categoriaPrincipal || 'stock'} 
                                                     onChange={async (e) => {
                                                         try { 
-                                                            await updatePosition({ id: p.id, data: { categoria: e.target.value } }).unwrap(); 
+                                                            await updatePosition({ id: p.id, data: { categoriaPrincipal: e.target.value } }).unwrap(); 
                                                             refetch();
                                                         } catch(err) { console.error(err); }
                                                     }}
-                                                    style={{ background: 'transparent', border: '1px solid #4b5563', color: '#f3f4f6', borderRadius: '4px', padding: '2px 4px', fontSize: '11px' }}
+                                                    style={{ background: '#0f1117', border: '1px solid #4b5563', color: '#f3f4f6', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', width: '100%' }}
                                                 >
-                                                    <option style={{color:'#000'}} value="stock">Stock</option>
-                                                    <option style={{color:'#000'}} value="picking">Picking</option>
-                                                    <option style={{color:'#000'}} value="entrada">Entrada</option>
+                                                    <option value="stock">Stock General</option>
+                                                    <option value="picking">Picking</option>
+                                                    <option value="entrada">Entrada / Recepción</option>
+                                                    <option value="MATERIA PRIMA">Materia Prima</option>
+                                                    <option value="PRODUCTO TERMINADO">Producto Terminado</option>
+                                                    <option value="INSUMO">Insumo</option>
+                                                </select>
+                                            </td>
+                                            <td style={{ padding: '8px 16px' }}>
+                                                <select 
+                                                    value={p.categoriaSecundaria || ''} 
+                                                    onChange={async (e) => {
+                                                        try { 
+                                                            await updatePosition({ id: p.id, data: { categoriaSecundaria: e.target.value || null } }).unwrap(); 
+                                                            refetch();
+                                                        } catch(err) { console.error(err); }
+                                                    }}
+                                                    style={{ background: '#0f1117', border: '1px solid #4b5563', color: '#f3f4f6', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', width: '100%' }}
+                                                >
+                                                    <option value="">— Ninguna —</option>
+                                                    <option value="stock">Stock General</option>
+                                                    <option value="picking">Picking</option>
+                                                    <option value="MATERIA PRIMA">Materia Prima</option>
+                                                    <option value="PRODUCTO TERMINADO">Producto Terminado</option>
+                                                    <option value="INSUMO">Insumo</option>
                                                 </select>
                                             </td>
                                             <td style={{ padding: '8px 16px', textAlign: 'center' }}>

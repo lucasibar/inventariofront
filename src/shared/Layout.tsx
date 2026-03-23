@@ -14,7 +14,10 @@ const navItems = [
     { to: '/movimientos', label: '🔄 Movimientos' },
     { to: '/consultas', label: '🔍 Consultas Intel' },
     { to: '/items', label: '🗂 Materiales' },
+    { to: '/items/box-types', label: '📦 Tipos de Caja' },
+    { to: '/dashboard/capacity', label: '📊 Medidores Capacidad' },
     { to: '/socios', label: '🤝 Proveedores/Clientes' },
+    { to: '/tasks', label: '✅ Mis Tareas' },
 ];
 
 const navStyle = (isActive: boolean): React.CSSProperties => ({

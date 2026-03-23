@@ -1,19 +1,11 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import {
-    Box,
-    Button,
-    TextField,
-    Typography,
-    Paper,
-    Container,
-    Alert
-} from '@mui/material';
 import { useLoginMutation } from '../../entities/auth/api/authApi';
 import { setCredentials, selectIsAuthenticated } from '../../entities/auth/model/authSlice';
+import { Card, Btn, Input, Spinner } from '../common/ui';
 
-export const LoginPage = () => {
+const LoginPage: React.FC = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
@@ -21,85 +13,118 @@ export const LoginPage = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const isAuthenticated = useSelector(selectIsAuthenticated);
-
     const [login, { isLoading }] = useLoginMutation();
 
     useEffect(() => {
         if (isAuthenticated) {
-            navigate('/');
+            navigate('/remitos-entrada');
         }
     }, [isAuthenticated, navigate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setErrorMsg('');
+        
+        if (!username || !password) {
+            setErrorMsg('Por favor, completa todos los campos.');
+            return;
+        }
+
         try {
             const userData = await login({ username, pass: password }).unwrap();
             dispatch(setCredentials({ user: userData.user, token: userData.access_token }));
-            navigate('/');
-        } catch (err) {
-            setErrorMsg('Credenciales inválidas. Intente nuevamente.');
+            navigate('/remitos-entrada');
+        } catch (err: any) {
             console.error('Login failed', err);
+            // Extraemos el mensaje del error de NestJS si existe
+            const message = err.data?.message || 'Error de conexión con el servidor';
+            setErrorMsg(Array.isArray(message) ? message[0] : message);
         }
     };
 
     return (
-        <Container component="main" maxWidth="xs">
-            <Box
-                sx={{
-                    marginTop: 8,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                }}
-            >
-                <Paper elevation={3} sx={{ p: 4, width: '100%', borderRadius: 2 }}>
-                    <Typography component="h1" variant="h5" align="center" gutterBottom>
-                        Inventario WMS
-                    </Typography>
-                    <Typography variant="body1" align="center" color="textSecondary" sx={{ mb: 3 }}>
-                        Iniciar Sesión
-                    </Typography>
+        <div style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'radial-gradient(circle at top right, #1e1b4b 0%, #0f1117 100%)',
+            padding: '20px'
+        }}>
+            <div style={{ width: '100%', maxWidth: '400px', animation: 'fadeIn 0.6s ease-out' }}>
+                <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                    <div style={{ 
+                        fontSize: '48px', 
+                        marginBottom: '16px',
+                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        fontWeight: 900,
+                        letterSpacing: '-1px'
+                    }}>
+                        WMS
+                    </div>
+                    <h1 style={{ color: '#f3f4f6', fontSize: '24px', margin: 0, fontWeight: 700 }}>Inventario Pro</h1>
+                    <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '8px' }}>Ingresa tus credenciales para continuar</p>
+                </div>
 
-                    {errorMsg && <Alert severity="error" sx={{ mb: 2 }}>{errorMsg}</Alert>}
+                <Card style={{ padding: '32px', border: '1px solid rgba(99, 102, 241, 0.2)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)' }}>
+                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                        
+                        {errorMsg && (
+                            <div style={{ 
+                                background: 'rgba(239, 68, 68, 0.1)', 
+                                border: '1px solid rgba(239, 68, 68, 0.2)', 
+                                color: '#f87171', 
+                                padding: '12px', 
+                                borderRadius: '8px', 
+                                fontSize: '13px',
+                                textAlign: 'center'
+                            }}>
+                                ⚠️ {errorMsg}
+                            </div>
+                        )}
 
-                    <Box component="form" onSubmit={handleSubmit} noValidate>
-                        <TextField
-                            margin="normal"
-                            required
-                            fullWidth
-                            id="username"
-                            label="Usuario"
-                            name="username"
-                            autoComplete="username"
-                            autoFocus
+                        <Input 
+                            label="Nombre de Usuario"
                             value={username}
-                            onChange={(e) => setUsername(e.target.value)}
+                            onChange={setUsername}
+                            placeholder="admin"
+                            style={{ width: '100%' }}
                         />
-                        <TextField
-                            margin="normal"
-                            required
-                            fullWidth
-                            name="password"
+
+                        <Input 
                             label="Contraseña"
                             type="password"
-                            id="password"
-                            autoComplete="current-password"
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={setPassword}
+                            placeholder="••••••••"
+                            style={{ width: '100%' }}
                         />
-                        <Button
-                            type="submit"
-                            fullWidth
-                            variant="contained"
-                            sx={{ mt: 3, mb: 2 }}
+
+                        <Btn 
+                            style={{ height: '44px', marginTop: '8px', fontSize: '15px' }}
                             disabled={isLoading}
                         >
-                            {isLoading ? 'Ingresando...' : 'Ingresar'}
-                        </Button>
-                    </Box>
-                </Paper>
-            </Box>
-        </Container>
+                            {isLoading ? <Spinner /> : 'Iniciar Sesión'}
+                        </Btn>
+                    </form>
+                </Card>
+
+                <div style={{ textAlign: 'center', marginTop: '24px', color: '#4b5563', fontSize: '12px' }}>
+                    &copy; 2026 Sistema de Gestión de Almacenes. Todos los derechos reservados.
+                </div>
+            </div>
+
+            <style>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+            `}</style>
+        </div>
     );
 };
+
+export default LoginPage;
+export { LoginPage }; // Keep both for compatibility
