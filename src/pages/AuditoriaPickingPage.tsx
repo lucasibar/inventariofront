@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useGetStockQuery, useSubmitPickingAuditMutation } from '../features/stock/api/stock.api';
 import { useGetDepotsQuery } from '../features/depots/api/depots.api';
-import { PageHeader, Card, Btn, Input, Badge } from './common/ui';
+import { PageHeader, Card, Btn, Badge } from './common/ui';
 
 export default function AuditoriaPickingPage() {
     const { data: depots = [] } = useGetDepotsQuery();

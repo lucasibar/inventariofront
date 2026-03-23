@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useGetOrdersQuery, useGetOrderQuery, useCreateOrderMutation, useDeleteOrderMutation } from '../features/orders/api/orders.api';
+import { useGetOrdersQuery, useCreateOrderMutation, useDeleteOrderMutation } from '../features/orders/api/orders.api';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
 import { useGetItemsQuery } from '../features/items/api/items.api';
 import { useGetAlertsQuery } from '../features/stock/api/stock.api';

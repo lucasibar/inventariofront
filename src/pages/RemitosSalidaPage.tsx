@@ -21,7 +21,7 @@ export default function RemitosSalidaPage() {
     const [clientName, setClientName] = useState('');
     const [newClient, setNewClient] = useState(false);
     const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
-    const [observaciones, setObservaciones] = useState('');
+    const [observaciones] = useState('');
     const [lines, setLines] = useState<{ itemId: string; kilos: string; unidades: string }[]>([{ itemId: '', kilos: '', unidades: '' }]);
     const [previewData, setPreviewData] = useState<any>(null);
     const [saving, setSaving] = useState(false);

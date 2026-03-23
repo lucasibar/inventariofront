@@ -7,7 +7,6 @@ import { useFieldArray, useFormContext } from 'react-hook-form';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import type { ItemCategory } from '../model/create-remito.dto';
 import { useState, useMemo } from 'react';
 import { CreateItemDialog } from './CreateItemDialog';
 import { useGetItemsQuery } from '../../items/api/items.api';

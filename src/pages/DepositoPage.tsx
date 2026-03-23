@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useGetDepotsQuery, useCreateDepotMutation, useUpdateDepotMutation, useDeleteDepotMutation, useCreatePositionMutation, useUpdatePositionMutation } from '../features/depots/api/depots.api';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '../entities/auth/model/authSlice';
@@ -52,10 +52,10 @@ export default function DepositoPage() {
     const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
 
     // API Hooks
-    const { data: depots = [], isLoading: loadingDepots, isError: errorDepots, error: depotErrorDetail, refetch, isFetching } = useGetDepotsQuery();
+    const { data: depots = [], isLoading: loadingDepots, isError: errorDepots, error: depotErrorDetail, refetch } = useGetDepotsQuery();
     const [createDepot] = useCreateDepotMutation();
     const [updateDepot] = useUpdateDepotMutation();
-    const [deleteDepot] = useDeleteDepotMutation();
+    const [] = useDeleteDepotMutation();
     const [createPosition] = useCreatePositionMutation();
     const [updatePosition] = useUpdatePositionMutation();
     
