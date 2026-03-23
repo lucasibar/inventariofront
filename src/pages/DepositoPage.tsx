@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { useGetDepotsQuery, useCreateDepotMutation, useUpdateDepotMutation, useDeleteDepotMutation, useCreatePositionMutation, useUpdatePositionMutation } from '../features/depots/api/depots.api';
 import { useSelector } from 'react-redux';
+import { useGetDepotsQuery, useCreateDepotMutation, useUpdateDepotMutation, useCreatePositionMutation, useUpdatePositionMutation } from '../features/depots/api/depots.api';
 import { selectCurrentUser } from '../entities/auth/model/authSlice';
-import { PageHeader, Card, Btn, Input, Modal, Badge } from './common/ui';
+import { PageHeader, Card, Btn, Input, Modal, Badge, Spinner } from './common/ui';
 
 /* ─── Inline-editable cell ─── */
-function EditableCell({ value, onSave, label }: { value: string; onSave: (v: string) => Promise<void>; label?: string }) {
+function EditableCell({ value, onSave, label, type = 'text' }: { value: string; onSave: (v: string) => Promise<void>; label?: string; type?: string }) {
     const [editing, setEditing] = useState(false);
     const [draft, setDraft] = useState(value);
     const [saving, setSaving] = useState(false);
@@ -21,17 +21,18 @@ function EditableCell({ value, onSave, label }: { value: string; onSave: (v: str
     };
 
     if (!editing) return (
-        <div onClick={() => { setDraft(value); setEditing(true); }} style={{ cursor: 'pointer', padding: '4px 0' }}>
-            <div style={{ fontSize: '10px', color: '#6b7280', textTransform: 'uppercase', marginBottom: '2px' }}>{label}</div>
+        <div onClick={() => { setDraft(value); setEditing(true); }} style={{ cursor: 'pointer', padding: '6px 0', borderBottom: '1px dashed transparent', transition: 'all 0.2s' }} className="editable-trigger">
+            {label && <div style={{ fontSize: '10px', color: '#6b7280', textTransform: 'uppercase', marginBottom: '2px' }}>{label}</div>}
             <div style={{ color: '#f3f4f6', fontWeight: 500 }}>{value || '—'}</div>
         </div>
     );
 
     return (
         <div style={{ padding: '4px 0' }}>
-            <div style={{ fontSize: '10px', color: '#6b7280', textTransform: 'uppercase', marginBottom: '2px' }}>{label}</div>
+            {label && <div style={{ fontSize: '10px', color: '#6b7280', textTransform: 'uppercase', marginBottom: '2px' }}>{label}</div>}
             <input
                 ref={ref}
+                type={type}
                 value={draft}
                 onChange={e => setDraft(e.target.value)}
                 onBlur={commit}
@@ -39,8 +40,8 @@ function EditableCell({ value, onSave, label }: { value: string; onSave: (v: str
                 disabled={saving}
                 style={{
                     width: '100%', background: '#0f1117', border: '1px solid #6366f1',
-                    borderRadius: '6px', padding: '4px 8px', color: '#f3f4f6',
-                    fontSize: '13px', outline: 'none',
+                    borderRadius: '6px', padding: '6px 10px', color: '#f3f4f6',
+                    fontSize: '13px', outline: 'none', boxShadow: '0 0 0 2px rgba(99, 102, 241, 0.2)'
                 }}
             />
         </div>
@@ -52,18 +53,21 @@ export default function DepositoPage() {
     const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
 
     // API Hooks
-    const { data: depots = [], isLoading: loadingDepots, isError: errorDepots, error: depotErrorDetail, refetch } = useGetDepotsQuery();
+    const { data: depots = [], isLoading: loadingDepots, refetch } = useGetDepotsQuery();
     const [createDepot] = useCreateDepotMutation();
     const [updateDepot] = useUpdateDepotMutation();
-    const [] = useDeleteDepotMutation();
     const [createPosition] = useCreatePositionMutation();
     const [updatePosition] = useUpdatePositionMutation();
     
     // Management State
-    const [selectedDepotForPos, setSelectedDepotForPos] = useState<any>(null);
+    const [selectedDepotId, setSelectedDepotId] = useState<string | null>(null);
     const [isSavingDepot, setIsSavingDepot] = useState(false);
     const [showNewDepot, setShowNewDepot] = useState(false);
+    const [showNewPosition, setShowNewPosition] = useState<string | null>(null);
     const [newDepotForm, setNewDepotForm] = useState({ nombre: '', planta: '', tipo: 'STORAGE' });
+    const [newPosForm, setNewPosForm] = useState({ codigo: '', tipo: 'STORAGE', categoriaPrincipal: 'stock' });
+
+    const selectedDepot = depots.find(d => d.id === selectedDepotId);
 
     if (!isAdmin) {
         return (
@@ -99,200 +103,251 @@ export default function DepositoPage() {
         if (!newDepotForm.nombre) return;
         setIsSavingDepot(true);
         try {
-            await createDepot(newDepotForm).unwrap();
+            const result = await createDepot(newDepotForm).unwrap();
             setShowNewDepot(false);
             setNewDepotForm({ nombre: '', planta: '', tipo: 'STORAGE' });
+            setSelectedDepotId(result.id);
         } catch (e) { console.error(e); }
         setIsSavingDepot(false);
     };
 
-    const handleAddPosition = async (depotId: string) => {
-        const codigo = prompt('Ingrese el código de la nueva posición:');
-        if (!codigo) return;
+    const handleAddPosition = async () => {
+        if (!showNewPosition || !newPosForm.codigo) return;
         try {
-            await createPosition({ depotId, data: { codigo, tipo: 'STORAGE', categoriaPrincipal: 'stock' } }).unwrap();
+            await createPosition({ depotId: showNewPosition, data: newPosForm }).unwrap();
+            setShowNewPosition(null);
+            setNewPosForm({ codigo: '', tipo: 'STORAGE', categoriaPrincipal: 'stock' });
             refetch();
         } catch (e) { console.error(e); }
     };
 
     return (
-        <div style={{ padding: '24px' }}>
+        <div className="infra-container" style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
+            <style>{`
+                .infra-container { font-family: 'Inter', sans-serif; }
+                .depot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 32px; }
+                .depot-card { 
+                    border: 1px solid #1e2133; background: #1a1d2e; border-radius: 12px; padding: 20px; cursor: pointer;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden;
+                }
+                .depot-card:hover { border-color: #4b5563; transform: translateY(-2px); }
+                .depot-card.selected { border-color: #6366f1; background: rgba(99, 102, 241, 0.05); box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2); }
+                .depot-card.inactive { opacity: 0.6; filter: grayscale(0.5); }
+                
+                .pos-table-container { animation: slideUp 0.3s ease-out; }
+                @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                
+                .editable-trigger:hover { border-bottom-color: #4b5563; }
+            `}</style>
+
             <PageHeader title="Infraestructura" subtitle="Gestión de Plantas, Depósitos y Posiciones">
                 <Btn small onClick={() => setShowNewDepot(true)}>+ Nuevo Depósito</Btn>
             </PageHeader>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{ color: '#9ca3af', fontSize: '14px' }}>Configura los depósitos y sus posiciones físicas para cada planta.</div>
+            {loadingDepots ? (
+                <div style={{ textAlign: 'center', padding: '48px' }}><Spinner /></div>
+            ) : (
+                <>
+                    <div className="depot-grid">
+                        {depots.map((d: any) => (
+                            <div 
+                                key={d.id} 
+                                className={`depot-card ${selectedDepotId === d.id ? 'selected' : ''} ${!d.activo ? 'inactive' : ''}`}
+                                onClick={() => setSelectedDepotId(d.id === selectedDepotId ? null : d.id)}
+                            >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                                    <div style={{ flex: 1 }}>
+                                        <EditableCell 
+                                            value={d.nombre} 
+                                            onSave={v => handleUpdateDepot(d.id, 'nombre', v)} 
+                                            label="Depósito"
+                                        />
+                                    </div>
+                                    <Badge color={d.activo ? '#10b981' : '#ef4444'}>
+                                        {d.activo ? 'ACTIVO' : 'INACTIVO'}
+                                    </Badge>
+                                </div>
+                                
+                                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+                                    <div style={{ flex: 1 }}>
+                                        <EditableCell 
+                                            value={d.planta || 'Sin planta'} 
+                                            onSave={v => handleUpdateDepot(d.id, 'planta', v)} 
+                                            label="Planta"
+                                        />
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontSize: '10px', color: '#6b7280', textTransform: 'uppercase' }}>Posiciones</div>
+                                        <div style={{ fontSize: '18px', fontWeight: 700, color: '#f3f4f6' }}>{d.positions?.length || 0}</div>
+                                    </div>
+                                </div>
 
-                <Card>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                            <tr style={{ borderBottom: '1px solid #2a2d3e' }}>
-                                {['Deposito / Nombre', 'Planta', 'Estado', 'Posiciones'].map(h => (
-                                    <th key={h} style={{ padding: '12px 16px', color: '#6b7280', fontSize: '11px', fontWeight: 600, textAlign: 'left', textTransform: 'uppercase' }}>{h}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {loadingDepots && (
-                                <tr><td colSpan={4} style={{ padding: '32px', textAlign: 'center', color: '#6b7280' }}>Cargando infraestructura...</td></tr>
-                            )}
-                            {errorDepots && (
-                                <tr><td colSpan={4} style={{ padding: '32px', textAlign: 'center', color: '#f87171' }}>
-                                    Error al cargar infraestructura: {JSON.stringify(depotErrorDetail)}
-                                </td></tr>
-                            )}
-                            {!loadingDepots && !errorDepots && depots.map((d: any) => (
-                                <tr key={d.id} style={{ borderBottom: '1px solid #1e2133', opacity: d.activo ? 1 : 0.6 }}>
-                                    <td style={{ padding: '12px 16px' }}>
-                                        <EditableCell label="Nombre" value={d.nombre} onSave={v => handleUpdateDepot(d.id, 'nombre', v)} />
-                                    </td>
-                                    <td style={{ padding: '12px 16px' }}>
-                                        <EditableCell label="Planta" value={d.planta || 'Sin planta'} onSave={v => handleUpdateDepot(d.id, 'planta', v)} />
-                                    </td>
-                                    <td style={{ padding: '12px 16px' }}>
-                                        <button 
-                                            onClick={() => handleToggleDepotStatus(d)}
-                                            style={{ 
-                                                background: d.activo ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)',
-                                                border: `1px solid ${d.activo ? '#34d399' : '#f87171'}`,
-                                                color: d.activo ? '#34d399' : '#f87171',
-                                                borderRadius: '20px', padding: '4px 12px', fontSize: '11px', fontWeight: 600, cursor: 'pointer'
-                                            }}
-                                        >
-                                            {d.activo ? 'ACTIVO' : 'INACTIVO'}
-                                        </button>
-                                    </td>
-                                    <td style={{ padding: '12px 16px' }}>
-                                        <div 
-                                            onClick={() => setSelectedDepotForPos(d)}
-                                            style={{ cursor: 'pointer', padding: '4px 0' }}
-                                        >
-                                            <div style={{ fontSize: '10px', color: '#6b7280', textTransform: 'uppercase', marginBottom: '2px' }}>Gestión</div>
-                                            <Badge color="#a5b4fc">{d.positions?.length || 0} posiciones</Badge>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </Card>
+                                <div style={{ display: 'flex', gap: '8px', marginTop: '16px', borderTop: '1px solid #2a2d3e', paddingTop: '12px' }}>
+                                    <Btn small variant="secondary" onClick={(e) => { e.stopPropagation(); handleToggleDepotStatus(d); }}>
+                                        {d.activo ? 'Desactivar' : 'Activar'}
+                                    </Btn>
+                                    <Btn small variant={selectedDepotId === d.id ? 'primary' : 'secondary'} style={{ flex: 1 }}>
+                                        {selectedDepotId === d.id ? 'Ocultar Posiciones' : 'Ver Posiciones'}
+                                    </Btn>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
 
-                {/* Position Manager Slider/Modal */}
-                {selectedDepotForPos && (
-                    <Modal 
-                        title={`Posiciones de ${selectedDepotForPos.nombre}`} 
-                        onClose={() => setSelectedDepotForPos(null)}
-                        wide
-                    >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                            <div style={{ color: '#9ca3af', fontSize: '13px' }}>Habilitá, deshabilitá o hacé clic en el código para editar.</div>
-                            <Btn small onClick={() => handleAddPosition(selectedDepotForPos.id)}>+ Añadir Posición</Btn>
+                    {selectedDepot && (
+                        <div className="pos-table-container">
+                            <Card style={{ padding: '24px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderBottom: '1px solid #1e2133', paddingBottom: '16px' }}>
+                                    <div>
+                                        <h3 style={{ margin: 0, color: '#f3f4f6', fontSize: '18px' }}>Posiciones de {selectedDepot.nombre}</h3>
+                                        <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: '13px' }}>Editar códigos, capacidades y categorías principales.</p>
+                                    </div>
+                                    <Btn small onClick={() => setShowNewPosition(selectedDepot.id)}>+ Añadir Posición</Btn>
+                                </div>
+
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <thead>
+                                            <tr>
+                                                {['Código', 'Volumen (m³)', 'Cat. Principal', 'Cat. Secundaria', 'Estado'].map(h => (
+                                                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {selectedDepot.positions.length === 0 ? (
+                                                <tr><td colSpan={5} style={{ padding: '32px', textAlign: 'center', color: '#4b5563' }}>No hay posiciones definidas para este depósito.</td></tr>
+                                            ) : selectedDepot.positions.map((p: any) => (
+                                                <tr key={p.id} style={{ borderBottom: '1px solid #1e2133', opacity: p.activo ? 1 : 0.5 }}>
+                                                    <td style={{ padding: '8px 16px' }}>
+                                                        <EditableCell 
+                                                            value={p.codigo} 
+                                                            onSave={async (v) => {
+                                                                await updatePosition({ id: p.id, data: { codigo: v } }).unwrap();
+                                                                refetch();
+                                                            }} 
+                                                        />
+                                                    </td>
+                                                    <td style={{ padding: '8px 16px', width: '140px' }}>
+                                                        <EditableCell 
+                                                            value={p.metrosCubicos?.toString() || ''} 
+                                                            type="number"
+                                                            onSave={async (v) => {
+                                                                await updatePosition({ id: p.id, data: { metrosCubicos: parseFloat(v) || null } }).unwrap();
+                                                                refetch();
+                                                            }} 
+                                                        />
+                                                    </td>
+                                                    <td style={{ padding: '8px 16px' }}>
+                                                        <select 
+                                                            value={p.categoriaPrincipal || 'stock'} 
+                                                            onChange={async (e) => {
+                                                                await updatePosition({ id: p.id, data: { categoriaPrincipal: e.target.value } }).unwrap(); 
+                                                                refetch();
+                                                            }}
+                                                            style={{ background: '#0f1117', border: '1px solid #2a2d3e', color: '#f3f4f6', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', outline: 'none' }}
+                                                        >
+                                                            <option value="stock">Stock General</option>
+                                                            <option value="picking">Picking</option>
+                                                            <option value="entrada">Entrada / Recepción</option>
+                                                            <option value="MATERIA PRIMA">Materia Prima</option>
+                                                            <option value="PRODUCTO TERMINADO">Producto Terminado</option>
+                                                            <option value="INSUMO">Insumo</option>
+                                                        </select>
+                                                    </td>
+                                                    <td style={{ padding: '8px 16px' }}>
+                                                        <select 
+                                                            value={p.categoriaSecundaria || ''} 
+                                                            onChange={async (e) => {
+                                                                await updatePosition({ id: p.id, data: { categoriaSecundaria: e.target.value || null } }).unwrap(); 
+                                                                refetch();
+                                                            }}
+                                                            style={{ background: '#0f1117', border: '1px solid #2a2d3e', color: '#f3f4f6', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', outline: 'none' }}
+                                                        >
+                                                            <option value="">— Ninguna —</option>
+                                                            <option value="stock">Stock General</option>
+                                                            <option value="picking">Picking</option>
+                                                            <option value="MATERIA PRIMA">Materia Prima</option>
+                                                            <option value="PRODUCTO TERMINADO">Producto Terminado</option>
+                                                            <option value="INSUMO">Insumo</option>
+                                                        </select>
+                                                    </td>
+                                                    <td style={{ padding: '8px 16px' }}>
+                                                        <button 
+                                                            onClick={() => handleTogglePosStatus(p)}
+                                                            style={{ 
+                                                                background: p.activo ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)',
+                                                                border: `1px solid ${p.activo ? '#34d399' : '#f87171'}`,
+                                                                color: p.activo ? '#34d399' : '#f87171',
+                                                                borderRadius: '20px', padding: '4px 12px', fontSize: '10px', fontWeight: 600, cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            {p.activo ? 'ACTIVO' : 'INACTIVO'}
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </Card>
                         </div>
-                        <div style={{ maxHeight: '400px', overflow: 'auto', border: '1px solid #2a2d3e', borderRadius: '8px' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                <thead style={{ position: 'sticky', top: 0, background: '#1a1d2e', zIndex: 1 }}>
-                                    <tr style={{ borderBottom: '1px solid #2a2d3e' }}>
-                                        <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', color: '#6b7280' }}>CÓDIGO</th>
-                                        <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', color: '#6b7280' }}>CAPACIDAD (m3)</th>
-                                        <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', color: '#6b7280' }}>Cat. Principal</th>
-                                        <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', color: '#6b7280' }}>Cat. Secundaria</th>
-                                        <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: '11px', color: '#6b7280' }}>ESTADO</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {(depots.find((x:any) => x.id === selectedDepotForPos.id)?.positions || []).map((p: any) => (
-                                        <tr key={p.id} style={{ borderBottom: '1px solid #1e2133', opacity: p.activo ? 1 : 0.5 }}>
-                                            <td style={{ padding: '8px 16px' }}>
-                                                <EditableCell 
-                                                    value={p.codigo} 
-                                                    onSave={async (v) => {
-                                                        try {
-                                                            await updatePosition({ id: p.id, data: { codigo: v } }).unwrap();
-                                                            refetch();
-                                                        } catch (e) { console.error(e); }
-                                                    }} 
-                                                />
-                                            </td>
-                                            <td style={{ padding: '8px 16px' }}>
-                                                <EditableCell 
-                                                    value={p.metrosCubicos?.toString() || ''} 
-                                                    label="Volumen"
-                                                    onSave={async (v) => {
-                                                        try {
-                                                            await updatePosition({ id: p.id, data: { metrosCubicos: parseFloat(v) || null } }).unwrap();
-                                                            refetch();
-                                                        } catch (e) { console.error(e); }
-                                                    }} 
-                                                />
-                                            </td>
-                                            <td style={{ padding: '8px 16px' }}>
-                                                <select 
-                                                    value={p.categoriaPrincipal || 'stock'} 
-                                                    onChange={async (e) => {
-                                                        try { 
-                                                            await updatePosition({ id: p.id, data: { categoriaPrincipal: e.target.value } }).unwrap(); 
-                                                            refetch();
-                                                        } catch(err) { console.error(err); }
-                                                    }}
-                                                    style={{ background: '#0f1117', border: '1px solid #4b5563', color: '#f3f4f6', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', width: '100%' }}
-                                                >
-                                                    <option value="stock">Stock General</option>
-                                                    <option value="picking">Picking</option>
-                                                    <option value="entrada">Entrada / Recepción</option>
-                                                    <option value="MATERIA PRIMA">Materia Prima</option>
-                                                    <option value="PRODUCTO TERMINADO">Producto Terminado</option>
-                                                    <option value="INSUMO">Insumo</option>
-                                                </select>
-                                            </td>
-                                            <td style={{ padding: '8px 16px' }}>
-                                                <select 
-                                                    value={p.categoriaSecundaria || ''} 
-                                                    onChange={async (e) => {
-                                                        try { 
-                                                            await updatePosition({ id: p.id, data: { categoriaSecundaria: e.target.value || null } }).unwrap(); 
-                                                            refetch();
-                                                        } catch(err) { console.error(err); }
-                                                    }}
-                                                    style={{ background: '#0f1117', border: '1px solid #4b5563', color: '#f3f4f6', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', width: '100%' }}
-                                                >
-                                                    <option value="">— Ninguna —</option>
-                                                    <option value="stock">Stock General</option>
-                                                    <option value="picking">Picking</option>
-                                                    <option value="MATERIA PRIMA">Materia Prima</option>
-                                                    <option value="PRODUCTO TERMINADO">Producto Terminado</option>
-                                                    <option value="INSUMO">Insumo</option>
-                                                </select>
-                                            </td>
-                                            <td style={{ padding: '8px 16px', textAlign: 'center' }}>
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={p.activo} 
-                                                    onChange={() => handleTogglePosStatus(p)}
-                                                    style={{ width: '16px', height: '16px', accentColor: '#34d399' }}
-                                                />
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </Modal>
-                )}
+                    )}
+                </>
+            )}
 
-                {showNewDepot && (
-                    <Modal title="Nuevo Depósito" onClose={() => setShowNewDepot(false)}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <Input label="Nombre del Depósito" value={newDepotForm.nombre} onChange={v => setNewDepotForm(p => ({...p, nombre: v}))} />
-                            <Input label="Planta" value={newDepotForm.planta} onChange={v => setNewDepotForm(p => ({...p, planta: v}))} />
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
-                                <Btn variant="secondary" onClick={() => setShowNewDepot(false)}>Cancelar</Btn>
-                                <Btn onClick={handleCreateDepot} disabled={isSavingDepot}>{isSavingDepot ? 'Guardando...' : 'Crear Depósito'}</Btn>
+            {showNewDepot && (
+                <Modal title="Nuevo Depósito" onClose={() => setShowNewDepot(false)}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>Crea un nuevo depósito físico. Se generará automáticamente una posición ENTRADA.</p>
+                        <Input label="Nombre del Depósito" value={newDepotForm.nombre} onChange={v => setNewDepotForm(p => ({...p, nombre: v}))} />
+                        <Input label="Planta" value={newDepotForm.planta} onChange={v => setNewDepotForm(p => ({...p, planta: v}))} />
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #1e2133', paddingTop: '16px' }}>
+                            <Btn variant="secondary" onClick={() => setShowNewDepot(false)}>Cancelar</Btn>
+                            <Btn onClick={handleCreateDepot} disabled={isSavingDepot}>{isSavingDepot ? 'Guardando...' : 'Crear Depósito'}</Btn>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
+            {showNewPosition && (
+                <Modal title="Nueva Posición" onClose={() => setShowNewPosition(null)}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>Define una nueva ubicación física dentro del depósito.</p>
+                        <Input label="Código de Posición" value={newPosForm.codigo} onChange={v => setNewPosForm(p => ({...p, codigo: v}))} placeholder="Ej: A-01-01" />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <div>
+                                <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>Categoría</label>
+                                <select 
+                                    value={newPosForm.categoriaPrincipal} 
+                                    onChange={e => setNewPosForm(p => ({...p, categoriaPrincipal: e.target.value}))}
+                                    style={{ width: '100%', background: '#0f1117', border: '1px solid #374151', borderRadius: '8px', padding: '8px 10px', color: '#f3f4f6', fontSize: '13px', outline: 'none' }}
+                                >
+                                    <option value="stock">Stock General</option>
+                                    <option value="picking">Picking</option>
+                                    <option value="entrada">Entrada / Recepción</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>Tipo</label>
+                                <select 
+                                    value={newPosForm.tipo} 
+                                    onChange={e => setNewPosForm(p => ({...p, tipo: e.target.value}))}
+                                    style={{ width: '100%', background: '#0f1117', border: '1px solid #374151', borderRadius: '8px', padding: '8px 10px', color: '#f3f4f6', fontSize: '13px', outline: 'none' }}
+                                >
+                                    <option value="STORAGE">Almacenamiento</option>
+                                    <option value="DOCK">Andén</option>
+                                    <option value="VIRTUAL">Virtual</option>
+                                </select>
                             </div>
                         </div>
-                    </Modal>
-                )}
-            </div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #1e2133', paddingTop: '16px' }}>
+                            <Btn variant="secondary" onClick={() => setShowNewPosition(null)}>Cancelar</Btn>
+                            <Btn onClick={handleAddPosition}>Crear Posición</Btn>
+                        </div>
+                    </div>
+                </Modal>
+            )}
         </div>
     );
 }
