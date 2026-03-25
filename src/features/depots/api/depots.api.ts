@@ -44,43 +44,37 @@ export const depotsApi = api.injectEndpoints({
             query: (id) => ({ url: `depots/${id}/restore`, method: 'PATCH' }),
             invalidatesTags: (_result, _error, id) => [{ type: 'Depots', id }, { type: 'Depots', id: 'LIST' }],
         }),
-        createPosition: builder.mutation<any, { depotId: string; data: any }>({
+        createPosition: builder.mutation<any, { depotId: string; data: { codigo: string; categoria: string; restrictions?: { type: string; value: string }[]; metrosCubicos?: number } }>({
             query: ({ depotId, data }) => ({ url: `depots/${depotId}/positions`, method: 'POST', body: data }),
-            invalidatesTags: ['Depots'],
+            invalidatesTags: [{ type: 'Depots', id: 'LIST' }],
         }),
-        updatePosition: builder.mutation<any, { id: string; data: any }>({
+        updatePosition: builder.mutation<any, { id: string; data: Partial<{ codigo: string; categoria: string; restrictions: { type: string; value: string }[]; metrosCubicos: number; activo: boolean }> }>({
             query: ({ id, data }) => ({ url: `positions/${id}`, method: 'PUT', body: data }),
-            invalidatesTags: ['Depots'],
+            invalidatesTags: [{ type: 'Depots', id: 'LIST' }],
             async onQueryStarted({ id, data }, { dispatch, queryFulfilled }) {
                 const patchResult = dispatch(
                     depotsApi.util.updateQueryData('getDepots', undefined, (draft) => {
-                        for (const depot of draft) {
-                            const pos = depot.positions?.find((p: any) => p.id === id);
-                            if (pos) {
-                                Object.assign(pos, data);
-                                break;
-                            }
+                        for (const d of draft) {
+                            if (!d.positions) continue;
+                            const p = d.positions.find((pos: any) => pos.id === id);
+                            if (p) Object.assign(p, data);
                         }
                     })
                 );
-                try {
-                    await queryFulfilled;
-                } catch {
-                    patchResult.undo();
-                }
+                try { await queryFulfilled; } catch { patchResult.undo(); }
             },
         }),
         deletePosition: builder.mutation<void, string>({
             query: (id) => ({ url: `positions/${id}`, method: 'DELETE' }),
-            invalidatesTags: ['Depots', 'Positions'],
+            invalidatesTags: [{ type: 'Depots', id: 'LIST' }],
         }),
         renamePlant: builder.mutation<void, { oldName: string; newName: string }>({
             query: (body) => ({ url: 'depots/plants/rename', method: 'PATCH', body }),
-            invalidatesTags: ['Depots'],
+            invalidatesTags: [{ type: 'Depots', id: 'LIST' }],
         }),
         togglePlantStatus: builder.mutation<void, { planta: string; activo: boolean }>({
             query: (body) => ({ url: 'depots/plants/toggle', method: 'PATCH', body }),
-            invalidatesTags: ['Depots'],
+            invalidatesTags: [{ type: 'Depots', id: 'LIST' }],
         }),
     }),
 });
