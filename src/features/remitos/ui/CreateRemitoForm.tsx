@@ -46,6 +46,14 @@ export const CreateRemitoForm = () => {
                 return;
             }
 
+            if (!data.lines || data.lines.length === 0) {
+                alert('Debe agregar al menos un item al remito');
+                return;
+            }
+
+            // Comprobar si hay errores de validación (ej: partidas faltantes)
+            // Aunque handleSubmit evita llegar aquí si hay errores, esto es una capa extra de seguridad.
+
             // Simplified payload: the backend now resolves "ENTRADA" position automatically via depotId
             const payload: any = {
                 ...data,
@@ -240,6 +248,13 @@ export const CreateRemitoForm = () => {
                             variant="text"
                             size="large"
                             disabled={isLoading}
+                            onClick={() => {
+                                const errors = methods.formState.errors;
+                                if (Object.keys(errors).length > 0) {
+                                    console.log('Form errors:', errors);
+                                    alert('Por favor, complete todos los campos requeridos (Remito, Fecha, Depósito y Partidas en los items)');
+                                }
+                            }}
                             sx={{
                                 fontWeight: 800,
                                 px: 4,

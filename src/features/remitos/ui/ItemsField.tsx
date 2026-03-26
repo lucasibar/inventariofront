@@ -181,8 +181,9 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                 fullWidth
                                 variant="filled"
                                 size="small"
-                                placeholder="Opcional"
-                                {...register(`lines.${index}.lotNumber` as const)}
+                                placeholder="Requerido"
+                                error={!!(control as any)._formState.errors?.lines?.[index]?.lotNumber}
+                                {...register(`lines.${index}.lotNumber` as const, { required: true })}
                             />
                         </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', pt: { xs: 0, sm: 0.5 } }}>
