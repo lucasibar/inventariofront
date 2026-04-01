@@ -18,6 +18,7 @@ import WorkspaceTasksPage from './pages/WorkspaceTasksPage';
 
 import MovimientosPage from './pages/MovimientosPage';
 import StockQueryPage from './pages/StockQueryPage';
+import StockPage from './pages/StockPage';
 
 import './App.css';
 
@@ -35,6 +36,7 @@ function App() {
             <Route path="/pedidos" element={<PedidosPage />} />
             <Route path="/remitos-salida" element={<RemitosSalidaPage />} />
             <Route path="/dashboard" element={<DashboardComprasPage />} />
+            <Route path="/stock" element={<StockPage />} />
             <Route path="/items" element={<MaterialesPage />} />
             <Route path="/items/box-types" element={<BoxTypesPage />} />
             <Route path="/socios" element={<SociosPage />} />

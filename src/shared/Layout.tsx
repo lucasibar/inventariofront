@@ -10,6 +10,7 @@ const navItems = [
     { to: '/deposito/auditoria-picking', label: '✅ Auditoría Picking' },
     { to: '/pedidos', label: '📋 Pedidos' },
     { to: '/remitos-salida', label: '🚚 Remitos Salida' },
+    { to: '/stock', label: '📋 Stock' },
     { to: '/dashboard', label: '📊 Dashboard Compras' },
     { to: '/movimientos', label: '🔄 Movimientos' },
     { to: '/consultas', label: '🔍 Consultas Intel' },

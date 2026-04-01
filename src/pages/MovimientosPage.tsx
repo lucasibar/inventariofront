@@ -35,8 +35,8 @@ export default function MovimientosPage() {
 
     // Transfer Modal State
     const [transferModal, setTransferModal] = useState<{ source: 'left' | 'right', item: any } | null>(null);
-    const [transferKilos, setTransferKilos] = useState('');
-    const [transferUnidades, setTransferUnidades] = useState('');
+    const [transferPrincipal, setTransferPrincipal] = useState('');
+    const [transferSecundaria, setTransferSecundaria] = useState('');
 
     const handleTransferClick = (item: any, source: 'left' | 'right') => {
         const destDepot = source === 'left' ? depositoIdRight : depositoIdLeft;
@@ -48,8 +48,8 @@ export default function MovimientosPage() {
         }
 
         setTransferModal({ source, item });
-        setTransferKilos(String(item.kilos));
-        setTransferUnidades(item.unidades ? String(item.unidades) : '');
+        setTransferPrincipal(String(item.qtyPrincipal));
+        setTransferSecundaria(item.qtySecundaria ? String(item.qtySecundaria) : '');
     };
 
     const confirmTransfer = async () => {
@@ -65,8 +65,8 @@ export default function MovimientosPage() {
                 posicionIdDestino: destPos,
                 itemId: item.item.id,
                 lotId: item.batch.id,
-                kilos: Number(transferKilos),
-                unidades: transferUnidades ? Number(transferUnidades) : null,
+                qtyPrincipal: Number(transferPrincipal),
+                qtySecundaria: transferSecundaria ? Number(transferSecundaria) : undefined,
                 fecha: new Date().toISOString()
             }).unwrap();
             setTransferModal(null);
@@ -76,34 +76,34 @@ export default function MovimientosPage() {
     };
 
     // Inline edit handlers
-    const handleEditKilos = async (val: string, row: any) => {
-        const newKilos = Number(val);
-        const delta = newKilos - row.kilos;
+    const handleEditPrincipal = async (val: string, row: any) => {
+        const newQty = Number(val);
+        const delta = newQty - row.qtyPrincipal;
         if (delta === 0) return;
         await adjustStock({
             depositoId: row.deposito.id,
             posicionId: row.posicion.id,
             itemId: row.item.id,
             lotId: row.batch.id,
-            deltaKilos: delta,
-            deltaUnidades: 0,
+            deltaPrincipal: delta,
+            deltaSecundaria: 0,
             fecha: new Date().toISOString(),
             observaciones: 'Ajuste rápido desde Movimientos'
         }).unwrap();
     };
 
-    const handleEditUnidades = async (val: string, row: any) => {
-        const newUnidades = Number(val);
-        const oldUnidades = row.unidades || 0;
-        const delta = newUnidades - oldUnidades;
+    const handleEditSecundaria = async (val: string, row: any) => {
+        const newQty = Number(val);
+        const oldQty = row.qtySecundaria || 0;
+        const delta = newQty - oldQty;
         if (delta === 0) return;
         await adjustStock({
             depositoId: row.deposito.id,
             posicionId: row.posicion.id,
             itemId: row.item.id,
             lotId: row.batch.id,
-            deltaKilos: 0,
-            deltaUnidades: delta,
+            deltaPrincipal: 0,
+            deltaSecundaria: delta,
             fecha: new Date().toISOString(),
             observaciones: 'Ajuste rápido desde Movimientos'
         }).unwrap();
@@ -122,7 +122,7 @@ export default function MovimientosPage() {
 
     // Columns builder
     const buildCols = () => [
-        'Material', 'Partida', 'Kilos', 'Unidades', ''
+        'Material', 'Partida', 'Stock Principal', 'Secundario', ''
     ];
 
     const buildRows = (stock: any[], source: 'left' | 'right') => stock.map(m => [
@@ -136,10 +136,10 @@ export default function MovimientosPage() {
             <EditableCell value={m.batch?.lotNumber || ''} onSave={val => handleEditLotNumber(val, m)} />
         </div>,
         <div style={{ color: '#34d399', fontWeight: 600 }}>
-            <EditableCell numeric value={String(m.kilos)} onSave={val => handleEditKilos(val, m)} /> kg
+            <EditableCell numeric value={String(m.qtyPrincipal)} onSave={val => handleEditPrincipal(val, m)} /> {m.item.unidadPrincipal}
         </div>,
         <div style={{ color: '#9ca3af' }}>
-            <EditableCell numeric value={String(m.unidades || 0)} onSave={val => handleEditUnidades(val, m)} /> un.
+            <EditableCell numeric value={String(m.qtySecundaria || 0)} onSave={val => handleEditSecundaria(val, m)} /> {m.item.unidadSecundaria || ''}
         </div>,
         <Btn small onClick={() => handleTransferClick(m, source)} style={{ padding: '4px 8px' }}>
             {source === 'left' ? 'Mover ➔' : '⬅ Mover'}
@@ -217,17 +217,17 @@ export default function MovimientosPage() {
                     </div>
                     <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
                         <Input 
-                            label={`Kilos a transferir (Disp: ${transferModal.item.kilos}kg)`}
+                            label={`Cant. Principal a mover (Disp: ${transferModal.item.qtyPrincipal}${transferModal.item.item.unidadPrincipal})`}
                             type="number" 
-                            value={transferKilos} 
-                            onChange={setTransferKilos} 
+                            value={transferPrincipal} 
+                            onChange={setTransferPrincipal} 
                             style={{ flex: 1 }}
                         />
                         <Input 
-                                label={`Unidades a transferir (Disp: ${transferModal.item.unidades || 0})`}
+                                label={`Secundaria a mover (Disp: ${transferModal.item.qtySecundaria || 0}${transferModal.item.item.unidadSecundaria || ''})`}
                                 type="number" 
-                                value={transferUnidades} 
-                                onChange={setTransferUnidades} 
+                                value={transferSecundaria} 
+                                onChange={setTransferSecundaria} 
                                 style={{ flex: 1 }}
                             />
                     </div>

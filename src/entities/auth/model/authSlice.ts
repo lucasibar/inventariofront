@@ -9,7 +9,13 @@ interface AuthState {
 }
 
 const initialState: AuthState = {
-    user: JSON.parse(localStorage.getItem('user') || 'null'),
+    user: (() => {
+        try {
+            return JSON.parse(localStorage.getItem('user') || 'null');
+        } catch (e) {
+            return null;
+        }
+    })(),
     token: localStorage.getItem('token'),
     isAuthenticated: !!localStorage.getItem('token'),
 };

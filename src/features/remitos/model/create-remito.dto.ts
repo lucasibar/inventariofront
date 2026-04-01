@@ -24,7 +24,7 @@ export interface RemitoLineDto {
     lotNumber?: string;
     depositoId: string;
     posicionId: string;
-    kilos: number;
-    unidades?: number;
+    qtyPrincipal: number;
+    qtySecundaria?: number;
     categoria?: ItemCategory;
 }

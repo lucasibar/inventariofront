@@ -7,7 +7,11 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import { useGetRemitosEntradaQuery, useDeleteRemitoMutation } from '../features/remitos/api/remito.api';
+import { 
+    useGetRemitosEntradaQuery, 
+    useDeleteRemitoMutation,
+    useLazyGetRemitoEntradaQuery 
+} from '../features/remitos/api/remito.api';
 import { CreateRemitoForm } from '../features/remitos/ui/CreateRemitoForm';
 import { RemitoDetailModal } from '../features/remitos/ui/RemitoDetailModal';
 
@@ -17,10 +21,19 @@ export default function RemitosEntradaPage() {
     const [showForm, setShowForm] = useState(false);
     const [selectedRemito, setSelectedRemito] = useState<any>(null);
     const [showDetail, setShowDetail] = useState(false);
+    const [triggerGetDetail, { isFetching: isFetchingDetail }] = useLazyGetRemitoEntradaQuery();
 
-    const handleRowClick = (remito: any) => {
-        setSelectedRemito(remito);
-        setShowDetail(true);
+    const handleRowClick = async (remito: any) => {
+        try {
+            const fullRemito = await triggerGetDetail(remito.id).unwrap();
+            setSelectedRemito(fullRemito);
+            setShowDetail(true);
+        } catch (err) {
+            console.error('Error al cargar detalle del remito', err);
+            // Fallback to basic data if detail fetch fails
+            setSelectedRemito(remito);
+            setShowDetail(true);
+        }
     };
 
     if (showForm) {

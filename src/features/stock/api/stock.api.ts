@@ -5,11 +5,12 @@ export const stockApi = api.injectEndpoints({
         getStock: builder.query<any[], {
             depotId?: string; positionId?: string; supplierId?: string;
             itemId?: string; lotNumber?: string; q?: string; categoria?: string;
+            limit?: number;
         }>({
             query: (f = {}) => {
-                const p = new URLSearchParams();
-                Object.entries(f).forEach(([k, v]) => { if (v) p.set(k, v as string); });
-                return `stock?${p.toString()}`;
+            const p = new URLSearchParams();
+            Object.entries(f).forEach(([k, v]) => { if (v) p.set(k, String(v)) });
+            return `stock?${p.toString()}`;
             },
             providesTags: ['Stock'],
         }),
@@ -23,7 +24,7 @@ export const stockApi = api.injectEndpoints({
         }),
         adjustStock: builder.mutation<any, {
             depositoId: string; posicionId: string; itemId: string; lotId: string;
-            deltaKilos: number; deltaUnidades?: number | null;
+            deltaPrincipal: number; deltaSecundaria?: number | null;
             fecha: string; observaciones?: string;
         }>({
             query: (body) => ({ url: 'stock/adjust', method: 'PATCH', body }),
@@ -31,7 +32,7 @@ export const stockApi = api.injectEndpoints({
         }),
         moveStock: builder.mutation<void, {
             depositoId: string; posicionIdOrigen: string; posicionIdDestino: string;
-            itemId: string; lotId: string; kilos: number; unidades?: number | null; fecha: string;
+            itemId: string; lotId: string; qtyPrincipal: number; qtySecundaria?: number | null; fecha: string;
         }>({
             query: (body) => ({ url: 'stock/move', method: 'POST', body }),
             invalidatesTags: ['Stock'],
@@ -59,7 +60,7 @@ export const stockApi = api.injectEndpoints({
             providesTags: ['Stock'],
         }),
         submitPickingAudit: builder.mutation<any, {
-            items: { depositoId: string; posicionId: string; itemId: string; lotId: string | null; faltanteKilos: number }[];
+            items: { depositoId: string; posicionId: string; itemId: string; lotId: string | null; faltantePrincipal: number }[];
             fecha: string; observaciones?: string;
         }>({
             query: (body) => ({ url: 'auditoria-picking', method: 'POST', body }),

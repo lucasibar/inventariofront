@@ -60,8 +60,8 @@ export const CreateRemitoForm = () => {
                 // Ensure numbers are sent as numbers
                 lines: data.lines.map(line => ({
                     ...line,
-                    kilos: Number(line.kilos),
-                    unidades: line.unidades ? Number(line.unidades) : undefined
+                    qtyPrincipal: Number(line.qtyPrincipal),
+                    qtySecundaria: line.qtySecundaria != null ? Number(line.qtySecundaria) : undefined
                 }))
             };
 

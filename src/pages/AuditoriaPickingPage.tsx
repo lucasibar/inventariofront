@@ -55,7 +55,7 @@ export default function AuditoriaPickingPage() {
                     posicionId: bal.posicionId,
                     itemId: bal.itemId,
                     lotId: bal.lotId,
-                    faltanteKilos: faltante
+                    faltantePrincipal: faltante
                 });
             }
         }

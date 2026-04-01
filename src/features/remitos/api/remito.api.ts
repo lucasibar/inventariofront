@@ -7,6 +7,18 @@ export const remitoApi = api.injectEndpoints({
             query: () => 'remitos-entrada',
             providesTags: ['RemitosEntrada'],
         }),
+        getRemitoEntrada: builder.query<any, string>({
+            query: (id) => `remitos-entrada/${id}`,
+            providesTags: (_result, _error, id) => [{ type: 'RemitosEntrada', id }],
+        }),
+        getRemitosSalida: builder.query<any[], void>({
+            query: () => 'remitos-salida',
+            providesTags: ['RemitosSalida'],
+        }),
+        getRemitoSalida: builder.query<any, string>({
+            query: (id) => `remitos-salida/${id}`,
+            providesTags: (_result, _error, id) => [{ type: 'RemitosSalida', id }],
+        }),
         createRemito: builder.mutation<void, CreateRemitoDto>({
             query: (body) => ({
                 url: 'remitos-entrada', // Correct endpoint based on legacy code
@@ -33,5 +45,10 @@ export const {
     useGetDepotsQuery,
     useLazySearchPartnersQuery,
     useGetRemitosEntradaQuery,
+    useGetRemitoEntradaQuery,
+    useLazyGetRemitoEntradaQuery,
+    useGetRemitosSalidaQuery,
+    useGetRemitoSalidaQuery,
+    useLazyGetRemitoSalidaQuery,
     useDeleteRemitoMutation
 } = remitoApi;

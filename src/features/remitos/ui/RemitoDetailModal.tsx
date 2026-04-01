@@ -39,18 +39,18 @@ export const RemitoDetailModal = ({ open, onClose, remito }: RemitoDetailModalPr
                     </Box>
                     <Box>
                         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
-                            Proveedor
+                            {remito.tipo?.includes('SALIDA') ? 'Cliente' : 'Proveedor'}
                         </Typography>
                         <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {remito.supplier?.name || remito.provider?.name || '—'}
+                            {remito.partner?.name || remito.supplier?.name || remito.provider?.name || remito.client?.name || '—'}
                         </Typography>
                     </Box>
                     <Box>
                         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
-                            CUIT
+                            Identificación / CUIT
                         </Typography>
                         <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {remito.supplier?.taxId || '—'}
+                            {remito.partner?.taxId || remito.supplier?.taxId || '—'}
                         </Typography>
                     </Box>
                 </Box>
@@ -96,10 +96,10 @@ export const RemitoDetailModal = ({ open, onClose, remito }: RemitoDetailModalPr
                                     />
                                 </TableCell>
                                 <TableCell align="right" sx={{ fontWeight: 600 }}>
-                                    {Number(line.kilos).toLocaleString()} kg
+                                    {Number(line.qtyPrincipal || line.qtyPrincipal).toLocaleString()} kg
                                 </TableCell>
                                 <TableCell align="right">
-                                    {line.unidades ? `${Number(line.unidades).toLocaleString()} un` : '—'}
+                                    {(line.qtySecundaria !== undefined && line.qtySecundaria !== null) ? `${Number(line.qtySecundaria).toLocaleString()} un` : '—'}
                                 </TableCell>
                             </TableRow>
                         ))}

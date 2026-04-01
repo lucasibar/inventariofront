@@ -55,8 +55,8 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                     onClick={() => append({
                         codigoInterno: '',
                         descripcion: '',
-                        kilos: 0,
-                        unidades: 0,
+                        qtyPrincipal: 0,
+                        qtySecundaria: 0,
                         categoria: 'SUPPLY',
                         lotNumber: ''
                     })}
@@ -158,21 +158,21 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                         <Box>
                             <TextField
                                 type="number"
-                                label="Kilos"
+                                label="Cantidad Principal (Kg)"
                                 fullWidth
                                 variant="filled"
                                 size="small"
-                                {...register(`lines.${index}.kilos` as const, { required: true, min: 0.01 })}
+                                {...register(`lines.${index}.qtyPrincipal` as const, { required: true, min: 0.01 })}
                             />
                         </Box>
                         <Box>
                             <TextField
                                 type="number"
-                                label="Unidades"
+                                label="Secundaria (Unid)"
                                 fullWidth
                                 variant="filled"
                                 size="small"
-                                {...register(`lines.${index}.unidades` as const, { min: 0 })}
+                                {...register(`lines.${index}.qtySecundaria` as const, { min: 0 })}
                             />
                         </Box>
                         <Box>
