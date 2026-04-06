@@ -66,6 +66,24 @@ export const stockApi = api.injectEndpoints({
             query: (body) => ({ url: 'auditoria-picking', method: 'POST', body }),
             invalidatesTags: ['Stock'],
         }),
+
+        // --- Combos de Compra ---
+        getCombos: builder.query<any[], void>({
+            query: () => 'combos-compra',
+            providesTags: ['Dashboard'],
+        }),
+        getComboBreakdown: builder.query<any[], string>({
+            query: (id) => `combos-compra/${id}/breakdown`,
+            providesTags: ['Dashboard', 'Stock'],
+        }),
+        createCombo: builder.mutation<any, { title: string; supplierId?: string | null; itemIds: string[] }>({
+            query: (body) => ({ url: 'combos-compra', method: 'POST', body }),
+            invalidatesTags: ['Dashboard'],
+        }),
+        deleteCombo: builder.mutation<void, string>({
+            query: (id) => ({ url: `combos-compra/${id}`, method: 'DELETE' }),
+            invalidatesTags: ['Dashboard'],
+        }),
     }),
 });
 
@@ -79,6 +97,10 @@ export const {
     useUpdateBatchNumberMutation,
     useGetStockSummaryQuery,
     useSubmitPickingAuditMutation,
+    useGetCombosQuery,
+    useGetComboBreakdownQuery,
+    useCreateComboMutation,
+    useDeleteComboMutation,
 } = stockApi;
 
 
