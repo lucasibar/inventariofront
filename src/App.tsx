@@ -19,7 +19,6 @@ import CapacityDashboardPage from './pages/CapacityDashboardPage';
 import WorkspaceTasksPage from './pages/WorkspaceTasksPage';
 
 import MovimientosPage from './pages/MovimientosPage';
-import StockQueryPage from './pages/StockQueryPage';
 import StockPage from './pages/StockPage';
 import UsersPage from './pages/UsersPage';
 
@@ -70,7 +69,6 @@ function App() {
 
             {/* Rutas compartidas o especiales */}
             <Route path="/deposito" element={<DepositoPage />} />
-            <Route path="/consultas" element={<StockQueryPage />} />
 
           </Route>
         </Route>

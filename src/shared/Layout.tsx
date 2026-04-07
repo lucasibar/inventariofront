@@ -13,7 +13,6 @@ const navItems = [
     { to: '/stock', label: '📋 Stock' },
     { to: '/dashboard', label: '📊 Dashboard Compras' },
     { to: '/movimientos', label: '🔄 Movimientos' },
-    { to: '/consultas', label: '🔍 Consultas Intel' },
     { to: '/items', label: '🗂 Materiales' },
     { to: '/items/box-types', label: '📦 Tipos de Caja' },
     { to: '/dashboard/capacity', label: '📊 Medidores Capacidad' },

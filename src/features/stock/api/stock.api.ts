@@ -65,18 +65,6 @@ export const stockApi = api.injectEndpoints({
             query: (body) => ({ url: 'stock/batch-number', method: 'PATCH', body }),
             invalidatesTags: ['Stock'],
         }),
-        getStockSummary: builder.query<any, {
-            depositoId?: string; supplierId?: string; itemId?: string;
-            lotId?: string; categoria?: string; rotacion?: string;
-            groupBy?: 'item' | 'batch' | 'categoria';
-        }>({
-            query: (f = {}) => {
-                const p = new URLSearchParams();
-                Object.entries(f).forEach(([k, v]) => { if (v) p.set(k, v as string); });
-                return `stock/summary?${p.toString()}`;
-            },
-            providesTags: ['Stock'],
-        }),
         submitPickingAudit: builder.mutation<any, {
             items: { depositoId: string; posicionId: string; itemId: string; lotId: string | null; faltantePrincipal: number }[];
             fecha: string; observaciones?: string;
@@ -115,7 +103,6 @@ export const {
     useQuickAddStockMutation,
     useDeleteStockMutation,
     useUpdateBatchNumberMutation,
-    useGetStockSummaryQuery,
     useSubmitPickingAuditMutation,
     useGetCombosQuery,
     useGetComboBreakdownQuery,
