@@ -1,24 +1,19 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useGetStockQuery, useQuickAddStockMutation } from '../features/stock/api/stock.api';
+import { useNavigate } from 'react-router-dom';
 import { useGetDepotsQuery } from '../features/depots/api/depots.api';
 import { useGetItemsQuery } from '../features/items/api/items.api';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
-import { PageHeader, Card, Select, Badge, Spinner, Btn, Modal, Input } from './common/ui';
+import { PageHeader, Select, Badge, Spinner, Btn, Modal, Input } from './common/ui';
 import { CreateItemDialog } from '../features/remitos/ui/CreateItemDialog';
 import { CreatePartnerDialog } from '../features/remitos/ui/CreatePartnerDialog';
 
 /* ─── UI COMPONENTS (Local or from common/ui) ─── */
 
 export default function StockPage() {
+    const navigate = useNavigate();
     const [depotId, setDepotId] = useState<string>('');
     const [searchTerm, setSearchTerm] = useState<string>('');
-    const [debouncedSearch, setDebouncedSearch] = useState<string>('');
-
-    // Debounce search to optimize API calls
-    useEffect(() => {
-        const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
-        return () => clearTimeout(timer);
-    }, [searchTerm]);
 
     const { data: depots = [] } = useGetDepotsQuery();
 
@@ -64,9 +59,9 @@ export default function StockPage() {
 
     // Fetch stock only if a depot is selected. 
     // We bring a limit to avoid massive data transfer.
-    const { data: rawStock = [], isFetching, isError } = useGetStockQuery(
-        { depotId: depotId || undefined, q: debouncedSearch || undefined, limit: 1000 },
-        { skip: !depotId && !debouncedSearch }
+    const { data: rawStock = [], isFetching } = useGetStockQuery(
+        { depotId: depotId || undefined, limit: 1000 },
+        { skip: !depotId }
     );
 
     // Grouping & Analysis Logic
@@ -76,8 +71,30 @@ export default function StockPage() {
         if (!rawStock.length) return { groupedData: [], generalMetrics: null };
 
         const groups: Record<string, any> = {};
+        
+        // Multi-word cumulative filtering logic
+        const searchWords = searchTerm.toLowerCase().split(' ').filter(w => w.length > 0);
+        
+        const filteredStock = rawStock.filter((entry: any) => {
+            if (searchWords.length === 0) return true;
+            
+            // For each word in the search, at least one field must contain it
+            return searchWords.every(word => {
+                const itemDesc = (entry.batch?.item?.descripcion || '').toLowerCase();
+                const itemCode = (entry.batch?.item?.codigoInterno || '').toLowerCase();
+                const lotNum = (entry.batch?.lotNumber || '').toLowerCase();
+                const supplierName = (entry.batch?.supplier?.name || '').toLowerCase();
+                const posCode = (entry.posicion?.codigo || '').toLowerCase();
+                
+                return itemDesc.includes(word) || 
+                       itemCode.includes(word) || 
+                       lotNum.includes(word) || 
+                       supplierName.includes(word) || 
+                       posCode.includes(word);
+            });
+        });
 
-        rawStock.forEach((entry: any) => {
+        filteredStock.forEach((entry: any) => {
             const itemId = entry.batch?.item?.id;
             if (!itemId) return;
 
@@ -110,7 +127,7 @@ export default function StockPage() {
             groupedData: Object.values(groups).sort((a: any, b: any) => a.item.descripcion.localeCompare(b.item.descripcion)),
             generalMetrics: { ...general, positionsCount: general.positions.size }
         };
-    }, [rawStock]);
+    }, [rawStock, searchTerm]);
 
     return (
         <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
@@ -169,6 +186,15 @@ export default function StockPage() {
                 .highlight-row td {
                      color: #fbbf24;
                 }
+                .aging-warning {
+                    color: #f87171;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 4px;
+                    font-size: 11px;
+                    margin-left: 8px;
+                    font-weight: 600;
+                }
                 .search-bar-container {
                     display: flex;
                     gap: 16px;
@@ -218,7 +244,7 @@ export default function StockPage() {
                         onChange={setDepotId}
                         options={[
                             { value: '', label: 'Seleccionar depósito...' },
-                            ...depots.map(d => ({ value: d.id, label: d.name }))
+                            ...depots.map(d => ({ value: d.id, label: d.nombre }))
                         ]}
                     />
                 </div>
@@ -294,7 +320,6 @@ export default function StockPage() {
                                     </span>
                                 </div>
                             </div>
-
                             <table className="positions-table">
                                 <thead>
                                     <tr>
@@ -302,23 +327,51 @@ export default function StockPage() {
                                         <th>Partida</th>
                                         <th style={{ textAlign: 'right' }}>Stock Principal</th>
                                         <th style={{ textAlign: 'right' }}>Secundario</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {group.entries.map((entry: any) => {
                                         const isMinBatch = entry.batch.lotNumber === group.minLotNumber;
+                                        const createdAt = new Date(entry.batch.createdAt);
+                                        const now = new Date();
+                                        const diffDays = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 3600 * 24));
+                                        const isOld = diffDays > 180;
+
                                         return (
                                             <tr key={entry.id} className={isMinBatch ? 'highlight-row' : ''}>
                                                 <td style={{ fontWeight: 600 }}>{entry.posicion?.codigo || 'S/P'}</td>
                                                 <td>
                                                     <code>{entry.batch.lotNumber}</code>
                                                     {isMinBatch && <span style={{ marginLeft: '8px', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700 }}>★ Min</span>}
+                                                    {isOld && (
+                                                        <span className="aging-warning" title={`Esta partida ingresó hace ${diffDays} días`}>
+                                                            ⚠️ {diffDays}d
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td style={{ textAlign: 'right', fontWeight: 700 }}>
                                                     {Number(entry.qtyPrincipal).toFixed(2)} <span style={{ fontSize: '11px', opacity: 0.7 }}>{entry.batch.item.unidadPrincipal}</span>
                                                 </td>
                                                 <td style={{ textAlign: 'right', color: '#9ca3af' }}>
                                                     {entry.qtySecundaria != null ? `${Number(entry.qtySecundaria).toFixed(0)} ${entry.batch.item.unidadSecundaria || ''}` : '-'}
+                                                </td>
+                                                <td style={{ textAlign: 'right', paddingRight: '12px' }}>
+                                                    <button 
+                                                        onClick={() => navigate('/movimientos', { 
+                                                            state: { 
+                                                                depositoId: entry.posicion?.depot?.id, 
+                                                                posicionId: entry.posicion?.id,
+                                                                itemId: entry.batch?.item?.id
+                                                            } 
+                                                        })}
+                                                        style={{
+                                                            background: 'none', border: '1px solid #2a2d3e', borderRadius: '4px',
+                                                            color: '#6366f1', fontSize: '11px', padding: '2px 6px', cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        Mover ➔
+                                                    </button>
                                                 </td>
                                             </tr>
                                         );

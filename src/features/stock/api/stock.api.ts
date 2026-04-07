@@ -37,6 +37,17 @@ export const stockApi = api.injectEndpoints({
             query: (body) => ({ url: 'stock/move', method: 'POST', body }),
             invalidatesTags: ['Stock'],
         }),
+        bulkMoveStock: builder.mutation<void, {
+            items: {
+                depositoId: string; posicionIdOrigen: string; posicionIdDestino: string;
+                itemId: string; lotId: string; qtyPrincipal: number; qtySecundaria?: number | null;
+            }[];
+            fecha: string;
+            observaciones?: string;
+        }>({
+            query: (body) => ({ url: 'stock/bulk-move', method: 'POST', body }),
+            invalidatesTags: ['Stock'],
+        }),
         quickAddStock: builder.mutation<void, {
             depositoId: string; posicionId: string; itemId: string; supplierId: string;
             lotNumber: string; qtyPrincipal: number; qtySecundaria?: number | null; fecha: string;
@@ -100,6 +111,7 @@ export const {
     useGetDashboardComprasQuery,
     useAdjustStockMutation,
     useMoveStockMutation,
+    useBulkMoveStockMutation,
     useQuickAddStockMutation,
     useDeleteStockMutation,
     useUpdateBatchNumberMutation,

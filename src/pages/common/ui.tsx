@@ -12,17 +12,26 @@ export function PageHeader({ title, subtitle, children }: { title: string; subti
     );
 }
 
-export function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+export function Card({ children, style, className, onClick }: { 
+    children: React.ReactNode; 
+    style?: React.CSSProperties; 
+    className?: string;
+    onClick?: () => void;
+}) {
     return (
-        <div style={{ background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: '12px', overflow: 'hidden', ...style }}>
+        <div 
+            className={className}
+            onClick={onClick}
+            style={{ background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: '12px', overflow: 'hidden', ...style }}
+        >
             {children}
         </div>
     );
 }
 
-export function Btn({ children, onClick, variant = 'primary', small, disabled, style }: {
+export function Btn({ children, onClick, variant = 'primary', small, disabled, style, title }: {
     children: React.ReactNode; onClick?: (e: React.MouseEvent) => void; variant?: 'primary' | 'secondary' | 'danger';
-    small?: boolean; disabled?: boolean; style?: React.CSSProperties;
+    small?: boolean; disabled?: boolean; style?: React.CSSProperties; title?: string;
 }) {
     const colors = {
         primary: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
@@ -32,7 +41,7 @@ export function Btn({ children, onClick, variant = 'primary', small, disabled, s
     const textColor = { primary: '#fff', secondary: '#9ca3af', danger: '#f87171' };
     return (
         <button
-            onClick={onClick} disabled={disabled}
+            onClick={onClick} disabled={disabled} title={title}
             style={{
                 background: colors[variant], color: textColor[variant],
                 border: variant === 'secondary' ? '1px solid #374151' : variant === 'danger' ? '1px solid rgba(239,68,68,0.3)' : 'none',
