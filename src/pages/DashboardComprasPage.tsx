@@ -1,114 +1,217 @@
-import { useGetDashboardComprasQuery, useGetAlertsQuery } from '../features/stock/api/stock.api';
-import { PageHeader, Card, Badge, SearchBar, Spinner } from './common/ui';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { 
+    useGetAlertsQuery, 
+    useGetCombosQuery, 
+    useCreateComboMutation, 
+    useDeleteComboMutation,
+    useGetComboBreakdownQuery
+} from '../features/stock/api/stock.api';
+import { useGetPartnersQuery } from '../features/partners/api/partners.api';
+import { useGetItemsQuery } from '../features/items/api/items.api';
+import { PageHeader, Card, Badge, Btn, Modal, Table, Spinner, Input, Select } from './common/ui';
 
 export default function DashboardComprasPage() {
-    const { data: compras = [], isLoading } = useGetDashboardComprasQuery();
+    const { data: combos = [], isLoading: loadingCombos } = useGetCombosQuery();
     const { data: alerts = [] } = useGetAlertsQuery();
-    const [q, setQ] = useState('');
+    const { data: partners = [] } = useGetPartnersQuery({ type: 'SUPPLIER' });
+    const { data: items = [] } = useGetItemsQuery();
+    
+    const [createCombo] = useCreateComboMutation();
+    const [deleteCombo] = useDeleteComboMutation();
 
-    const filtered = compras.filter((c: any) =>
-        !q || c.descripcion?.toLowerCase().includes(q.toLowerCase()) || c.codigoInterno?.toLowerCase().includes(q.toLowerCase())
-    );
-    const alta = filtered.filter((c: any) => c.rotacion === 'ALTA');
-    const media = filtered.filter((c: any) => c.rotacion === 'MEDIA');
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showBreakdownId, setShowBreakdownId] = useState<string | null>(null);
+    
+    // Create Combo State
+    const [newCombo, setNewCombo] = useState({ title: '', supplierId: '', itemIds: [] as string[] });
 
-    const StockBar = ({ item }: { item: any }) => {
-        const pct = item.stockMinimo ? Math.min(100, (item.stockActual / item.stockMinimo) * 100) : 100;
-        const color = pct < 50 ? '#ef4444' : pct < 80 ? '#f59e0b' : '#34d399';
-        return (
-            <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ color: '#d1d5db', fontSize: '13px', fontWeight: 600 }}>{item.descripcion}</span>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <code style={{ color: '#6b7280', fontSize: '11px' }}>{item.codigoInterno}</code>
-                        {item.enAlerta && <Badge color="#f87171">⚠️ Bajo</Badge>}
-                    </div>
-                </div>
-                <div style={{ height: '8px', background: '#1e2133', borderRadius: '99px', overflow: 'hidden', marginBottom: '4px' }}>
-                    <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: '99px', transition: 'width 0.3s' }} />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#6b7280' }}>
-                    <span style={{ color }}>{Number(item.stockActual).toFixed(1)} kg</span>
-                    {item.stockMinimo && <span>mín: {Number(item.stockMinimo).toFixed(1)}</span>}
-                </div>
-            </div>
-        );
+    const handleCreate = async () => {
+        if (!newCombo.title || newCombo.itemIds.length === 0) return;
+        await createCombo({
+            title: newCombo.title,
+            supplierId: newCombo.supplierId || null,
+            itemIds: newCombo.itemIds
+        });
+        setShowCreateModal(false);
+        setNewCombo({ title: '', supplierId: '', itemIds: [] });
+    };
+
+    const handleDelete = async (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (window.confirm('¿Eliminar este combo?')) {
+            await deleteCombo(id);
+        }
     };
 
     return (
-        <div className="dashboard-container" style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+        <div className="dashboard-container" style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
             <style>{`
-                .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-                @media (max-width: 900px) {
-                    .dashboard-grid { grid-template-columns: 1fr; }
-                    .dashboard-container { padding: 16px !important; }
-                    .header-top { flex-direction: column; align-items: stretch !important; gap: 16px !important; }
+                .combos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-bottom: 40px; }
+                .combo-card { 
+                    cursor: pointer; transition: transform 0.2s, border-color 0.2s; 
+                    position: relative; padding: 20px; display: flex; flex-direction: column; gap: 12px;
                 }
-                .stock-bar-container {
-                    padding: 16px;
-                    border-bottom: 1px solid #1e2133;
-                    transition: background 0.2s;
+                .combo-card:hover { transform: translateY(-4px); border-color: #6366f1; }
+                .delete-btn { position: absolute; top: 12px; right: 12px; opacity: 0; transition: opacity 0.2s; }
+                .combo-card:hover .delete-btn { opacity: 1; }
+                
+                .item-chip { 
+                    display: inline-flex; align-items: center; gap: 6px; background: #0f1117; 
+                    border: 1px solid #374151; border-radius: 6px; padding: 4px 8px; font-size: 11px; color: #d1d5db;
                 }
-                .stock-bar-container:last-child { border-bottom: none; }
-                .stock-bar-container:hover { background: rgba(255,255,255,0.02); }
+                .item-chip button { background: none; border: none; color: #ef4444; cursor: pointer; padding: 0 2px; }
             `}</style>
 
-            <div className="header-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <PageHeader title="Abastecimiento" subtitle="Estado de stock y alertas de reposición" />
-                <SearchBar value={q} onChange={setQ} />
-            </div>
+            <PageHeader title="Dashboard de Compras" subtitle="Control de stock por combos y materiales críticos">
+                <Btn onClick={() => setShowCreateModal(true)}>+ Nuevo Combo</Btn>
+            </PageHeader>
 
-            {alerts.length > 0 && (
-                <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '12px', padding: '16px', marginBottom: '24px', animation: 'pulse 2s infinite' }}>
-                    <style>{`@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.2); } 70% { box-shadow: 0 0 0 10px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }`}</style>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
-                        <span style={{ fontSize: '18px' }}>⚠️</span>
-                        <span style={{ color: '#f87171', fontWeight: 700, fontSize: '15px' }}>Materiales por debajo del mínimo crítico ({alerts.length})</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                        {alerts.map((a: any) => (
-                            <span key={a.itemId} style={{ color: '#fca5a5', fontSize: '12px', background: 'rgba(239,68,68,0.15)', padding: '4px 10px', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.1)' }}>
-                                <strong>{a.descripcion}</strong>: {Number(a.stockActual).toFixed(1)} kg
-                            </span>
-                        ))}
-                    </div>
+            <h3 style={{ color: '#f3f4f6', fontSize: '18px', fontWeight: 600, marginBottom: '20px' }}>📦 Mis Combos</h3>
+            
+            {loadingCombos ? <Spinner /> : (
+                <div className="combos-grid">
+                    {combos.length === 0 && (
+                        <p style={{ color: '#6b7280', gridColumn: '1/-1', textAlign: 'center', padding: '40px' }}>
+                            No has creado ningún combo de compra todavía.
+                        </p>
+                    )}
+                    {combos.map((combo: any) => (
+                        <Card key={combo.id} className="combo-card" style={{ cursor: 'pointer' }} onClick={() => setShowBreakdownId(combo.id)}>
+                            <button className="delete-btn" onClick={(e) => handleDelete(combo.id, e)} style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: '14px' }}>✕</button>
+                            
+                            <div>
+                                <h4 style={{ color: '#f3f4f6', fontSize: '16px', fontWeight: 700, margin: '0 0 4px 0' }}>{combo.title}</h4>
+                                {combo.supplier && <span style={{ color: '#6366f1', fontSize: '12px', fontWeight: 600 }}>{combo.supplier.name}</span>}
+                            </div>
+
+                            <div style={{ background: 'rgba(99, 102, 241, 0.05)', borderRadius: '12px', padding: '16px', textAlign: 'center', border: '1px solid rgba(99, 102, 241, 0.1)' }}>
+                                <span style={{ color: '#d1d5db', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Total de Kilos en Stock</span>
+                                <span style={{ color: '#34d399', fontSize: '28px', fontWeight: 800 }}>{Number(combo.totalStock || 0).toFixed(1)} <small style={{ fontSize: '14px' }}>kg</small></span>
+                            </div>
+
+                            <div style={{ color: '#6b7280', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>{combo.itemIds.length} materiales</span>
+                                <span style={{ color: '#6366f1' }}>Ver desglose →</span>
+                            </div>
+                        </Card>
+                    ))}
                 </div>
             )}
 
-            {isLoading ? <Spinner /> : (
-                <div className="dashboard-grid">
-                    <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-                            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 10px rgba(239,68,68,0.4)' }} />
-                            <h3 style={{ color: '#f3f4f6', fontSize: '16px', fontWeight: 700, margin: 0 }}>Alta Rotación</h3>
-                            <Badge color="#ef4444">{alta.length}</Badge>
-                        </div>
-                        <Card style={{ overflow: 'hidden' }}>
-                            {alta.length === 0 ? <p style={{ padding: '32px', textAlign: 'center', color: '#4b5563' }}>Sin datos</p> : alta.map((item: any) => (
-                                <div key={item.itemId} className="stock-bar-container">
-                                    <StockBar item={item} />
-                                </div>
-                            ))}
-                        </Card>
-                    </div>
-                    <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-                            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#f59e0b', boxShadow: '0 0 10px rgba(245,158,11,0.4)' }} />
-                            <h3 style={{ color: '#f3f4f6', fontSize: '16px', fontWeight: 700, margin: 0 }}>Media Rotación</h3>
-                            <Badge color="#f59e0b">{media.length}</Badge>
-                        </div>
-                        <Card style={{ overflow: 'hidden' }}>
-                            {media.length === 0 ? <p style={{ padding: '32px', textAlign: 'center', color: '#4b5563' }}>Sin datos</p> : media.map((item: any) => (
-                                <div key={item.itemId} className="stock-bar-container">
-                                    <StockBar item={item} />
-                                </div>
-                            ))}
-                        </Card>
-                    </div>
+            <hr style={{ border: 'none', borderTop: '1px solid #1e2133', margin: '40px 0' }} />
+
+            <h3 style={{ color: '#f3f4f6', fontSize: '18px', fontWeight: 600, marginBottom: '20px' }}>⚠️ Alertas de Reposición</h3>
+            {alerts.length > 0 ? (
+                <Card style={{ padding: '0' }}>
+                    <Table 
+                        cols={['Material', 'Código', 'Stock Actual', 'Mínimo', 'Déficit']}
+                        rows={alerts.map(a => [
+                            <strong style={{ color: '#f3f4f6' }}>{a.descripcion}</strong>,
+                            <code>{a.codigoInterno}</code>,
+                            <span style={{ color: '#f87171', fontWeight: 600 }}>{Number(a.stockActual).toFixed(1)} kg</span>,
+                            <span style={{ color: '#6b7280' }}>{Number(a.stockMinimo).toFixed(1)} kg</span>,
+                            <Badge color="#ef4444">{Number(a.deficit).toFixed(1)} kg faltantes</Badge>
+                        ])}
+                    />
+                </Card>
+            ) : (
+                <div style={{ textAlign: 'center', padding: '40px', background: 'rgba(52, 211, 153, 0.05)', borderRadius: '12px', border: '1px dashed rgba(52, 211, 153, 0.3)' }}>
+                    <span style={{ color: '#34d399', fontWeight: 600 }}>Todo en orden.</span>
+                    <p style={{ color: '#6b7280', fontSize: '13px', margin: '4px 0 0' }}>No hay materiales por debajo del stock mínimo.</p>
                 </div>
+            )}
+
+            {/* Create Combo Modal */}
+            {showCreateModal && (
+                <Modal title="Nuevo Combo de Compra" onClose={() => setShowCreateModal(false)}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        <Input label="Título del Combo (ej: Algodón Blanco)" value={newCombo.title} onChange={(v) => setNewCombo({ ...newCombo, title: v })} placeholder="Asigna un nombre..." />
+                        
+                        <Select 
+                            label="Proveedor (opcional)" 
+                            value={newCombo.supplierId || ''} 
+                            onChange={(v) => setNewCombo({ ...newCombo, supplierId: v })}
+                            options={[{ value: '', label: 'Cualquier proveedor' }, ...partners.map(p => ({ value: p.id, label: p.name }))]}
+                        />
+
+                        <div>
+                            <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '8px' }}>Seleccionar Materiales</label>
+                            <div style={{ maxHeight: '200px', overflow: 'auto', background: '#0f1117', borderRadius: '8px', border: '1px solid #374151', padding: '10px' }}>
+                                {items.map(item => (
+                                    <label key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0', borderBottom: '1px solid #1e2133', cursor: 'pointer', color: '#d1d5db', fontSize: '13px' }}>
+                                        <input 
+                                            type="checkbox" 
+                                            checked={newCombo.itemIds.includes(item.id)}
+                                            onChange={(e) => {
+                                                const ids = e.target.checked 
+                                                    ? [...newCombo.itemIds, item.id]
+                                                    : newCombo.itemIds.filter(id => id !== item.id);
+                                                setNewCombo({ ...newCombo, itemIds: ids });
+                                            }}
+                                        />
+                                        <span>{item.descripcion} <code style={{ fontSize: '11px', color: '#6b7280' }}>({item.codigoInterno})</code></span>
+                                    </label>
+                                ))}
+                            </div>
+                            <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                {newCombo.itemIds.map(id => {
+                                    const item = items.find(i => i.id === id);
+                                    return (
+                                        <span key={id} className="item-chip">
+                                            {item?.codigoInterno}
+                                            <button onClick={() => setNewCombo({ ...newCombo, itemIds: newCombo.itemIds.filter(x => x !== id) })}>✕</button>
+                                        </span>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                            <Btn onClick={handleCreate} style={{ flex: 1 }} disabled={!newCombo.title || newCombo.itemIds.length === 0}>Crear Combo</Btn>
+                            <Btn variant="secondary" onClick={() => setShowCreateModal(false)}>Cancelar</Btn>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
+            {/* Breakdown Modal */}
+            {showBreakdownId && (
+                <BreakdownModal id={showBreakdownId} onClose={() => setShowBreakdownId(null)} />
             )}
         </div>
     );
+}
 
+function BreakdownModal({ id, onClose }: { id: string, onClose: () => void }) {
+    const { data: breakdown = [], isLoading } = useGetComboBreakdownQuery(id);
+
+    return (
+        <Modal title="Desglose por Partidas" onClose={onClose} wide>
+            {isLoading ? <Spinner /> : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    {breakdown.map((item: any) => (
+                        <div key={item.itemId}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '12px', borderBottom: '1px solid #2a2d3e', paddingBottom: '8px' }}>
+                                <h4 style={{ color: '#f3f4f6', fontSize: '15px', fontWeight: 700, margin: 0 }}>
+                                    {item.description} <code style={{ fontWeight: 400, fontSize: '12px', marginLeft: '8px', color: '#6b7280' }}>{item.code}</code>
+                                </h4>
+                                <span style={{ color: '#34d399', fontWeight: 700 }}>{Number(item.total).toFixed(1)} kg</span>
+                            </div>
+                            <Table 
+                                cols={['Partida/Lote', 'Depósito', 'Posición', 'Cantidad']}
+                                rows={item.batches.map((b: any) => [
+                                    <code style={{ color: '#a5b4fc', fontSize: '13px' }}>{b.lotNumber}</code>,
+                                    b.depot,
+                                    b.position,
+                                    <strong>{Number(b.qty).toFixed(1)} kg</strong>
+                                ]).sort((a: any, b: any) => b[0] - a[0])}
+                            />
+                        </div>
+                    ))}
+                    {breakdown.length === 0 && <p style={{ color: '#6b7280', textAlign: 'center', padding: '20px' }}>No hay stock disponible para los materiales de este combo.</p>}
+                    <Btn variant="secondary" onClick={onClose} style={{ alignSelf: 'flex-end' }}>Cerrar</Btn>
+                </div>
+            )}
+        </Modal>
+    );
 }
