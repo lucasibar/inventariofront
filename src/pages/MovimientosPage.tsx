@@ -1,13 +1,18 @@
 import { useState } from 'react';
 import { useGetDepotsQuery } from '../features/depots/api/depots.api';
-import { 
-    useGetStockQuery, 
-    useMoveStockMutation, 
-    useAdjustStockMutation, 
-    useUpdateBatchNumberMutation 
+import {
+    useGetStockQuery,
+    useMoveStockMutation,
+    useAdjustStockMutation,
+    useUpdateBatchNumberMutation,
+    useQuickAddStockMutation,
+    useDeleteStockMutation
 } from '../features/stock/api/stock.api';
-import { useUpdateItemMutation } from '../features/items/api/items.api';
+import { useUpdateItemMutation, useGetItemsQuery } from '../features/items/api/items.api';
+import { useGetPartnersQuery } from '../features/partners/api/partners.api';
 import { PageHeader, Card, Table, Select, Input, Btn, Modal, EditableCell } from './common/ui';
+import { CreateItemDialog } from '../features/remitos/ui/CreateItemDialog';
+import { CreatePartnerDialog } from '../features/remitos/ui/CreatePartnerDialog';
 
 export default function MovimientosPage() {
     const { data: depots = [] } = useGetDepotsQuery();
@@ -20,18 +25,73 @@ export default function MovimientosPage() {
     const [depositoIdRight, setDepositoIdRight] = useState('');
     const [posicionIdRight, setPosicionIdRight] = useState('');
 
-    const { data: stockLeft = [], isLoading: loadingLeft } = useGetStockQuery({ 
-        depotId: depositoIdLeft, positionId: posicionIdLeft 
+    const { data: stockLeft = [], isLoading: loadingLeft } = useGetStockQuery({
+        depotId: depositoIdLeft, positionId: posicionIdLeft
     }, { skip: !depositoIdLeft || !posicionIdLeft });
 
-    const { data: stockRight = [], isLoading: loadingRight } = useGetStockQuery({ 
-        depotId: depositoIdRight, positionId: posicionIdRight 
+    const { data: stockRight = [], isLoading: loadingRight } = useGetStockQuery({
+        depotId: depositoIdRight, positionId: posicionIdRight
     }, { skip: !depositoIdRight || !posicionIdRight });
 
     const [moveStock] = useMoveStockMutation();
     const [adjustStock] = useAdjustStockMutation();
     const [updateBatchNumber] = useUpdateBatchNumberMutation();
     const [updateItem] = useUpdateItemMutation();
+    const [quickAddStock] = useQuickAddStockMutation();
+    const [deleteStock] = useDeleteStockMutation();
+
+    const { data: items = [] } = useGetItemsQuery({});
+    const { data: partners = [] } = useGetPartnersQuery({});
+
+    // Quick Add Modal State
+    const [quickAddModal, setQuickAddModal] = useState(false);
+    const [qaDepot, setQaDepot] = useState('');
+    const [qaPosition, setQaPosition] = useState('');
+    const [qaItem, setQaItem] = useState('');
+    const [qaSupplier, setQaSupplier] = useState('');
+    const [qaLot, setQaLot] = useState('');
+    const [qaPrincipal, setQaPrincipal] = useState('');
+    const [qaSecundaria, setQaSecundaria] = useState('');
+
+    // Dialog States
+    const [createItemModal, setCreateItemModal] = useState(false);
+    const [createPartnerModal, setCreatePartnerModal] = useState(false);
+
+    const handleQuickAddSubmit = async () => {
+        if (!qaDepot || !qaPosition || !qaItem || !qaSupplier || !qaLot || !qaPrincipal) {
+            alert('Completá todos los campos obligatorios para agregar mercadería.');
+            return;
+        }
+        try {
+            await quickAddStock({
+                depositoId: qaDepot,
+                posicionId: qaPosition,
+                itemId: qaItem,
+                supplierId: qaSupplier,
+                lotNumber: qaLot,
+                qtyPrincipal: Number(qaPrincipal),
+                qtySecundaria: qaSecundaria ? Number(qaSecundaria) : undefined,
+                fecha: new Date().toISOString()
+            }).unwrap();
+            setQuickAddModal(false);
+            setQaItem(''); setQaLot(''); setQaPrincipal(''); setQaSecundaria('');
+        } catch (e: any) {
+            alert(e?.data?.message || 'Error en adición rápida');
+        }
+    };
+
+    const handleDeleteBalance = async (row: any) => {
+        if (!window.confirm('¿Estás seguro de eliminar TODO este balance de la posición?')) return;
+        try {
+            await deleteStock({
+                depositoId: row.depositoId || row.posicion?.depot?.id || row.deposito?.id,
+                posicionId: row.posicionId || row.posicion?.id,
+                itemId: row.batch?.item?.id,
+                lotId: row.batch.id,
+                fecha: new Date().toISOString()
+            }).unwrap();
+        } catch (e: any) { alert(e?.data?.message || 'Error eliminando stock'); }
+    };
 
     // Transfer Modal State
     const [transferModal, setTransferModal] = useState<{ source: 'left' | 'right', item: any } | null>(null);
@@ -63,7 +123,7 @@ export default function MovimientosPage() {
                 depositoId: destDepot,
                 posicionIdOrigen: item.posicion.id,
                 posicionIdDestino: destPos,
-                itemId: item.item.id,
+                itemId: item.batch?.item?.id,
                 lotId: item.batch.id,
                 qtyPrincipal: Number(transferPrincipal),
                 qtySecundaria: transferSecundaria ? Number(transferSecundaria) : undefined,
@@ -83,10 +143,10 @@ export default function MovimientosPage() {
         await adjustStock({
             depositoId: row.deposito.id,
             posicionId: row.posicion.id,
-            itemId: row.item.id,
+            itemId: row.batch?.item?.id,
             lotId: row.batch.id,
-            deltaPrincipal: delta,
-            deltaSecundaria: 0,
+            qtyPrincipal: delta,
+            qtySecundaria: 0,
             fecha: new Date().toISOString(),
             observaciones: 'Ajuste rápido desde Movimientos'
         }).unwrap();
@@ -100,10 +160,10 @@ export default function MovimientosPage() {
         await adjustStock({
             depositoId: row.deposito.id,
             posicionId: row.posicion.id,
-            itemId: row.item.id,
+            itemId: row.batch?.item?.id,
             lotId: row.batch.id,
-            deltaPrincipal: 0,
-            deltaSecundaria: delta,
+            qtyPrincipal: 0,
+            qtySecundaria: delta,
             fecha: new Date().toISOString(),
             observaciones: 'Ajuste rápido desde Movimientos'
         }).unwrap();
@@ -115,43 +175,54 @@ export default function MovimientosPage() {
     };
 
     const handleEditItemName = async (val: string, row: any) => {
-        if (val === row.item.descripcion) return;
+        if (val === row.batch?.item?.descripcion) return;
         if (!window.confirm(`¿Estás seguro que querés cambiar el nombre del material para todo el sistema a "${val}"?`)) return;
-        await updateItem({ id: row.item.id, data: { descripcion: val } }).unwrap();
+        await updateItem({ id: row.batch?.item?.id, data: { descripcion: val } }).unwrap();
     };
 
     // Columns builder
     const buildCols = () => [
-        'Material', 'Partida', 'Stock Principal', 'Secundario', ''
+        'Material', 'Partida', 'Stock Principal', 'Secundario', '', ''
     ];
 
     const buildRows = (stock: any[], source: 'left' | 'right') => stock.map(m => [
         <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ color: '#f3f4f6', fontWeight: 600 }}>
-                <EditableCell value={m.item?.descripcion || ''} onSave={val => handleEditItemName(val, m)} />
+                <EditableCell value={m.batch?.item?.descripcion || ''} onSave={val => handleEditItemName(val, m)} />
             </span>
-            <code style={{ color: '#a5b4fc', fontSize: '11px' }}>{m.item?.codigoInterno || '—'}</code>
+            <code style={{ color: '#a5b4fc', fontSize: '11px' }}>{m.batch?.item?.codigoInterno || '—'}</code>
         </div>,
         <div style={{ color: '#fbbf24', fontWeight: 600 }}>
             <EditableCell value={m.batch?.lotNumber || ''} onSave={val => handleEditLotNumber(val, m)} />
         </div>,
         <div style={{ color: '#34d399', fontWeight: 600 }}>
-            <EditableCell numeric value={String(m.qtyPrincipal)} onSave={val => handleEditPrincipal(val, m)} /> {m.item.unidadPrincipal}
+            <EditableCell numeric value={String(m.qtyPrincipal)} onSave={val => handleEditPrincipal(val, m)} /> {m.batch?.item?.unidadPrincipal}
         </div>,
         <div style={{ color: '#9ca3af' }}>
-            <EditableCell numeric value={String(m.qtySecundaria || 0)} onSave={val => handleEditSecundaria(val, m)} /> {m.item.unidadSecundaria || ''}
+            <EditableCell numeric value={String(m.qtySecundaria || 0)} onSave={val => handleEditSecundaria(val, m)} /> {m.batch?.item?.unidadSecundaria || ''}
         </div>,
-        <Btn small onClick={() => handleTransferClick(m, source)} style={{ padding: '4px 8px' }}>
+        <Btn small onClick={() => handleTransferClick(m, source)} style={{ padding: '4px 8px', width: '100%' }}>
             {source === 'left' ? 'Mover ➔' : '⬅ Mover'}
-        </Btn>
+        </Btn>,
+        <button
+            onClick={() => handleDeleteBalance(m)}
+            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '16px', padding: '4px' }}
+            title="Borrar registro de stock"
+        >
+            🗑
+        </button>
     ]);
 
     const posOptionsLeft = depots.find((d: any) => d.id === depositoIdLeft)?.positions?.map((p: any) => ({ value: p.id, label: p.codigo })) || [];
     const posOptionsRight = depots.find((d: any) => d.id === depositoIdRight)?.positions?.map((p: any) => ({ value: p.id, label: p.codigo })) || [];
 
+    const posOptionsLeftModal = depots.find((d: any) => d.id === qaDepot)?.positions?.map((p: any) => ({ value: p.id, label: p.codigo })) || [];
+
     return (
         <div style={{ padding: '24px' }}>
-            <PageHeader title="Manejo de Movimientos" subtitle="Transferencias entre posiciones y edición rápida" />
+            <PageHeader title="Manejo de Movimientos" subtitle="Transferencias entre posiciones y edición rápida">
+                <Btn onClick={() => setQuickAddModal(true)}>+ Adición Rápida</Btn>
+            </PageHeader>
 
             <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
                 {/* Left Panel */}
@@ -213,23 +284,23 @@ export default function MovimientosPage() {
             {transferModal && (
                 <Modal title="Transferir Mercadería" onClose={() => setTransferModal(null)}>
                     <div style={{ marginBottom: '20px', color: '#9ca3af', fontSize: '14px' }}>
-                        Moviendo <strong>{transferModal.item.item.descripcion}</strong> (Partida {transferModal.item.batch.lotNumber})
+                        Moviendo <strong>{transferModal.item.batch?.item?.descripcion}</strong> (Partida {transferModal.item.batch?.lotNumber})
                     </div>
                     <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-                        <Input 
-                            label={`Cant. Principal a mover (Disp: ${transferModal.item.qtyPrincipal}${transferModal.item.item.unidadPrincipal})`}
-                            type="number" 
-                            value={transferPrincipal} 
-                            onChange={setTransferPrincipal} 
+                        <Input
+                            label={`Cant. Principal a mover (Disp: ${transferModal.item.qtyPrincipal}${transferModal.item.batch?.item?.unidadPrincipal})`}
+                            type="number"
+                            value={transferPrincipal}
+                            onChange={setTransferPrincipal}
                             style={{ flex: 1 }}
                         />
-                        <Input 
-                                label={`Secundaria a mover (Disp: ${transferModal.item.qtySecundaria || 0}${transferModal.item.item.unidadSecundaria || ''})`}
-                                type="number" 
-                                value={transferSecundaria} 
-                                onChange={setTransferSecundaria} 
-                                style={{ flex: 1 }}
-                            />
+                        <Input
+                            label={`Secundaria a mover (Disp: ${transferModal.item.qtySecundaria || 0}${transferModal.item.batch?.item?.unidadSecundaria || ''})`}
+                            type="number"
+                            value={transferSecundaria}
+                            onChange={setTransferSecundaria}
+                            style={{ flex: 1 }}
+                        />
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                         <Btn variant="secondary" onClick={() => setTransferModal(null)}>Cancelar</Btn>
@@ -237,6 +308,51 @@ export default function MovimientosPage() {
                     </div>
                 </Modal>
             )}
+
+            {/* Quick Add Modal */}
+            {quickAddModal && (
+                <Modal title="Adición Rápida de Mercadería" onClose={() => setQuickAddModal(false)}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <Select label="Depósito Destino" value={qaDepot} onChange={val => { setQaDepot(val); setQaPosition(''); }} options={[{ value: '', label: 'Seleccionar...' }, ...depots.map((d: any) => ({ value: d.id, label: d.nombre }))]} style={{ flex: 1 }} />
+                            <Select label="Posición" value={qaPosition} onChange={setQaPosition} options={[{ value: '', label: 'Seleccionar...' }, ...posOptionsLeftModal]} style={{ flex: 1 }} />
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+                            <Select label="Material" value={qaItem} onChange={setQaItem} options={[{ value: '', label: 'Seleccionar...' }, ...items.map((i: any) => ({ value: i.id, label: `${i.codigoInterno} - ${i.descripcion}` }))]} style={{ flex: 1 }} />
+                            <Btn variant="secondary" onClick={() => setCreateItemModal(true)} style={{ whiteSpace: 'nowrap' }}>+ Nuevo Material</Btn>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+                            <Select label="Proveedor" value={qaSupplier} onChange={setQaSupplier} options={[{ value: '', label: 'Seleccionar...' }, ...partners.filter((p: any) => p.isSupplier).map((p: any) => ({ value: p.id, label: p.name }))]} style={{ flex: 1 }} />
+                            <Btn variant="secondary" onClick={() => setCreatePartnerModal(true)} style={{ whiteSpace: 'nowrap' }}>+ Nuevo Proveedor</Btn>
+                        </div>
+                        <Input label="Número de Partida (Lote)" value={qaLot} onChange={setQaLot} />
+
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <Input label="Cantidad Principal (EJ: Kilos)" type="number" value={qaPrincipal} onChange={setQaPrincipal} style={{ flex: 1 }} />
+                            <Input label="Cantidad Secundaria (EJ: Unidades)" type="number" value={qaSecundaria} onChange={setQaSecundaria} style={{ flex: 1 }} />
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                        <Btn variant="secondary" onClick={() => setQuickAddModal(false)}>Cancelar</Btn>
+                        <Btn onClick={handleQuickAddSubmit}>Confirmar</Btn>
+                    </div>
+                </Modal>
+            )}
+
+            {/* Dialogs */}
+            <CreateItemDialog
+                open={createItemModal}
+                onClose={() => setCreateItemModal(false)}
+                onSuccess={(newItem: any) => { setQaItem(newItem.id); }}
+            />
+
+            <CreatePartnerDialog
+                open={createPartnerModal}
+                onClose={() => setCreatePartnerModal(false)}
+                onSuccess={(newPartner: any) => { setQaSupplier(newPartner.id); }}
+            />
         </div>
     );
 }

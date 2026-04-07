@@ -7,10 +7,10 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import { 
-    useGetRemitosEntradaQuery, 
+import {
+    useGetRemitosEntradaQuery,
     useDeleteRemitoMutation,
-    useLazyGetRemitoEntradaQuery 
+    useLazyGetRemitoEntradaQuery
 } from '../features/remitos/api/remito.api';
 import { CreateRemitoForm } from '../features/remitos/ui/CreateRemitoForm';
 import { RemitoDetailModal } from '../features/remitos/ui/RemitoDetailModal';
@@ -119,11 +119,11 @@ export default function RemitosEntradaPage() {
                     </TableHead>
                     <TableBody>
                         {remitos.map((r: any) => (
-                            <TableRow 
-                                key={r.id} 
-                                hover 
+                            <TableRow
+                                key={r.id}
+                                hover
                                 onClick={() => handleRowClick(r)}
-                                sx={{ 
+                                sx={{
                                     '&:last-child td, &:last-child th': { border: 0 },
                                     cursor: 'pointer'
                                 }}
@@ -132,7 +132,7 @@ export default function RemitosEntradaPage() {
                                 <TableCell color="text.secondary">
                                     {new Date(r.fecha || r.date).toLocaleDateString()}
                                 </TableCell>
-                                <TableCell>{r.supplier?.name || r.provider?.name || '—'}</TableCell>
+                                <TableCell>{r.partner?.name || r.supplier?.name || r.provider?.name || '—'}</TableCell>
                                 <TableCell>
                                     <Chip
                                         label={`${r.lines?.length || r.items?.length || 0} ítems`}
@@ -142,9 +142,9 @@ export default function RemitosEntradaPage() {
                                     />
                                 </TableCell>
                                 <TableCell align="right">
-                                    <IconButton 
-                                        size="small" 
-                                        color="error" 
+                                    <IconButton
+                                        size="small"
+                                        color="error"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             deleteRemito(r.id);
@@ -159,10 +159,10 @@ export default function RemitosEntradaPage() {
                 </Table>
             )}
 
-            <RemitoDetailModal 
-                open={showDetail} 
-                onClose={() => setShowDetail(false)} 
-                remito={selectedRemito} 
+            <RemitoDetailModal
+                open={showDetail}
+                onClose={() => setShowDetail(false)}
+                remito={selectedRemito}
             />
         </Box>
     );

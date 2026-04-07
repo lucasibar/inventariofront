@@ -74,6 +74,7 @@ export function Select({ label, value, onChange, options, style }: {
                 style={{
                     width: '100%', background: '#0f1117', border: '1px solid #374151', borderRadius: '8px',
                     padding: '8px 10px', color: '#f3f4f6', fontSize: '13px', outline: 'none', boxSizing: 'border-box',
+                    colorScheme: 'dark'
                 }}
             >
                 {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -95,6 +96,7 @@ export function GroupedSelect({ label, value, onChange, groups, style }: {
                 style={{
                     width: '100%', background: '#0f1117', border: '1px solid #374151', borderRadius: '8px',
                     padding: '8px 10px', color: '#f3f4f6', fontSize: '13px', outline: 'none', boxSizing: 'border-box',
+                    colorScheme: 'dark'
                 }}
             >
                 <option value="">— Sin posición —</option>
@@ -204,10 +206,10 @@ export function EditableCell({ value, onSave, numeric }: { value: string; onSave
     const commit = async () => {
         if (draft === value) { setEditing(false); return; }
         setSaving(true);
-        try { 
-            await onSave(draft); 
-            setEditing(false); 
-        } catch (e) { 
+        try {
+            await onSave(draft);
+            setEditing(false);
+        } catch (e) {
             console.error("Error saving cell:", e);
         } finally {
             setSaving(false);
@@ -218,9 +220,9 @@ export function EditableCell({ value, onSave, numeric }: { value: string; onSave
         <span
             onClick={() => { setDraft(value); setEditing(true); }}
             title="Click para editar"
-            style={{ 
-                cursor: 'pointer', 
-                borderBottom: '1px dashed #4b5563', 
+            style={{
+                cursor: 'pointer',
+                borderBottom: '1px dashed #4b5563',
                 paddingBottom: '1px',
                 transition: 'color 0.2s',
             }}

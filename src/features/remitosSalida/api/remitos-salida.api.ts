@@ -24,4 +24,4 @@ export const remitosSalidaApi = api.injectEndpoints({
     }),
 });
 
-export const { useGetRemitosSalidaQuery, useGetRemitoSalidaQuery, usePreviewRemitoSalidaMutation, useCreateRemitoSalidaMutation, useDeleteRemitoSalidaMutation } = remitosSalidaApi;
+export const { useGetRemitosSalidaQuery, useGetRemitoSalidaQuery, useLazyGetRemitoSalidaQuery, usePreviewRemitoSalidaMutation, useCreateRemitoSalidaMutation, useDeleteRemitoSalidaMutation } = remitosSalidaApi;

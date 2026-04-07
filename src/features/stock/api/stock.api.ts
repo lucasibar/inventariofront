@@ -8,9 +8,9 @@ export const stockApi = api.injectEndpoints({
             limit?: number;
         }>({
             query: (f = {}) => {
-            const p = new URLSearchParams();
-            Object.entries(f).forEach(([k, v]) => { if (v) p.set(k, String(v)) });
-            return `stock?${p.toString()}`;
+                const p = new URLSearchParams();
+                Object.entries(f).forEach(([k, v]) => { if (v) p.set(k, String(v)) });
+                return `stock?${p.toString()}`;
             },
             providesTags: ['Stock'],
         }),
@@ -24,7 +24,7 @@ export const stockApi = api.injectEndpoints({
         }),
         adjustStock: builder.mutation<any, {
             depositoId: string; posicionId: string; itemId: string; lotId: string;
-            deltaPrincipal: number; deltaSecundaria?: number | null;
+            qtyPrincipal: number; qtySecundaria?: number | null;
             fecha: string; observaciones?: string;
         }>({
             query: (body) => ({ url: 'stock/adjust', method: 'PATCH', body }),
@@ -35,6 +35,13 @@ export const stockApi = api.injectEndpoints({
             itemId: string; lotId: string; qtyPrincipal: number; qtySecundaria?: number | null; fecha: string;
         }>({
             query: (body) => ({ url: 'stock/move', method: 'POST', body }),
+            invalidatesTags: ['Stock'],
+        }),
+        quickAddStock: builder.mutation<void, {
+            depositoId: string; posicionId: string; itemId: string; supplierId: string;
+            lotNumber: string; qtyPrincipal: number; qtySecundaria?: number | null; fecha: string;
+        }>({
+            query: (body) => ({ url: 'stock/quick-add', method: 'POST', body }),
             invalidatesTags: ['Stock'],
         }),
         deleteStock: builder.mutation<void, {
@@ -75,6 +82,7 @@ export const {
     useGetDashboardComprasQuery,
     useAdjustStockMutation,
     useMoveStockMutation,
+    useQuickAddStockMutation,
     useDeleteStockMutation,
     useUpdateBatchNumberMutation,
     useGetStockSummaryQuery,

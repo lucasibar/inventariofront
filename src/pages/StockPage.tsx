@@ -1,7 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useGetStockQuery } from '../features/stock/api/stock.api';
+import { useGetStockQuery, useQuickAddStockMutation } from '../features/stock/api/stock.api';
 import { useGetDepotsQuery } from '../features/depots/api/depots.api';
-import { PageHeader, Card, Select, Badge, Spinner } from './common/ui';
+import { useGetItemsQuery } from '../features/items/api/items.api';
+import { useGetPartnersQuery } from '../features/partners/api/partners.api';
+import { PageHeader, Card, Select, Badge, Spinner, Btn, Modal, Input } from './common/ui';
+import { CreateItemDialog } from '../features/remitos/ui/CreateItemDialog';
+import { CreatePartnerDialog } from '../features/remitos/ui/CreatePartnerDialog';
 
 /* ─── UI COMPONENTS (Local or from common/ui) ─── */
 
@@ -17,23 +21,70 @@ export default function StockPage() {
     }, [searchTerm]);
 
     const { data: depots = [] } = useGetDepotsQuery();
-    
+
+    const { data: items = [] } = useGetItemsQuery({});
+    const { data: partners = [] } = useGetPartnersQuery({});
+    const [quickAddStock] = useQuickAddStockMutation();
+
+    const [quickAddModal, setQuickAddModal] = useState(false);
+    const [qaDepot, setQaDepot] = useState('');
+    const [qaPosition, setQaPosition] = useState('');
+    const [qaItem, setQaItem] = useState('');
+    const [qaSupplier, setQaSupplier] = useState('');
+    const [qaLot, setQaLot] = useState('');
+    const [qaPrincipal, setQaPrincipal] = useState('');
+    const [qaSecundaria, setQaSecundaria] = useState('');
+
+    // Dialog States
+    const [createItemModal, setCreateItemModal] = useState(false);
+    const [createPartnerModal, setCreatePartnerModal] = useState(false);
+
+    const handleQuickAddSubmit = async () => {
+        if (!qaDepot || !qaPosition || !qaItem || !qaSupplier || !qaLot || !qaPrincipal) {
+            alert('Completá todos los campos obligatorios para agregar mercadería.');
+            return;
+        }
+        try {
+            await quickAddStock({
+                depositoId: qaDepot,
+                posicionId: qaPosition,
+                itemId: qaItem,
+                supplierId: qaSupplier,
+                lotNumber: qaLot,
+                qtyPrincipal: Number(qaPrincipal),
+                qtySecundaria: qaSecundaria ? Number(qaSecundaria) : undefined,
+                fecha: new Date().toISOString()
+            }).unwrap();
+            setQuickAddModal(false);
+            setQaItem(''); setQaLot(''); setQaPrincipal(''); setQaSecundaria('');
+        } catch (e: any) {
+            alert(e?.data?.message || 'Error en adición rápida');
+        }
+    };
+
     // Fetch stock only if a depot is selected. 
     // We bring a limit to avoid massive data transfer.
     const { data: rawStock = [], isFetching, isError } = useGetStockQuery(
         { depotId: depotId || undefined, q: debouncedSearch || undefined, limit: 1000 },
-        { skip: !depotId && !debouncedSearch } 
+        { skip: !depotId && !debouncedSearch }
     );
 
     // Grouping & Analysis Logic
-    const groupedData = useMemo(() => {
-        if (!rawStock.length) return [];
+    const { groupedData, generalMetrics } = useMemo(() => {
+        const general = { kilos: 0, units: 0, positions: new Set<string>() };
+
+        if (!rawStock.length) return { groupedData: [], generalMetrics: null };
 
         const groups: Record<string, any> = {};
 
-        rawStock.forEach(entry => {
+        rawStock.forEach((entry: any) => {
             const itemId = entry.batch?.item?.id;
             if (!itemId) return;
+
+            // Update general metrics
+            general.kilos += Number(entry.qtyPrincipal || 0);
+            if (entry.qtySecundaria) general.units += Number(entry.qtySecundaria);
+            if (entry.posicionId) general.positions.add(entry.posicionId);
 
             if (!groups[itemId]) {
                 groups[itemId] = {
@@ -41,10 +92,13 @@ export default function StockPage() {
                     supplier: entry.batch.supplier,
                     entries: [],
                     minLotNumber: entry.batch.lotNumber,
+                    metrics: { kilos: 0, units: 0 }
                 };
             }
 
             groups[itemId].entries.push(entry);
+            groups[itemId].metrics.kilos += Number(entry.qtyPrincipal || 0);
+            if (entry.qtySecundaria) groups[itemId].metrics.units += Number(entry.qtySecundaria);
 
             // Update min lot number (string comparison for correlative batches)
             if (entry.batch.lotNumber < groups[itemId].minLotNumber) {
@@ -52,7 +106,10 @@ export default function StockPage() {
             }
         });
 
-        return Object.values(groups).sort((a, b) => a.item.descripcion.localeCompare(b.item.descripcion));
+        return {
+            groupedData: Object.values(groups).sort((a: any, b: any) => a.item.descripcion.localeCompare(b.item.descripcion)),
+            generalMetrics: { ...general, positionsCount: general.positions.size }
+        };
     }, [rawStock]);
 
     return (
@@ -146,10 +203,12 @@ export default function StockPage() {
                 }
             `}</style>
 
-            <PageHeader 
-                title="Gestión de Stock" 
-                subtitle="Consulta de inventario físico, posiciones y rotación de partidas" 
-            />
+            <PageHeader
+                title="Gestión de Stock"
+                subtitle="Consulta de inventario físico, posiciones y rotación de partidas"
+            >
+                <Btn onClick={() => setQuickAddModal(true)}>+ Adición Rápida</Btn>
+            </PageHeader>
 
             <div className="search-bar-container">
                 <div style={{ width: '250px' }}>
@@ -177,6 +236,31 @@ export default function StockPage() {
                 </div>
             </div>
 
+            {/* General Metrics Banner */}
+            {!isFetching && generalMetrics && rawStock.length > 0 && (
+                <div style={{
+                    display: 'flex', gap: '32px', padding: '16px 24px',
+                    background: 'rgba(99, 102, 241, 0.04)',
+                    border: '1px solid rgba(99, 102, 241, 0.15)',
+                    borderRadius: '12px', marginBottom: '8px'
+                }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Total Kilos</span>
+                        <span style={{ fontSize: '20px', color: '#6366f1', fontWeight: 800 }}>{generalMetrics.kilos.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span style={{ fontSize: '13px', fontWeight: 500, color: '#a5b4fc' }}>kg</span></span>
+                    </div>
+                    {generalMetrics.units > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Total Unidades</span>
+                            <span style={{ fontSize: '20px', color: '#10b981', fontWeight: 800 }}>{generalMetrics.units.toLocaleString('es-AR')} <span style={{ fontSize: '13px', fontWeight: 500, color: '#6ee7b7' }}>un</span></span>
+                        </div>
+                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Posiciones Asignadas</span>
+                        <span style={{ fontSize: '20px', color: '#f3f4f6', fontWeight: 800 }}>{generalMetrics.positionsCount}</span>
+                    </div>
+                </div>
+            )}
+
             {isFetching ? (
                 <div style={{ textAlign: 'center', padding: '100px' }}>
                     <Spinner />
@@ -193,12 +277,24 @@ export default function StockPage() {
                                         {group.item.categoria}
                                     </Badge>
                                 </div>
-                                <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px', display: 'flex', gap: '12px' }}>
-                                    <span>Cod: <code style={{ color: '#a5b4fc' }}>{group.item.codigoInterno}</code></span>
-                                    {group.supplier && <span>Prov: {group.supplier.name}</span>}
+                                <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                    <span>Cod: <code style={{ color: '#a5b4fc', fontSize: '11px' }}>{group.item.codigoInterno}</code></span>
+                                    {group.supplier && <span>Prov: <span style={{ color: '#9ca3af' }}>{group.supplier.name}</span></span>}
+                                    <span style={{
+                                        marginLeft: 'auto',
+                                        background: 'rgba(255,255,255,0.06)',
+                                        padding: '2px 8px',
+                                        borderRadius: '4px',
+                                        color: '#f3f4f6',
+                                        fontWeight: 600,
+                                        fontSize: '11px'
+                                    }}>
+                                        {group.metrics.kilos.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
+                                        {group.metrics.units > 0 && ` / ${group.metrics.units.toLocaleString('es-AR')} un`}
+                                    </span>
                                 </div>
                             </div>
-                            
+
                             <table className="positions-table">
                                 <thead>
                                     <tr>
@@ -247,6 +343,51 @@ export default function StockPage() {
                     )}
                 </div>
             )}
+
+            {/* Quick Add Modal */}
+            {quickAddModal && (
+                <Modal title="Adición Rápida de Mercadería" onClose={() => setQuickAddModal(false)}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <Select label="Depósito Destino" value={qaDepot} onChange={val => { setQaDepot(val); setQaPosition(''); }} options={[{ value: '', label: 'Seleccionar...' }, ...depots.map((d: any) => ({ value: d.id, label: d.nombre }))]} style={{ flex: 1 }} />
+                            <Select label="Posición" value={qaPosition} onChange={setQaPosition} options={[{ value: '', label: 'Seleccionar...' }, ...(depots.find((d: any) => d.id === qaDepot)?.positions?.map((p: any) => ({ value: p.id, label: p.codigo })) || [])]} style={{ flex: 1 }} />
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+                            <Select label="Material" value={qaItem} onChange={setQaItem} options={[{ value: '', label: 'Seleccionar...' }, ...items.map((i: any) => ({ value: i.id, label: `${i.codigoInterno} - ${i.descripcion}` }))]} style={{ flex: 1 }} />
+                            <Btn variant="secondary" onClick={() => setCreateItemModal(true)} style={{ whiteSpace: 'nowrap' }}>+ Nuevo Material</Btn>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+                            <Select label="Proveedor" value={qaSupplier} onChange={setQaSupplier} options={[{ value: '', label: 'Seleccionar...' }, ...partners.filter((p: any) => p.isSupplier).map((p: any) => ({ value: p.id, label: p.name }))]} style={{ flex: 1 }} />
+                            <Btn variant="secondary" onClick={() => setCreatePartnerModal(true)} style={{ whiteSpace: 'nowrap' }}>+ Nuevo Proveedor</Btn>
+                        </div>
+                        <Input label="Número de Partida (Lote)" value={qaLot} onChange={setQaLot} />
+
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <Input label="Cantidad Principal (EJ: Kilos)" type="number" value={qaPrincipal} onChange={setQaPrincipal} style={{ flex: 1 }} />
+                            <Input label="Cantidad Secundaria (EJ: Unidades)" type="number" value={qaSecundaria} onChange={setQaSecundaria} style={{ flex: 1 }} />
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                        <Btn variant="secondary" onClick={() => setQuickAddModal(false)}>Cancelar</Btn>
+                        <Btn onClick={handleQuickAddSubmit}>Confirmar</Btn>
+                    </div>
+                </Modal>
+            )}
+
+            {/* Dialogs */}
+            <CreateItemDialog
+                open={createItemModal}
+                onClose={() => setCreateItemModal(false)}
+                onSuccess={(newItem: any) => { setQaItem(newItem.id); }}
+            />
+
+            <CreatePartnerDialog
+                open={createPartnerModal}
+                onClose={() => setCreatePartnerModal(false)}
+                onSuccess={(newPartner: any) => { setQaSupplier(newPartner.id); }}
+            />
         </div>
     );
 }

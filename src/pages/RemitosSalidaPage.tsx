@@ -88,7 +88,7 @@ export default function RemitosSalidaPage() {
                     rows={remitos.map((r: any) => [
                         <span key="num" style={{ color: '#a5b4fc', fontWeight: 600, cursor: 'pointer' }} onClick={() => handleRowClick(r)}>{r.numero}</span>,
                         new Date(r.fecha).toLocaleDateString('es-AR'),
-                        r.partner?.name || r.client?.name ?? '—',
+                        (r.partner?.name || r.client?.name) ?? '—',
                         r.order?.numero ?? '—',
                         <Badge key="badge">{r.lines?.length ?? 0} ítems</Badge>,
                         <Btn key="del" small variant="danger" onClick={(e: any) => { e.stopPropagation(); deleteRemito(r.id); }}>🗑</Btn>,
