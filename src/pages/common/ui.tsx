@@ -71,19 +71,23 @@ export function Input({ label, value, onChange, type = 'text', placeholder, styl
     );
 }
 
-export function Select({ label, value, onChange, options, style }: {
+export function Select({ label, value, onChange, options, style, disabled }: {
     label?: string; value: string; onChange: (v: string) => void;
     options: { value: string; label: string }[]; style?: React.CSSProperties;
+    disabled?: boolean;
 }) {
     return (
         <div style={style}>
             {label && <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>{label}</label>}
             <select
                 value={value} onChange={e => onChange(e.target.value)}
+                disabled={disabled}
                 style={{
                     width: '100%', background: '#0f1117', border: '1px solid #374151', borderRadius: '8px',
                     padding: '8px 10px', color: '#f3f4f6', fontSize: '13px', outline: 'none', boxSizing: 'border-box',
-                    colorScheme: 'dark'
+                    colorScheme: 'dark',
+                    opacity: disabled ? 0.6 : 1,
+                    cursor: disabled ? 'not-allowed' : 'default'
                 }}
             >
                 {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}

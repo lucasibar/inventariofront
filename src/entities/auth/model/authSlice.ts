@@ -8,17 +8,30 @@ interface AuthState {
     isAuthenticated: boolean;
 }
 
-const initialState: AuthState = {
-    user: (() => {
+const initialState: AuthState = (() => {
+    // Switching to sessionStorage to improve security and avoid leftover state
+    const user = (() => {
         try {
-            return JSON.parse(localStorage.getItem('user') || 'null');
+            const stored = sessionStorage.getItem('user');
+            if (!stored || stored === 'null' || stored === 'undefined') return null;
+            return JSON.parse(stored);
         } catch (e) {
             return null;
         }
-    })(),
-    token: localStorage.getItem('token'),
-    isAuthenticated: !!localStorage.getItem('token'),
-};
+    })();
+
+    const token = (() => {
+        const storedToken = sessionStorage.getItem('token');
+        if (!storedToken || storedToken === 'null' || storedToken === 'undefined') return null;
+        return storedToken;
+    })();
+
+    return {
+        user,
+        token,
+        isAuthenticated: !!token,
+    };
+})();
 
 const authSlice = createSlice({
     name: 'auth',
@@ -31,16 +44,15 @@ const authSlice = createSlice({
             state.user = user;
             state.token = token;
             state.isAuthenticated = true;
-            localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(user));
+            sessionStorage.setItem('token', token);
+            sessionStorage.setItem('user', JSON.stringify(user));
         },
         logout: (state) => {
             state.user = null;
             state.token = null;
             state.isAuthenticated = false;
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            // Hard clean session storage too assuming it might be used
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('user');
             sessionStorage.clear();
         },
     },
@@ -51,3 +63,5 @@ export default authSlice.reducer;
 
 export const selectCurrentUser = (state: any) => state.auth.user;
 export const selectIsAuthenticated = (state: any) => state.auth.isAuthenticated;
+export const selectUserRole = (state: any) => state.auth.user?.role;
+export const selectAllowedDepots = (state: any) => state.auth.user?.allowedDepotIds || [];

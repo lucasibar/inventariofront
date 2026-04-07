@@ -18,6 +18,7 @@ const navItems = [
     { to: '/items/box-types', label: '📦 Tipos de Caja' },
     { to: '/dashboard/capacity', label: '📊 Medidores Capacidad' },
     { to: '/socios', label: '🤝 Proveedores/Clientes' },
+    { to: '/users', label: '👥 Usuarios y Roles' },
     { to: '/tasks', label: '✅ Mis Tareas' },
 ];
 
@@ -33,12 +34,31 @@ const navStyle = (isActive: boolean): React.CSSProperties => ({
 
 export default function Layout() {
     const user = useSelector(selectCurrentUser);
-    const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+    const role = user?.role?.toUpperCase() || '';
+    const isAdmin = role === 'ADMIN';
+    const isCompras = role === 'COMPRAS';
+    const isOperario = role === 'OPERATOR';
 
     const [collapsed, setCollapsed] = useState(false);
     const { data: alerts = [] } = useGetAlertsQuery();
     const dispatch = useDispatch();
     const navigate = useNavigate();
+
+    const filteredNavItems = navItems.filter(item => {
+        if (isAdmin) return true;
+        
+        if (isOperario) {
+            const allowed = ['/movimientos', '/stock', '/deposito/auditoria-picking', '/remitos-salida', '/tasks'];
+            return allowed.includes(item.to);
+        }
+        
+        if (isCompras) {
+            const allowed = ['/dashboard', '/remitos-entrada', '/items', '/items/box-types', '/dashboard/capacity', '/socios'];
+            return allowed.includes(item.to);
+        }
+        
+        return false;
+    });
 
     const handleLogout = () => {
         dispatch(logout());
@@ -58,7 +78,10 @@ export default function Layout() {
                 flexShrink: 0,
             }}>
                 <div style={{ padding: '16px 12px', borderBottom: '1px solid #2a2d3e', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    {!collapsed && <span style={{ color: '#a5b4fc', fontWeight: 700, fontSize: '14px', whiteSpace: 'nowrap' }}>📦 WMS</span>}
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        {!collapsed && <span style={{ color: '#a5b4fc', fontWeight: 700, fontSize: '14px', whiteSpace: 'nowrap' }}>📦 WMS</span>}
+                        {!collapsed && <span style={{ color: '#6b7280', fontSize: '10px', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{role}</span>}
+                    </div>
                     <button
                         onClick={() => setCollapsed(!collapsed)}
                         style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '18px', padding: '2px 6px' }}
@@ -69,18 +92,16 @@ export default function Layout() {
 
                 {/* Main nav */}
                 <nav style={{ flex: 1, paddingTop: '8px' }}>
-                    {navItems
-                        .filter(item => item.to !== '/deposito' || isAdmin)
-                        .map(({ to, label }) => (
-                            <NavLink
-                                key={to}
-                                to={to}
-                                style={({ isActive }) => navStyle(isActive)}
-                            >
-                                <span style={{ fontSize: '16px', minWidth: '20px' }}>{label.split(' ')[0]}</span>
-                                {!collapsed && <span>{label.split(' ').slice(1).join(' ')}</span>}
-                            </NavLink>
-                        ))}
+                    {filteredNavItems.map(({ to, label }) => (
+                        <NavLink
+                            key={to}
+                            to={to}
+                            style={({ isActive }) => navStyle(isActive)}
+                        >
+                            <span style={{ fontSize: '16px', minWidth: '20px' }}>{label.split(' ')[0]}</span>
+                            {!collapsed && <span>{label.split(' ').slice(1).join(' ')}</span>}
+                        </NavLink>
+                    ))}
                 </nav>
 
                 {/* Stock alert */}

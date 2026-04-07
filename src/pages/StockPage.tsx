@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useGetStockQuery, useQuickAddStockMutation } from '../features/stock/api/stock.api';
 import { useNavigate } from 'react-router-dom';
 import { useGetDepotsQuery } from '../features/depots/api/depots.api';
@@ -7,15 +7,34 @@ import { useGetPartnersQuery } from '../features/partners/api/partners.api';
 import { PageHeader, Select, Badge, Spinner, Btn, Modal, Input } from './common/ui';
 import { CreateItemDialog } from '../features/remitos/ui/CreateItemDialog';
 import { CreatePartnerDialog } from '../features/remitos/ui/CreatePartnerDialog';
+import { useSelector } from 'react-redux';
+import { selectCurrentUser, selectAllowedDepots } from '../entities/auth/model/authSlice';
 
 /* ─── UI COMPONENTS (Local or from common/ui) ─── */
 
 export default function StockPage() {
+    const user = useSelector(selectCurrentUser);
+    const allowedDepots = useSelector(selectAllowedDepots);
+    const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+
     const navigate = useNavigate();
     const [depotId, setDepotId] = useState<string>('');
     const [searchTerm, setSearchTerm] = useState<string>('');
 
-    const { data: depots = [] } = useGetDepotsQuery();
+    const { data: rawDepots = [] } = useGetDepotsQuery();
+
+    // Filtered depots based on user permissions
+    const availableDepots = useMemo(() => {
+        if (isAdmin) return rawDepots;
+        return rawDepots.filter(d => allowedDepots.includes(d.id));
+    }, [rawDepots, allowedDepots, isAdmin]);
+
+    // Auto-set depot if only one option is available
+    useEffect(() => {
+        if (!depotId && availableDepots.length === 1) {
+            setDepotId(availableDepots[0].id);
+        }
+    }, [availableDepots, depotId]);
 
     const { data: items = [] } = useGetItemsQuery({});
     const { data: partners = [] } = useGetPartnersQuery({});
@@ -33,6 +52,13 @@ export default function StockPage() {
     // Dialog States
     const [createItemModal, setCreateItemModal] = useState(false);
     const [createPartnerModal, setCreatePartnerModal] = useState(false);
+
+    const qaFilteredItems = useMemo(() => {
+        if (!qaSupplier) return items;
+        return items.filter((i: any) => i.supplierId === qaSupplier);
+    }, [items, qaSupplier]);
+
+    const qaSelectedItem = useMemo(() => items.find((i: any) => i.id === qaItem), [items, qaItem]);
 
     const handleQuickAddSubmit = async () => {
         if (!qaDepot || !qaPosition || !qaItem || !qaSupplier || !qaLot || !qaPrincipal) {
@@ -242,9 +268,10 @@ export default function StockPage() {
                         label="Depósito"
                         value={depotId}
                         onChange={setDepotId}
+                        disabled={!isAdmin && availableDepots.length === 1}
                         options={[
                             { value: '', label: 'Seleccionar depósito...' },
-                            ...depots.map(d => ({ value: d.id, label: d.nombre }))
+                            ...availableDepots.map(d => ({ value: d.id, label: d.nombre }))
                         ]}
                     />
                 </div>
@@ -402,24 +429,32 @@ export default function StockPage() {
                 <Modal title="Adición Rápida de Mercadería" onClose={() => setQuickAddModal(false)}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
                         <div style={{ display: 'flex', gap: '12px' }}>
-                            <Select label="Depósito Destino" value={qaDepot} onChange={val => { setQaDepot(val); setQaPosition(''); }} options={[{ value: '', label: 'Seleccionar...' }, ...depots.map((d: any) => ({ value: d.id, label: d.nombre }))]} style={{ flex: 1 }} />
-                            <Select label="Posición" value={qaPosition} onChange={setQaPosition} options={[{ value: '', label: 'Seleccionar...' }, ...(depots.find((d: any) => d.id === qaDepot)?.positions?.map((p: any) => ({ value: p.id, label: p.codigo })) || [])]} style={{ flex: 1 }} />
+                            <Select 
+                                label="Depósito Destino" 
+                                value={qaDepot || (availableDepots.length === 1 ? availableDepots[0].id : '')} 
+                                onChange={val => { setQaDepot(val); setQaPosition(''); }} 
+                                disabled={!isAdmin && availableDepots.length === 1}
+                                options={[{ value: '', label: 'Seleccionar...' }, ...availableDepots.map((d: any) => ({ value: d.id, label: d.nombre }))]} 
+                                style={{ flex: 1 }} 
+                            />
+                            <Select label="Posición" value={qaPosition} onChange={setQaPosition} options={[{ value: '', label: 'Seleccionar...' }, ...(availableDepots.find((d: any) => d.id === (qaDepot || (availableDepots.length === 1 ? availableDepots[0].id : '')))?.positions?.map((p: any) => ({ value: p.id, label: p.codigo })) || [])]} style={{ flex: 1 }} />
                         </div>
 
                         <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
-                            <Select label="Material" value={qaItem} onChange={setQaItem} options={[{ value: '', label: 'Seleccionar...' }, ...items.map((i: any) => ({ value: i.id, label: `${i.codigoInterno} - ${i.descripcion}` }))]} style={{ flex: 1 }} />
+                            <Select label="Proveedor" value={qaSupplier} onChange={val => { setQaSupplier(val); setQaItem(''); }} options={[{ value: '', label: 'Seleccionar...' }, ...partners.filter((p: any) => p.isSupplier).map((p: any) => ({ value: p.id, label: p.name }))]} style={{ flex: 1 }} />
+                            <Btn variant="secondary" onClick={() => setCreatePartnerModal(true)} style={{ whiteSpace: 'nowrap' }}>+ Nuevo Proveedor</Btn>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+                            <Select label="Material" value={qaItem} onChange={setQaItem} options={[{ value: '', label: 'Seleccionar...' }, ...qaFilteredItems.map((i: any) => ({ value: i.id, label: `${i.codigoInterno} - ${i.descripcion}` }))]} style={{ flex: 1 }} />
                             <Btn variant="secondary" onClick={() => setCreateItemModal(true)} style={{ whiteSpace: 'nowrap' }}>+ Nuevo Material</Btn>
                         </div>
 
-                        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
-                            <Select label="Proveedor" value={qaSupplier} onChange={setQaSupplier} options={[{ value: '', label: 'Seleccionar...' }, ...partners.filter((p: any) => p.isSupplier).map((p: any) => ({ value: p.id, label: p.name }))]} style={{ flex: 1 }} />
-                            <Btn variant="secondary" onClick={() => setCreatePartnerModal(true)} style={{ whiteSpace: 'nowrap' }}>+ Nuevo Proveedor</Btn>
-                        </div>
                         <Input label="Número de Partida (Lote)" value={qaLot} onChange={setQaLot} />
 
                         <div style={{ display: 'flex', gap: '12px' }}>
-                            <Input label="Cantidad Principal (EJ: Kilos)" type="number" value={qaPrincipal} onChange={setQaPrincipal} style={{ flex: 1 }} />
-                            <Input label="Cantidad Secundaria (EJ: Unidades)" type="number" value={qaSecundaria} onChange={setQaSecundaria} style={{ flex: 1 }} />
+                            <Input label={`Cantidad (${qaSelectedItem?.unidadPrincipal || 'Principal'})`} type="number" value={qaPrincipal} onChange={setQaPrincipal} style={{ flex: 1 }} />
+                            <Input label={`Secundaria (${qaSelectedItem?.unidadSecundaria || 'Bolsas/Un'})`} type="number" value={qaSecundaria} onChange={setQaSecundaria} style={{ flex: 1 }} />
                         </div>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>

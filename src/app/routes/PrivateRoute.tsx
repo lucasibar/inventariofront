@@ -1,19 +1,30 @@
+import { useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { selectIsAuthenticated } from '../../entities/auth/model/authSlice';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectIsAuthenticated, logout, selectCurrentUser } from '../../entities/auth/model/authSlice';
 import { useVerifySessionQuery } from '../../entities/auth/api/authApi';
 import { Spinner } from '../../pages/common/ui';
 
-export const PrivateRoute = () => {
-    const isAuthenticated = useSelector(selectIsAuthenticated);
+interface PrivateRouteProps {
+    allowedRoles?: string[];
+}
 
-    // Solo verifica si hay token en localStorage. Si el token expiró,
-    // el backend devuelve 401 y baseQueryWithReauth redirige al login.
-    const { isLoading } = useVerifySessionQuery(undefined, {
+export const PrivateRoute = ({ allowedRoles }: PrivateRouteProps) => {
+    const dispatch = useDispatch();
+    const isAuthenticated = useSelector(selectIsAuthenticated);
+    const user = useSelector(selectCurrentUser);
+
+    const { isLoading, isError } = useVerifySessionQuery(undefined, {
         skip: !isAuthenticated,
     });
 
-    if (!isAuthenticated) return <Navigate to="/login" replace />;
+    useEffect(() => {
+        if (isError) {
+            dispatch(logout());
+        }
+    }, [isError, dispatch]);
+
+    if (!isAuthenticated || (isError && !isLoading)) return <Navigate to="/login" replace />;
 
     if (isLoading) {
         return (
@@ -33,6 +44,10 @@ export const PrivateRoute = () => {
                 </div>
             </div>
         );
+    }
+
+    if (allowedRoles && user && !allowedRoles.includes(user.role.toUpperCase())) {
+        return <Navigate to="/" replace />;
     }
 
     return <Outlet />;

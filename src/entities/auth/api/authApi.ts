@@ -4,6 +4,8 @@ export interface User {
     id: string;
     username: string;
     role: string;
+    isActive: boolean;
+    allowedDepotIds: string[];
 }
 
 export interface LoginResponse {
@@ -28,8 +30,34 @@ export const authApi = api.injectEndpoints({
         verifySession: build.query<User, void>({
             query: () => 'auth/me',
         }),
+        getUsers: build.query<User[], void>({
+            query: () => 'auth/users',
+            providesTags: ['User'],
+        }),
+        createUser: build.mutation<User, Partial<User> & { password?: string }>({
+            query: (body) => ({
+                url: 'auth/users',
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['User'],
+        }),
+        updateUser: build.mutation<User, { id: string; data: Partial<User> & { password?: string } }>({
+            query: ({ id, data }) => ({
+                url: `auth/users/${id}`,
+                method: 'PATCH',
+                body: data,
+            }),
+            invalidatesTags: ['User'],
+        }),
     }),
 });
 
-export const { useLoginMutation, useVerifySessionQuery } = authApi;
+export const { 
+    useLoginMutation, 
+    useVerifySessionQuery, 
+    useGetUsersQuery, 
+    useCreateUserMutation, 
+    useUpdateUserMutation 
+} = authApi;
 

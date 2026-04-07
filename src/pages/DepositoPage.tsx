@@ -50,14 +50,23 @@ function EditableCell({ value, onSave, label, type = 'text' }: { value: string; 
 }
 
 /* ─── Restriction Manager ─── */
-function RestrictionManager({ restrictions, itemCategories, onUpdate, onClose }: { 
+function RestrictionManager({ restrictions, itemCategories, allItems, onUpdate, onClose }: { 
     restrictions: { type: string; value: string }[], 
     itemCategories: string[], 
+    allItems: any[],
     onUpdate: (r: { type: string; value: string }[]) => Promise<void>,
     onClose: () => void 
 }) {
     const [materialSearch, setMaterialSearch] = useState('');
-    const { data: searchResults = [] } = useGetItemsQuery({ q: materialSearch }, { skip: materialSearch.length < 2 });
+    
+    const searchResults = useMemo(() => {
+        if (materialSearch.length < 2) return [];
+        const q = materialSearch.toLowerCase();
+        return allItems.filter(it => 
+            it.codigoInterno.toLowerCase().includes(q) || 
+            it.descripcion.toLowerCase().includes(q)
+        ).slice(0, 10);
+    }, [allItems, materialSearch]);
 
     const addRestriction = (type: string, value: string) => {
         const current = Array.isArray(restrictions) ? restrictions : [];
@@ -429,6 +438,7 @@ export default function DepositoPage() {
                                                                 <RestrictionManager 
                                                                     restrictions={p.restrictions || []}
                                                                     itemCategories={itemCategories}
+                                                                    allItems={items}
                                                                     onUpdate={async (newRestrictions) => {
                                                                         await updatePosition({ id: p.id, data: { restrictions: newRestrictions } }).unwrap();
                                                                         refetch();

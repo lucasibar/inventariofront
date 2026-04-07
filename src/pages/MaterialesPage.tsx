@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useGetItemsQuery, useCreateItemMutation, useUpdateItemMutation, useDeleteItemMutation } from '../features/items/api/items.api';
 import { PageHeader, Card, Btn, Input, Select, Modal, Table, Badge, SearchBar, Spinner } from './common/ui';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
@@ -51,7 +51,20 @@ const emptyForm = () => ({
 
 export default function MaterialesPage() {
     const [q, setQ] = useState('');
-    const { data: items = [], isLoading } = useGetItemsQuery({ q: q || undefined });
+    const { data: items = [], isLoading } = useGetItemsQuery({});
+
+    const filteredItems = useMemo(() => {
+        if (!q) return items;
+        const words = q.toLowerCase().split(' ').filter(w => w.length > 0);
+        return items.filter((it: any) => {
+            return words.every(word => 
+                it.descripcion.toLowerCase().includes(word) || 
+                it.codigoInterno.toLowerCase().includes(word) ||
+                (it.supplier?.name || '').toLowerCase().includes(word) ||
+                it.categoria.toLowerCase().includes(word)
+            );
+        });
+    }, [items, q]);
     const { data: suppliers = [] } = useGetPartnersQuery({ type: 'SUPPLIER' });
     const { data: boxTypes = [] } = useGetBoxTypesQuery();
     const [createItem] = useCreateItemMutation();
@@ -138,7 +151,7 @@ export default function MaterialesPage() {
                 <Table
                     loading={isLoading}
                     cols={['Material', 'Proveedor', 'Categoría', 'Rotación', 'Caja', 'Mínimo', 'Unid.', 'Tono', '']}
-                    rows={items.map((it: any) => [
+                    rows={filteredItems.map((it: any) => [
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span style={{ color: '#f3f4f6', fontWeight: 600 }}>{it.descripcion}</span>
                             <code style={{ color: '#a5b4fc', fontSize: '11px' }}>{it.codigoInterno}</code>
@@ -164,9 +177,9 @@ export default function MaterialesPage() {
 
             {/* Mobile View */}
             <div className="mobile-card-grid">
-                {isLoading ? <Spinner /> : items.length === 0 ? (
+                {isLoading ? <Spinner /> : filteredItems.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '48px', color: '#4b5563' }}>No se encontraron materiales.</div>
-                ) : items.map((it: any) => (
+                ) : filteredItems.map((it: any) => (
                     <div key={it.id} className="material-card">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>

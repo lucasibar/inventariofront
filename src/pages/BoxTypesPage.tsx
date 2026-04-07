@@ -157,16 +157,22 @@ const BoxTypesPage: React.FC = () => {
     const [deleteBoxType] = useDeleteBoxTypeMutation();
 
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [form, setForm] = useState({ nombre: '', largoCm: 0, anchoCm: 0, altoCm: 0 });
+    const [form, setForm] = useState({ nombre: '', largoCm: 0, anchoCm: 0, altoCm: 0, capacidadKilos: 0 });
     const [showBulk, setShowBulk] = useState(false);
     const [viewItemsBox, setViewItemsBox] = useState<{ id: string, name: string } | null>(null);
+
+    const handleNumericChange = (key: string, value: string) => {
+        const processed = value.replace(',', '.');
+        setForm({ ...form, [key]: parseFloat(processed) || 0 });
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
             if (editingId) await updateBoxType({ id: editingId, data: form }).unwrap();
             else await createBoxType(form).unwrap();
-            setEditingId(null); setForm({ nombre: '', largoCm: 0, anchoCm: 0, altoCm: 0 });
+            setEditingId(null); 
+            setForm({ nombre: '', largoCm: 0, anchoCm: 0, altoCm: 0, capacidadKilos: 0 });
         } catch (err) { alert('Error al guardar'); }
     };
 
@@ -184,14 +190,20 @@ const BoxTypesPage: React.FC = () => {
                     <BoxPreview l={form.largoCm} w={form.anchoCm} h={form.altoCm} />
                     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <Input label="Nombre" value={form.nombre} onChange={v => setForm({...form, nombre: v})} />
+                        
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                            <Input label="Largo (cm)" type="number" value={String(form.largoCm)} onChange={v => setForm({...form, largoCm: parseFloat(v) || 0})} />
-                            <Input label="Ancho (cm)" type="number" value={String(form.anchoCm)} onChange={v => setForm({...form, anchoCm: parseFloat(v) || 0})} />
+                            <Input label="Largo (cm)" value={String(form.largoCm)} onChange={v => handleNumericChange('largoCm', v)} />
+                            <Input label="Ancho (cm)" value={String(form.anchoCm)} onChange={v => handleNumericChange('anchoCm', v)} />
                         </div>
-                        <Input label="Alto (cm)" type="number" value={String(form.altoCm)} onChange={v => setForm({...form, altoCm: parseFloat(v) || 0})} />
+                        
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <Input label="Alto (cm)" value={String(form.altoCm)} onChange={v => handleNumericChange('altoCm', v)} />
+                            <Input label="Capacidad (kg)" value={String(form.capacidadKilos)} onChange={v => handleNumericChange('capacidadKilos', v)} />
+                        </div>
+
                         <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                            <Btn style={{ flex: 1 }}>{editingId ? 'Guardar' : 'Crear'}</Btn>
-                            {editingId && <Btn variant="secondary" onClick={() => { setEditingId(null); setForm({nombre:'', largoCm:0, anchoCm:0, altoCm:0}); }}>X</Btn>}
+                            <Btn style={{ flex: 1 }}>{editingId ? 'Guardar' : 'Crear Formato'}</Btn>
+                            {editingId && <Btn variant="secondary" onClick={() => { setEditingId(null); setForm({nombre:'', largoCm:0, anchoCm:0, altoCm:0, capacidadKilos:0}); }}>X</Btn>}
                         </div>
                     </form>
                 </Card>
@@ -201,18 +213,33 @@ const BoxTypesPage: React.FC = () => {
                         <Card key={bt.id}>
                             <div style={{ padding: '20px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
-                                    <h4 style={{ margin: 0, color: '#f3f4f6', fontSize: '15px' }}>{bt.nombre}</h4>
+                                    <div>
+                                        <h4 style={{ margin: 0, color: '#f3f4f6', fontSize: '15px' }}>{bt.nombre}</h4>
+                                        <div style={{ color: '#34d399', fontSize: '12px', fontWeight: 600, marginTop: '2px' }}>
+                                            Capacidad: {Number(bt.capacidadKilos || 0).toFixed(1)} kg
+                                        </div>
+                                    </div>
                                     <Badge color="#818cf8">{parseFloat(bt.volumenM3).toFixed(4)} m³</Badge>
                                 </div>
                                 <div style={{ background: '#0f1117', borderRadius: '8px', padding: '12px', display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: '10px', color: '#4b5563' }}>L</div><div style={{ color: '#d1d5db', fontSize: '13px', fontWeight: 600 }}>{bt.largoCm}</div></div>
-                                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: '10px', color: '#4b5563' }}>W</div><div style={{ color: '#d1d5db', fontSize: '13px', fontWeight: 600 }}>{bt.anchoCm}</div></div>
-                                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: '10px', color: '#4b5563' }}>H</div><div style={{ color: '#d1d5db', fontSize: '13px', fontWeight: 600 }}>{bt.altoCm}</div></div>
+                                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: '10px', color: '#4b5563' }}>Largo</div><div style={{ color: '#d1d5db', fontSize: '13px', fontWeight: 600 }}>{bt.largoCm}</div></div>
+                                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: '10px', color: '#4b5563' }}>Ancho</div><div style={{ color: '#d1d5db', fontSize: '13px', fontWeight: 600 }}>{bt.anchoCm}</div></div>
+                                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: '10px', color: '#4b5563' }}>Alto</div><div style={{ color: '#d1d5db', fontSize: '13px', fontWeight: 600 }}>{bt.altoCm}</div></div>
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid #2a2d3e', paddingTop: '16px' }}>
                                     <Btn small variant="secondary" onClick={() => setViewItemsBox({ id: bt.id, name: bt.nombre })} style={{ flex: 1 }}>📦 Items</Btn>
-                                    <Btn small variant="secondary" onClick={() => { setEditingId(bt.id); setForm({ nombre: bt.nombre, largoCm: bt.largoCm, anchoCm: bt.anchoCm, altoCm: bt.altoCm }); window.scrollTo(0,0); }}>✏️</Btn>
-                                    <Btn small variant="danger" onClick={() => { if(confirm('¿Eliminar?')) deleteBoxType(bt.id); }}>🗑</Btn>
+                                    <Btn small variant="secondary" onClick={() => { 
+                                        setEditingId(bt.id); 
+                                        setForm({ 
+                                            nombre: bt.nombre, 
+                                            largoCm: bt.largoCm, 
+                                            anchoCm: bt.anchoCm, 
+                                            altoCm: bt.altoCm,
+                                            capacidadKilos: bt.capacidadKilos || 0
+                                        }); 
+                                        window.scrollTo({ top: 0, behavior: 'smooth' }); 
+                                    }}>✏️</Btn>
+                                    <Btn small variant="secondary" style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.2)' }} onClick={() => { if(confirm('¿Eliminar este formato de embalaje?')) deleteBoxType(bt.id); }}>🗑</Btn>
                                 </div>
                             </div>
                         </Card>

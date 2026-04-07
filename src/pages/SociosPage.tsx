@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useGetPartnersQuery, useCreatePartnerMutation, useUpdatePartnerMutation, useDeletePartnerMutation } from '../features/partners/api/partners.api';
 import { PageHeader, Card, Btn, Input, Select, Modal, Table, Badge, SearchBar } from './common/ui';
 
@@ -13,7 +13,15 @@ const emptyForm = () => ({ name: '', type: 'BOTH', taxId: '', email: '', phone: 
 export default function SociosPage() {
     const [q, setQ] = useState('');
     const [filterType, setFilterType] = useState('');
-    const { data: partners = [], isLoading } = useGetPartnersQuery({ q: q || undefined, type: filterType || undefined });
+    const { data: partners = [], isLoading } = useGetPartnersQuery({});
+
+    const filteredPartners = useMemo(() => {
+        return partners.filter((p: any) => {
+            const matchesType = !filterType || p.type === filterType || (p.type === 'BOTH' && (filterType === 'SUPPLIER' || filterType === 'CLIENT'));
+            const matchesSearch = !q || p.name.toLowerCase().includes(q.toLowerCase()) || (p.taxId && p.taxId.includes(q));
+            return matchesType && matchesSearch;
+        });
+    }, [partners, q, filterType]);
     const [createPartner] = useCreatePartnerMutation();
     const [updatePartner] = useUpdatePartnerMutation();
     const [deletePartner] = useDeletePartnerMutation();
@@ -51,7 +59,7 @@ export default function SociosPage() {
                 <Table
                     loading={isLoading}
                     cols={['Nombre', 'Tipo', 'CUIT/CUIL', 'Email', 'Teléfono', '']}
-                    rows={partners.map((p: any) => [
+                    rows={filteredPartners.map((p: any) => [
                         <span style={{ color: '#d1d5db', fontWeight: 600 }}>{p.name}</span>,
                         <Badge color={TYPE_COLORS[p.type]}>{TYPES.find(t => t.value === p.type)?.label ?? p.type}</Badge>,
                         p.taxId ?? '—',

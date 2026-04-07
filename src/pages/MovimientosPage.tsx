@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useGetDepotsQuery } from '../features/depots/api/depots.api';
 import {
     useGetStockQuery,
@@ -15,18 +16,37 @@ import { PageHeader, Card, Table, Select, Input, Btn, Modal, EditableCell } from
 import { CreateItemDialog } from '../features/remitos/ui/CreateItemDialog';
 import { CreatePartnerDialog } from '../features/remitos/ui/CreatePartnerDialog';
 
-export default function MovimientosPage() {
-    const { data: depots = [] } = useGetDepotsQuery();
+import { useSelector } from 'react-redux';
+import { selectCurrentUser, selectAllowedDepots } from '../entities/auth/model/authSlice';
 
-    // Left Panel State
+export default function MovimientosPage() {
+    const user = useSelector(selectCurrentUser);
+    const allowedDepots = useSelector(selectAllowedDepots);
+    const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+
     const [depositoIdLeft, setDepositoIdLeft] = useState('');
     const [posicionIdLeft, setPosicionIdLeft] = useState('');
     const [selectedLeft, setSelectedLeft] = useState<string[]>([]);
 
-    // Right Panel State
     const [depositoIdRight, setDepositoIdRight] = useState('');
     const [posicionIdRight, setPosicionIdRight] = useState('');
     const [selectedRight, setSelectedRight] = useState<string[]>([]);
+
+    const { data: rawDepots = [] } = useGetDepotsQuery();
+
+    const availableDepots = useMemo(() => {
+        if (isAdmin) return rawDepots;
+        return rawDepots.filter((d: any) => allowedDepots.includes(d.id));
+    }, [rawDepots, allowedDepots, isAdmin]);
+
+    useEffect(() => {
+        if (!depositoIdLeft && availableDepots.length === 1) {
+            setDepositoIdLeft(availableDepots[0].id);
+        }
+        if (!depositoIdRight && availableDepots.length === 1) {
+            setDepositoIdRight(availableDepots[0].id);
+        }
+    }, [availableDepots, depositoIdLeft, depositoIdRight]);
 
     const { data: stockLeft = [], isLoading: loadingLeft } = useGetStockQuery({
         depotId: depositoIdLeft, positionId: posicionIdLeft
@@ -68,6 +88,24 @@ export default function MovimientosPage() {
             setSelectedRight(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
         }
     };
+
+    const location = useLocation();
+
+    // Pre-populate if navigating from Stock
+    useEffect(() => {
+        const state = location.state as any;
+        if (state && state.depositoId && state.posicionId) {
+            setDepositoIdLeft(state.depositoId);
+            setPosicionIdLeft(state.posicionId);
+        }
+    }, [location.state]);
+
+    const qaFilteredItems = useMemo(() => {
+        if (!qaSupplier) return items;
+        return items.filter((i: any) => i.supplierId === qaSupplier);
+    }, [items, qaSupplier]);
+
+    const qaSelectedItem = useMemo(() => items.find((i: any) => i.id === qaItem), [items, qaItem]);
 
     const handleBulkTransfer = async (source: 'left' | 'right') => {
         const selectedIds = source === 'left' ? selectedLeft : selectedRight;
@@ -113,13 +151,13 @@ export default function MovimientosPage() {
     };
 
     const handleQuickAddSubmit = async () => {
-        if (!qaDepot || !qaPosition || !qaItem || !qaSupplier || !qaLot || !qaPrincipal) {
+        if (!(qaDepot || (availableDepots.length === 1 ? availableDepots[0].id : '')) || !qaPosition || !qaItem || !qaSupplier || !qaLot || !qaPrincipal) {
             alert('Completá todos los campos obligatorios para agregar mercadería.');
             return;
         }
         try {
             await quickAddStock({
-                depositoId: qaDepot,
+                depositoId: qaDepot || (availableDepots.length === 1 ? availableDepots[0].id : ''),
                 posicionId: qaPosition,
                 itemId: qaItem,
                 supplierId: qaSupplier,
@@ -190,29 +228,27 @@ export default function MovimientosPage() {
         }
     };
 
-    // Inline edit handlers (igual que antes)
+    const confirmAdjust = async (row: any, deltaP: number, deltaS: number) => {
+        await adjustStock({
+            depositoId: row.deposito.id, posicionId: row.posicion.id,
+            itemId: row.batch?.item?.id, lotId: row.batch.id,
+            qtyPrincipal: deltaP, qtySecundaria: deltaS, fecha: new Date().toISOString(),
+            observaciones: 'Ajuste rápido desde Movimientos'
+        }).unwrap();
+    };
+
     const handleEditPrincipal = async (val: string, row: any) => {
         const newQty = Number(val);
         const delta = newQty - row.qtyPrincipal;
         if (delta === 0) return;
-        await adjustStock({
-            depositoId: row.deposito.id, posicionId: row.posicion.id,
-            itemId: row.batch?.item?.id, lotId: row.batch.id,
-            qtyPrincipal: delta, qtySecundaria: 0, fecha: new Date().toISOString(),
-            observaciones: 'Ajuste rápido desde Movimientos'
-        }).unwrap();
+        await confirmAdjust(row, delta, 0);
     };
 
     const handleEditSecundaria = async (val: string, row: any) => {
         const newQty = Number(val);
         const delta = newQty - (row.qtySecundaria || 0);
         if (delta === 0) return;
-        await adjustStock({
-            depositoId: row.deposito.id, posicionId: row.posicion.id,
-            itemId: row.batch?.item?.id, lotId: row.batch.id,
-            qtyPrincipal: 0, qtySecundaria: delta, fecha: new Date().toISOString(),
-            observaciones: 'Ajuste rápido desde Movimientos'
-        }).unwrap();
+        await confirmAdjust(row, 0, delta);
     };
 
     const handleEditLotNumber = async (val: string, row: any) => {
@@ -259,10 +295,10 @@ export default function MovimientosPage() {
         </div>
     ]);
 
-    const posOptionsLeft = depots.find((d: any) => d.id === depositoIdLeft)?.positions?.map((p: any) => ({ value: p.id, label: p.codigo })) || [];
-    const posOptionsRight = depots.find((d: any) => d.id === depositoIdRight)?.positions?.map((p: any) => ({ value: p.id, label: p.codigo })) || [];
+    const posOptionsLeft = availableDepots.find((d: any) => d.id === depositoIdLeft)?.positions?.map((p: any) => ({ value: p.id, label: p.codigo })) || [];
+    const posOptionsRight = availableDepots.find((d: any) => d.id === depositoIdRight)?.positions?.map((p: any) => ({ value: p.id, label: p.codigo })) || [];
 
-    const posOptionsLeftModal = depots.find((d: any) => d.id === qaDepot)?.positions?.map((p: any) => ({ value: p.id, label: p.codigo })) || [];
+    const posOptionsLeftModal = availableDepots.find((d: any) => d.id === (qaDepot || (availableDepots.length === 1 ? availableDepots[0].id : '')))?.positions?.map((p: any) => ({ value: p.id, label: p.codigo })) || [];
 
     return (
         <div style={{ padding: '24px', maxWidth: '1600px', margin: '0 auto' }}>
@@ -277,7 +313,8 @@ export default function MovimientosPage() {
                         <Select
                             value={depositoIdLeft}
                             onChange={val => { setDepositoIdLeft(val); setPosicionIdLeft(''); setSelectedLeft([]); }}
-                            options={[{ value: '', label: 'Depósito' }, ...depots.map((d: any) => ({ value: d.id, label: d.nombre }))]}
+                            disabled={!isAdmin && availableDepots.length === 1}
+                            options={[{ value: '', label: 'Depósito' }, ...availableDepots.map((d: any) => ({ value: d.id, label: d.nombre }))]}
                             style={{ flex: 1 }}
                         />
                         <Select
@@ -314,7 +351,8 @@ export default function MovimientosPage() {
                         <Select
                             value={depositoIdRight}
                             onChange={val => { setDepositoIdRight(val); setPosicionIdRight(''); setSelectedRight([]); }}
-                            options={[{ value: '', label: 'Depósito' }, ...depots.map((d: any) => ({ value: d.id, label: d.nombre }))]}
+                            disabled={!isAdmin && availableDepots.length === 1}
+                            options={[{ value: '', label: 'Depósito' }, ...availableDepots.map((d: any) => ({ value: d.id, label: d.nombre }))]}
                             style={{ flex: 1 }}
                         />
                         <Select
@@ -352,24 +390,30 @@ export default function MovimientosPage() {
             {/* Quick Add Modal */}
             {quickAddModal && (
                 <Modal title="Adición Rápida" onClose={() => setQuickAddModal(false)}>
-                    {/* ... (mismo contenido que antes, omitido por brevedad en el prompt pero debe incluirse en la implementación real) ... */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
                         <div style={{ display: 'flex', gap: '12px' }}>
-                            <Select label="Depósito" value={qaDepot} onChange={val => { setQaDepot(val); setQaPosition(''); }} options={[{ value: '', label: 'Seleccionar...' }, ...depots.map((d: any) => ({ value: d.id, label: d.nombre }))]} style={{ flex: 1 }} />
+                            <Select 
+                                label="Depósito" 
+                                value={qaDepot || (availableDepots.length === 1 ? availableDepots[0].id : '')} 
+                                onChange={val => { setQaDepot(val); setQaPosition(''); }} 
+                                disabled={!isAdmin && availableDepots.length === 1}
+                                options={[{ value: '', label: 'Seleccionar...' }, ...availableDepots.map((d: any) => ({ value: d.id, label: d.nombre }))]} 
+                                style={{ flex: 1 }} 
+                            />
                             <Select label="Posición" value={qaPosition} onChange={setQaPosition} options={[{ value: '', label: 'Seleccionar...' }, ...posOptionsLeftModal]} style={{ flex: 1 }} />
                         </div>
                         <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
-                            <Select label="Material" value={qaItem} onChange={setQaItem} options={[{ value: '', label: 'Seleccionar...' }, ...items.map((i: any) => ({ value: i.id, label: `${i.codigoInterno} - ${i.descripcion}` }))]} style={{ flex: 1 }} />
-                            <Btn variant="secondary" onClick={() => setCreateItemModal(true)} style={{ whiteSpace: 'nowrap' }}>+</Btn>
+                            <Select label="Proveedor" value={qaSupplier} onChange={val => { setQaSupplier(val); setQaItem(''); }} options={[{ value: '', label: 'Seleccionar...' }, ...partners.filter((p: any) => p.isSupplier).map((p: any) => ({ value: p.id, label: p.name }))]} style={{ flex: 1 }} />
+                            <Btn variant="secondary" onClick={() => setCreatePartnerModal(true)} style={{ whiteSpace: 'nowrap' }}>+</Btn>
                         </div>
                         <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
-                            <Select label="Proveedor" value={qaSupplier} onChange={setQaSupplier} options={[{ value: '', label: 'Seleccionar...' }, ...partners.filter((p: any) => p.isSupplier).map((p: any) => ({ value: p.id, label: p.name }))]} style={{ flex: 1 }} />
-                            <Btn variant="secondary" onClick={() => setCreatePartnerModal(true)} style={{ whiteSpace: 'nowrap' }}>+</Btn>
+                            <Select label="Material" value={qaItem} onChange={setQaItem} options={[{ value: '', label: 'Seleccionar...' }, ...qaFilteredItems.map((i: any) => ({ value: i.id, label: `${i.codigoInterno} - ${i.descripcion}` }))]} style={{ flex: 1 }} />
+                            <Btn variant="secondary" onClick={() => setCreateItemModal(true)} style={{ whiteSpace: 'nowrap' }}>+</Btn>
                         </div>
                         <Input label="Lote" value={qaLot} onChange={setQaLot} />
                         <div style={{ display: 'flex', gap: '12px' }}>
-                            <Input label="Cant. Principal" type="number" value={qaPrincipal} onChange={setQaPrincipal} style={{ flex: 1 }} />
-                            <Input label="Cant. Secundaria" type="number" value={qaSecundaria} onChange={setQaSecundaria} style={{ flex: 1 }} />
+                            <Input label={`Cant. (${qaSelectedItem?.unidadPrincipal || 'Principal'})`} type="number" value={qaPrincipal} onChange={setQaPrincipal} style={{ flex: 1 }} />
+                            <Input label={`Secundaria (${qaSelectedItem?.unidadSecundaria || 'Bolsas/Un'})`} type="number" value={qaSecundaria} onChange={setQaSecundaria} style={{ flex: 1 }} />
                         </div>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
