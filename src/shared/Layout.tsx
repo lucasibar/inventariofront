@@ -8,7 +8,8 @@ const navItems = [
     { to: '/remitos-entrada', label: '📦 Remitos Entrada' },
     { to: '/deposito', label: '🏭 Depósito' },
     { to: '/deposito/auditoria-picking', label: '✅ Auditoría Picking' },
-    { to: '/pedidos', label: '📋 Pedidos' },
+    { to: '/pedidos', label: '📋 Pedidos Internos' },
+    { to: '/pedidos-compra', label: '🛒 Pedidos a Proveedor' },
     { to: '/remitos-salida', label: '🚚 Remitos Salida' },
     { to: '/stock', label: '📋 Stock' },
     { to: '/dashboard', label: '📊 Dashboard Compras' },
@@ -53,7 +54,7 @@ export default function Layout() {
         }
         
         if (isCompras) {
-            const allowed = ['/dashboard', '/remitos-entrada', '/items', '/items/box-types', '/dashboard/capacity', '/dashboard/volumes', '/socios'];
+            const allowed = ['/dashboard', '/remitos-entrada', '/items', '/items/box-types', '/dashboard/capacity', '/dashboard/volumes', '/socios', '/pedidos-compra'];
             return allowed.includes(item.to);
         }
         

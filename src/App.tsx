@@ -9,6 +9,7 @@ import { selectCurrentUser } from './entities/auth/model/authSlice';
 import RemitosEntradaPage from './pages/RemitosEntradaPage';
 import DepositoPage from './pages/DepositoPage';
 import PedidosPage from './pages/PedidosPage';
+import PedidosCompraPage from './pages/PedidosCompraPage';
 import RemitosSalidaPage from './pages/RemitosSalidaPage';
 import DashboardComprasPage from './pages/DashboardComprasPage';
 import MaterialesPage from './pages/MaterialesPage';
@@ -53,6 +54,7 @@ function App() {
                 <Route path="/items/box-types" element={<BoxTypesPage />} />
                 <Route path="/socios" element={<SociosPage />} />
                 <Route path="/pedidos" element={<PedidosPage />} />
+                <Route path="/pedidos-compra" element={<PedidosCompraPage />} />
             </Route>
 
             {/* Rutas exclusivas de ADMIN */}

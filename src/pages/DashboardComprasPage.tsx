@@ -144,6 +144,22 @@ export default function DashboardComprasPage() {
                                 </div>
                             )}
 
+                            {combo.incomingStock > 0 && (
+                                <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '8px', textAlign: 'center' }}>
+                                    <span style={{ fontSize: '11px', color: '#93c5fd', fontWeight: 600 }}>🚚 Sup. en Tránsito: {Number(combo.incomingStock).toFixed(1)} {combo.unitLabel}</span>
+                                    {combo.incomingDate && (
+                                        <span style={{ display: 'block', fontSize: '10px', color: '#60a5fa', marginTop: '4px' }}>
+                                            Llega aprox: {new Date(combo.incomingDate).toLocaleDateString()}
+                                            {combo.daysOfSupply !== null && (
+                                                <span style={{ color: new Date(combo.incomingDate) > new Date(Date.now() + combo.daysOfSupply * 86400000) ? '#f87171' : '#34d399', marginLeft: '6px' }}>
+                                                    {new Date(combo.incomingDate) > new Date(Date.now() + combo.daysOfSupply * 86400000) ? '(⚠️ Llegaría después de quiebre)' : '(✅ Llega a tiempo)'}
+                                                </span>
+                                            )}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+
                             <div style={{ color: '#6b7280', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span>{combo.itemIds.length} materiales</span>
                                 <span style={{ color: '#6366f1' }}>Ver detalles →</span>
@@ -287,6 +303,15 @@ function BreakdownModal({ id, onClose }: { id: string, onClose: () => void }) {
                                             <span style={{ color: '#6b7280', fontSize: '13px', fontWeight: 600 }}>S/D</span>
                                         </div>
                                     )}
+                                        <div style={{ textAlign: 'center' }}>
+                                            <span style={{ color: '#9ca3af', fontSize: '10px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                En Tránsito <InfoTooltip text={`Hay ${Number(item.incomingStock).toFixed(1)} ${item.unitLabel} pedidos a proveedor pendientes de llegada`} />
+                                            </span>
+                                            <span style={{ color: item.incomingStock > 0 ? '#60a5fa' : '#6b7280', fontWeight: 600, fontSize: '13px' }}>
+                                                {item.incomingStock > 0 ? `${Number(item.incomingStock).toFixed(1)} ${item.unitLabel}` : 'S/D'}
+                                                {item.incomingDate && <span style={{display: 'block', fontSize: '10px'}}>{new Date(item.incomingDate).toLocaleDateString()}</span>}
+                                            </span>
+                                        </div>
                                     <div style={{ textAlign: 'right', borderLeft: '1px solid #374151', paddingLeft: '32px' }}>
                                         <div style={{ color: '#34d399', fontWeight: 700, fontSize: '16px' }}>{Number(item.total).toFixed(1)} <small>{item.unitLabel}</small></div>
                                         <div style={{ color: '#9ca3af', fontSize: '13px' }}>{Number(item.totalSecondary).toFixed(0)} <small>{item.secondaryUnitLabel}</small></div>
