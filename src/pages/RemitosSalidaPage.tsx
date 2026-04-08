@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useGetRemitosSalidaQuery, usePreviewRemitoSalidaMutation, useCreateRemitoSalidaMutation, useDeleteRemitoSalidaMutation, useLazyGetRemitoSalidaQuery } from '../features/remitosSalida/api/remitos-salida.api';
 import { RemitoDetailModal } from '../features/remitos/ui/RemitoDetailModal';
 import { useGetOrdersQuery } from '../features/orders/api/orders.api';
@@ -122,7 +123,7 @@ export default function RemitosSalidaPage() {
                             <label style={{ color: '#9ca3af', fontSize: '12px' }}>Materiales a despachar</label>
                             <Btn small onClick={() => setLines(p => [...p, { itemId: '', qtyPrincipal: '', qtySecundaria: '' }])}>+ Línea</Btn>
                         </div>
-                        {lines.map((l, i) => (
+                        {lines.map((l: any, i: number) => (
                             <div key={i} style={{ display: 'grid', gridTemplateColumns: '3fr 1fr 1fr auto', gap: '8px', marginBottom: '8px', alignItems: 'end' }}>
                                 <Select label="Material" value={l.itemId} onChange={v => setLines(p => p.map((x, j) => j === i ? { ...x, itemId: v } : x))}
                                     options={[{ value: '', label: 'Seleccionar...' }, ...items.map((it: any) => ({ value: it.id, label: `${it.codigoInterno} — ${it.descripcion}` }))]} />

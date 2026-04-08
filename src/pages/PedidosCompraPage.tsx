@@ -14,8 +14,8 @@ export default function PedidosCompraPage() {
     const { data: suppliers = [] } = useGetPartnersQuery({ type: 'SUPPLIER' });
     const { data: items = [] } = useGetItemsQuery({});
 
-    const [createOrder] = useCreateOrderMutation();
-    const [deleteOrder] = useDeleteOrderMutation();
+    const [createOrder] = useCreatePurchaseOrderMutation();
+    const [deleteOrder] = useDeletePurchaseOrderMutation();
     const [updateStatus] = useUpdatePurchaseOrderStatusMutation();
 
     const [showForm, setShowForm] = useState(false);

@@ -21,7 +21,7 @@ export default function RemitosEntradaPage() {
     const [showForm, setShowForm] = useState(false);
     const [selectedRemito, setSelectedRemito] = useState<any>(null);
     const [showDetail, setShowDetail] = useState(false);
-    const [triggerGetDetail, { isFetching: isFetchingDetail }] = useLazyGetRemitoEntradaQuery();
+    const [triggerGetDetail] = useLazyGetRemitoEntradaQuery();
 
     const handleRowClick = async (remito: any) => {
         try {

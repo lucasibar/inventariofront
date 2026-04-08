@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useGetItemsQuery } from '../features/items/api/items.api';
 import { useGetDepotsQuery, useCreateDepotMutation, useUpdateDepotMutation, useCreatePositionMutation, useUpdatePositionMutation } from '../features/depots/api/depots.api';
@@ -244,7 +244,7 @@ export default function DepositoPage() {
                 depotId: showNewPosition, 
                 data: { 
                     ...newPosForm, 
-                    metrosCubicos: newPosForm.metrosCubicos ? parseFloat(newPosForm.metrosCubicos) : null 
+                    metrosCubicos: newPosForm.metrosCubicos ? parseFloat(newPosForm.metrosCubicos) : undefined 
                 } 
             }).unwrap();
             setShowNewPosition(null);
@@ -409,7 +409,7 @@ export default function DepositoPage() {
                                                             value={p.metrosCubicos?.toString() || ''} 
                                                             type="number"
                                                             onSave={async (v) => {
-                                                                await updatePosition({ id: p.id, data: { metrosCubicos: parseFloat(v) || null } }).unwrap();
+                                                                await updatePosition({ id: p.id, data: { metrosCubicos: parseFloat(v) || undefined } }).unwrap();
                                                                 refetch();
                                                             }} 
                                                         />
@@ -554,26 +554,7 @@ export default function DepositoPage() {
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #1e2133', paddingTop: '16px' }}>
                             <Btn variant="secondary" onClick={() => setShowNewPosition(null)}>Cancelar</Btn>
-                            <Btn onClick={async () => {
-                                if (!showNewPosition || !newPosForm.codigo) return;
-                                try {
-                                    const restrictions = newPosForm.categoria_item_primario 
-                                        ? [{ type: 'CATEGORY', value: newPosForm.categoria_item_primario }] 
-                                        : [];
-                                    await createPosition({ 
-                                        depotId: showNewPosition, 
-                                        data: { 
-                                            codigo: newPosForm.codigo,
-                                            categoria: newPosForm.categoria,
-                                            restrictions,
-                                            metrosCubicos: newPosForm.metrosCubicos ? parseFloat(newPosForm.metrosCubicos) : undefined 
-                                        } 
-                                    }).unwrap();
-                                    setShowNewPosition(null);
-                                    setNewPosForm({ codigo: '', categoria: 'STOCK', categoria_item_primario: '', categoria_item_secundario: '', metrosCubicos: '' });
-                                    refetch();
-                                } catch (e) { console.error(e); }
-                            }}>Crear Posición</Btn>
+                            <Btn onClick={handleAddPosition}>Crear Posición</Btn>
                         </div>
                     </div>
                 </Modal>

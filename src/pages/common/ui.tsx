@@ -208,6 +208,19 @@ export function SearchBar({ value, onChange, placeholder }: { value: string; onC
     );
 }
 
+export function InfoTooltip({ text }: { text: string }) {
+    return (
+        <span 
+            title={text} 
+            style={{ 
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                width: '14px', height: '14px', borderRadius: '50%', background: '#374151',
+                color: '#9ca3af', fontSize: '10px', cursor: 'help', marginLeft: '6px'
+            }}
+        >?</span>
+    );
+}
+
 export function EditableCell({ value, onSave, numeric }: { value: string; onSave: (v: string) => Promise<void>; numeric?: boolean }) {
     const [editing, setEditing] = React.useState(false);
     const [draft, setDraft] = React.useState(value);
