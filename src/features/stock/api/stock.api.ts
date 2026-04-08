@@ -90,6 +90,26 @@ export const stockApi = api.injectEndpoints({
             query: (id) => ({ url: `combos-compra/${id}`, method: 'DELETE' }),
             invalidatesTags: ['Dashboard'],
         }),
+        deleteAllItemStock: builder.mutation<void, { itemId: string; fecha: string; observaciones?: string }>({
+            query: ({ itemId, ...body }) => ({ url: `stock/item/${itemId}`, method: 'DELETE', body }),
+            invalidatesTags: ['Stock'],
+        }),
+        getRecentMovements: builder.query<any[], { desde?: string; hasta?: string; depositoId?: string; itemId?: string; lotNumber?: string }>({
+            query: (params) => {
+                const p = new URLSearchParams();
+                if (params.desde) p.set('desde', params.desde);
+                if (params.hasta) p.set('hasta', params.hasta);
+                if (params.depositoId) p.set('depositoId', params.depositoId);
+                if (params.itemId) p.set('itemId', params.itemId);
+                if (params.lotNumber) p.set('lotNumber', params.lotNumber);
+                return `movimientos?${p.toString()}`;
+            },
+            providesTags: ['Stock'],
+        }),
+        reverseMovement: builder.mutation<void, string>({
+            query: (id) => ({ url: `movimientos/${id}/cancel`, method: 'POST' }),
+            invalidatesTags: ['Stock'],
+        }),
     }),
 });
 
@@ -108,6 +128,9 @@ export const {
     useGetComboBreakdownQuery,
     useCreateComboMutation,
     useDeleteComboMutation,
+    useDeleteAllItemStockMutation,
+    useGetRecentMovementsQuery,
+    useReverseMovementMutation,
 } = stockApi;
 
 

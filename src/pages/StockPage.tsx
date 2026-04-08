@@ -1,5 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useGetStockQuery, useQuickAddStockMutation } from '../features/stock/api/stock.api';
+import { 
+    useGetStockQuery, 
+    useQuickAddStockMutation, 
+    useDeleteStockMutation, 
+    useDeleteAllItemStockMutation 
+} from '../features/stock/api/stock.api';
 import { useNavigate } from 'react-router-dom';
 import { useGetDepotsQuery } from '../features/depots/api/depots.api';
 import { useGetItemsQuery } from '../features/items/api/items.api';
@@ -39,6 +44,8 @@ export default function StockPage() {
     const { data: items = [] } = useGetItemsQuery({});
     const { data: partners = [] } = useGetPartnersQuery({});
     const [quickAddStock] = useQuickAddStockMutation();
+    const [deleteStock] = useDeleteStockMutation();
+    const [deleteAllStock] = useDeleteAllItemStockMutation();
 
     const [quickAddModal, setQuickAddModal] = useState(false);
     const [qaDepot, setQaDepot] = useState('');
@@ -80,6 +87,33 @@ export default function StockPage() {
             setQaItem(''); setQaLot(''); setQaPrincipal(''); setQaSecundaria('');
         } catch (e: any) {
             alert(e?.data?.message || 'Error en adición rápida');
+        }
+    };
+
+    const handleDeleteLine = async (entry: any) => {
+        if (!window.confirm(`¿Estás seguro de eliminar el stock de la partida ${entry.batch.lotNumber} en la posición ${entry.posicion?.codigo}?`)) return;
+        try {
+            await deleteStock({
+                depositoId: entry.posicion.depot.id,
+                posicionId: entry.posicion.id,
+                itemId: entry.batch.item.id,
+                lotId: entry.batch.id,
+                fecha: new Date().toISOString()
+            }).unwrap();
+        } catch (e: any) {
+            alert(e?.data?.message || 'Error al eliminar línea');
+        }
+    };
+
+    const handleDeleteAll = async (itemId: string, itemDesc: string) => {
+        if (!window.confirm(`¡ATENCIÓN! ¿Estás seguro de eliminar TODO el stock del material "${itemDesc}"? Esta acción no se puede deshacer de forma masiva.`)) return;
+        try {
+            await deleteAllStock({
+                itemId,
+                fecha: new Date().toISOString()
+            }).unwrap();
+        } catch (e: any) {
+            alert(e?.data?.message || 'Error al eliminar stock total');
         }
     };
 
@@ -326,9 +360,29 @@ export default function StockPage() {
                             <div className="material-header">
                                 <div className="material-title">
                                     <span>{group.item.descripcion}</span>
-                                    <Badge color={group.item.categoria === 'Importacion' ? '#6366f1' : '#10b981'}>
-                                        {group.item.categoria}
-                                    </Badge>
+                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                        <Badge color={group.item.categoria === 'Importacion' ? '#6366f1' : '#10b981'}>
+                                            {group.item.categoria}
+                                        </Badge>
+                                        {isAdmin && (
+                                            <button 
+                                                onClick={() => handleDeleteAll(group.item.id, group.item.descripcion)}
+                                                title="Eliminar todo el stock de este material"
+                                                style={{
+                                                    background: 'rgba(239, 68, 68, 0.1)',
+                                                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                                                    borderRadius: '4px',
+                                                    color: '#ef4444',
+                                                    fontSize: '10px',
+                                                    padding: '2px 6px',
+                                                    cursor: 'pointer',
+                                                    fontWeight: 600
+                                                }}
+                                            >
+                                                ELIMINAR TODO
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                                 <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px', display: 'flex', gap: '12px', alignItems: 'center' }}>
                                     <span>Cod: <code style={{ color: '#a5b4fc', fontSize: '11px' }}>{group.item.codigoInterno}</code></span>
@@ -384,21 +438,33 @@ export default function StockPage() {
                                                     {entry.qtySecundaria != null ? `${Number(entry.qtySecundaria).toFixed(0)} ${entry.batch.item.unidadSecundaria || ''}` : '-'}
                                                 </td>
                                                 <td style={{ textAlign: 'right', paddingRight: '12px' }}>
-                                                    <button 
-                                                        onClick={() => navigate('/movimientos', { 
-                                                            state: { 
-                                                                depositoId: entry.posicion?.depot?.id, 
-                                                                posicionId: entry.posicion?.id,
-                                                                itemId: entry.batch?.item?.id
-                                                            } 
-                                                        })}
-                                                        style={{
-                                                            background: 'none', border: '1px solid #2a2d3e', borderRadius: '4px',
-                                                            color: '#6366f1', fontSize: '11px', padding: '2px 6px', cursor: 'pointer'
-                                                        }}
-                                                    >
-                                                        Mover ➔
-                                                    </button>
+                                                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
+                                                        <button 
+                                                            onClick={() => navigate('/movimientos', { 
+                                                                state: { 
+                                                                    depositoId: entry.posicion?.depot?.id, 
+                                                                    posicionId: entry.posicion?.id,
+                                                                    itemId: entry.batch?.item?.id
+                                                                } 
+                                                            })}
+                                                            style={{
+                                                                background: 'none', border: '1px solid #2a2d3e', borderRadius: '4px',
+                                                                color: '#6366f1', fontSize: '11px', padding: '2px 6px', cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            ➔
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleDeleteLine(entry)}
+                                                            title="Eliminar este registro"
+                                                            style={{
+                                                                background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', 
+                                                                borderRadius: '4px', color: '#ef4444', fontSize: '11px', padding: '2px 6px', cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            🗑️
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );

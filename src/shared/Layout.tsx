@@ -21,6 +21,7 @@ const navItems = [
     { to: '/socios', label: '🤝 Proveedores/Clientes' },
     { to: '/users', label: '👥 Usuarios y Roles' },
     { to: '/tasks', label: '✅ Mis Tareas' },
+    { to: '/admin/movements', label: '🛡️ Control de Movimientos' },
 ];
 
 const navStyle = (isActive: boolean): React.CSSProperties => ({
@@ -92,7 +93,7 @@ export default function Layout() {
                 </div>
 
                 {/* Main nav */}
-                <nav style={{ flex: 1, paddingTop: '8px' }}>
+                <nav className="custom-scrollbar" style={{ flex: 1, paddingTop: '8px', overflowY: 'auto' }}>
                     {filteredNavItems.map(({ to, label }) => (
                         <NavLink
                             key={to}

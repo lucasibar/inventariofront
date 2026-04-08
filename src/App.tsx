@@ -23,6 +23,7 @@ import VolumenesDashboardPage from './pages/VolumenesDashboardPage';
 import MovimientosPage from './pages/MovimientosPage';
 import StockPage from './pages/StockPage';
 import UsersPage from './pages/UsersPage';
+import AdminMovementsPage from './pages/AdminMovementsPage';
 
 import './App.css';
 
@@ -60,6 +61,7 @@ function App() {
             {/* Rutas exclusivas de ADMIN */}
             <Route element={<PrivateRoute allowedRoles={['ADMIN']} />}>
                 <Route path="/users" element={<UsersPage />} />
+                <Route path="/admin/movements" element={<AdminMovementsPage />} />
             </Route>
 
             {/* Rutas para Operario / Admin */}
