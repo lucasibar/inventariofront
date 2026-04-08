@@ -6,9 +6,14 @@ export const dashboardApi = api.injectEndpoints({
             query: () => 'dashboard/capacity',
             providesTags: ['Depots', 'Stock'],
         }),
+        getVolumesDashboard: builder.query<any[], void>({
+            query: () => 'dashboard/volumes',
+            providesTags: ['Stock'],
+        }),
     }),
 });
 
 export const {
     useGetCapacityDashboardQuery,
+    useGetVolumesDashboardQuery,
 } = dashboardApi;

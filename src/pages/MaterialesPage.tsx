@@ -46,7 +46,9 @@ const emptyForm = () => ({
     unidadSecundaria: '', 
     tono: '', 
     supplierId: '', 
-    boxTypeId: '' 
+    boxTypeId: '',
+    stockMaximo: '',
+    kilosPorCaja: ''
 });
 
 export default function MaterialesPage() {
@@ -89,7 +91,9 @@ export default function MaterialesPage() {
             unidadSecundaria: item.unidadSecundaria ?? '', 
             tono: item.tono ?? '', 
             supplierId: item.supplierId ?? '',
-            boxTypeId: item.boxTypeId ?? ''
+            boxTypeId: item.boxTypeId ?? '',
+            stockMaximo: item.stockMaximo ?? '',
+            kilosPorCaja: item.kilosPorCaja ?? ''
         });
         setEditTarget(item); setModal('edit');
     };
@@ -98,7 +102,9 @@ export default function MaterialesPage() {
         setSaving(true); setError('');
         const dto = { 
             ...form, 
-            stockMinimo: form.stockMinimo ? Number(form.stockMinimo) : undefined, 
+            stockMinimo: form.stockMinimo !== '' ? Number(form.stockMinimo) : undefined, 
+            stockMaximo: form.stockMaximo !== '' ? Number(form.stockMaximo) : undefined,
+            kilosPorCaja: form.kilosPorCaja !== '' ? Number(form.kilosPorCaja) : undefined,
             tono: form.tono || null,
             boxTypeId: form.boxTypeId || null
         };
@@ -150,7 +156,7 @@ export default function MaterialesPage() {
                 <Card>
                 <Table
                     loading={isLoading}
-                    cols={['Material', 'Proveedor', 'Categoría', 'Rotación', 'Caja', 'Mínimo', 'Unid.', 'Tono', '']}
+                    cols={['Material', 'Proveedor', 'Categoría', 'Rotación', 'Caja', 'Lim./Caja', 'Mín / Máx', 'Unid.', 'Tono', '']}
                     rows={filteredItems.map((it: any) => [
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span style={{ color: '#f3f4f6', fontWeight: 600 }}>{it.descripcion}</span>
@@ -160,7 +166,12 @@ export default function MaterialesPage() {
                         <div style={{ fontSize: '12px', color: '#9ca3af' }}>{it.categoria}</div>,
                         <Badge color={ROT_COLORS[it.rotacion] ?? '#6b7280'}>{it.rotacion}</Badge>,
                         <div style={{ fontSize: '12px', color: '#a5b4fc' }}>{it.boxType?.nombre || <span style={{ opacity: 0.4 }}>Sin asignar</span>}</div>,
-                        it.stockMinimo ? <span style={{ color: '#ef4444', fontWeight: 600 }}>{it.stockMinimo}</span> : <span style={{ color: '#4b5563' }}>—</span>,
+                        <div style={{ fontSize: '12px', color: '#e5e7eb' }}>{it.kilosPorCaja ? `${it.kilosPorCaja} kg/cj` : '—'}</div>,
+                        <div style={{ fontSize: '12px' }}>
+                            {it.stockMinimo ? <span style={{ color: '#ef4444', fontWeight: 600 }}>{it.stockMinimo}</span> : <span style={{ color: '#4b5563' }}>—</span>}
+                            <span style={{ color: '#6b7280', margin: '0 4px' }}>/</span>
+                            {it.stockMaximo ? <span style={{ color: '#10b981', fontWeight: 600 }}>{it.stockMaximo}</span> : <span style={{ color: '#4b5563' }}>—</span>}
+                        </div>,
                         <div style={{ fontSize: '12px', color: '#9ca3af' }}>
                             {it.unidadPrincipal}
                             {it.unidadSecundaria && <span style={{ opacity: 0.6 }}> / {it.unidadSecundaria}</span>}
@@ -218,8 +229,12 @@ export default function MaterialesPage() {
                             <Select label="Categoría" value={form.categoria} onChange={v => setForm(p => ({ ...p, categoria: v }))} options={CATEGORIAS} />
                             <Select label="Rotación" value={form.rotacion} onChange={v => setForm(p => ({ ...p, rotacion: v }))} options={ROTACIONES} />
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                             <Input label="Stock Mínimo" type="number" value={String(form.stockMinimo)} onChange={v => setForm(p => ({ ...p, stockMinimo: v }))} />
+                            <Input label="Stock Máximo" type="number" value={String(form.stockMaximo)} onChange={v => setForm(p => ({ ...p, stockMaximo: v }))} />
+                            <Input label="Kilos por Caja" type="number" value={String(form.kilosPorCaja)} onChange={v => setForm(p => ({ ...p, kilosPorCaja: v }))} />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                             <Select label="Tono (Opcional)" value={form.tono} onChange={v => setForm(p => ({ ...p, tono: v }))} options={TONOS} />
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>

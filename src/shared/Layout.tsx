@@ -12,10 +12,11 @@ const navItems = [
     { to: '/remitos-salida', label: '🚚 Remitos Salida' },
     { to: '/stock', label: '📋 Stock' },
     { to: '/dashboard', label: '📊 Dashboard Compras' },
+    { to: '/dashboard/capacity', label: '📊 Medidores Capacidad' },
+    { to: '/dashboard/volumes', label: '📦 Dashboard Volúmenes' },
     { to: '/movimientos', label: '🔄 Movimientos' },
     { to: '/items', label: '🗂 Materiales' },
     { to: '/items/box-types', label: '📦 Tipos de Caja' },
-    { to: '/dashboard/capacity', label: '📊 Medidores Capacidad' },
     { to: '/socios', label: '🤝 Proveedores/Clientes' },
     { to: '/users', label: '👥 Usuarios y Roles' },
     { to: '/tasks', label: '✅ Mis Tareas' },
@@ -52,7 +53,7 @@ export default function Layout() {
         }
         
         if (isCompras) {
-            const allowed = ['/dashboard', '/remitos-entrada', '/items', '/items/box-types', '/dashboard/capacity', '/socios'];
+            const allowed = ['/dashboard', '/remitos-entrada', '/items', '/items/box-types', '/dashboard/capacity', '/dashboard/volumes', '/socios'];
             return allowed.includes(item.to);
         }
         

@@ -8,7 +8,7 @@ import {
 } from '../features/stock/api/stock.api';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
 import { useGetItemsQuery } from '../features/items/api/items.api';
-import { PageHeader, Card, Badge, Btn, Modal, Table, Spinner, Input, Select } from './common/ui';
+import { PageHeader, Card, Badge, Btn, Modal, Table, Spinner, Input, Select, InfoTooltip } from './common/ui';
 
 export default function DashboardComprasPage() {
     const { data: combos = [], isLoading: loadingCombos } = useGetCombosQuery();
@@ -120,6 +120,29 @@ export default function DashboardComprasPage() {
                                     )}
                                 </div>
                             </div>
+                            
+                            {combo.daysOfSupply !== null ? (
+                                <div style={{ textAlign: 'center', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px' }}>
+                                    <span style={{ fontSize: '11px', color: '#9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px' }}>
+                                        Inventario Restante (Estimado)
+                                        <InfoTooltip text="Calculado en base al consumo promedio de estos materiales (remitos de salida) en los últimos 30 días contra el stock actual." />
+                                    </span>
+                                    <span style={{ 
+                                        fontSize: '16px', fontWeight: 700, 
+                                        color: combo.daysOfSupply < 15 ? '#ef4444' : combo.daysOfSupply > 60 ? '#10b981' : '#f59e0b'
+                                    }}>
+                                        ~ {Math.ceil(combo.daysOfSupply)} días
+                                    </span>
+                                </div>
+                            ) : (
+                                <div style={{ textAlign: 'center', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px' }}>
+                                    <span style={{ fontSize: '11px', color: '#9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px' }}>
+                                        Inventario Restante (Estimado)
+                                        <InfoTooltip text="Calculado en base al consumo promedio de estos materiales en los últimos 30 días. Actualmente no hay datos." />
+                                    </span>
+                                    <span style={{ fontSize: '13px', color: '#6b7280' }}>Sin historial de consumo</span>
+                                </div>
+                            )}
 
                             <div style={{ color: '#6b7280', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span>{combo.itemIds.length} materiales</span>
@@ -245,9 +268,29 @@ function BreakdownModal({ id, onClose }: { id: string, onClose: () => void }) {
                                     <h4 style={{ color: '#f3f4f6', fontSize: '15px', fontWeight: 700, margin: 0 }}>{item.description}</h4>
                                     <code style={{ fontWeight: 400, fontSize: '12px', color: '#6b7280' }}>{item.code}</code>
                                 </div>
-                                <div style={{ textAlign: 'right' }}>
-                                    <div style={{ color: '#34d399', fontWeight: 700, fontSize: '16px' }}>{Number(item.total).toFixed(1)} <small>{item.unitLabel}</small></div>
-                                    <div style={{ color: '#9ca3af', fontSize: '13px' }}>{Number(item.totalSecondary).toFixed(0)} <small>{item.secondaryUnitLabel}</small></div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+                                    {item.daysOfSupply !== null ? (
+                                        <div style={{ textAlign: 'center' }}>
+                                            <span style={{ color: '#9ca3af', fontSize: '10px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                Restante Promedio <InfoTooltip text="Duración en días calculada sobre el consumo del material en el último mes" />
+                                            </span>
+                                            <span style={{ 
+                                                color: item.daysOfSupply < 15 ? '#ef4444' : item.daysOfSupply > 60 ? '#10b981' : '#f59e0b', 
+                                                fontWeight: 800, fontSize: '16px' 
+                                            }}>~{Math.ceil(item.daysOfSupply)} días</span>
+                                        </div>
+                                    ) : (
+                                        <div style={{ textAlign: 'center' }}>
+                                            <span style={{ color: '#9ca3af', fontSize: '10px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                Restante Promedio <InfoTooltip text="No hay historial de consumo de salidas en los últimos 30 días" />
+                                            </span>
+                                            <span style={{ color: '#6b7280', fontSize: '13px', fontWeight: 600 }}>S/D</span>
+                                        </div>
+                                    )}
+                                    <div style={{ textAlign: 'right', borderLeft: '1px solid #374151', paddingLeft: '32px' }}>
+                                        <div style={{ color: '#34d399', fontWeight: 700, fontSize: '16px' }}>{Number(item.total).toFixed(1)} <small>{item.unitLabel}</small></div>
+                                        <div style={{ color: '#9ca3af', fontSize: '13px' }}>{Number(item.totalSecondary).toFixed(0)} <small>{item.secondaryUnitLabel}</small></div>
+                                    </div>
                                 </div>
                             </div>
                             <Table 

@@ -17,6 +17,7 @@ import AuditoriaPickingPage from './pages/AuditoriaPickingPage';
 import BoxTypesPage from './pages/BoxTypesPage';
 import CapacityDashboardPage from './pages/CapacityDashboardPage';
 import WorkspaceTasksPage from './pages/WorkspaceTasksPage';
+import VolumenesDashboardPage from './pages/VolumenesDashboardPage';
 
 import MovimientosPage from './pages/MovimientosPage';
 import StockPage from './pages/StockPage';
@@ -47,6 +48,7 @@ function App() {
                 <Route path="/remitos-entrada" element={<RemitosEntradaPage />} />
                 <Route path="/dashboard" element={<DashboardComprasPage />} />
                 <Route path="/dashboard/capacity" element={<CapacityDashboardPage />} />
+                <Route path="/dashboard/volumes" element={<VolumenesDashboardPage />} />
                 <Route path="/items" element={<MaterialesPage />} />
                 <Route path="/items/box-types" element={<BoxTypesPage />} />
                 <Route path="/socios" element={<SociosPage />} />
