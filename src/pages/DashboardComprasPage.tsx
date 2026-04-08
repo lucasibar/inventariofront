@@ -8,9 +8,10 @@ import {
 } from '../features/stock/api/stock.api';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
 import { useGetItemsQuery } from '../features/items/api/items.api';
-import { PageHeader, Card, Badge, Btn, Modal, Table, Spinner, Input, Select, InfoTooltip } from './common/ui';
+import { PageHeader, Card, Badge, Btn, Modal, Table, Spinner, Input, Select, useIsMobile, ActionMenu, InfoTooltip } from './common/ui';
 
 export default function DashboardComprasPage() {
+    const isMobile = useIsMobile();
     const { data: combos = [], isLoading: loadingCombos } = useGetCombosQuery();
     const { data: alerts = [] } = useGetAlertsQuery();
     const { data: partners = [] } = useGetPartnersQuery({ type: 'SUPPLIER' });
@@ -43,35 +44,37 @@ export default function DashboardComprasPage() {
         setMaterialSearch('');
     };
 
-    const handleDelete = async (id: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (window.confirm('¿Eliminar este combo?')) {
-            await deleteCombo(id);
-        }
-    };
+
 
     return (
         <div className="dashboard-container" style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
             <style>{`
-                .combos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-bottom: 40px; }
+                .combos-grid { 
+                    display: grid; 
+                    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+                    gap: 16px; 
+                    margin-bottom: 32px; 
+                }
                 .combo-card { 
-                    cursor: pointer; transition: transform 0.2s, border-color 0.2s; 
-                    position: relative; padding: 20px; display: flex; flex-direction: column; gap: 14px;
+                    cursor: pointer; 
+                    transition: border-color 0.2s; 
+                    position: relative; 
+                    padding: 16px; 
+                    display: flex; 
+                    flex-direction: column; 
+                    gap: 12px;
                 }
-                .combo-card:hover { transform: translateY(-4px); border-color: #6366f1; }
-                .delete-btn { position: absolute; top: 12px; right: 12px; opacity: 0; transition: opacity 0.2s; }
-                .combo-card:hover .delete-btn { opacity: 1; }
-                
                 .item-chip { 
-                    display: inline-flex; align-items: center; gap: 6px; background: #0f1117; 
-                    border: 1px solid #374151; border-radius: 6px; padding: 4px 8px; font-size: 11px; color: #d1d5db;
+                    display: inline-flex; align-items: center; gap: 4px; background: #0f1117; 
+                    border: 1px solid #374151; border-radius: 4px; padding: 2px 8px; font-size: 10px; color: #9ca3af;
                 }
-                .item-chip button { background: none; border: none; color: #ef4444; cursor: pointer; padding: 0 2px; }
-
                 .search-mini {
-                    background: #111827; border: 1px solid #374151; border-radius: 6px; padding: 6px 12px; color: white; font-size: 13px; width: 100%; box-sizing: border-box; outline: none; margin-bottom: 10px;
+                    background: #111827; border: 1px solid #374151; border-radius: 6px; padding: 10px 12px; color: white; font-size: 13px; width: 100%; box-sizing: border-box; outline: none; margin-bottom: 12px;
                 }
                 .search-mini:focus { border-color: #6366f1; }
+                @media (max-width: 768px) {
+                    .combos-grid { grid-template-columns: 1fr; gap: 12px; }
+                }
             `}</style>
 
             <PageHeader title="Dashboard de Compras" subtitle="Control de stock por combos y materiales críticos">
@@ -89,38 +92,36 @@ export default function DashboardComprasPage() {
                     )}
                     {combos.map((combo: any) => (
                         <Card key={combo.id} className="combo-card" style={{ cursor: 'pointer' }} onClick={() => setShowBreakdownId(combo.id)}>
-                            <button className="delete-btn" onClick={(e) => handleDelete(combo.id, e)} style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: '14px', cursor: 'pointer', zIndex: 10 }}>✕</button>
-                            
-                            <div>
-                                <h4 style={{ color: '#f3f4f6', fontSize: '16px', fontWeight: 700, margin: '0 0 4px 0' }}>{combo.title}</h4>
-                                {combo.supplier && <span style={{ color: '#6366f1', fontSize: '12px', fontWeight: 600 }}>{combo.supplier.name}</span>}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <div style={{ flex: 1 }}>
+                                    <h4 style={{ color: '#f3f4f6', fontSize: '15px', fontWeight: 700, margin: '0 0 2px 0' }}>{combo.title}</h4>
+                                    {combo.supplier && <span style={{ color: '#6366f1', fontSize: '11px', fontWeight: 600 }}>{combo.supplier.name}</span>}
+                                </div>
+                                <ActionMenu options={[
+                                    { label: 'Ver Detalle', icon: '🔍', onClick: () => setShowBreakdownId(combo.id) },
+                                    { label: 'Eliminar Combo', icon: '🗑️', color: '#ef4444', onClick: () => {
+                                        if (window.confirm('¿Eliminar este combo?')) deleteCombo(combo.id);
+                                    }}
+                                ]} />
                             </div>
 
                             <div style={{ 
-                                background: combo.deficit > 0 ? 'rgba(239, 68, 68, 0.05)' : 'rgba(99, 102, 241, 0.05)', 
-                                borderRadius: '12px', padding: '16px', textAlign: 'center', 
-                                border: `1px solid ${combo.deficit > 0 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(99, 102, 241, 0.1)'}` 
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '12px'
                             }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '8px' }}>
-                                    <div>
-                                        <span style={{ color: '#9ca3af', fontSize: '10px', display: 'block', textTransform: 'uppercase' }}>{combo.unitLabel || 'Principal'}</span>
-                                        <span style={{ color: combo.deficit > 0 ? '#f87171' : '#34d399', fontSize: '18px', fontWeight: 800 }}>{Number(combo.totalStock || 0).toFixed(1)}</span>
-                                    </div>
-                                    <div style={{ borderLeft: '1px solid #2a2d3e' }}>
-                                        <span style={{ color: '#9ca3af', fontSize: '10px', display: 'block', textTransform: 'uppercase' }}>{combo.secondaryUnitLabel || 'Secundario'}</span>
-                                        <span style={{ color: '#d1d5db', fontSize: '18px', fontWeight: 800 }}>{Number(combo.totalSecondaryStock || 0).toFixed(0)}</span>
-                                    </div>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ color: combo.deficit > 0 ? '#fca5a5' : '#a5b4fc', fontSize: '10px', fontWeight: 600 }}>STOCK TOTAL</span>
+                                    <span style={{ color: 'white', fontSize: '16px', fontWeight: 800 }}>{Number(combo.totalQtyPrincipal || 0).toLocaleString('es-AR', { maximumFractionDigits: 1 })} kg</span>
                                 </div>
-                                <div style={{ paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                    <span style={{ color: '#6b7280', fontSize: '11px' }}>Mínimo Sugerido: {Number(combo.totalMinStock || 0).toFixed(1)} {combo.unitLabel}</span>
-                                    {combo.deficit > 0 && (
-                                        <div style={{ marginTop: '4px' }}>
-                                            <span style={{ color: '#ef4444', fontSize: '12px', fontWeight: 700 }}>⚠️ Sugerido de Compra: {Number(combo.deficit).toFixed(1)} {combo.unitLabel}</span>
-                                        </div>
-                                    )}
+                                <div style={{ height: '30px', width: '1px', background: 'rgba(255,255,255,0.08)' }}></div>
+                                <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'right' }}>
+                                    <span style={{ color: combo.deficit > 0 ? '#fca5a5' : '#a5b4fc', fontSize: '10px', fontWeight: 600 }}>{combo.deficit > 0 ? 'DÉFICIT' : 'SUSTENTO'}</span>
+                                    <span style={{ color: combo.deficit > 0 ? '#ef4444' : '#10b981', fontSize: '16px', fontWeight: 800 }}>
+                                        {combo.deficit > 0 ? `-${Number(combo.deficit).toLocaleString('es-AR', { maximumFractionDigits: 0 })} kg` : `+${combo.stockDays || 0} d`}
+                                    </span>
                                 </div>
                             </div>
-                            
+
                             {combo.daysOfSupply !== null ? (
                                 <div style={{ textAlign: 'center', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px' }}>
                                     <span style={{ fontSize: '11px', color: '#9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px' }}>
@@ -160,8 +161,8 @@ export default function DashboardComprasPage() {
                                 </div>
                             )}
 
-                            <div style={{ color: '#6b7280', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span>{combo.itemIds.length} materiales</span>
+                            <div style={{ color: '#6b7280', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '8px' }}>
+                                <span>{combo.itemIds?.length || 0} materiales</span>
                                 <span style={{ color: '#6366f1' }}>Ver detalles →</span>
                             </div>
                         </Card>

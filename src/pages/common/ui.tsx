@@ -1,4 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+
+export function useIsMobile() {
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+    return isMobile;
+}
 
 export function PageHeader({ title, subtitle, children }: { title: string; subtitle?: string; children?: React.ReactNode }) {
     return (
@@ -45,9 +55,11 @@ export function Btn({ children, onClick, variant = 'primary', small, disabled, s
             style={{
                 background: colors[variant], color: textColor[variant],
                 border: variant === 'secondary' ? '1px solid #374151' : variant === 'danger' ? '1px solid rgba(239,68,68,0.3)' : 'none',
-                borderRadius: '8px', padding: small ? '4px 10px' : '8px 16px',
-                fontSize: small ? '12px' : '13px', fontWeight: 600, cursor: disabled ? 'not-allowed' : 'pointer',
-                opacity: disabled ? 0.5 : 1, transition: 'opacity 0.15s', ...style,
+                borderRadius: '8px', padding: small ? '6px 10px' : '10px 18px',
+                fontSize: small ? '11px' : '14px', fontWeight: 600, cursor: disabled ? 'not-allowed' : 'pointer',
+                opacity: disabled ? 0.5 : 1, transition: 'all 0.15s', 
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                ...style,
             }}
         >{children}</button>
     );
@@ -158,30 +170,119 @@ export function Spinner() {
 
 export function Table({ cols, rows, loading }: { cols: (string | React.ReactNode)[]; rows: (string | React.ReactNode)[][]; loading?: boolean }) {
     return (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-                <tr style={{ borderBottom: '1px solid #2a2d3e' }}>
-                    {cols.map((c, i) => (
-                        <th key={i} style={{ padding: '10px 16px', color: '#6b7280', fontSize: '11px', fontWeight: 600, textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{c}</th>
-                    ))}
-                </tr>
-            </thead>
-            <tbody>
-                {rows.length === 0 && !loading && (
-                    <tr><td colSpan={cols.length} style={{ padding: '32px', textAlign: 'center', color: '#4b5563', fontSize: '14px' }}>Todavía no hay datos cargados</td></tr>
-                )}
-                {loading && (
-                    <tr><td colSpan={cols.length}><Spinner /></td></tr>
-                )}
-                {rows.map((row, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid #1e2133' }}>
-                        {row.map((cell, j) => (
-                            <td key={j} style={{ padding: '12px 16px', color: '#d1d5db', fontSize: '13px' }}>{cell}</td>
+        <div style={{ width: '100%', overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+                <thead>
+                    <tr style={{ borderBottom: '1px solid #2a2d3e' }}>
+                        {cols.map((c, i) => (
+                            <th key={i} style={{ padding: '12px 16px', color: '#6b7280', fontSize: '11px', fontWeight: 600, textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{c}</th>
                         ))}
                     </tr>
+                </thead>
+                <tbody>
+                    {rows.length === 0 && !loading && (
+                        <tr><td colSpan={cols.length} style={{ padding: '48px', textAlign: 'center', color: '#4b5563', fontSize: '14px' }}>No hay datos disponibles</td></tr>
+                    )}
+                    {loading && (
+                        <tr><td colSpan={cols.length}><Spinner /></td></tr>
+                    )}
+                    {rows.map((row, i) => (
+                        <tr key={i} style={{ borderBottom: '1px solid #1e2133', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
+                            {row.map((cell, j) => (
+                                <td key={j} style={{ padding: '14px 16px', color: '#d1d5db', fontSize: '13px' }}>{cell}</td>
+                            ))}
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+}
+
+export function ActionMenu({ options }: { options: { label: string; onClick: () => void; icon?: string; color?: string }[] }) {
+    const [open, setOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    return (
+        <div ref={menuRef} style={{ position: 'relative' }}>
+            <button 
+                onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid #2a2d3e', borderRadius: '4px', cursor: 'pointer', padding: '4px 8px', color: '#9ca3af' }}
+            >
+                •••
+            </button>
+            {open && (
+                <div style={{
+                    position: 'absolute', right: 0, top: '100%', marginTop: '4px',
+                    background: '#1a1d2e', border: '1px solid #374151', borderRadius: '8px',
+                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.4)', zIndex: 100, minWidth: '160px',
+                    overflow: 'hidden'
+                }}>
+                    {options.map((opt, i) => (
+                        <div 
+                            key={i} 
+                            onClick={(e) => { e.stopPropagation(); opt.onClick(); setOpen(false); }}
+                            style={{ 
+                                padding: '10px 16px', fontSize: '13px', color: opt.color || '#d1d5db', 
+                                cursor: 'pointer', borderBottom: i === options.length - 1 ? 'none' : '1px solid #2a2d3e',
+                                display: 'flex', alignItems: 'center', gap: '8px'
+                            }}
+                            className="hoverable-option"
+                        >
+                            {opt.icon && <span>{opt.icon}</span>}
+                            {opt.label}
+                        </div>
+                    ))}
+                    <style>{`.hoverable-option:hover { background: rgba(99, 102, 241, 0.1); }`}</style>
+                </div>
+            )}
+        </div>
+    );
+}
+
+export function ResponsiveTable({ 
+    desktopCols, 
+    renderDesktopRow, 
+    renderMobileCard,
+    data,
+    loading 
+}: { 
+    desktopCols: (string | React.ReactNode)[]; 
+    renderDesktopRow: (item: any, index: number) => (string | React.ReactNode)[];
+    renderMobileCard: (item: any, index: number) => React.ReactNode;
+    data: any[];
+    loading?: boolean;
+}) {
+    const isMobile = useIsMobile();
+    
+    if (loading) return <Spinner />;
+    if (data.length === 0) return <div style={{ padding: '60px', textAlign: 'center', color: '#4b5563', border: '2px dashed #1e2133', borderRadius: '16px' }}>No hay registros para mostrar</div>;
+
+    if (isMobile) {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {data.map((item, i) => (
+                    <Card key={i} style={{ padding: '16px', position: 'relative' }}>
+                        {renderMobileCard(item, i)}
+                    </Card>
                 ))}
-            </tbody>
-        </table>
+            </div>
+        );
+    }
+
+    return (
+        <Table 
+            cols={desktopCols} 
+            rows={data.map((item, i) => renderDesktopRow(item, i))} 
+        />
     );
 }
 

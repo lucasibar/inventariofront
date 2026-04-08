@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { useGetDepotsQuery } from '../features/depots/api/depots.api';
 import { useGetItemsQuery } from '../features/items/api/items.api';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
-import { PageHeader, Select, Badge, Spinner, Btn, Modal, Input } from './common/ui';
+import { PageHeader, Select, Badge, Spinner, Btn, Modal, Input, useIsMobile, ActionMenu, Card } from './common/ui';
 import { CreateItemDialog } from '../features/remitos/ui/CreateItemDialog';
 import { CreatePartnerDialog } from '../features/remitos/ui/CreatePartnerDialog';
 import { useSelector } from 'react-redux';
@@ -21,10 +21,16 @@ export default function StockPage() {
     const user = useSelector(selectCurrentUser);
     const allowedDepots = useSelector(selectAllowedDepots);
     const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+    const isMobile = useIsMobile();
 
     const navigate = useNavigate();
     const [depotId, setDepotId] = useState<string>('');
     const [searchTerm, setSearchTerm] = useState<string>('');
+    const [expandedMaterials, setExpandedMaterials] = useState<string[]>([]);
+
+    const toggleMaterial = (id: string) => {
+        setExpandedMaterials(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    };
 
     const { data: rawDepots = [] } = useGetDepotsQuery();
 
@@ -194,30 +200,33 @@ export default function StockPage() {
             <style>{`
                 .stock-grid {
                     display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-                    gap: 20px;
-                    margin-top: 24px;
+                    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+                    gap: 16px;
+                    margin-top: 16px;
                 }
                 .material-card {
                     background: #1a1d2e;
                     border: 1px solid #2a2d3e;
                     border-radius: 12px;
                     overflow: hidden;
-                    transition: transform 0.2s, border-color 0.2s;
+                    transition: border-color 0.2s;
+                    display: flex;
+                    flex-direction: column;
                 }
-                .material-card:hover {
-                    border-color: #6366f1;
+                .material-card.expanded {
+                    grid-row: span 2;
                 }
                 .material-header {
-                    padding: 16px;
+                    padding: 12px 16px;
                     border-bottom: 1px solid #2a2d3e;
-                    background: rgba(255,255,255,0.02);
+                    background: rgba(255,255,255,0.01);
+                    cursor: pointer;
                 }
                 .material-title {
                     margin: 0;
                     color: #f3f4f6;
-                    font-size: 15px;
-                    font-weight: 600;
+                    font-size: 14px;
+                    font-weight: 700;
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
@@ -225,67 +234,44 @@ export default function StockPage() {
                 .positions-table {
                     width: 100%;
                     border-collapse: collapse;
-                    font-size: 13px;
+                    font-size: 12px;
                 }
                 .positions-table th {
                     text-align: left;
-                    padding: 8px 16px;
+                    padding: 6px 12px;
                     color: #6b7280;
-                    font-weight: 500;
+                    font-weight: 600;
                     border-bottom: 1px solid #2a2d3e;
                     background: rgba(0,0,0,0.1);
+                    text-transform: uppercase;
+                    font-size: 10px;
                 }
                 .positions-table td {
-                    padding: 10px 16px;
+                    padding: 8px 12px;
                     border-bottom: 1px solid #23263a;
-                }
-                .highlight-row {
-                    background: rgba(245, 158, 11, 0.08);
-                    border-left: 3px solid #f59e0b;
-                }
-                .highlight-row td {
-                     color: #fbbf24;
-                }
-                .aging-warning {
-                    color: #f87171;
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 4px;
-                    font-size: 11px;
-                    margin-left: 8px;
-                    font-weight: 600;
                 }
                 .search-bar-container {
                     display: flex;
-                    gap: 16px;
-                    margin-bottom: 24px;
+                    gap: 12px;
+                    margin-bottom: 16px;
                     align-items: flex-end;
                     flex-wrap: wrap;
                 }
-                .search-input {
-                    background: #1a1d2e;
-                    border: 1px solid #2a2d3e;
-                    border-radius: 8px;
-                    padding: 10px 16px;
-                    color: white;
-                    width: 100%;
-                    max-width: 400px;
-                    transition: border-color 0.2s;
+                .search-input-wrapper {
+                    flex: 1;
+                    min-width: 260px;
+                    position: relative;
                 }
-                .search-input:focus {
-                    outline: none;
-                    border-color: #6366f1;
-                }
-                .empty-state {
-                    text-align: center;
-                    padding: 80px 20px;
+                .search-input-wrapper i {
+                    position: absolute;
+                    left: 12px;
+                    top: 36px;
                     color: #4b5563;
-                    border: 2px dashed #2a2d3e;
-                    border-radius: 16px;
-                    grid-column: 1 / -1;
                 }
-                @media (max-width: 600px) {
+                @media (max-width: 768px) {
                     .stock-grid { grid-template-columns: 1fr; }
+                    .search-bar-container { flex-direction: column; align-items: stretch; }
+                    .search-input-wrapper { min-width: 100%; }
                 }
             `}</style>
 
@@ -297,7 +283,7 @@ export default function StockPage() {
             </PageHeader>
 
             <div className="search-bar-container">
-                <div style={{ width: '250px' }}>
+                <div style={{ width: isMobile ? '100%' : '240px' }}>
                     <Select
                         label="Depósito"
                         value={depotId}
@@ -309,15 +295,19 @@ export default function StockPage() {
                         ]}
                     />
                 </div>
-                <div style={{ flex: 1, minWidth: '300px' }}>
-                    <label style={{ display: 'block', color: '#9ca3af', fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>
-                        Buscador (Material, Proveedor, Partida, Color, Posición)
+                <div className="search-input-wrapper">
+                    <label style={{ display: 'block', color: '#9ca3af', fontSize: '11px', marginBottom: '6px', fontWeight: 600, textTransform: 'uppercase' }}>
+                        Búsqueda rápida
                     </label>
                     <input
                         type="text"
                         className="search-input"
-                        placeholder="Escribe para buscar..."
+                        placeholder="Material, Proveedor, Partida o Posición..."
                         value={searchTerm}
+                        style={{
+                            background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: '8px', 
+                            padding: '10px 16px', color: 'white', width: '100%', outline: 'none'
+                        }}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
@@ -355,124 +345,111 @@ export default function StockPage() {
                 </div>
             ) : (
                 <div className="stock-grid">
-                    {groupedData.map((group) => (
-                        <div key={group.item.id} className="material-card">
-                            <div className="material-header">
-                                <div className="material-title">
-                                    <span>{group.item.descripcion}</span>
-                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                        <Badge color={group.item.categoria === 'Importacion' ? '#6366f1' : '#10b981'}>
-                                            {group.item.categoria}
-                                        </Badge>
-                                        {isAdmin && (
-                                            <button 
-                                                onClick={() => handleDeleteAll(group.item.id, group.item.descripcion)}
-                                                title="Eliminar todo el stock de este material"
-                                                style={{
-                                                    background: 'rgba(239, 68, 68, 0.1)',
-                                                    border: '1px solid rgba(239, 68, 68, 0.2)',
-                                                    borderRadius: '4px',
-                                                    color: '#ef4444',
-                                                    fontSize: '10px',
-                                                    padding: '2px 6px',
-                                                    cursor: 'pointer',
-                                                    fontWeight: 600
-                                                }}
-                                            >
-                                                ELIMINAR TODO
-                                            </button>
-                                        )}
+                    {groupedData.map((group) => {
+                        const isExpanded = expandedMaterials.includes(group.item.id) || !isMobile;
+                        
+                        return (
+                            <div key={group.item.id} className={`material-card ${isExpanded ? 'expanded' : ''}`}>
+                                <div className="material-header" onClick={() => isMobile && toggleMaterial(group.item.id)}>
+                                    <div className="material-title">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            {isMobile && <span>{isExpanded ? '▾' : '▸'}</span>}
+                                            <span>{group.item.descripcion}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                            {!isMobile && (
+                                                <Badge color={group.item.categoria === 'Importacion' ? '#6366f1' : '#10b981'}>
+                                                    {group.item.categoria}
+                                                </Badge>
+                                            )}
+                                            <ActionMenu options={[
+                                                { label: 'Ver Movimientos', icon: '➔', onClick: () => navigate('/movimientos', { state: { itemId: group.item.id } }) },
+                                                ...(isAdmin ? [{ 
+                                                    label: 'ELIMINAR TODO STOCK', 
+                                                    icon: '🗑️', 
+                                                    color: '#ef4444', 
+                                                    onClick: () => handleDeleteAll(group.item.id, group.item.descripcion) 
+                                                }] : [])
+                                            ]} />
+                                        </div>
+                                    </div>
+                                    <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                        <code style={{ color: '#a5b4fc' }}>{group.item.codigoInterno}</code>
+                                        {!isMobile && group.supplier && <span>• {group.supplier.name}</span>}
+                                        <span style={{
+                                            marginLeft: 'auto',
+                                            background: 'rgba(99, 102, 241, 0.1)',
+                                            padding: '2px 6px',
+                                            borderRadius: '4px',
+                                            color: '#f3f4f6',
+                                            fontWeight: 700
+                                        }}>
+                                            {group.metrics.kilos.toLocaleString('es-AR', { minimumFractionDigits: 1 })} kg
+                                        </span>
                                     </div>
                                 </div>
-                                <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px', display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                    <span>Cod: <code style={{ color: '#a5b4fc', fontSize: '11px' }}>{group.item.codigoInterno}</code></span>
-                                    {group.supplier && <span>Prov: <span style={{ color: '#9ca3af' }}>{group.supplier.name}</span></span>}
-                                    <span style={{
-                                        marginLeft: 'auto',
-                                        background: 'rgba(255,255,255,0.06)',
-                                        padding: '2px 8px',
-                                        borderRadius: '4px',
-                                        color: '#f3f4f6',
-                                        fontWeight: 600,
-                                        fontSize: '11px'
-                                    }}>
-                                        {group.metrics.kilos.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
-                                        {group.metrics.units > 0 && ` / ${group.metrics.units.toLocaleString('es-AR')} un`}
-                                    </span>
-                                </div>
-                            </div>
-                            <table className="positions-table">
-                                <thead>
-                                    <tr>
-                                        <th>Posición</th>
-                                        <th>Partida</th>
-                                        <th style={{ textAlign: 'right' }}>Stock Principal</th>
-                                        <th style={{ textAlign: 'right' }}>Secundario</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {group.entries.map((entry: any) => {
-                                        const isMinBatch = entry.batch.lotNumber === group.minLotNumber;
-                                        const createdAt = new Date(entry.batch.createdAt);
-                                        const now = new Date();
-                                        const diffDays = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 3600 * 24));
-                                        const isOld = diffDays > 180;
-
-                                        return (
-                                            <tr key={entry.id} className={isMinBatch ? 'highlight-row' : ''}>
-                                                <td style={{ fontWeight: 600 }}>{entry.posicion?.codigo || 'S/P'}</td>
-                                                <td>
-                                                    <code>{entry.batch.lotNumber}</code>
-                                                    {isMinBatch && <span style={{ marginLeft: '8px', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700 }}>★ Min</span>}
-                                                    {isOld && (
-                                                        <span className="aging-warning" title={`Esta partida ingresó hace ${diffDays} días`}>
-                                                            ⚠️ {diffDays}d
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td style={{ textAlign: 'right', fontWeight: 700 }}>
-                                                    {Number(entry.qtyPrincipal).toFixed(2)} <span style={{ fontSize: '11px', opacity: 0.7 }}>{entry.batch.item.unidadPrincipal}</span>
-                                                </td>
-                                                <td style={{ textAlign: 'right', color: '#9ca3af' }}>
-                                                    {entry.qtySecundaria != null ? `${Number(entry.qtySecundaria).toFixed(0)} ${entry.batch.item.unidadSecundaria || ''}` : '-'}
-                                                </td>
-                                                <td style={{ textAlign: 'right', paddingRight: '12px' }}>
-                                                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
-                                                        <button 
-                                                            onClick={() => navigate('/movimientos', { 
-                                                                state: { 
-                                                                    depositoId: entry.posicion?.depot?.id, 
-                                                                    posicionId: entry.posicion?.id,
-                                                                    itemId: entry.batch?.item?.id
-                                                                } 
-                                                            })}
-                                                            style={{
-                                                                background: 'none', border: '1px solid #2a2d3e', borderRadius: '4px',
-                                                                color: '#6366f1', fontSize: '11px', padding: '2px 6px', cursor: 'pointer'
-                                                            }}
-                                                        >
-                                                            ➔
-                                                        </button>
-                                                        <button 
-                                                            onClick={() => handleDeleteLine(entry)}
-                                                            title="Eliminar este registro"
-                                                            style={{
-                                                                background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', 
-                                                                borderRadius: '4px', color: '#ef4444', fontSize: '11px', padding: '2px 6px', cursor: 'pointer'
-                                                            }}
-                                                        >
-                                                            🗑️
-                                                        </button>
-                                                    </div>
-                                                </td>
+                                
+                                {isExpanded && (
+                                    <table className="positions-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Pos</th>
+                                                <th>Partida (Lote)</th>
+                                                <th style={{ textAlign: 'right' }}>Stock</th>
+                                                {!isMobile && <th style={{ textAlign: 'right' }}>Secundario</th>}
+                                                <th></th>
                                             </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    ))}
+                                        </thead>
+                                        <tbody>
+                                            {group.entries.map((entry: any) => {
+                                                const isMinBatch = entry.batch.lotNumber === group.minLotNumber;
+                                                const createdAt = new Date(entry.batch.createdAt);
+                                                const diffDays = Math.floor((Date.now() - createdAt.getTime()) / (1000 * 3600 * 24));
+                                                const isOld = diffDays > 180;
+
+                                                return (
+                                                    <tr key={entry.id} style={{ background: isMinBatch ? 'rgba(99,102,241,0.03)' : 'transparent' }}>
+                                                        <td style={{ fontWeight: 700, color: '#6366f1' }}>{entry.posicion?.codigo || 'S/P'}</td>
+                                                        <td>
+                                                            <code>{entry.batch.lotNumber}</code>
+                                                            {isMinBatch && !isMobile && <span style={{ marginLeft: '6px', fontSize: '9px', background: '#fbbf24', color: '#000', padding: '1px 4px', borderRadius: '3px', fontWeight: 800 }}>MIN</span>}
+                                                            {isOld && <span style={{ marginLeft: '4px' }} title={`Antigüedad: ${diffDays} días`}>⚠️</span>}
+                                                        </td>
+                                                        <td style={{ textAlign: 'right', fontWeight: 700 }}>
+                                                            {Number(entry.qtyPrincipal).toFixed(1)} <span style={{ fontSize: '10px', opacity: 0.6 }}>{entry.batch.item.unidadPrincipal}</span>
+                                                        </td>
+                                                        {!isMobile && (
+                                                            <td style={{ textAlign: 'right', color: '#9ca3af' }}>
+                                                                {entry.qtySecundaria != null ? `${Number(entry.qtySecundaria).toFixed(0)} ${entry.batch.item.unidadSecundaria || ''}` : '—'}
+                                                            </td>
+                                                        )}
+                                                        <td style={{ textAlign: 'right', paddingRight: '12px' }}>
+                                                            <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
+                                                                <button 
+                                                                    onClick={() => navigate('/movimientos', { 
+                                                                        state: { 
+                                                                            depositoId: entry.posicion?.depot?.id || depotId, 
+                                                                            posicionId: entry.posicion?.id,
+                                                                            itemId: entry.batch?.item?.id
+                                                                        } 
+                                                                    })}
+                                                                    style={{ background: 'none', border: 'none', color: '#60a5fa', cursor: 'pointer', padding: '4px' }}
+                                                                >➔</button>
+                                                                <button 
+                                                                    onClick={() => handleDeleteLine(entry)}
+                                                                    style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', padding: '4px' }}
+                                                                >🗑</button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+                        );
+                    })}
 
                     {!depotId && !searchTerm && (
                         <div className="empty-state">
