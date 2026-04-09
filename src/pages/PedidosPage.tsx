@@ -61,8 +61,8 @@ export default function PedidosPage() {
 
     return (
         <div style={{ padding: '24px' }}>
-            <PageHeader title="Pedidos a Depósito" subtitle="Solicitudes de materiales">
-                <Btn onClick={() => setShowForm(true)}>+ Nuevo Pedido</Btn>
+            <PageHeader title="Órdenes de Compra" subtitle="Solicitudes de materiales">
+                <Btn onClick={() => setShowForm(true)}>+ Nueva Orden</Btn>
             </PageHeader>
 
             {alerts.length > 0 && (
@@ -124,7 +124,7 @@ export default function PedidosPage() {
             ))}
 
             {showForm && (
-                <Modal title="Nuevo Pedido" onClose={() => setShowForm(false)} wide>
+                <Modal title="Nueva Orden de Compra" onClose={() => setShowForm(false)} wide>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                         <div>
                             <label style={{ color: '#9ca3af', fontSize: '12px' }}>Cliente</label>
@@ -155,7 +155,7 @@ export default function PedidosPage() {
                     {error && <p style={{ color: '#f87171' }}>{error}</p>}
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                         <Btn variant="secondary" onClick={() => setShowForm(false)}>Cancelar</Btn>
-                        <Btn onClick={save} disabled={saving}>{saving ? 'Guardando...' : 'Guardar Pedido'}</Btn>
+                        <Btn onClick={save} disabled={saving}>{saving ? 'Guardando...' : 'Guardar Orden'}</Btn>
                     </div>
                 </Modal>
             )}

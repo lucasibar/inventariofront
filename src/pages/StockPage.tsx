@@ -2,46 +2,61 @@ import { useState, useMemo, useEffect } from 'react';
 import { 
     useGetStockQuery, 
     useQuickAddStockMutation, 
-    useDeleteStockMutation, 
-    useDeleteAllItemStockMutation 
+    useDeleteStockMutation,
+    useAdjustStockMutation,
+    useReassignBatchMutation,
+    useLazyCheckBatchQuery,
 } from '../features/stock/api/stock.api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGetDepotsQuery } from '../features/depots/api/depots.api';
 import { useGetItemsQuery } from '../features/items/api/items.api';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
-import { PageHeader, Select, Badge, Spinner, Btn, Modal, Input, useIsMobile, ActionMenu, Card } from './common/ui';
+import { PageHeader, Select, Spinner, Btn, Modal, Input, EditableCell, useIsMobile } from './common/ui';
 import { CreateItemDialog } from '../features/remitos/ui/CreateItemDialog';
 import { CreatePartnerDialog } from '../features/remitos/ui/CreatePartnerDialog';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser, selectAllowedDepots } from '../entities/auth/model/authSlice';
-
-/* ─── UI COMPONENTS (Local or from common/ui) ─── */
 
 export default function StockPage() {
     const user = useSelector(selectCurrentUser);
     const allowedDepots = useSelector(selectAllowedDepots);
     const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
     const isMobile = useIsMobile();
-
     const navigate = useNavigate();
-    const [depotId, setDepotId] = useState<string>('');
+
+    const [depotId, setDepotId] = useState<string>(() => sessionStorage.getItem('selectedDepotId') || '');
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [expandedMaterials, setExpandedMaterials] = useState<string[]>([]);
 
-    const toggleMaterial = (id: string) => {
+    const [searchParams, setSearchParams] = useSearchParams();
+    
+    useEffect(() => {
+        if (depotId) sessionStorage.setItem('selectedDepotId', depotId);
+    }, [depotId]);
+
+    // Handle Quick Add trigger from global Header
+    useEffect(() => {
+        if (searchParams.get('qa') === '1') {
+            setQuickAddModal(true);
+            const newParams = new URLSearchParams(searchParams);
+            newParams.delete('qa');
+            setSearchParams(newParams, { replace: true });
+        }
+    }, [searchParams]);
+
+    const toggleMaterial = (id: string, e?: React.MouseEvent) => {
+        if(e) e.stopPropagation();
         setExpandedMaterials(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
     };
 
     const { data: rawDepots = [] } = useGetDepotsQuery();
-
-    // Filtered depots based on user permissions
     const availableDepots = useMemo(() => {
         if (isAdmin) return rawDepots;
         return rawDepots.filter(d => allowedDepots.includes(d.id));
     }, [rawDepots, allowedDepots, isAdmin]);
 
-    // Auto-set depot if only one option is available
     useEffect(() => {
+        // Only auto-select if no manual selection exists in session OR if stored selection is no longer available
         if (!depotId && availableDepots.length === 1) {
             setDepotId(availableDepots[0].id);
         }
@@ -51,7 +66,6 @@ export default function StockPage() {
     const { data: partners = [] } = useGetPartnersQuery({});
     const [quickAddStock] = useQuickAddStockMutation();
     const [deleteStock] = useDeleteStockMutation();
-    const [deleteAllStock] = useDeleteAllItemStockMutation();
 
     const [quickAddModal, setQuickAddModal] = useState(false);
     const [qaDepot, setQaDepot] = useState('');
@@ -62,9 +76,54 @@ export default function StockPage() {
     const [qaPrincipal, setQaPrincipal] = useState('');
     const [qaSecundaria, setQaSecundaria] = useState('');
 
-    // Dialog States
     const [createItemModal, setCreateItemModal] = useState(false);
     const [createPartnerModal, setCreatePartnerModal] = useState(false);
+
+    const [adjustStock] = useAdjustStockMutation();
+    const [reassignBatch] = useReassignBatchMutation();
+    const [checkBatch] = useLazyCheckBatchQuery();
+
+    const handleAdjustQty = async (entry: any, newValue: string, field: 'principal' | 'secundaria') => {
+        const newQty = Number(newValue);
+        if (isNaN(newQty) || newQty < 0) { alert('Valor inválido'); return; }
+        const currentQty = field === 'principal' ? Number(entry.qtyPrincipal) : Number(entry.qtySecundaria || 0);
+        const diff = newQty - currentQty;
+        if (diff === 0) return;
+        try {
+            await adjustStock({
+                depositoId: entry.posicion?.depot?.id || depotId,
+                posicionId: entry.posicionId,
+                itemId: entry.batch.item.id,
+                lotId: entry.lotId,
+                qtyPrincipal: field === 'principal' ? diff : 0,
+                qtySecundaria: field === 'secundaria' ? diff : null,
+                fecha: new Date().toISOString(),
+                observaciones: `Ajuste manual: ${currentQty} → ${newQty} (${field === 'principal' ? entry.batch.item.unidadPrincipal : entry.batch.item.unidadSecundaria})`,
+            }).unwrap();
+        } catch (e: any) { alert(e?.data?.message || 'Error al ajustar'); }
+    };
+
+    const handleReassignBatch = async (entry: any, newLotNumber: string) => {
+        if (!newLotNumber.trim()) return;
+        if (newLotNumber === entry.batch.lotNumber) return;
+        const entryDepotId = entry.posicion?.depot?.id || depotId;
+        try {
+            const result = await checkBatch({ itemId: entry.batch.item.id, lotNumber: newLotNumber, supplierId: entry.batch.supplier?.id }).unwrap();
+            if (result.exists) {
+                if (!window.confirm(`La partida "${newLotNumber}" ya existe. ¿Querés fusionar el stock con esa partida?`)) return;
+            } else {
+                if (!window.confirm(`La partida "${newLotNumber}" no existe. Se va a crear una nueva. ¿Continuar?`)) return;
+            }
+            await reassignBatch({
+                depositoId: entryDepotId,
+                posicionId: entry.posicionId,
+                itemId: entry.batch.item.id,
+                currentLotId: entry.lotId,
+                newLotNumber: newLotNumber.trim(),
+                fecha: new Date().toISOString(),
+            }).unwrap();
+        } catch (e: any) { alert(e?.data?.message || 'Error al reasignar partida'); }
+    };
 
     const qaFilteredItems = useMemo(() => {
         if (!qaSupplier) return items;
@@ -75,96 +134,56 @@ export default function StockPage() {
 
     const handleQuickAddSubmit = async () => {
         if (!qaDepot || !qaPosition || !qaItem || !qaSupplier || !qaLot || !qaPrincipal) {
-            alert('Completá todos los campos obligatorios para agregar mercadería.');
+            alert('Completá todos los campos obligatorios.');
             return;
         }
         try {
             await quickAddStock({
-                depositoId: qaDepot,
-                posicionId: qaPosition,
-                itemId: qaItem,
-                supplierId: qaSupplier,
-                lotNumber: qaLot,
-                qtyPrincipal: Number(qaPrincipal),
-                qtySecundaria: qaSecundaria ? Number(qaSecundaria) : undefined,
+                depositoId: qaDepot, posicionId: qaPosition, itemId: qaItem, supplierId: qaSupplier,
+                lotNumber: qaLot, qtyPrincipal: Number(qaPrincipal), qtySecundaria: qaSecundaria ? Number(qaSecundaria) : undefined,
                 fecha: new Date().toISOString()
             }).unwrap();
             setQuickAddModal(false);
             setQaItem(''); setQaLot(''); setQaPrincipal(''); setQaSecundaria('');
-        } catch (e: any) {
-            alert(e?.data?.message || 'Error en adición rápida');
-        }
+        } catch (e: any) { alert(e?.data?.message || 'Error en adición rápida'); }
     };
 
     const handleDeleteLine = async (entry: any) => {
-        if (!window.confirm(`¿Estás seguro de eliminar el stock de la partida ${entry.batch.lotNumber} en la posición ${entry.posicion?.codigo}?`)) return;
+        if (!window.confirm(`¿Eliminar esta línea de stock (${entry.qtyPrincipal} ${entry.batch.item.unidadPrincipal})?`)) return;
         try {
             await deleteStock({
-                depositoId: entry.posicion.depot.id,
-                posicionId: entry.posicion.id,
+                depositoId: entry.posicion?.depot?.id || depotId,
+                posicionId: entry.posicionId,
                 itemId: entry.batch.item.id,
-                lotId: entry.batch.id,
+                lotId: entry.lotId,
                 fecha: new Date().toISOString()
             }).unwrap();
-        } catch (e: any) {
-            alert(e?.data?.message || 'Error al eliminar línea');
-        }
+        } catch (e: any) { alert(e?.data?.message || 'Error al eliminar línea de stock'); }
     };
 
-    const handleDeleteAll = async (itemId: string, itemDesc: string) => {
-        if (!window.confirm(`¡ATENCIÓN! ¿Estás seguro de eliminar TODO el stock del material "${itemDesc}"? Esta acción no se puede deshacer de forma masiva.`)) return;
-        try {
-            await deleteAllStock({
-                itemId,
-                fecha: new Date().toISOString()
-            }).unwrap();
-        } catch (e: any) {
-            alert(e?.data?.message || 'Error al eliminar stock total');
-        }
-    };
+    const { data: rawStock = [], isFetching } = useGetStockQuery({ depotId: depotId || undefined, limit: 1000 }, { skip: !depotId });
 
-    // Fetch stock only if a depot is selected. 
-    // We bring a limit to avoid massive data transfer.
-    const { data: rawStock = [], isFetching } = useGetStockQuery(
-        { depotId: depotId || undefined, limit: 1000 },
-        { skip: !depotId }
-    );
-
-    // Grouping & Analysis Logic
     const { groupedData, generalMetrics } = useMemo(() => {
         const general = { kilos: 0, units: 0, positions: new Set<string>() };
-
         if (!rawStock.length) return { groupedData: [], generalMetrics: null };
-
         const groups: Record<string, any> = {};
-        
-        // Multi-word cumulative filtering logic
         const searchWords = searchTerm.toLowerCase().split(' ').filter(w => w.length > 0);
         
         const filteredStock = rawStock.filter((entry: any) => {
             if (searchWords.length === 0) return true;
-            
-            // For each word in the search, at least one field must contain it
             return searchWords.every(word => {
                 const itemDesc = (entry.batch?.item?.descripcion || '').toLowerCase();
                 const itemCode = (entry.batch?.item?.codigoInterno || '').toLowerCase();
                 const lotNum = (entry.batch?.lotNumber || '').toLowerCase();
                 const supplierName = (entry.batch?.supplier?.name || '').toLowerCase();
                 const posCode = (entry.posicion?.codigo || '').toLowerCase();
-                
-                return itemDesc.includes(word) || 
-                       itemCode.includes(word) || 
-                       lotNum.includes(word) || 
-                       supplierName.includes(word) || 
-                       posCode.includes(word);
+                return itemDesc.includes(word) || itemCode.includes(word) || lotNum.includes(word) || supplierName.includes(word) || posCode.includes(word);
             });
         });
 
         filteredStock.forEach((entry: any) => {
             const itemId = entry.batch?.item?.id;
             if (!itemId) return;
-
-            // Update general metrics
             general.kilos += Number(entry.qtyPrincipal || 0);
             if (entry.qtySecundaria) general.units += Number(entry.qtySecundaria);
             if (entry.posicionId) general.positions.add(entry.posicionId);
@@ -178,12 +197,11 @@ export default function StockPage() {
                     metrics: { kilos: 0, units: 0 }
                 };
             }
-
             groups[itemId].entries.push(entry);
             groups[itemId].metrics.kilos += Number(entry.qtyPrincipal || 0);
             if (entry.qtySecundaria) groups[itemId].metrics.units += Number(entry.qtySecundaria);
-
-            // Update min lot number (string comparison for correlative batches)
+            
+            // FIFO Logic: smallest lot number is oldest
             if (entry.batch.lotNumber < groups[itemId].minLotNumber) {
                 groups[itemId].minLotNumber = entry.batch.lotNumber;
             }
@@ -196,329 +214,219 @@ export default function StockPage() {
     }, [rawStock, searchTerm]);
 
     return (
-        <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
+        <div style={{ 
+            padding: isMobile ? '12px' : '24px', 
+            maxWidth: '1400px', 
+            margin: '0 auto',
+            boxSizing: 'border-box',
+            width: '100%',
+            overflowX: 'hidden'
+        }}>
             <style>{`
-                .stock-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-                    gap: 16px;
-                    margin-top: 16px;
+                .stock-grid { 
+                    column-width: ${isMobile ? '100%' : '360px'}; 
+                    column-gap: 12px; 
+                    margin-top: 12px; 
                 }
-                .material-card {
-                    background: #1a1d2e;
-                    border: 1px solid #2a2d3e;
-                    border-radius: 12px;
-                    overflow: hidden;
-                    transition: border-color 0.2s;
-                    display: flex;
-                    flex-direction: column;
-                }
-                .material-card.expanded {
-                    grid-row: span 2;
-                }
-                .material-header {
-                    padding: 12px 16px;
-                    border-bottom: 1px solid #2a2d3e;
-                    background: rgba(255,255,255,0.01);
-                    cursor: pointer;
-                }
-                .material-title {
-                    margin: 0;
-                    color: #f3f4f6;
-                    font-size: 14px;
-                    font-weight: 700;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-                .positions-table {
+                .material-card { 
+                    background: #1a1d2e; 
+                    border: 1px solid #2a2d3e; 
+                    border-radius: 12px; 
+                    overflow: hidden; 
+                    display: inline-block; 
                     width: 100%;
-                    border-collapse: collapse;
-                    font-size: 12px;
+                    margin-bottom: 12px;
+                    cursor: pointer;
+                    transition: transform 0.15s, border-color 0.15s;
+                    break-inside: avoid;
                 }
-                .positions-table th {
-                    text-align: left;
-                    padding: 6px 12px;
-                    color: #6b7280;
-                    font-weight: 600;
-                    border-bottom: 1px solid #2a2d3e;
-                    background: rgba(0,0,0,0.1);
-                    text-transform: uppercase;
-                    font-size: 10px;
-                }
-                .positions-table td {
-                    padding: 8px 12px;
-                    border-bottom: 1px solid #23263a;
-                }
-                .search-bar-container {
-                    display: flex;
-                    gap: 12px;
-                    margin-bottom: 16px;
-                    align-items: flex-end;
-                    flex-wrap: wrap;
-                }
-                .search-input-wrapper {
-                    flex: 1;
-                    min-width: 260px;
-                    position: relative;
-                }
-                .search-input-wrapper i {
-                    position: absolute;
-                    left: 12px;
-                    top: 36px;
-                    color: #4b5563;
-                }
-                @media (max-width: 768px) {
-                    .stock-grid { grid-template-columns: 1fr; }
-                    .search-bar-container { flex-direction: column; align-items: stretch; }
-                    .search-input-wrapper { min-width: 100%; }
-                }
+                .material-card:hover { transform: translateY(-2px); border-color: #6366f1; }
+                .material-header { padding: 14px 16px; background: rgba(255,255,255,0.01); }
+                .material-title-line { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+                .positions-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+                .positions-table th { text-align: left; padding: 10px 8px; color: #9ca3af; font-weight: 700; border-bottom: 1px solid #2a2d3e; background: rgba(0,0,0,0.2); text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; }
+                .positions-table td { padding: 8px; border-bottom: 1px solid #23263a; }
+                .metrics-banner { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 12px; background: rgba(99, 102, 241, 0.05); border: 1px solid #2a2d3e; border-radius: 12px; margin-bottom: 12px; }
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #2a2d3e; border-radius: 10px; }
+                .hoverable-row:hover { background: rgba(99, 102, 241, 0.05); }
             `}</style>
 
-            <PageHeader
-                title="Gestión de Stock"
-                subtitle="Consulta de inventario físico, posiciones y rotación de partidas"
-            >
-                <Btn onClick={() => setQuickAddModal(true)}>+ Adición Rápida</Btn>
-            </PageHeader>
+            <PageHeader title="Gestión de Stock" subtitle="Inventario físico y posiciones" hideTitleOnMobile />
 
-            <div className="search-bar-container">
-                <div style={{ width: isMobile ? '100%' : '240px' }}>
-                    <Select
-                        label="Depósito"
-                        value={depotId}
-                        onChange={setDepotId}
-                        disabled={!isAdmin && availableDepots.length === 1}
-                        options={[
-                            { value: '', label: 'Seleccionar depósito...' },
-                            ...availableDepots.map(d => ({ value: d.id, label: d.nombre }))
-                        ]}
-                    />
-                </div>
-                <div className="search-input-wrapper">
-                    <label style={{ display: 'block', color: '#9ca3af', fontSize: '11px', marginBottom: '6px', fontWeight: 600, textTransform: 'uppercase' }}>
-                        Búsqueda rápida
-                    </label>
-                    <input
-                        type="text"
-                        className="search-input"
-                        placeholder="Material, Proveedor, Partida o Posición..."
-                        value={searchTerm}
-                        style={{
-                            background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: '8px', 
-                            padding: '10px 16px', color: 'white', width: '100%', outline: 'none'
-                        }}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+            <div style={{ display: 'flex', flexDirection: 'row', gap: '8px', marginBottom: '16px', alignItems: 'flex-end' }}>
+                <Select
+                    label="Depósito"
+                    value={depotId}
+                    onChange={setDepotId}
+                    disabled={!isAdmin && availableDepots.length === 1}
+                    options={[{ value: '', label: 'Seleccionar depósito...' }, ...availableDepots.map(d => ({ value: d.id, label: d.nombre }))]}
+                    style={{ flex: isMobile ? '1' : '0 0 200px' }}
+                />
+                <div style={{ flex: 2, display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+                    <div style={{ flex: 1 }}>
+                        <Input
+                            label="Búsqueda Rápida"
+                            placeholder="Buscar..."
+                            value={searchTerm}
+                            onChange={setSearchTerm}
+                        />
+                    </div>
+                    {!isMobile && (
+                        <Btn 
+                            onClick={() => setQuickAddModal(true)} 
+                            style={{ height: '38px', width: '38px', padding: 0, minWidth: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}
+                            title="Adición Rápida"
+                        >+</Btn>
+                    )}
                 </div>
             </div>
 
-            {/* General Metrics Banner */}
             {!isFetching && generalMetrics && rawStock.length > 0 && (
-                <div style={{
-                    display: 'flex', gap: '32px', padding: '16px 24px',
-                    background: 'rgba(99, 102, 241, 0.04)',
-                    border: '1px solid rgba(99, 102, 241, 0.15)',
-                    borderRadius: '12px', marginBottom: '8px'
-                }}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Total Kilos</span>
-                        <span style={{ fontSize: '20px', color: '#6366f1', fontWeight: 800 }}>{generalMetrics.kilos.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span style={{ fontSize: '13px', fontWeight: 500, color: '#a5b4fc' }}>kg</span></span>
+                <div className="metrics-banner" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                    <div className="metric-item">
+                        <div style={{ fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 600 }}>Total Kilos</div>
+                        <div style={{ fontSize: '18px', color: '#6366f1', fontWeight: 800 }}>{generalMetrics.kilos.toLocaleString('es-AR', { minimumFractionDigits: 1 })} <small style={{fontSize:'10px'}}>kg</small></div>
                     </div>
-                    {generalMetrics.units > 0 && (
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Total Unidades</span>
-                            <span style={{ fontSize: '20px', color: '#10b981', fontWeight: 800 }}>{generalMetrics.units.toLocaleString('es-AR')} <span style={{ fontSize: '13px', fontWeight: 500, color: '#6ee7b7' }}>un</span></span>
-                        </div>
-                    )}
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Posiciones Asignadas</span>
-                        <span style={{ fontSize: '20px', color: '#f3f4f6', fontWeight: 800 }}>{generalMetrics.positionsCount}</span>
+                    <div className="metric-item">
+                        <div style={{ fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 600 }}>Total Unidades</div>
+                        <div style={{ fontSize: '18px', color: '#10b981', fontWeight: 800 }}>{generalMetrics.units.toLocaleString('es-AR')} <small style={{fontSize:'10px'}}>un</small></div>
                     </div>
                 </div>
             )}
 
             {isFetching ? (
-                <div style={{ textAlign: 'center', padding: '100px' }}>
-                    <Spinner />
-                    <p style={{ color: '#6b7280', marginTop: '16px' }}>Calculando inventarios...</p>
-                </div>
+                <div style={{ textAlign: 'center', padding: '100px' }}><Spinner /></div>
             ) : (
                 <div className="stock-grid">
                     {groupedData.map((group) => {
-                        const isExpanded = expandedMaterials.includes(group.item.id) || !isMobile;
-                        
+                        const isExpanded = expandedMaterials.includes(group.item.id);
+                        const titleText = `${group.item.categoria || '-'} ${group.item.descripcion}`.toLowerCase();
+                        const subTitleText = (group.supplier?.name || 'Sin proveedor').toLowerCase();
+
                         return (
-                            <div key={group.item.id} className={`material-card ${isExpanded ? 'expanded' : ''}`}>
-                                <div className="material-header" onClick={() => isMobile && toggleMaterial(group.item.id)}>
-                                    <div className="material-title">
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            {isMobile && <span>{isExpanded ? '▾' : '▸'}</span>}
-                                            <span>{group.item.descripcion}</span>
+                            <div key={group.item.id} className="material-card" onClick={() => toggleMaterial(group.item.id)}>
+                                <div className="material-header">
+                                    <div className="material-title-line">
+                                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: 1 }}>
+                                            <span style={{ 
+                                                color: '#6366f1', fontSize: '18px', paddingTop: '2px',
+                                                transition: 'transform 0.2s', 
+                                                transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' 
+                                            }}>▸</span>
+                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                <div style={{ fontWeight: 700, fontSize: '15px', color: '#f3f4f6', lineHeight: 1.2 }}>
+                                                    {titleText.charAt(0).toUpperCase() + titleText.slice(1)}
+                                                </div>
+                                                <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+                                                    {subTitleText.charAt(0).toUpperCase() + subTitleText.slice(1)}
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                            {!isMobile && (
-                                                <Badge color={group.item.categoria === 'Importacion' ? '#6366f1' : '#10b981'}>
-                                                    {group.item.categoria}
-                                                </Badge>
-                                            )}
-                                            <ActionMenu options={[
-                                                { label: 'Ver Movimientos', icon: '➔', onClick: () => navigate('/movimientos', { state: { itemId: group.item.id } }) },
-                                                ...(isAdmin ? [{ 
-                                                    label: 'ELIMINAR TODO STOCK', 
-                                                    icon: '🗑️', 
-                                                    color: '#ef4444', 
-                                                    onClick: () => handleDeleteAll(group.item.id, group.item.descripcion) 
-                                                }] : [])
-                                            ]} />
+                                        
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'right' }}>
+                                            <div style={{ fontWeight: 800, color: '#6366f1', fontSize: '18px' }}>
+                                                {group.metrics.kilos.toLocaleString('es-AR', { minimumFractionDigits: 1 })}
+                                                <small style={{ fontSize: '10px', fontWeight: 400, marginLeft: '2px' }}>kg</small>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                        <code style={{ color: '#a5b4fc' }}>{group.item.codigoInterno}</code>
-                                        {!isMobile && group.supplier && <span>• {group.supplier.name}</span>}
-                                        <span style={{
-                                            marginLeft: 'auto',
-                                            background: 'rgba(99, 102, 241, 0.1)',
-                                            padding: '2px 6px',
-                                            borderRadius: '4px',
-                                            color: '#f3f4f6',
-                                            fontWeight: 700
-                                        }}>
-                                            {group.metrics.kilos.toLocaleString('es-AR', { minimumFractionDigits: 1 })} kg
-                                        </span>
                                     </div>
                                 </div>
-                                
-                                {isExpanded && (
-                                    <table className="positions-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Pos</th>
-                                                <th>Partida (Lote)</th>
-                                                <th style={{ textAlign: 'right' }}>Stock</th>
-                                                {!isMobile && <th style={{ textAlign: 'right' }}>Secundario</th>}
-                                                <th></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {group.entries.map((entry: any) => {
-                                                const isMinBatch = entry.batch.lotNumber === group.minLotNumber;
-                                                const createdAt = new Date(entry.batch.createdAt);
-                                                const diffDays = Math.floor((Date.now() - createdAt.getTime()) / (1000 * 3600 * 24));
-                                                const isOld = diffDays > 180;
 
-                                                return (
-                                                    <tr key={entry.id} style={{ background: isMinBatch ? 'rgba(99,102,241,0.03)' : 'transparent' }}>
-                                                        <td style={{ fontWeight: 700, color: '#6366f1' }}>{entry.posicion?.codigo || 'S/P'}</td>
-                                                        <td>
-                                                            <code>{entry.batch.lotNumber}</code>
-                                                            {isMinBatch && !isMobile && <span style={{ marginLeft: '6px', fontSize: '9px', background: '#fbbf24', color: '#000', padding: '1px 4px', borderRadius: '3px', fontWeight: 800 }}>MIN</span>}
-                                                            {isOld && <span style={{ marginLeft: '4px' }} title={`Antigüedad: ${diffDays} días`}>⚠️</span>}
-                                                        </td>
-                                                        <td style={{ textAlign: 'right', fontWeight: 700 }}>
-                                                            {Number(entry.qtyPrincipal).toFixed(1)} <span style={{ fontSize: '10px', opacity: 0.6 }}>{entry.batch.item.unidadPrincipal}</span>
-                                                        </td>
-                                                        {!isMobile && (
-                                                            <td style={{ textAlign: 'right', color: '#9ca3af' }}>
-                                                                {entry.qtySecundaria != null ? `${Number(entry.qtySecundaria).toFixed(0)} ${entry.batch.item.unidadSecundaria || ''}` : '—'}
-                                                            </td>
-                                                        )}
-                                                        <td style={{ textAlign: 'right', paddingRight: '12px' }}>
-                                                            <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
-                                                                <button 
-                                                                    onClick={() => navigate('/movimientos', { 
-                                                                        state: { 
-                                                                            depositoId: entry.posicion?.depot?.id || depotId, 
-                                                                            posicionId: entry.posicion?.id,
-                                                                            itemId: entry.batch?.item?.id
-                                                                        } 
-                                                                    })}
-                                                                    style={{ background: 'none', border: 'none', color: '#60a5fa', cursor: 'pointer', padding: '4px' }}
-                                                                >➔</button>
-                                                                <button 
-                                                                    onClick={() => handleDeleteLine(entry)}
-                                                                    style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', padding: '4px' }}
-                                                                >🗑</button>
-                                                            </div>
-                                                        </td>
+                                {isExpanded && (
+                                    <div style={{ background: 'rgba(255,255,255,0.02)', borderTop: '1px solid #2a2d3e' }}>
+                                        <div className="custom-scrollbar">
+                                            <table className="positions-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th style={{ width: isMobile ? '80px' : '150px' }}>Ubicación</th>
+                                                        <th>Lote</th>
+                                                        <th style={{ textAlign: 'right', width: isMobile ? '80px' : '120px' }}>Kilos</th>
+                                                        {!isMobile && <th style={{ textAlign: 'right', width: '120px' }}>Unidades</th>}
+                                                        {isAdmin && <th style={{ textAlign: 'center', width: '50px' }}></th>}
                                                     </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
+                                                </thead>
+                                                <tbody>
+                                                    {group.entries.map((entry: any) => {
+                                                        const isOldest = entry.batch.lotNumber === group.minLotNumber;
+                                                        return (
+                                                            <tr key={entry.id} className="hoverable-row">
+                                                                <td 
+                                                                    style={{ color: '#6366f1', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}
+                                                                    onClick={(e) => { 
+                                                                        e.stopPropagation(); 
+                                                                        navigate('/movimientos', { state: { depositoId: entry.posicion?.depot?.id || depotId, posicionId: entry.posicion?.id, itemId: entry.batch?.item?.id } });
+                                                                    }}
+                                                                >
+                                                                    {entry.posicion?.codigo || 'S/P'}
+                                                                </td>
+                                                                <td onClick={(e) => e.stopPropagation()}>
+                                                                    <EditableCell value={entry.batch?.lotNumber || ''} onSave={(val) => handleReassignBatch(entry, val)} />
+                                                                    {isOldest && <span title="Próximo a consumir" style={{color:'#fbbf24', marginLeft:'4px'}}>⭐</span>}
+                                                                    {isMobile && <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>{Number(entry.qtySecundaria || 0).toFixed(0)} un</div>}
+                                                                </td>
+                                                                <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
+                                                                    <EditableCell numeric value={Number(entry.qtyPrincipal).toFixed(1)} onSave={(val) => handleAdjustQty(entry, val, 'principal')} />
+                                                                    <small style={{opacity:0.6, marginLeft: '2px'}}>{group.item.unidadPrincipal}</small>
+                                                                </td>
+                                                                {!isMobile && <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
+                                                                    <EditableCell numeric value={Number(entry.qtySecundaria || 0).toFixed(0)} onSave={(val) => handleAdjustQty(entry, val, 'secundaria')} />
+                                                                    <small style={{opacity:0.6, marginLeft: '2px'}}>{group.item.unidadSecundaria}</small>
+                                                                </td>}
+                                                                {isAdmin && (
+                                                                    <td style={{ textAlign: 'center' }}>
+                                                                        <button 
+                                                                            onClick={(e) => { e.stopPropagation(); handleDeleteLine(entry); }} 
+                                                                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', padding: '4px' }}
+                                                                            title="Eliminar esta línea"
+                                                                        >🗑️</button>
+                                                                    </td>
+                                                                )}
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 )}
                             </div>
                         );
                     })}
-
-                    {!depotId && !searchTerm && (
-                        <div className="empty-state">
-                            <h3 style={{ margin: '0 0 8px 0', color: '#9ca3af' }}>🔍 Listo para comenzar</h3>
-                            <p style={{ margin: 0 }}>Selecciona un depósito o escribe un criterio de búsqueda para ver el stock.</p>
-                        </div>
-                    )}
-
-                    {depotId && rawStock.length === 0 && !isFetching && (
-                        <div className="empty-state">
-                            <h3 style={{ margin: '0 0 8px 0', color: '#9ca3af' }}>📭 Sin resultados</h3>
-                            <p style={{ margin: 0 }}>No se encontraron materiales en este depósito con los filtros aplicados.</p>
-                        </div>
-                    )}
                 </div>
             )}
 
-            {/* Quick Add Modal */}
             {quickAddModal && (
-                <Modal title="Adición Rápida de Mercadería" onClose={() => setQuickAddModal(false)}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
-                        <div style={{ display: 'flex', gap: '12px' }}>
-                            <Select 
-                                label="Depósito Destino" 
-                                value={qaDepot || (availableDepots.length === 1 ? availableDepots[0].id : '')} 
-                                onChange={val => { setQaDepot(val); setQaPosition(''); }} 
-                                disabled={!isAdmin && availableDepots.length === 1}
-                                options={[{ value: '', label: 'Seleccionar...' }, ...availableDepots.map((d: any) => ({ value: d.id, label: d.nombre }))]} 
-                                style={{ flex: 1 }} 
-                            />
+                <Modal title="Adición Rápida" onClose={() => setQuickAddModal(false)}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '16px' }}>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <Select label="Depósito" value={qaDepot || (availableDepots.length === 1 ? availableDepots[0].id : '')} onChange={val => { setQaDepot(val); setQaPosition(''); }} disabled={!isAdmin && availableDepots.length === 1} options={[{ value: '', label: 'Seleccionar...' }, ...availableDepots.map((d: any) => ({ value: d.id, label: d.nombre }))]} style={{ flex: 1 }} />
                             <Select label="Posición" value={qaPosition} onChange={setQaPosition} options={[{ value: '', label: 'Seleccionar...' }, ...(availableDepots.find((d: any) => d.id === (qaDepot || (availableDepots.length === 1 ? availableDepots[0].id : '')))?.positions?.map((p: any) => ({ value: p.id, label: p.codigo })) || [])]} style={{ flex: 1 }} />
                         </div>
-
-                        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
                             <Select label="Proveedor" value={qaSupplier} onChange={val => { setQaSupplier(val); setQaItem(''); }} options={[{ value: '', label: 'Seleccionar...' }, ...partners.filter((p: any) => p.isSupplier).map((p: any) => ({ value: p.id, label: p.name }))]} style={{ flex: 1 }} />
-                            <Btn variant="secondary" onClick={() => setCreatePartnerModal(true)} style={{ whiteSpace: 'nowrap' }}>+ Nuevo Proveedor</Btn>
+                            <Btn small variant="secondary" onClick={() => setCreatePartnerModal(true)}>+</Btn>
                         </div>
-
-                        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
                             <Select label="Material" value={qaItem} onChange={setQaItem} options={[{ value: '', label: 'Seleccionar...' }, ...qaFilteredItems.map((i: any) => ({ value: i.id, label: `${i.codigoInterno} - ${i.descripcion}` }))]} style={{ flex: 1 }} />
-                            <Btn variant="secondary" onClick={() => setCreateItemModal(true)} style={{ whiteSpace: 'nowrap' }}>+ Nuevo Material</Btn>
+                            <Btn small variant="secondary" onClick={() => setCreateItemModal(true)}>+</Btn>
                         </div>
-
-                        <Input label="Número de Partida (Lote)" value={qaLot} onChange={setQaLot} />
-
-                        <div style={{ display: 'flex', gap: '12px' }}>
-                            <Input label={`Cantidad (${qaSelectedItem?.unidadPrincipal || 'Principal'})`} type="number" value={qaPrincipal} onChange={setQaPrincipal} style={{ flex: 1 }} />
-                            <Input label={`Secundaria (${qaSelectedItem?.unidadSecundaria || 'Bolsas/Un'})`} type="number" value={qaSecundaria} onChange={setQaSecundaria} style={{ flex: 1 }} />
+                        <Input label="Lote" value={qaLot} onChange={setQaLot} />
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <Input label={`Cant (${qaSelectedItem?.unidadPrincipal || 'Kg'})`} type="number" value={qaPrincipal} onChange={setQaPrincipal} style={{ flex: 1 }} />
+                            <Input label={`Sec (${qaSelectedItem?.unidadSecundaria || 'Un'})`} type="number" value={qaSecundaria} onChange={setQaSecundaria} style={{ flex: 1 }} />
                         </div>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                        <Btn variant="secondary" onClick={() => setQuickAddModal(false)}>Cancelar</Btn>
-                        <Btn onClick={handleQuickAddSubmit}>Confirmar</Btn>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                        <Btn variant="secondary" onClick={() => setQuickAddModal(false)}>Can</Btn>
+                        <Btn onClick={handleQuickAddSubmit}>Conf</Btn>
                     </div>
                 </Modal>
             )}
 
-            {/* Dialogs */}
-            <CreateItemDialog
-                open={createItemModal}
-                onClose={() => setCreateItemModal(false)}
-                onSuccess={(newItem: any) => { setQaItem(newItem.id); }}
-            />
-
-            <CreatePartnerDialog
-                open={createPartnerModal}
-                onClose={() => setCreatePartnerModal(false)}
-                onSuccess={(newPartner: any) => { setQaSupplier(newPartner.id); }}
-            />
+            <CreateItemDialog open={createItemModal} onClose={() => setCreateItemModal(false)} onSuccess={(newItem: any) => { setQaItem(newItem.id); }} />
+            <CreatePartnerDialog open={createPartnerModal} onClose={() => setCreatePartnerModal(false)} onSuccess={(newPartner: any) => { setQaSupplier(newPartner.id); }} />
         </div>
     );
 }

@@ -10,14 +10,37 @@ export function useIsMobile() {
     return isMobile;
 }
 
-export function PageHeader({ title, subtitle, children }: { title: string; subtitle?: string; children?: React.ReactNode }) {
+export function PageHeader({ title, subtitle, children, hideTitleOnMobile }: { title: string; subtitle?: string; children?: React.ReactNode; hideTitleOnMobile?: boolean }) {
+    const isMobile = useIsMobile();
+    const shouldHideTitle = isMobile && hideTitleOnMobile;
+    
     return (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-            <div>
-                <h1 style={{ color: '#f3f4f6', fontSize: '22px', fontWeight: 700, margin: 0 }}>{title}</h1>
-                {subtitle && <p style={{ color: '#6b7280', fontSize: '13px', margin: '4px 0 0' }}>{subtitle}</p>}
+        <div style={{ 
+            display: 'flex', 
+            flexWrap: 'wrap', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            marginBottom: isMobile ? '16px' : '24px', 
+            gap: '12px',
+            width: '100%',
+            boxSizing: 'border-box'
+        }}>
+            {!shouldHideTitle && (
+                <div style={{ minWidth: isMobile ? 'auto' : '200px', flex: 1 }}>
+                    <h1 style={{ color: '#f3f4f6', fontSize: isMobile ? '18px' : '22px', fontWeight: 800, margin: 0 }}>{title}</h1>
+                    {subtitle && <p style={{ color: '#6b7280', fontSize: '12px', margin: '4px 0 0' }}>{subtitle}</p>}
+                </div>
+            )}
+            <div style={{ 
+                display: 'flex', 
+                gap: '8px', 
+                marginLeft: shouldHideTitle ? '0' : 'auto', 
+                width: isMobile ? '100%' : 'auto',
+                justifyContent: isMobile ? 'flex-end' : 'flex-start',
+                flexWrap: 'wrap'
+            }}>
+                {children}
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>{children}</div>
         </div>
     );
 }

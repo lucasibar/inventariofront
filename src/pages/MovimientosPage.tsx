@@ -1,18 +1,18 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { useGetDepotsQuery } from '../features/depots/api/depots.api';
 import {
     useGetStockQuery,
-    useMoveStockMutation,
     useBulkMoveStockMutation,
     useAdjustStockMutation,
-    useUpdateBatchNumberMutation,
+    useReassignBatchMutation,
+    useLazyCheckBatchQuery,
     useQuickAddStockMutation,
     useDeleteStockMutation
 } from '../features/stock/api/stock.api';
-import { useUpdateItemMutation, useGetItemsQuery } from '../features/items/api/items.api';
+import { useGetItemsQuery } from '../features/items/api/items.api';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
-import { PageHeader, Card, Table, Select, Input, Btn, Modal, EditableCell, useIsMobile, ActionMenu } from './common/ui';
+import { PageHeader, Card, Table, Select, Input, Btn, Modal, EditableCell, useIsMobile, Badge } from './common/ui';
 import { CreateItemDialog } from '../features/remitos/ui/CreateItemDialog';
 import { CreatePartnerDialog } from '../features/remitos/ui/CreatePartnerDialog';
 
@@ -25,11 +25,22 @@ export default function MovimientosPage() {
     const allowedDepots = useSelector(selectAllowedDepots);
     const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
 
-    const [depositoIdLeft, setDepositoIdLeft] = useState('');
+    const [searchParams, setSearchParams] = useSearchParams();
+    
+    useEffect(() => {
+        if (searchParams.get('qa') === '1') {
+            setQuickAddModal(true);
+            const newParams = new URLSearchParams(searchParams);
+            newParams.delete('qa');
+            setSearchParams(newParams, { replace: true });
+        }
+    }, [searchParams]);
+
+    const [depositoIdLeft, setDepositoIdLeft] = useState<string>('');
     const [posicionIdLeft, setPosicionIdLeft] = useState('');
     const [selectedLeft, setSelectedLeft] = useState<string[]>([]);
 
-    const [depositoIdRight, setDepositoIdRight] = useState('');
+    const [depositoIdRight, setDepositoIdRight] = useState<string>('');
     const [posicionIdRight, setPosicionIdRight] = useState('');
     const [selectedRight, setSelectedRight] = useState<string[]>([]);
 
@@ -57,11 +68,10 @@ export default function MovimientosPage() {
         depotId: depositoIdRight, positionId: posicionIdRight
     }, { skip: !depositoIdRight || !posicionIdRight });
 
-    const [moveStock] = useMoveStockMutation();
-    const [bulkMoveStock] = useBulkMoveStockMutation();
     const [adjustStock] = useAdjustStockMutation();
-    const [updateBatchNumber] = useUpdateBatchNumberMutation();
-    const [updateItem] = useUpdateItemMutation();
+    const [reassignBatch] = useReassignBatchMutation();
+    const [checkBatchQuery] = useLazyCheckBatchQuery();
+    const [bulkMoveStock] = useBulkMoveStockMutation();
     const [quickAddStock] = useQuickAddStockMutation();
     const [deleteStock] = useDeleteStockMutation();
 
@@ -144,8 +154,6 @@ export default function MovimientosPage() {
             
             if (source === 'left') setSelectedLeft([]);
             else setSelectedRight([]);
-            
-            alert('Transferencia completada con éxito.');
         } catch (e: any) {
             alert(e?.data?.message || 'Error en transferencia grupal');
         }
@@ -205,8 +213,21 @@ export default function MovimientosPage() {
     const handleUpdateBatch = async (row: any, val: string) => {
         if (val === row.batch.lotNumber) return;
         try {
-            await updateBatchNumber({ batchId: row.batch.id, newLotNumber: val }).unwrap();
-        } catch (e: any) { alert(e?.data?.message || 'Error actualizando lote'); }
+            const result = await checkBatchQuery({ itemId: row.batch.item.id, lotNumber: val, supplierId: row.batch.supplier?.id }).unwrap();
+            if (result.exists) {
+                if (!window.confirm(`La partida "${val}" ya existe. ¿Fusionar?`)) return;
+            } else {
+                if (!window.confirm(`La partida "${val}" no existe. Se creará una nueva. ¿Continuar?`)) return;
+            }
+            await reassignBatch({
+                depositoId: row.posicion.depotId,
+                posicionId: row.posicion.id,
+                itemId: row.batch.item.id,
+                currentLotId: row.batch.id,
+                newLotNumber: val.trim(),
+                fecha: new Date().toISOString(),
+            }).unwrap();
+        } catch (e: any) { alert(e?.data?.message || 'Error reasignando partida'); }
     };
 
     const buildCols = (side: 'left' | 'right') => [
@@ -235,80 +256,149 @@ export default function MovimientosPage() {
                 <EditableCell numeric value={Number(entry.qtyPrincipal).toFixed(1)} onSave={(val) => handleAdjustQty(entry, val)} />
                 <span style={{fontSize: '9px', opacity: 0.6, marginLeft: '4px'}}>{entry.batch.item.unidadPrincipal}</span>
             </div>,
-            <ActionMenu options={[
-                { label: 'Ajustar Cantidad', icon: '✏️', onClick: () => {
-                    const newQty = prompt('Nueva cantidad:', entry.qtyPrincipal.toString());
-                    if (newQty) handleAdjustQty(entry, newQty);
-                }},
-                ...(isAdmin ? [{ label: 'Eliminar Registro', icon: '🗑️', color: '#ef4444', onClick: () => handleDeleteLine(entry) }] : [])
-            ]} />
+            isAdmin && (
+                <button 
+                    onClick={(e) => { e.stopPropagation(); handleDeleteLine(entry); }} 
+                    style={{ 
+                        background: 'rgba(239, 68, 68, 0.1)', 
+                        border: '1px solid rgba(239, 68, 68, 0.2)', 
+                        color: '#ef4444', 
+                        cursor: 'pointer', 
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '14px',
+                        transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#ef4444'; e.currentTarget.style.color = 'white'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.color = '#ef4444'; }}
+                    title="Eliminar Registro"
+                >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6" />
+                    </svg>
+                </button>
+            )
         ];
     });
 
-    const posOptionsLeft = availableDepots.find((d: any) => d.id === depositoIdLeft)?.posiciones?.map((p: any) => ({ value: p.id, label: p.codigo })) || [];
-    const posOptionsRight = availableDepots.find((d: any) => d.id === depositoIdRight)?.posiciones?.map((p: any) => ({ value: p.id, label: p.codigo })) || [];
-    const posOptionsLeftModal = availableDepots.find((d: any) => d.id === (qaDepot || (availableDepots.length === 1 ? availableDepots[0].id : '')))?.posiciones?.map((p: any) => ({ value: p.id, label: p.codigo })) || [];
+    const posOptionsLeft = availableDepots.find((d: any) => d.id === depositoIdLeft)?.positions?.map((p: any) => ({ value: p.id, label: p.codigo })) || [];
+    const posOptionsRight = availableDepots.find((d: any) => d.id === depositoIdRight)?.positions?.map((p: any) => ({ value: p.id, label: p.codigo })) || [];
+    const posOptionsLeftModal = availableDepots.find((d: any) => d.id === (qaDepot || (availableDepots.length === 1 ? availableDepots[0].id : '')))?.positions?.map((p: any) => ({ value: p.id, label: p.codigo })) || [];
 
     return (
-        <div style={{ padding: isMobile ? '12px' : '24px', maxWidth: '1600px', margin: '0 auto' }}>
+        <div style={{ 
+            padding: isMobile ? '12px' : '24px', 
+            maxWidth: '1600px', 
+            margin: '0 auto',
+            boxSizing: 'border-box',
+            width: '100%',
+            overflowX: 'hidden'
+        }}>
             <style>{`
                 .movimientos-grid { 
                     display: grid; 
-                    grid-template-columns: ${isMobile ? '1fr' : '1fr 40px 1fr'}; 
-                    gap: 12px; 
+                    grid-template-columns: ${isMobile ? '1fr' : '1fr auto 1fr'}; 
+                    gap: ${isMobile ? '8px' : '16px'}; 
                     align-items: start;
                 }
-                .side-panel { display: flex; flex-direction: column; gap: 12px; }
                 .move-arrow-container { 
-                    display: flex; align-items: center; justify-content: center; height: 100%; 
-                    flex-direction: ${isMobile ? 'row' : 'column'}; gap: 12px; padding: ${isMobile ? '20px 0' : '160px 0'};
+                    display: flex; 
+                    flex-direction: ${isMobile ? 'row' : 'column'}; 
+                    gap: 12px; 
+                    align-items: center;
+                    justify-content: center;
+                    padding: ${isMobile ? '4px 0' : '80px 0 0 0'};
                 }
                 .move-btn {
-                    background: #6366f1; border: none; border-radius: 50%; width: 48px; height: 48px;
-                    color: white; cursor: pointer; transition: all 0.2s;
-                    display: flex; align-items: center; justify-content: center; font-size: 20px;
-                    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+                    background: rgba(99, 102, 241, 0.9); 
+                    backdrop-filter: blur(8px);
+                    border: 1px solid rgba(255,255,255,0.1); 
+                    border-radius: 12px; 
+                    width: 42px; 
+                    height: 42px;
+                    color: white; 
+                    cursor: pointer; 
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                    display: flex; 
+                    align-items: center; 
+                    justify-content: center; 
+                    font-size: 18px;
+                    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
                 }
-                .move-btn:disabled { background: #1e2133; color: #4b5563; cursor: not-allowed; }
-                .move-btn:hover:not(:disabled) { transform: scale(1.1); background: #4f46e5; }
+                .move-btn:disabled { 
+                    background: #1e2133; 
+                    color: #4b5563; 
+                    cursor: not-allowed; 
+                    box-shadow: none;
+                }
+                .move-btn:hover:not(:disabled) { 
+                    transform: scale(1.1); 
+                    background: #4f46e5; 
+                    box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+                }
+                .panel-header {
+                    padding: 12px 16px;
+                    border-bottom: 1px solid #2a2d3e;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                .panel-title {
+                    font-size: 11px;
+                    font-weight: 800;
+                    text-transform: uppercase;
+                    letter-spacing: 0.1em;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
             `}</style>
 
-            <PageHeader title="Manejo de Movimientos" subtitle="Transferencias entre posiciones y edición rápida">
-                <Btn onClick={() => setQuickAddModal(true)}>+ Adición Rápida</Btn>
+            <PageHeader 
+                title="Manejo de Movimientos" 
+                subtitle="Transferencias entre posiciones y edición rápida"
+                hideTitleOnMobile
+            >
+                {!isMobile && <Btn onClick={() => setQuickAddModal(true)}>+ Adición Rápida</Btn>}
             </PageHeader>
 
             <div className="movimientos-grid">
-                {/* PANEL IZQUIERDO */}
-                <div className="side-panel">
-                    <Card style={{ padding: '12px' }}>
-                        <h3 style={{ color: '#a5b4fc', fontSize: '13px', margin: '0 0 12px 0', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>📤 Origen</h3>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <Select
-                                label="Depósito"
-                                value={depositoIdLeft}
-                                onChange={val => { setDepositoIdLeft(val); setPosicionIdLeft(''); setSelectedLeft([]); }}
-                                options={[{ value: '', label: 'Seleccionar' }, ...availableDepots.map((d: any) => ({ value: d.id, label: d.nombre }))]}
-                                style={{ flex: 1 }}
-                            />
-                            <Select
-                                rowLabel={false}
-                                label="Posición"
-                                value={posicionIdLeft}
-                                onChange={val => { setPosicionIdLeft(val); setSelectedLeft([]); }}
-                                options={[{ value: '', label: 'Seleccionar' }, ...posOptionsLeft]}
-                                style={{ flex: 1 }}
-                            />
+                {/* PANEL IZQUIERDO UNIFICADO */}
+                <Card style={{ padding: 0, border: '1px solid rgba(165, 180, 252, 0.2)' }}>
+                    <div className="panel-header" style={{ background: 'rgba(165, 180, 252, 0.05)' }}>
+                        <div className="panel-title" style={{ color: '#a5b4fc' }}>
+                            <span style={{ fontSize: '16px' }}>📤</span> Origen
                         </div>
-                    </Card>
-
-                    <Card style={{ padding: '0', overflow: 'hidden' }}>
+                        {posicionIdLeft && <Badge color="#6366f1">{stockLeft.length} Batchs</Badge>}
+                    </div>
+                    <div style={{ padding: '12px 16px', borderBottom: '1px solid #1e2133', display: 'flex', gap: '10px', background: 'rgba(0,0,0,0.1)' }}>
+                        <Select
+                            label="Depósito"
+                            value={depositoIdLeft}
+                            onChange={val => { setDepositoIdLeft(val); setPosicionIdLeft(''); setSelectedLeft([]); }}
+                            options={[{ value: '', label: 'Seleccionar' }, ...availableDepots.map((d: any) => ({ value: d.id, label: d.nombre }))]}
+                            style={{ flex: 1 }}
+                        />
+                        <Select
+                            label="Posición"
+                            value={posicionIdLeft}
+                            onChange={val => { setPosicionIdLeft(val); setSelectedLeft([]); }}
+                            options={[{ value: '', label: 'Seleccionar' }, ...posOptionsLeft]}
+                            style={{ flex: 1 }}
+                        />
+                    </div>
+                    <div>
                         {depositoIdLeft && posicionIdLeft ? (
                             <Table loading={loadingLeft} cols={buildCols('left')} rows={buildRows(stockLeft, 'left')} />
                         ) : (
-                            <div style={{ padding: '40px', textAlign: 'center', color: '#4b5563', fontSize: '13px' }}>Seleccioná origen para ver stock</div>
+                            <div style={{ padding: '40px', textAlign: 'center', color: '#4b5563', fontSize: '13px' }}>Seleccioná un depósito y posición</div>
                         )}
-                    </Card>
-                </div>
+                    </div>
+                </Card>
 
                 {/* BOTONES DE MOVIMIENTO */}
                 <div className="move-arrow-container">
@@ -330,36 +420,38 @@ export default function MovimientosPage() {
                     </button>
                 </div>
 
-                {/* PANEL DERECHO */}
-                <div className="side-panel">
-                    <Card style={{ padding: '12px' }}>
-                        <h3 style={{ color: '#34d399', fontSize: '13px', margin: '0 0 12px 0', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>📥 Destino</h3>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <Select
-                                label="Depósito"
-                                value={depositoIdRight}
-                                onChange={val => { setDepositoIdRight(val); setPosicionIdRight(''); setSelectedRight([]); }}
-                                options={[{ value: '', label: 'Seleccionar' }, ...availableDepots.map((d: any) => ({ value: d.id, label: d.nombre }))]}
-                                style={{ flex: 1 }}
-                            />
-                            <Select
-                                label="Posición"
-                                value={posicionIdRight}
-                                onChange={val => { setPosicionIdRight(val); setSelectedRight([]); }}
-                                options={[{ value: '', label: 'Seleccionar' }, ...posOptionsRight]}
-                                style={{ flex: 1 }}
-                            />
+                {/* PANEL DERECHO UNIFICADO */}
+                <Card style={{ padding: 0, border: '1px solid rgba(52, 211, 153, 0.2)' }}>
+                    <div className="panel-header" style={{ background: 'rgba(52, 211, 153, 0.05)' }}>
+                        <div className="panel-title" style={{ color: '#34d399' }}>
+                            <span style={{ fontSize: '16px' }}>📥</span> Destino
                         </div>
-                    </Card>
-
-                    <Card style={{ padding: '0', overflow: 'hidden' }}>
+                        {posicionIdRight && <Badge color="#10b981">{stockRight.length} Batchs</Badge>}
+                    </div>
+                    <div style={{ padding: '12px 16px', borderBottom: '1px solid #1e2133', display: 'flex', gap: '10px', background: 'rgba(0,0,0,0.1)' }}>
+                        <Select
+                            label="Depósito"
+                            value={depositoIdRight}
+                            onChange={val => { setDepositoIdRight(val); setPosicionIdRight(''); setSelectedRight([]); }}
+                            options={[{ value: '', label: 'Seleccionar' }, ...availableDepots.map((d: any) => ({ value: d.id, label: d.nombre }))]}
+                            style={{ flex: 1 }}
+                        />
+                        <Select
+                            label="Posición"
+                            value={posicionIdRight}
+                            onChange={val => { setPosicionIdRight(val); setSelectedRight([]); }}
+                            options={[{ value: '', label: 'Seleccionar' }, ...posOptionsRight]}
+                            style={{ flex: 1 }}
+                        />
+                    </div>
+                    <div>
                         {depositoIdRight && posicionIdRight ? (
                             <Table loading={loadingRight} cols={buildCols('right')} rows={buildRows(stockRight, 'right')} />
                         ) : (
-                            <div style={{ padding: '40px', textAlign: 'center', color: '#4b5563', fontSize: '13px' }}>Seleccioná destino para ver stock</div>
+                            <div style={{ padding: '40px', textAlign: 'center', color: '#4b5563', fontSize: '13px' }}>Seleccioná un depósito y posición</div>
                         )}
-                    </Card>
-                </div>
+                    </div>
+                </Card>
             </div>
 
             {/* Modals */}

@@ -46,8 +46,15 @@ export const stockApi = api.injectEndpoints({
             observaciones?: string;
         }>({
             query: (body) => ({ url: 'stock/bulk-move', method: 'POST', body }),
-            invalidatesTags: ['Stock'],
+            async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+                try {
+                    await queryFulfilled; // Wait for server confirmation FIRST
+                    // Then invalidate to refresh both panels
+                    dispatch(stockApi.util.invalidateTags(['Stock']));
+                } catch { /* error handled by caller */ }
+            },
         }),
+
         quickAddStock: builder.mutation<void, {
             depositoId: string; posicionId: string; itemId: string; supplierId: string;
             lotNumber: string; qtyPrincipal: number; qtySecundaria?: number | null; fecha: string;
@@ -61,9 +68,19 @@ export const stockApi = api.injectEndpoints({
             query: (body) => ({ url: 'stock', method: 'DELETE', body }),
             invalidatesTags: ['Stock'],
         }),
-        updateBatchNumber: builder.mutation<void, { batchId: string; newLotNumber: string }>({
-            query: (body) => ({ url: 'stock/batch-number', method: 'PATCH', body }),
+        reassignBatch: builder.mutation<{ action: 'merged' | 'created'; batchId: string }, {
+            depositoId: string; posicionId: string; itemId: string;
+            currentLotId: string; newLotNumber: string; fecha: string;
+        }>({
+            query: (body) => ({ url: 'stock/reassign-batch', method: 'PATCH', body }),
             invalidatesTags: ['Stock'],
+        }),
+        checkBatch: builder.query<{ exists: boolean; batchId?: string }, { itemId: string; lotNumber: string; supplierId?: string }>({
+            query: (params) => {
+                const p = new URLSearchParams({ itemId: params.itemId, lotNumber: params.lotNumber });
+                if (params.supplierId) p.set('supplierId', params.supplierId);
+                return `stock/check-batch?${p.toString()}`;
+            },
         }),
         submitPickingAudit: builder.mutation<any, {
             items: { depositoId: string; posicionId: string; itemId: string; lotId: string | null; faltantePrincipal: number }[];
@@ -122,7 +139,8 @@ export const {
     useBulkMoveStockMutation,
     useQuickAddStockMutation,
     useDeleteStockMutation,
-    useUpdateBatchNumberMutation,
+    useReassignBatchMutation,
+    useLazyCheckBatchQuery,
     useSubmitPickingAuditMutation,
     useGetCombosQuery,
     useGetComboBreakdownQuery,
