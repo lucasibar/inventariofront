@@ -24,6 +24,7 @@ import MovimientosPage from './pages/MovimientosPage';
 import StockPage from './pages/StockPage';
 import UsersPage from './pages/UsersPage';
 import AdminMovementsPage from './pages/AdminMovementsPage';
+import NotificationsPage from './pages/NotificationsPage';
 
 import './App.css';
 
@@ -75,6 +76,7 @@ function App() {
 
             {/* Rutas compartidas o especiales */}
             <Route path="/deposito" element={<DepositoPage />} />
+            <Route path="/notificaciones" element={<NotificationsPage />} />
 
           </Route>
         </Route>

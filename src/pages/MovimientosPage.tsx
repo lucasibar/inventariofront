@@ -60,11 +60,11 @@ export default function MovimientosPage() {
         }
     }, [availableDepots, depositoIdLeft, depositoIdRight]);
 
-    const { data: stockLeft = [], isLoading: loadingLeft } = useGetStockQuery({
+    const { data: stockLeft = [], isFetching: fetchingLeft, refetch: refetchLeft } = useGetStockQuery({
         depotId: depositoIdLeft, positionId: posicionIdLeft
     }, { skip: !depositoIdLeft || !posicionIdLeft });
 
-    const { data: stockRight = [], isLoading: loadingRight } = useGetStockQuery({
+    const { data: stockRight = [], isFetching: fetchingRight, refetch: refetchRight } = useGetStockQuery({
         depotId: depositoIdRight, positionId: posicionIdRight
     }, { skip: !depositoIdRight || !posicionIdRight });
 
@@ -91,6 +91,11 @@ export default function MovimientosPage() {
     // Dialog States
     const [createItemModal, setCreateItemModal] = useState(false);
     const [createPartnerModal, setCreatePartnerModal] = useState(false);
+    
+    // Partial Move State
+    const [partialMoveModal, setPartialMoveModal] = useState(false);
+    const [pendingItems, setPendingItems] = useState<any[]>([]);
+    const [sourceSide, setSourceSide] = useState<'left' | 'right' | null>(null);
 
     const toggleSelect = (id: string, side: 'left' | 'right') => {
         if (side === 'left') {
@@ -133,29 +138,74 @@ export default function MovimientosPage() {
             return;
         }
 
-        const itemsToMove = stockItems
-            .filter((m: any) => selectedIds.includes(m.batch.id))
-            .map((m: any) => ({
+        // ALWAYS show partial move modal for one or many items
+        const selectedStock = stockItems.filter((m: any) => selectedIds.includes(m.batch.id));
+        setPendingItems(selectedStock.map((m: any) => ({
+            batchId: m.batch.id,
+            itemId: m.batch.item.id,
+            posicionIdOrigen: m.posicion.id,
+            descripcion: m.batch.item.descripcion,
+            lotNumber: m.batch.lotNumber,
+            unidadP: m.batch.item.unidadPrincipal,
+            unidadS: m.batch.item.unidadSecundaria,
+            maxP: Number(m.qtyPrincipal),
+            qtyP: String(m.qtyPrincipal),
+            qtyS: String(m.qtySecundaria || 0)
+        })));
+        setSourceSide(source);
+        setPartialMoveModal(true);
+    };
+
+    const updatePendingItem = (index: number, field: 'qtyP' | 'qtyS', value: string) => {
+        setPendingItems(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], [field]: value };
+            return next;
+        });
+    };
+
+    const handleConfirmPartialMove = async () => {
+        if (!sourceSide || !pendingItems.length) return;
+        
+        const destDepot = sourceSide === 'left' ? depositoIdRight : depositoIdLeft;
+        const destPos = sourceSide === 'left' ? posicionIdRight : posicionIdLeft;
+
+        const itemsToMove = pendingItems.map(item => {
+            const qp = Number(item.qtyP);
+            const qs = Number(item.qtyS);
+            
+            if (isNaN(qp) || qp <= 0) throw new Error(`Cantidad inválida para ${item.descripcion}`);
+            if (qp > item.maxP) throw new Error(`No podés mover más de lo disponible para ${item.descripcion}`);
+            
+            return {
                 depositoId: destDepot,
-                posicionIdOrigen: m.posicion.id,
+                posicionIdOrigen: item.posicionIdOrigen,
                 posicionIdDestino: destPos,
-                itemId: m.batch.item.id,
-                lotId: m.batch.id,
-                qtyPrincipal: m.qtyPrincipal,
-                qtySecundaria: m.qtySecundaria
-            }));
+                itemId: item.itemId,
+                lotId: item.batchId,
+                qtyPrincipal: qp,
+                qtySecundaria: qs || null
+            };
+        });
 
         try {
             await bulkMoveStock({
                 items: itemsToMove,
                 fecha: new Date().toISOString(),
-                observaciones: `Traslado masivo para ${selectedIds.length} ítems`
+                observaciones: `Traslado confirmado (${itemsToMove.length} ítems)`
             }).unwrap();
-            
-            if (source === 'left') setSelectedLeft([]);
+
+            setPartialMoveModal(false);
+            if (sourceSide === 'left') setSelectedLeft([]);
             else setSelectedRight([]);
+            setSourceSide(null);
+            setPendingItems([]);
+            
+            // Forces manual refetch to ensure immediate cross-panel update
+            refetchLeft();
+            refetchRight();
         } catch (e: any) {
-            alert(e?.data?.message || 'Error en transferencia grupal');
+            alert(e?.message || e?.data?.message || 'Error en traslado');
         }
     };
 
@@ -196,18 +246,24 @@ export default function MovimientosPage() {
         } catch (e: any) { alert(e?.data?.message || 'Error eliminando stock'); }
     };
 
-    const handleAdjustQty = async (row: any, val: string) => {
-        const newQty = Number(val);
-        const delta = newQty - row.qtyPrincipal;
-        if (delta === 0) return;
+    const handleAdjustQty = async (row: any, newValue: string, field: 'principal' | 'secundaria') => {
+        const newQty = Number(newValue);
+        if (isNaN(newQty) || newQty < 0) { alert('Valor inválido'); return; }
+        const currentQty = field === 'principal' ? Number(row.qtyPrincipal) : Number(row.qtySecundaria || 0);
+        const diff = newQty - currentQty;
+        if (diff === 0) return;
         try {
             await adjustStock({
-                depositoId: row.posicion.depotId, posicionId: row.posicion.id,
-                itemId: row.batch.item.id, lotId: row.batch.id,
-                qtyPrincipal: delta, qtySecundaria: 0, fecha: new Date().toISOString(),
-                observaciones: 'Ajuste rápido desde Movimientos'
+                depositoId: row.posicion.depotId,
+                posicionId: row.posicion.id,
+                itemId: row.batch.item.id,
+                lotId: row.batch.id,
+                qtyPrincipal: field === 'principal' ? diff : 0,
+                qtySecundaria: field === 'secundaria' ? diff : null,
+                fecha: new Date().toISOString(),
+                observaciones: `Ajuste manual desde Movimientos: ${currentQty} → ${newQty} (${field === 'principal' ? row.batch.item.unidadPrincipal : row.batch.item.unidadSecundaria})`,
             }).unwrap();
-        } catch (e: any) { alert(e?.data?.message || 'Error ajustando stock'); }
+        } catch (e: any) { alert(e?.data?.message || 'Error al ajustar'); }
     };
 
     const handleUpdateBatch = async (row: any, val: string) => {
@@ -240,21 +296,33 @@ export default function MovimientosPage() {
             }} 
             checked={(side === 'left' ? selectedLeft : selectedRight).length === (side === 'left' ? stockLeft : stockRight).length && (side === 'left' ? stockLeft : stockRight).length > 0} 
         />,
-        'Material', 'Lote', 'Stock', ''
+        isMobile ? 'Mat.' : 'Material', 
+        'Lote', 
+        isMobile ? 'Kg' : 'Stock', 
+        isMobile ? 'Un.' : 'Unidades', 
+        ''
     ];
 
     const buildRows = (stock: any[], side: 'left' | 'right') => stock.map(entry => {
         const isSelected = (side === 'left' ? selectedLeft : selectedRight).includes(entry.batch.id);
         return [
             <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(entry.batch.id, side)} />,
-            <div style={{ fontSize: '12px' }}>
-                <div style={{ fontWeight: 600, color: '#f3f4f6' }}>{entry.batch.item.descripcion}</div>
-                <code style={{ fontSize: '10px', color: '#6366f1' }}>{entry.batch.item.codigoInterno}</code>
+            <div 
+                style={{ fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s' }} 
+                className="clickable-material"
+                onClick={() => navigate(`/stock?q=${encodeURIComponent(entry.batch.item.descripcion)}`)}
+            >
+                <div style={{ fontWeight: 600, color: '#6366f1', whiteSpace: isMobile ? 'nowrap' : 'normal', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: isMobile ? '60px' : 'none' }}>{entry.batch.item.descripcion}</div>
+                {!isMobile && <code style={{ fontSize: '10px', opacity: 0.8 }}>{entry.batch.item.codigoInterno}</code>}
             </div>,
-            <EditableCell value={entry.batch.lotNumber} onSave={(val) => handleUpdateBatch(entry, val)} />,
+            <EditableCell value={entry.batch.lotNumber} onSave={(val) => handleUpdateBatch(entry, val)} inputStyle={isMobile ? { minWidth: '40px' } : undefined} />,
             <div style={{ textAlign: 'right', fontWeight: 700 }}>
-                <EditableCell numeric value={Number(entry.qtyPrincipal).toFixed(1)} onSave={(val) => handleAdjustQty(entry, val)} />
-                <span style={{fontSize: '9px', opacity: 0.6, marginLeft: '4px'}}>{entry.batch.item.unidadPrincipal}</span>
+                <EditableCell numeric value={Number(entry.qtyPrincipal).toFixed(1)} onSave={(val) => handleAdjustQty(entry, val, 'principal')} inputStyle={isMobile ? { minWidth: '40px' } : undefined} />
+                {!isMobile && <span style={{fontSize: '9px', opacity: 0.6, marginLeft: '4px'}}>{entry.batch.item.unidadPrincipal}</span>}
+            </div>,
+            <div style={{ textAlign: 'right', fontWeight: 700 }}>
+                <EditableCell numeric value={Number(entry.qtySecundaria || 0).toFixed(0)} onSave={(val) => handleAdjustQty(entry, val, 'secundaria')} inputStyle={isMobile ? { minWidth: '40px' } : undefined} />
+                {!isMobile && <span style={{fontSize: '9px', opacity: 0.6, marginLeft: '4px'}}>{entry.batch.item.unidadSecundaria}</span>}
             </div>,
             isAdmin && (
                 <button 
@@ -302,7 +370,7 @@ export default function MovimientosPage() {
                 .movimientos-grid { 
                     display: grid; 
                     grid-template-columns: ${isMobile ? '1fr' : '1fr auto 1fr'}; 
-                    gap: ${isMobile ? '8px' : '16px'}; 
+                    gap: ${isMobile ? '4px' : '16px'}; 
                     align-items: start;
                 }
                 .move-arrow-container { 
@@ -356,6 +424,16 @@ export default function MovimientosPage() {
                     align-items: center;
                     gap: 8px;
                 }
+                @media (max-width: 768px) {
+                    table td, table th {
+                        padding: 8px 4px !important;
+                        font-size: 11px !important;
+                    }
+                }
+                .clickable-material:hover {
+                    text-decoration: underline;
+                    color: #818cf8;
+                }
             `}</style>
 
             <PageHeader 
@@ -391,9 +469,9 @@ export default function MovimientosPage() {
                             style={{ flex: 1 }}
                         />
                     </div>
-                    <div>
+                    <div style={{ opacity: fetchingLeft ? 0.6 : 1, transition: 'opacity 0.2s' }}>
                         {depositoIdLeft && posicionIdLeft ? (
-                            <Table loading={loadingLeft} cols={buildCols('left')} rows={buildRows(stockLeft, 'left')} />
+                            <Table loading={fetchingLeft} cols={buildCols('left')} rows={buildRows(stockLeft, 'left')} minWidth={isMobile ? '300px' : '600px'} />
                         ) : (
                             <div style={{ padding: '40px', textAlign: 'center', color: '#4b5563', fontSize: '13px' }}>Seleccioná un depósito y posición</div>
                         )}
@@ -444,9 +522,9 @@ export default function MovimientosPage() {
                             style={{ flex: 1 }}
                         />
                     </div>
-                    <div>
+                    <div style={{ opacity: fetchingRight ? 0.6 : 1, transition: 'opacity 0.2s' }}>
                         {depositoIdRight && posicionIdRight ? (
-                            <Table loading={loadingRight} cols={buildCols('right')} rows={buildRows(stockRight, 'right')} />
+                            <Table loading={fetchingRight} cols={buildCols('right')} rows={buildRows(stockRight, 'right')} minWidth={isMobile ? '300px' : '600px'} />
                         ) : (
                             <div style={{ padding: '40px', textAlign: 'center', color: '#4b5563', fontSize: '13px' }}>Seleccioná un depósito y posición</div>
                         )}
@@ -485,6 +563,48 @@ export default function MovimientosPage() {
 
             <CreateItemDialog open={createItemModal} onClose={() => setCreateItemModal(false)} onSuccess={(newItem: any) => { setQaItem(newItem.id); }} />
             <CreatePartnerDialog open={createPartnerModal} onClose={() => setCreatePartnerModal(false)} onSuccess={(newPartner: any) => { setQaSupplier(newPartner.id); }} />
+            {/* Partial Move Modal */}
+            {partialMoveModal && (
+                <Modal title="Confirmar Traslado" onClose={() => setPartialMoveModal(false)}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '70vh', overflowY: 'auto', paddingRight: '8px' }}>
+                        <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>Revisá las cantidades antes de confirmar el movimiento:</p>
+                        
+                        {pendingItems.map((item, idx) => (
+                            <div key={item.batchId} style={{ 
+                                background: 'rgba(255,255,255,0.02)', 
+                                border: '1px solid #2a2d3e', 
+                                padding: '12px', 
+                                borderRadius: '8px' 
+                            }}>
+                                <div style={{ marginBottom: '12px' }}>
+                                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#f3f4f6' }}>{item.descripcion}</div>
+                                    <div style={{ fontSize: '11px', color: '#6366f1' }}>Lote: {item.lotNumber}</div>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '10px', color: '#6b7280', marginBottom: '4px', textTransform: 'uppercase' }}>
+                                            {item.unidadP} (Max: {item.maxP})
+                                        </label>
+                                        <Input value={item.qtyP} type="number" onChange={(val) => updatePendingItem(idx, 'qtyP', val)} />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '10px', color: '#6b7280', marginBottom: '4px', textTransform: 'uppercase' }}>
+                                            {item.unidadS}
+                                        </label>
+                                        <Input value={item.qtyS} type="number" onChange={(val) => updatePendingItem(idx, 'qtyS', val)} />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
+                        <Btn style={{ flex: 1, background: '#1f2937' }} onClick={() => setPartialMoveModal(false)}>Cancelar</Btn>
+                        <Btn style={{ flex: 1 }} onClick={handleConfirmPartialMove}>Confirmar Movimiento</Btn>
+                    </div>
+                </Modal>
+            )}
         </div>
     );
 }

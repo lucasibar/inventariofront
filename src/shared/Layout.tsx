@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useGetAlertsQuery } from '../features/stock/api/stock.api';
 import { logout, selectCurrentUser } from '../entities/auth/model/authSlice';
+import { setCurrentAlerts, selectHasUnreadNotifications } from '../entities/notifications/notificationsSlice';
 import { useIsMobile } from '../pages/common/ui';
 
 const navItems = [
@@ -45,10 +46,18 @@ export default function Layout() {
     const [collapsed, setCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     
-    const { data: alerts = [] } = useGetAlertsQuery();
+    const { data: alerts = [] } = useGetAlertsQuery(undefined, { pollingInterval: 120000 });
+    const hasUnread = useSelector(selectHasUnreadNotifications);
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
+
+    // Sync alerts data with notifications slice
+    useEffect(() => {
+        if (alerts.length >= 0) {
+            dispatch(setCurrentAlerts(alerts));
+        }
+    }, [alerts, dispatch]);
 
     // Close mobile menu on route change
     useEffect(() => {
@@ -91,6 +100,48 @@ export default function Layout() {
                         {(!collapsed || isMobile) && <span>{label.split(' ').slice(1).join(' ')}</span>}
                     </NavLink>
                 ))}
+
+                {/* Notificaciones menu item */}
+                <NavLink
+                    to="/notificaciones"
+                    style={({ isActive }) => ({
+                        ...navStyle(isActive, isMobile),
+                        marginTop: '4px',
+                        borderTop: '1px solid #2a2d3e',
+                        paddingTop: isMobile ? '16px' : '12px',
+                    })}
+                >
+                    <span style={{ fontSize: isMobile ? '20px' : '16px', minWidth: '24px', position: 'relative' }}>
+                        🔔
+                        {hasUnread && (
+                            <span style={{
+                                position: 'absolute', top: '-2px', right: '-4px',
+                                width: '9px', height: '9px', borderRadius: '50%',
+                                background: '#ef4444', border: '2px solid #1a1d2e',
+                                animation: 'pulse-dot 2s ease-in-out infinite',
+                            }} />
+                        )}
+                    </span>
+                    {(!collapsed || isMobile) && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            Notificaciones
+                            {hasUnread && alerts.length > 0 && (
+                                <span style={{
+                                    background: '#ef4444',
+                                    color: 'white',
+                                    fontSize: '10px',
+                                    fontWeight: 800,
+                                    padding: '1px 7px',
+                                    borderRadius: '10px',
+                                    minWidth: '18px',
+                                    textAlign: 'center' as const,
+                                }}>
+                                    {alerts.length}
+                                </span>
+                            )}
+                        </span>
+                    )}
+                </NavLink>
             </nav>
 
             {/* Bottom Actions */}
@@ -122,6 +173,10 @@ export default function Layout() {
                     opacity: ${mobileMenuOpen ? 1 : 0}; visibility: ${mobileMenuOpen ? 'visible' : 'hidden'};
                     transition: all 0.3s ease;
                 }
+                @keyframes pulse-dot {
+                    0%, 100% { opacity: 1; transform: scale(1); }
+                    50% { opacity: 0.7; transform: scale(1.2); }
+                }
             `}</style>
 
             {/* Mobile Header */}
@@ -137,10 +192,19 @@ export default function Layout() {
                             style={{ 
                                 background: 'transparent', border: 'none', color: '#f3f4f6', 
                                 fontSize: '24px', cursor: 'pointer', padding: '4px',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                position: 'relative',
                             }}
                         >
                             ☰
+                            {hasUnread && !mobileMenuOpen && (
+                                <span style={{
+                                    position: 'absolute', top: '2px', right: '0px',
+                                    width: '10px', height: '10px', borderRadius: '50%',
+                                    background: '#ef4444', border: '2px solid #1a1d2e',
+                                    animation: 'pulse-dot 2s ease-in-out infinite',
+                                }} />
+                            )}
                         </button>
                         <span style={{ 
                             fontWeight: 800, 
@@ -180,13 +244,6 @@ export default function Layout() {
                             >
                                 +
                             </button>
-                        )}
-
-                        {alerts.length > 0 && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(239,68,68,0.15)', padding: '4px 10px', borderRadius: '20px', border: '1px solid rgba(239,68,68,0.3)' }}>
-                                <span style={{ fontSize: '14px' }}>⚠️</span>
-                                <span style={{ fontSize: '11px', fontWeight: 700, color: '#f87171' }}>{alerts.length}</span>
-                            </div>
                         )}
                     </div>
                 </header>

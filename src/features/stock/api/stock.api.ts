@@ -12,7 +12,10 @@ export const stockApi = api.injectEndpoints({
                 Object.entries(f).forEach(([k, v]) => { if (v) p.set(k, String(v)) });
                 return `stock?${p.toString()}`;
             },
-            providesTags: ['Stock'],
+            providesTags: (result, error, arg) => [
+                { type: 'Stock', id: `${arg.depotId || 'all'}-${arg.positionId || 'all'}` },
+                'Stock'
+            ],
         }),
         getAlerts: builder.query<any[], void>({
             query: () => 'stock/alerts',
@@ -46,13 +49,7 @@ export const stockApi = api.injectEndpoints({
             observaciones?: string;
         }>({
             query: (body) => ({ url: 'stock/bulk-move', method: 'POST', body }),
-            async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
-                try {
-                    await queryFulfilled; // Wait for server confirmation FIRST
-                    // Then invalidate to refresh both panels
-                    dispatch(stockApi.util.invalidateTags(['Stock']));
-                } catch { /* error handled by caller */ }
-            },
+            invalidatesTags: ['Stock'],
         }),
 
         quickAddStock: builder.mutation<void, {

@@ -191,10 +191,10 @@ export function Spinner() {
     );
 }
 
-export function Table({ cols, rows, loading }: { cols: (string | React.ReactNode)[]; rows: (string | React.ReactNode)[][]; loading?: boolean }) {
+export function Table({ cols, rows, loading, minWidth = '600px' }: { cols: (string | React.ReactNode)[]; rows: (string | React.ReactNode)[][]; loading?: boolean; minWidth?: string }) {
     return (
         <div style={{ width: '100%', overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth }}>
                 <thead>
                     <tr style={{ borderBottom: '1px solid #2a2d3e' }}>
                         {cols.map((c, i) => (
@@ -345,7 +345,7 @@ export function InfoTooltip({ text }: { text: string }) {
     );
 }
 
-export function EditableCell({ value, onSave, numeric }: { value: string; onSave: (v: string) => Promise<void>; numeric?: boolean }) {
+export function EditableCell({ value, onSave, numeric, style, inputStyle }: { value: string; onSave: (v: string) => Promise<void>; numeric?: boolean; style?: React.CSSProperties; inputStyle?: React.CSSProperties }) {
     const [editing, setEditing] = React.useState(false);
     const [draft, setDraft] = React.useState(value);
     const [saving, setSaving] = React.useState(false);
@@ -375,6 +375,7 @@ export function EditableCell({ value, onSave, numeric }: { value: string; onSave
                 borderBottom: '1px dashed #4b5563',
                 paddingBottom: '1px',
                 transition: 'color 0.2s',
+                ...style
             }}
             onMouseEnter={e => e.currentTarget.style.color = '#6366f1'}
             onMouseLeave={e => e.currentTarget.style.color = 'inherit'}
@@ -391,9 +392,10 @@ export function EditableCell({ value, onSave, numeric }: { value: string; onSave
             onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false); }}
             disabled={saving}
             style={{
-                width: '100%', minWidth: '80px', background: '#0f1117', border: '1px solid #6366f1',
+                width: '100%', minWidth: '60px', background: '#0f1117', border: '1px solid #6366f1',
                 borderRadius: '6px', padding: '3px 8px', color: '#f3f4f6',
                 fontSize: '13px', outline: 'none',
+                ...inputStyle
             }}
         />
     );

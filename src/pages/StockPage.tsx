@@ -34,6 +34,12 @@ export default function StockPage() {
         if (depotId) sessionStorage.setItem('selectedDepotId', depotId);
     }, [depotId]);
 
+    // Handle search parameter from URL
+    useEffect(() => {
+        const q = searchParams.get('q');
+        if (q) setSearchTerm(q);
+    }, [searchParams]);
+
     // Handle Quick Add trigger from global Header
     useEffect(() => {
         if (searchParams.get('qa') === '1') {
@@ -161,7 +167,7 @@ export default function StockPage() {
         } catch (e: any) { alert(e?.data?.message || 'Error al eliminar línea de stock'); }
     };
 
-    const { data: rawStock = [], isFetching } = useGetStockQuery({ depotId: depotId || undefined, limit: 1000 }, { skip: !depotId });
+    const { data: rawStock = [], isFetching, isLoading } = useGetStockQuery({ depotId: depotId || undefined, limit: 1000 }, { skip: !depotId });
 
     const { groupedData, generalMetrics } = useMemo(() => {
         const general = { kilos: 0, units: 0, positions: new Set<string>() };
@@ -296,7 +302,7 @@ export default function StockPage() {
                 </div>
             )}
 
-            {isFetching ? (
+            {isLoading ? (
                 <div style={{ textAlign: 'center', padding: '100px' }}><Spinner /></div>
             ) : (
                 <div className="stock-grid">
@@ -340,10 +346,10 @@ export default function StockPage() {
                                             <table className="positions-table">
                                                 <thead>
                                                     <tr>
-                                                        <th style={{ width: isMobile ? '80px' : '150px' }}>Ubicación</th>
+                                                        <th style={{ width: isMobile ? '60px' : '150px' }}>Ubic.</th>
                                                         <th>Lote</th>
-                                                        <th style={{ textAlign: 'right', width: isMobile ? '80px' : '120px' }}>Kilos</th>
-                                                        {!isMobile && <th style={{ textAlign: 'right', width: '120px' }}>Unidades</th>}
+                                                        <th style={{ textAlign: 'right', width: isMobile ? '70px' : '120px' }}>Kilos</th>
+                                                        <th style={{ textAlign: 'right', width: isMobile ? '55px' : '120px' }}>Un.</th>
                                                         {isAdmin && <th style={{ textAlign: 'center', width: '50px' }}></th>}
                                                     </tr>
                                                 </thead>
@@ -362,18 +368,16 @@ export default function StockPage() {
                                                                     {entry.posicion?.codigo || 'S/P'}
                                                                 </td>
                                                                 <td onClick={(e) => e.stopPropagation()}>
-                                                                    <EditableCell value={entry.batch?.lotNumber || ''} onSave={(val) => handleReassignBatch(entry, val)} />
-                                                                    {isOldest && <span title="Próximo a consumir" style={{color:'#fbbf24', marginLeft:'4px'}}>⭐</span>}
-                                                                    {isMobile && <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>{Number(entry.qtySecundaria || 0).toFixed(0)} un</div>}
+                                                                    <EditableCell value={entry.batch?.lotNumber || ''} onSave={(val) => handleReassignBatch(entry, val)} style={isOldest ? { color: '#fbbf24', fontWeight: 700 } : undefined} />
                                                                 </td>
                                                                 <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
                                                                     <EditableCell numeric value={Number(entry.qtyPrincipal).toFixed(1)} onSave={(val) => handleAdjustQty(entry, val, 'principal')} />
-                                                                    <small style={{opacity:0.6, marginLeft: '2px'}}>{group.item.unidadPrincipal}</small>
+                                                                    {!isMobile && <small style={{opacity:0.6, marginLeft: '2px'}}>{group.item.unidadPrincipal}</small>}
                                                                 </td>
-                                                                {!isMobile && <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
+                                                                <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
                                                                     <EditableCell numeric value={Number(entry.qtySecundaria || 0).toFixed(0)} onSave={(val) => handleAdjustQty(entry, val, 'secundaria')} />
-                                                                    <small style={{opacity:0.6, marginLeft: '2px'}}>{group.item.unidadSecundaria}</small>
-                                                                </td>}
+                                                                    {!isMobile && <small style={{opacity:0.6, marginLeft: '2px'}}>{group.item.unidadSecundaria}</small>}
+                                                                </td>
                                                                 {isAdmin && (
                                                                     <td style={{ textAlign: 'center' }}>
                                                                         <button 
