@@ -35,7 +35,7 @@ export const remitoApi = api.injectEndpoints({
             query: () => 'depots',
         }),
         searchPartners: builder.query<any[], string>({
-            query: (search) => `partners?search=${search}`,
+            query: (search) => `partners?q=${search}`,
         }),
     }),
 });

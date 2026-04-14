@@ -12,7 +12,7 @@ export const stockApi = api.injectEndpoints({
                 Object.entries(f).forEach(([k, v]) => { if (v) p.set(k, String(v)) });
                 return `stock?${p.toString()}`;
             },
-            providesTags: (result, error, arg) => [
+            providesTags: (_result, _error, arg) => [
                 { type: 'Stock', id: `${arg.depotId || 'all'}-${arg.positionId || 'all'}` },
                 'Stock'
             ],

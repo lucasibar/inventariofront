@@ -18,7 +18,9 @@ export default function SociosPage() {
     const filteredPartners = useMemo(() => {
         return partners.filter((p: any) => {
             const matchesType = !filterType || p.type === filterType || (p.type === 'BOTH' && (filterType === 'SUPPLIER' || filterType === 'CLIENT'));
-            const matchesSearch = !q || p.name.toLowerCase().includes(q.toLowerCase()) || (p.taxId && p.taxId.includes(q));
+            const pName = (p.name || '').toLowerCase();
+            const pTaxId = p.taxId || '';
+            const matchesSearch = !q || pName.includes(q.toLowerCase()) || pTaxId.includes(q);
             return matchesType && matchesSearch;
         });
     }, [partners, q, filterType]);
@@ -36,13 +38,19 @@ export default function SociosPage() {
     const openEdit = (p: any) => { setForm({ name: p.name, type: p.type, taxId: p.taxId ?? '', email: p.email ?? '', phone: p.phone ?? '', address: p.address ?? '' }); setEditTarget(p); setModal('edit'); };
 
     const save = async () => {
+        if (!form.name.trim()) return setError('El nombre es obligatorio');
         setSaving(true); setError('');
         try {
             if (modal === 'edit') await updatePartner({ id: editTarget.id, data: form }).unwrap();
             else await createPartner(form).unwrap();
+            alert('Socio guardado con éxito');
             setModal(null);
-        } catch (e: any) { setError(e?.data?.message ?? 'Error'); }
-        setSaving(false);
+        } catch (e: any) { 
+            console.error("Error saving partner:", e);
+            setError(e?.data?.message || e?.message || 'Error al guardar'); 
+        } finally {
+            setSaving(false);
+        }
     };
 
     return (

@@ -1,4 +1,0 @@
-﻿src/pages/DepositoPage.tsx(247,21): error TS2322: Type 'number | null' is not assignable to type 'number | undefined'.
-  Type 'null' is not assignable to type 'number | undefined'.
-src/pages/DepositoPage.tsx(412,106): error TS2322: Type 'number | null' is not assignable to type 'number | undefined'.
-  Type 'null' is not assignable to type 'number | undefined'.

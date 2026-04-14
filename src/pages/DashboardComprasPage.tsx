@@ -8,10 +8,10 @@ import {
 } from '../features/stock/api/stock.api';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
 import { useGetItemsQuery } from '../features/items/api/items.api';
-import { PageHeader, Card, Badge, Btn, Modal, Table, Spinner, Input, Select, useIsMobile, ActionMenu, InfoTooltip } from './common/ui';
+import { PageHeader, Card, Badge, Btn, Modal, Table, Spinner, Input, Select, ActionMenu, InfoTooltip } from './common/ui';
 
 export default function DashboardComprasPage() {
-    const isMobile = useIsMobile();
+
     const { data: combos = [], isLoading: loadingCombos } = useGetCombosQuery();
     const { data: alerts = [] } = useGetAlertsQuery();
     const { data: partners = [] } = useGetPartnersQuery({ type: 'SUPPLIER' });

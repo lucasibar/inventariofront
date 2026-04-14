@@ -23,6 +23,7 @@ export const CreatePartnerDialog = ({ open, onClose, onSuccess }: CreatePartnerD
         e.preventDefault();
         try {
             const result = await createPartner(form).unwrap();
+            alert('Socio creado con éxito');
             onSuccess(result);
             onClose();
             setForm({ name: '', taxId: '', type: 'SUPPLIER' });

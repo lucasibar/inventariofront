@@ -5,7 +5,7 @@ import {
 } from '../features/stock/api/stock.api';
 import { useGetDepotsQuery } from '../features/depots/api/depots.api';
 import { useGetItemsQuery } from '../features/items/api/items.api';
-import { PageHeader, Card, Table, Badge, Spinner, Btn, Select, Input, useIsMobile, ActionMenu, ResponsiveTable } from './common/ui';
+import { PageHeader, Card, Badge, Btn, Select, Input, useIsMobile, ActionMenu, ResponsiveTable } from './common/ui';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '../entities/auth/model/authSlice';
 

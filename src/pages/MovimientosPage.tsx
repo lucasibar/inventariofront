@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import { useGetDepotsQuery } from '../features/depots/api/depots.api';
 import {
     useGetStockQuery,
@@ -26,6 +26,7 @@ export default function MovimientosPage() {
     const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
 
     const [searchParams, setSearchParams] = useSearchParams();
+    const navigate = useNavigate();
     
     useEffect(() => {
         if (searchParams.get('qa') === '1') {
@@ -121,7 +122,7 @@ export default function MovimientosPage() {
         return items.filter((i: any) => i.supplierId === qaSupplier);
     }, [items, qaSupplier]);
 
-    const qaSelectedItem = useMemo(() => items.find((i: any) => i.id === qaItem), [items, qaItem]);
+
 
     const handleBulkTransfer = async (source: 'left' | 'right') => {
         const selectedIds = source === 'left' ? selectedLeft : selectedRight;
