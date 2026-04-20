@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useSelector } from 'react-redux';
+import { selectCurrentUser } from '../entities/auth/model/authSlice';
 import { useGetRemitosSalidaQuery, usePreviewRemitoSalidaMutation, useCreateRemitoSalidaMutation, useDeleteRemitoSalidaMutation, useLazyGetRemitoSalidaQuery } from '../features/remitosSalida/api/remitos-salida.api';
 import { RemitoDetailModal } from '../features/remitos/ui/RemitoDetailModal';
 import { useGetOrdersQuery } from '../features/orders/api/orders.api';
@@ -18,11 +20,11 @@ export default function RemitosSalidaPage() {
 
     const [step, setStep] = useState<'form' | 'preview' | null>(null);
     const [orderId, setOrderId] = useState('');
-    const [clientId, setClientId] = useState('');
-    const [clientName, setClientName] = useState('');
-    const [newClient, setNewClient] = useState(false);
+    const [numero, setNumero] = useState('');
+    const user = useSelector(selectCurrentUser);
+    const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
     const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
-    const [observaciones] = useState('');
+    const [observaciones, setObservaciones] = useState('');
     const [lines, setLines] = useState<{ itemId: string; qtyPrincipal: string; qtySecundaria: string }[]>([{ itemId: '', qtyPrincipal: '', qtySecundaria: '' }]);
     const [previewData, setPreviewData] = useState<any>(null);
     const [saving, setSaving] = useState(false);
@@ -64,7 +66,8 @@ export default function RemitosSalidaPage() {
         setSaving(true); setError('');
         try {
             const dto: any = {
-                fecha, observaciones,
+                fecha, observaciones: observaciones || undefined,
+                numero: numero || undefined,
                 orderId: orderId || undefined,
                 lines: lines.filter(l => l.itemId).map(l => ({ itemId: l.itemId, qtyPrincipal: Number(l.qtyPrincipal), qtySecundaria: l.qtySecundaria ? Number(l.qtySecundaria) : undefined })),
             };
@@ -92,7 +95,7 @@ export default function RemitosSalidaPage() {
                         (r.partner?.name || r.client?.name) ?? '—',
                         r.order?.numero ?? '—',
                         <Badge key="badge">{r.lines?.length ?? 0} ítems</Badge>,
-                        <Btn key="del" small variant="danger" onClick={(e: any) => { e.stopPropagation(); deleteRemito(r.id); }}>🗑</Btn>,
+                        <Btn key="del" small variant="danger" onClick={(e: any) => { e.stopPropagation(); if (window.confirm('¿Anular este remito de salida?')) deleteRemito(r.id); }}>🗑</Btn>,
                     ])}
                 />
             </Card>
@@ -100,23 +103,39 @@ export default function RemitosSalidaPage() {
             {/* Step 1: Form */}
             {step === 'form' && (
                 <Modal title="Nuevo Remito de Salida" onClose={() => setStep(null)} wide>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                         <div>
                             <label style={{ color: '#9ca3af', fontSize: '12px' }}>Pedido (opcional)</label>
                             <Select value={orderId} onChange={v => { setOrderId(v); if (v) setTimeout(loadFromOrder, 100); }}
                                 options={[{ value: '', label: 'Sin pedido asociado' }, ...orders.map((o: any) => ({ value: o.id, label: `${o.numero} — ${o.client?.name ?? 'S/C'}` }))]}
                                 style={{ marginTop: '6px' }} />
                         </div>
+                        <Input label="Número (opcional)" placeholder="Auto-generar si vacío" value={numero} onChange={setNumero} />
                         <Input label="Fecha" type="date" value={fecha} onChange={setFecha} />
                     </div>
 
                     <div style={{ marginBottom: '16px' }}>
                         <label style={{ color: '#9ca3af', fontSize: '12px' }}>Cliente</label>
-                        <Select value={newClient ? '__new__' : clientId} onChange={v => { if (v === '__new__') setNewClient(true); else { setNewClient(false); setClientId(v); } }}
-                            options={[{ value: '', label: 'Seleccionar...' }, { value: '__new__', label: '+ Nuevo cliente' }, ...clients.map((c: any) => ({ value: c.id, label: c.name }))]}
-                            style={{ marginTop: '6px' }} />
-                        {newClient && <Input style={{ marginTop: '8px' }} label="Nombre" value={clientName} onChange={setClientName} />}
+                        <SearchSelect
+                            value={newClient ? '__new__' : clientId}
+                            onChange={v => {
+                                if (v === '__new__') {
+                                    if (!isAdmin) { alert('Solo administradores pueden crear clientes'); return; }
+                                    setNewClient(true);
+                                    setClientId('');
+                                } else {
+                                    setNewClient(false);
+                                    setClientId(v);
+                                }
+                            }}
+                            options={[{ value: '', label: 'Seleccionar...' }, ...(isAdmin ? [{ value: '__new__', label: '+ Nuevo cliente' }] : []), ...clients.map((c:any)=>({value:c.id,label:c.name}))]}
+                            placeholder="Buscar cliente..."
+                            style={{ marginTop: '6px' }}
+                        />
+                        {newClient && isAdmin && <Input style={{ marginTop: '8px' }} label="Nombre" value={clientName} onChange={setClientName} />}
                     </div>
+
+                    <Input label="Observaciones (opcional)" value={observaciones} onChange={setObservaciones} style={{ marginBottom: '16px' }} />
 
                     <div style={{ marginBottom: '16px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>

@@ -1,12 +1,4 @@
-
 import { useState } from 'react';
-import {
-    Box, Typography, Button, IconButton, Chip,
-    Table, TableBody, TableCell, TableHead, TableRow,
-    Skeleton, Stack, Tooltip
-} from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
 import {
     useGetRemitosEntradaQuery,
     useDeleteRemitoMutation,
@@ -14,6 +6,7 @@ import {
 } from '../features/remitos/api/remito.api';
 import { CreateRemitoForm } from '../features/remitos/ui/CreateRemitoForm';
 import { RemitoDetailModal } from '../features/remitos/ui/RemitoDetailModal';
+import { PageHeader, Card, Btn, Table, Badge, Spinner } from './common/ui';
 
 export default function RemitosEntradaPage() {
     const { data: remitos = [], isLoading, isError } = useGetRemitosEntradaQuery();
@@ -30,7 +23,6 @@ export default function RemitosEntradaPage() {
             setShowDetail(true);
         } catch (err) {
             console.error('Error al cargar detalle del remito', err);
-            // Fallback to basic data if detail fetch fails
             setSelectedRemito(remito);
             setShowDetail(true);
         }
@@ -38,125 +30,53 @@ export default function RemitosEntradaPage() {
 
     if (showForm) {
         return (
-            <Box sx={{ p: { xs: 2, sm: 4 } }}>
-                <Box sx={{ mb: 3 }}>
-                    <Button
-                        onClick={() => setShowForm(false)}
-                        color="inherit"
-                        size="small"
-                        sx={{ fontWeight: 600, mb: 2 }}
-                    >
-                        ← Volver al Listado
-                    </Button>
-                </Box>
-                <CreateRemitoForm />
-            </Box>
+            <div style={{ padding: '24px' }}>
+                <Btn variant="secondary" onClick={() => setShowForm(false)} style={{ marginBottom: '20px' }}>
+                    ← Volver al Listado
+                </Btn>
+                <Card>
+                    <CreateRemitoForm />
+                </Card>
+            </div>
         );
     }
 
     return (
-        <Box sx={{ p: { xs: 2, sm: 4 } }}>
-            {/* Header: No Card, just layout */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-                <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-1px' }}>
-                        Remitos de Entrada
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
-                        Listado y gestión de ingresos de mercadería
-                    </Typography>
-                </Box>
-                <Tooltip title="Nuevo Ingreso">
-                    <IconButton
-                        color="primary"
-                        onClick={() => setShowForm(true)}
-                        sx={{
-                            border: '1px solid',
-                            borderColor: 'divider',
-                            borderRadius: 2
-                        }}
-                    >
-                        <AddIcon />
-                    </IconButton>
-                </Tooltip>
-            </Box>
+        <div style={{ padding: '24px' }}>
+            <PageHeader title="Remitos de Entrada" subtitle="Listado y gestión de ingresos de mercadería">
+                <Btn onClick={() => setShowForm(true)}>+ Nuevo Ingreso</Btn>
+            </PageHeader>
 
-            {/* List Section: No outer Card/Paper backgrounnd */}
-            {isLoading ? (
-                <Stack spacing={2}>
-                    {[1, 2, 3].map(i => <Skeleton key={i} variant="rounded" height={60} />)}
-                </Stack>
-            ) : isError ? (
-                <Typography color="error" variant="body2" align="center" sx={{ py: 8 }}>
+            {isError ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#ef4444' }}>
                     Error al cargar los remitos. Intente nuevamente.
-                </Typography>
-            ) : remitos.length === 0 ? (
-                <Box sx={{
-                    py: 12,
-                    textAlign: 'center',
-                    border: '1px dashed',
-                    borderColor: 'divider',
-                    borderRadius: 3,
-                    backgroundColor: 'transparent'
-                }}>
-                    <Typography variant="h5" sx={{ color: 'text.primary', fontWeight: 800, mb: 1.5, letterSpacing: '-0.5px' }}>
-                        Todavía no hay ningún remito cargado en este depósito
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: 'text.secondary', fontWeight: 500, maxWidth: 400, mx: 'auto' }}>
-                        Inicie una nueva recepción de materiales presionando el botón "+" arriba a la derecha.
-                    </Typography>
-                </Box>
+                </div>
+            ) : remitos.length === 0 && !isLoading ? (
+                <Card style={{ textAlign: 'center', padding: '60px' }}>
+                    <h3 style={{ color: '#f3f4f6', marginBottom: '8px' }}>Todavía no hay ningún remito cargado</h3>
+                    <p style={{ color: '#9ca3af' }}>Inicie una nueva recepción de materiales presionando el botón "+ Nuevo Ingreso".</p>
+                </Card>
             ) : (
-                <Table sx={{ minWidth: 650 }} aria-label="remitos list">
-                    <TableHead>
-                        <TableRow>
-                            <TableCell sx={{ color: 'primary.main', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Número</TableCell>
-                            <TableCell sx={{ color: 'primary.main', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Fecha</TableCell>
-                            <TableCell sx={{ color: 'primary.main', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Proveedor</TableCell>
-                            <TableCell sx={{ color: 'primary.main', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Items</TableCell>
-                            <TableCell align="right"></TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {remitos.map((r: any) => (
-                            <TableRow
-                                key={r.id}
-                                hover
-                                onClick={() => handleRowClick(r)}
-                                sx={{
-                                    '&:last-child td, &:last-child th': { border: 0 },
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                <TableCell sx={{ fontWeight: 600 }}>{r.numero || r.documentId}</TableCell>
-                                <TableCell color="text.secondary">
-                                    {new Date(r.fecha || r.date).toLocaleDateString()}
-                                </TableCell>
-                                <TableCell>{r.partner?.name || r.supplier?.name || r.provider?.name || '—'}</TableCell>
-                                <TableCell>
-                                    <Chip
-                                        label={`${r.lines?.length || r.items?.length || 0} ítems`}
-                                        size="small"
-                                        variant="outlined"
-                                        sx={{ fontWeight: 600, border: '1px solid rgba(0,0,0,0.08)' }}
-                                    />
-                                </TableCell>
-                                <TableCell align="right">
-                                    <IconButton
-                                        size="small"
-                                        color="error"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            deleteRemito(r.id);
-                                        }}
-                                    >
-                                        <DeleteIcon fontSize="inherit" />
-                                    </IconButton>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                <Card>
+                    <Table
+                        loading={isLoading}
+                        cols={['Número', 'Fecha', 'Proveedor', 'Líneas', '']}
+                        rows={remitos.map((r: any) => [
+                            <span key="num" style={{ color: '#a5b4fc', fontWeight: 600, cursor: 'pointer' }} onClick={() => handleRowClick(r)}>{r.numero || r.documentId}</span>,
+                            new Date(r.fecha || r.date).toLocaleDateString('es-AR'),
+                            r.partner?.name || r.supplier?.name || '—',
+                            <Badge key="badge">{r.lines?.length || r.items?.length || 0} ítems</Badge>,
+                            <div key="actions" style={{ textAlign: 'right' }}>
+                                <Btn small variant="danger" onClick={(e: any) => {
+                                    e.stopPropagation();
+                                    if (window.confirm('¿Estás seguro de que querés anular este remito?')) {
+                                        deleteRemito(r.id);
+                                    }
+                                }}>🗑</Btn>
+                            </div>
+                        ])}
+                    />
+                </Card>
             )}
 
             <RemitoDetailModal
@@ -164,6 +84,6 @@ export default function RemitosEntradaPage() {
                 onClose={() => setShowDetail(false)}
                 remito={selectedRemito}
             />
-        </Box>
+        </div>
     );
 }

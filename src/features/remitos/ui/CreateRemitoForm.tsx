@@ -13,6 +13,7 @@ export const CreateRemitoForm = () => {
         defaultValues: {
             numero: '',
             fecha: new Date().toISOString().split('T')[0],
+            observaciones: '',
             lines: []
         }
     });
@@ -76,6 +77,7 @@ export const CreateRemitoForm = () => {
             methods.reset({
                 numero: '',
                 fecha: new Date().toISOString().split('T')[0],
+                observaciones: '',
                 lines: []
             });
             setSelectedPlanta('');
@@ -161,6 +163,16 @@ export const CreateRemitoForm = () => {
                             ))}
                         </TextField>
                     </Box>
+
+                    <TextField
+                        label="Observaciones (Opcional)"
+                        fullWidth
+                        multiline
+                        rows={2}
+                        variant="filled"
+                        sx={{ mb: 4 }}
+                        {...methods.register('observaciones')}
+                    />
 
                     {/* Section: Proveedor Integrada */}
                     <Box sx={{ mb: 4 }}>

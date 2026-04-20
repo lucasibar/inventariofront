@@ -1,15 +1,15 @@
-import { useState, useMemo } from 'react';
-import { useGetOrdersQuery, useCreateOrderMutation, useDeleteOrderMutation } from '../features/orders/api/orders.api';
-import { useGetPartnersQuery } from '../features/partners/api/partners.api';
-import { useGetItemsQuery } from '../features/items/api/items.api';
-import { useGetAlertsQuery } from '../features/stock/api/stock.api';
-import { PageHeader, Card, Btn, Input, Select, Modal, Table, Badge, Spinner } from './common/ui';
+import { useSelector } from 'react-redux';
+import { selectCurrentUser } from '../entities/auth/model/authSlice';
+import { PageHeader, Card, Btn, Input, Select, SearchSelect, Modal, Table, Badge, Spinner } from './common/ui';
 
 export default function PedidosPage() {
     const { data: orders = [], isLoading } = useGetOrdersQuery();
     const { data: clients = [] } = useGetPartnersQuery({ type: 'CLIENT' });
     const { data: items = [] } = useGetItemsQuery({});
     const { data: alerts = [] } = useGetAlertsQuery();
+
+    const user = useSelector(selectCurrentUser);
+    const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
 
     const [createOrder] = useCreateOrderMutation();
     const [deleteOrder] = useDeleteOrderMutation();
@@ -95,7 +95,7 @@ export default function PedidosPage() {
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px' }}>
                                     <span style={{ color: '#6b7280' }}>{selectedOrderId === o.id ? '▲' : '▼'}</span>
-                                    <Btn small variant="danger" onClick={e => { e.stopPropagation(); deleteOrder(o.id); }}>🗑</Btn>
+                                    <Btn small variant="danger" onClick={e => { e.stopPropagation(); if (window.confirm('¿Eliminar esta orden?')) deleteOrder(o.id); }}>🗑</Btn>
                                 </div>
                             </div>
                             {selectedOrderId === o.id && (
@@ -129,9 +129,22 @@ export default function PedidosPage() {
                         <div>
                             <label style={{ color: '#9ca3af', fontSize: '12px' }}>Cliente</label>
                             <div style={{ marginTop: '6px' }}>
-                                <Select value={newClient ? '__new__' : clientId} onChange={v => { if (v === '__new__') setNewClient(true); else { setNewClient(false); setClientId(v); } }}
-                                    options={[{ value: '', label: 'Seleccionar...' }, { value: '__new__', label: '+ Nuevo cliente' }, ...clients.map((c: any) => ({ value: c.id, label: c.name }))]} />
-                                {newClient && <Input style={{ marginTop: '8px' }} label="Nombre" value={clientName} onChange={setClientName} />}
+                                <SearchSelect 
+                                    value={newClient ? '__new__' : clientId} 
+                                    onChange={v => { 
+                                        if (v === '__new__') {
+                                            if (!isAdmin) { alert('Solo administradores pueden crear clientes'); return; }
+                                            setNewClient(true); 
+                                            setClientId('');
+                                        } else { 
+                                            setNewClient(false); 
+                                            setClientId(v); 
+                                        }
+                                    }}
+                                    options={[{ value: '', label: 'Seleccionar...' }, ...(isAdmin ? [{ value: '__new__', label: '+ Nuevo cliente' }] : []), ...clients.map((c: any) => ({ value: c.id, label: c.name }))]} 
+                                    placeholder="Buscar cliente..."
+                                />
+                                {newClient && isAdmin && <Input style={{ marginTop: '8px' }} label="Nombre" value={clientName} onChange={setClientName} />}
                             </div>
                         </div>
                         <Input label="Fecha" type="date" value={fecha} onChange={setFecha} />
@@ -145,8 +158,8 @@ export default function PedidosPage() {
                         </div>
                         {lines.map((l, i) => (
                             <div key={i} style={{ display: 'grid', gridTemplateColumns: '3fr 1fr auto', gap: '8px', marginBottom: '8px', alignItems: 'end' }}>
-                                <Select label="Material" value={l.itemId} onChange={v => setLines(p => p.map((x, j) => j === i ? { ...x, itemId: v } : x))}
-                                    options={[{ value: '', label: 'Seleccionar...' }, ...items.map((it: any) => ({ value: it.id, label: `${it.codigoInterno} — ${it.descripcion}` }))]} />
+                                <SearchSelect label="Material" value={l.itemId} onChange={v => setLines(p => p.map((x, j) => j === i ? { ...x, itemId: v } : x))}
+                                    options={[{ value: '', label: 'Seleccionar...' }, ...items.map((it: any) => ({ value: it.id, label: `${it.codigoInterno} — ${it.descripcion}` }))]} placeholder="Buscar material..." />
                                 <Input label="Kilos" type="number" value={l.kilosPedidos} onChange={v => setLines(p => p.map((x, j) => j === i ? { ...x, kilosPedidos: v } : x))} />
                                 <Btn small variant="danger" onClick={() => setLines(p => p.filter((_, j) => j !== i))} style={{ alignSelf: 'flex-end' }}>✕</Btn>
                             </div>

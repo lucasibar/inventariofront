@@ -7,6 +7,7 @@ import {
     useReassignBatchMutation,
     useLazyCheckBatchQuery,
 } from '../features/stock/api/stock.api';
+import { useDespachoDirectoMutation } from '../features/remitosSalida/api/remitos-salida.api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGetDepotsQuery } from '../features/depots/api/depots.api';
 import { useGetItemsQuery } from '../features/items/api/items.api';
@@ -88,6 +89,60 @@ export default function StockPage() {
     const [adjustStock] = useAdjustStockMutation();
     const [reassignBatch] = useReassignBatchMutation();
     const [checkBatch] = useLazyCheckBatchQuery();
+    const [despachoDirecto] = useDespachoDirectoMutation();
+
+    // Despacho Directo state
+    const [despachoModal, setDespachoModal] = useState(false);
+    const [despachoEntry, setDespachoEntry] = useState<any>(null);
+    const [despachoQty, setDespachoQty] = useState('');
+    const [despachoQtySec, setDespachoQtySec] = useState('');
+    const [despachoClient, setDespachoClient] = useState('');
+    const [despachoClientName, setDespachoClientName] = useState('');
+    const [despachoNewClient, setDespachoNewClient] = useState(false);
+    const [despachoFecha, setDespachoFecha] = useState(new Date().toISOString().split('T')[0]);
+    const [despachoSaving, setDespachoSaving] = useState(false);
+
+    const clientOptions = useMemo(() => [
+        { value: '', label: 'Seleccionar cliente...' },
+        ...(isAdmin ? [{ value: '__new__', label: '+ Nuevo cliente' }] : []),
+        ...partners.filter((p: any) => p.type === 'CLIENT' || p.type === 'BOTH').map((p: any) => ({ value: p.id, label: p.name }))
+    ], [partners, isAdmin]);
+
+    const openDespacho = (entry: any) => {
+        setDespachoEntry(entry);
+        setDespachoQty('');
+        setDespachoQtySec('');
+        setDespachoClient('');
+        setDespachoClientName('');
+        setDespachoNewClient(false);
+        setDespachoFecha(new Date().toISOString().split('T')[0]);
+        setDespachoModal(true);
+    };
+
+    const handleDespachoSubmit = async () => {
+        if (!despachoEntry || !despachoQty) return;
+        if (!despachoClient && !despachoClientName) { alert('Seleccioná un cliente'); return; }
+        setDespachoSaving(true);
+        try {
+            const result = await despachoDirecto({
+                fecha: despachoFecha,
+                clientId: despachoNewClient ? undefined : despachoClient,
+                clientName: despachoNewClient ? despachoClientName : undefined,
+                depositoId: despachoEntry.posicion?.depot?.id || depotId,
+                posicionId: despachoEntry.posicionId,
+                itemId: despachoEntry.batch.item.id,
+                lotId: despachoEntry.lotId,
+                qtyPrincipal: Number(despachoQty),
+                qtySecundaria: despachoQtySec ? Number(despachoQtySec) : undefined,
+            }).unwrap();
+            alert(`✅ Despachado. Remito: ${result.numero}`);
+            setDespachoModal(false);
+        } catch (e: any) {
+            alert(e?.data?.message || 'Error al despachar');
+        } finally {
+            setDespachoSaving(false);
+        }
+    };
 
     const handleAdjustQty = async (entry: any, newValue: string, field: 'principal' | 'secundaria') => {
         const newQty = Number(newValue);
@@ -355,7 +410,7 @@ export default function StockPage() {
                                                         <th>Lote</th>
                                                         <th style={{ textAlign: 'right', width: isMobile ? '70px' : '120px' }}>Kilos</th>
                                                         <th style={{ textAlign: 'right', width: isMobile ? '55px' : '120px' }}>Un.</th>
-                                                        {isAdmin && <th style={{ textAlign: 'center', width: '50px' }}></th>}
+                                                        <th style={{ textAlign: 'center', width: '50px' }}></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -383,15 +438,22 @@ export default function StockPage() {
                                                                     <EditableCell numeric value={Number(entry.qtySecundaria || 0).toFixed(0)} onSave={(val) => handleAdjustQty(entry, val, 'secundaria')} />
                                                                     {!isMobile && <small style={{opacity:0.6, marginLeft: '2px'}}>{group.item.unidadSecundaria}</small>}
                                                                 </td>
-                                                                {isAdmin && (
-                                                                    <td style={{ textAlign: 'center' }}>
+                                                                <td style={{ textAlign: 'center' }}>
+                                                                    <div style={{ display: 'flex', gap: '2px', justifyContent: 'center' }}>
                                                                         <button 
-                                                                            onClick={(e) => { e.stopPropagation(); handleDeleteLine(entry); }} 
-                                                                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', padding: '4px' }}
-                                                                            title="Eliminar esta línea"
-                                                                        >🗑️</button>
-                                                                    </td>
-                                                                )}
+                                                                            onClick={(e) => { e.stopPropagation(); openDespacho(entry); }} 
+                                                                            style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '14px', padding: '4px' }}
+                                                                            title="Despachar (agregar a remito de salida)"
+                                                                        >📦</button>
+                                                                        {isAdmin && (
+                                                                            <button 
+                                                                                onClick={(e) => { e.stopPropagation(); handleDeleteLine(entry); }} 
+                                                                                style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', padding: '4px' }}
+                                                                                title="Eliminar esta línea"
+                                                                            >🗑️</button>
+                                                                        )}
+                                                                    </div>
+                                                                </td>
                                                             </tr>
                                                         );
                                                     })}
@@ -436,6 +498,58 @@ export default function StockPage() {
 
             <CreateItemDialog open={createItemModal} onClose={() => setCreateItemModal(false)} onSuccess={(newItem: any) => { setQaItem(newItem.id); }} />
             <CreatePartnerDialog open={createPartnerModal} onClose={() => setCreatePartnerModal(false)} onSuccess={(newPartner: any) => { setQaSupplier(newPartner.id); }} />
+
+            {despachoModal && despachoEntry && (
+                <Modal title="Despacho Directo" onClose={() => setDespachoModal(false)}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        <div style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '10px', padding: '12px' }}>
+                            <div style={{ fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', marginBottom: '4px' }}>Material seleccionado</div>
+                            <div style={{ color: '#f3f4f6', fontWeight: 700 }}>{despachoEntry.batch.item.descripcion}</div>
+                            <div style={{ fontSize: '12px', color: '#a5b4fc', marginTop: '2px' }}>
+                                📍 {despachoEntry.posicion?.codigo || 'S/P'} &middot; Lote: {despachoEntry.batch.lotNumber || '—'} &middot; Disp: {Number(despachoEntry.qtyPrincipal).toFixed(1)} {despachoEntry.batch.item.unidadPrincipal}
+                            </div>
+                        </div>
+
+                        <SearchSelect
+                            label="Cliente"
+                            value={despachoNewClient ? '__new__' : despachoClient}
+                            onChange={v => { 
+                                if (v === '__new__') { 
+                                    if (!isAdmin) { alert('Solo los administradores pueden crear clientes nuevos'); return; }
+                                    setDespachoNewClient(true); 
+                                    setDespachoClient(''); 
+                                } else { 
+                                    setDespachoNewClient(false); 
+                                    setDespachoClient(v); 
+                                }
+                            }}
+                            options={clientOptions}
+                            placeholder="Buscar cliente..."
+                        />
+                        {despachoNewClient && isAdmin && <Input label="Nombre del nuevo cliente" value={despachoClientName} onChange={setDespachoClientName} />}
+
+                        <Input label="Fecha" type="date" value={despachoFecha} onChange={setDespachoFecha} />
+
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <Input label={`Cantidad (${despachoEntry.batch.item.unidadPrincipal})`} type="number" value={despachoQty} onChange={setDespachoQty} style={{ flex: 1 }} />
+                            {despachoEntry.batch.item.unidadSecundaria && (
+                                <Input label={`Sec. (${despachoEntry.batch.item.unidadSecundaria})`} type="number" value={despachoQtySec} onChange={setDespachoQtySec} style={{ flex: 1 }} />
+                            )}
+                        </div>
+
+                        <div style={{ fontSize: '11px', color: '#6b7280', fontStyle: 'italic' }}>
+                            💡 Si ya existe un remito de salida para esta fecha y cliente, se agregará automáticamente.
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #2a2d3e', paddingTop: '12px' }}>
+                            <Btn variant="secondary" onClick={() => setDespachoModal(false)}>Cancelar</Btn>
+                            <Btn onClick={handleDespachoSubmit} disabled={despachoSaving || !despachoQty}>
+                                {despachoSaving ? 'Despachando...' : '📦 Despachar'}
+                            </Btn>
+                        </div>
+                    </div>
+                </Modal>
+            )}
         </div>
     );
 }

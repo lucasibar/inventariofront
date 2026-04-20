@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useGetItemsQuery, useCreateItemMutation, useUpdateItemMutation, useDeleteItemMutation } from '../features/items/api/items.api';
-import { PageHeader, Card, Btn, Input, Select, Modal, Table, Badge, SearchBar, Spinner } from './common/ui';
+import { PageHeader, Card, Btn, Input, Select, SearchSelect, Modal, Table, Badge, SearchBar, Spinner } from './common/ui';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
 import { useGetBoxTypesQuery } from '../features/items/api/box-types.api';
 
@@ -242,11 +242,12 @@ export default function MaterialesPage() {
                             <Input label="Unid. Secundaria" value={form.unidadSecundaria} onChange={v => setForm(p => ({ ...p, unidadSecundaria: v }))} />
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                            <Select 
+                            <SearchSelect 
                                 label="Proveedor" 
                                 value={form.supplierId} 
                                 onChange={v => setForm(p => ({ ...p, supplierId: v }))} 
                                 options={[{ value: '', label: '— Sin proveedor —' }, ...suppliers.map((s: any) => ({ value: s.id, label: s.name }))]} 
+                                placeholder="Buscar proveedor..."
                             />
                             <Select 
                                 label="Caja (Opcional)" 

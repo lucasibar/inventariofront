@@ -7,7 +7,7 @@ import {
 } from '../features/purchase-orders/api/purchase-orders.api';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
 import { useGetItemsQuery } from '../features/items/api/items.api';
-import { PageHeader, Card, Btn, Input, Select, Modal, Table, Badge, Spinner } from './common/ui';
+import { PageHeader, Card, Btn, Input, Select, SearchSelect, Modal, Table, Badge, Spinner } from './common/ui';
 
 export default function PedidosCompraPage() {
     const { data: orders = [], isLoading } = useGetPurchaseOrdersQuery();
@@ -27,6 +27,11 @@ export default function PedidosCompraPage() {
     const [lines, setLines] = useState<{ itemId: string; qtyPedido: string }[]>([{ itemId: '', qtyPedido: '' }]);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
+
+    const filteredItems = useMemo(() => {
+        if (!supplierId) return items;
+        return items.filter((i: any) => !i.supplierId || i.supplierId === supplierId);
+    }, [items, supplierId]);
 
     const grouped = useMemo(() => {
         const map = new Map<string, { supplierName: string; orders: any[] }>();
@@ -86,7 +91,7 @@ export default function PedidosCompraPage() {
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px' }}>
                                     <span style={{ color: '#6b7280' }}>{selectedOrderId === o.id ? '▲' : '▼'}</span>
-                                    <Btn small variant="danger" onClick={e => { e.stopPropagation(); deleteOrder(o.id); }}>🗑</Btn>
+                                    <Btn small variant="danger" onClick={e => { e.stopPropagation(); if (window.confirm('¿Eliminar este pedido?')) deleteOrder(o.id); }}>🗑</Btn>
                                 </div>
                             </div>
                             {selectedOrderId === o.id && (
@@ -120,8 +125,8 @@ export default function PedidosCompraPage() {
                         <div>
                             <label style={{ color: '#9ca3af', fontSize: '12px' }}>Proveedor</label>
                             <div style={{ marginTop: '6px' }}>
-                                <Select value={supplierId} onChange={setSupplierId}
-                                    options={[{ value: '', label: 'Seleccionar...' }, ...suppliers.map((c: any) => ({ value: c.id, label: c.name }))]} />
+                                <SearchSelect value={supplierId} onChange={setSupplierId}
+                                    options={[{ value: '', label: 'Seleccionar...' }, ...suppliers.map((c: any) => ({ value: c.id, label: c.name }))]} placeholder="Buscar proveedor..." />
                             </div>
                         </div>
                         <Input label="Fecha Emisión" type="date" value={fechaEmision} onChange={setFechaEmision} />
@@ -136,8 +141,8 @@ export default function PedidosCompraPage() {
                         </div>
                         {lines.map((l, i) => (
                             <div key={i} style={{ display: 'grid', gridTemplateColumns: '3fr 1fr auto', gap: '8px', marginBottom: '8px', alignItems: 'end' }}>
-                                <Select label="Material" value={l.itemId} onChange={v => setLines(p => p.map((x, j) => j === i ? { ...x, itemId: v } : x))}
-                                    options={[{ value: '', label: 'Seleccionar...' }, ...items.map((it: any) => ({ value: it.id, label: `${it.codigoInterno} — ${it.descripcion}` }))]} />
+                                <SearchSelect label="Material" value={l.itemId} onChange={v => setLines(p => p.map((x, j) => j === i ? { ...x, itemId: v } : x))}
+                                    options={[{ value: '', label: 'Seleccionar...' }, ...filteredItems.map((it: any) => ({ value: it.id, label: `${it.codigoInterno} — ${it.descripcion}` }))]} placeholder="Buscar material..." />
                                 <Input label="Cantidad Requerida" type="number" value={l.qtyPedido} onChange={v => setLines(p => p.map((x, j) => j === i ? { ...x, qtyPedido: v } : x))} />
                                 <Btn small variant="danger" onClick={() => setLines(p => p.filter((_, j) => j !== i))} style={{ alignSelf: 'flex-end' }}>✕</Btn>
                             </div>

@@ -75,7 +75,7 @@ export default function SociosPage() {
                         p.phone ?? '—',
                         <div style={{ display: 'flex', gap: '4px' }}>
                             <Btn small variant="secondary" onClick={() => openEdit(p)}>✏️</Btn>
-                            <Btn small variant="danger" onClick={() => deletePartner(p.id)}>🗑</Btn>
+                            <Btn small variant="danger" onClick={() => { if (window.confirm('¿Eliminar este socio?')) deletePartner(p.id); }}>🗑</Btn>
                         </div>,
                     ])}
                 />
