@@ -6,7 +6,8 @@ import {
 } from '@mui/material';
 import type { Machine } from '../../entities/performance/api/performanceApi';
 import { useGetLogsQuery } from '../../entities/performance/api/performanceApi';
-import { calculateKPIs } from './utils/kpiUtils';
+import { calculateKPIs } from '../../features/rendimiento/utils/kpiUtils';
+
 
 
 interface MachineDetailModalProps {
