@@ -1,35 +1,9 @@
-export type MachineStatus = 'SOLVED' | 'ELECTRICAL' | 'MECHANICAL' | 'SUCTION' | 'YARN_SHORTAGE';
+import { PerformanceLog, MachineKPI as MachineKPIs, Machine } from '../api/performanceApi';
 
-export interface PerformanceLog {
-    id: string;
-    machineId: string;
-    fromStatus: MachineStatus;
-    toStatus: MachineStatus;
-    failureType?: string;
-    observation?: string;
-    generatedBy: string;
-    timestamp: string;
-    machine?: {
-        number: number;
-        codigoInterno: string;
-        plant?: { name: string };
-    };
-}
-
-export interface MachineKPIs {
-    uptime: string;
-    downtime: string;
-    availability: string;
-    mtbf: string;
-    mttr: string;
-    mttf: string;
-    failures: number;
-    repairs: number;
-    oee: string;
-    history: PerformanceLog[];
-}
+type MachineStatus = Machine['status'];
 
 export const calculateKPIs = (logs: PerformanceLog[], startDate: Date, endDate: Date, machineCreatedAt: string): MachineKPIs => {
+
     let uptimeMs = 0;
     let downtimeMs = 0;
     let nFailures = 0;
