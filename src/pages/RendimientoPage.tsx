@@ -6,8 +6,9 @@ import {
     useGetMachineTypesQuery, 
     useGetMachinesQuery, 
     useGetMetricsQuery,
-    Machine
 } from '../entities/performance/api/performanceApi';
+import type { Machine } from '../entities/performance/api/performanceApi';
+
 import { MachineGrid } from '../widgets/rendimiento/MachineGrid';
 import { FailureFormModal } from '../features/rendimiento/FailureFormModal';
 import { SolveConfirmationModal } from '../features/rendimiento/SolveConfirmationModal';
@@ -112,7 +113,8 @@ export default function RendimientoPage() {
                 </Card>
             </Box>
 
-            <Card style={{ p: 0 }}>
+            <Card style={{ padding: 0 }}>
+
                 <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'rgba(255,255,255,0.02)' }}>
                     <Tabs 
                         value={activeTab} 

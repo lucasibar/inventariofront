@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
 import { 
     Dialog, DialogTitle, DialogContent, DialogActions, 
-    Button, TextField, Typography, Box, Alert
+    Button, TextField, Box, Alert
 } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
-import { Machine, useUpdateMachineStatusMutation } from '../../entities/performance/api/performanceApi';
+import type { Machine } from '../../entities/performance/api/performanceApi';
+import { useUpdateMachineStatusMutation } from '../../entities/performance/api/performanceApi';
+
 
 interface SolveConfirmationModalProps {
     open: boolean;

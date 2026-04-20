@@ -6,7 +6,9 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '../../entities/auth/model/authSlice';
-import { Machine, useUpdateMachineStatusMutation } from '../../entities/performance/api/performanceApi';
+import type { Machine } from '../../entities/performance/api/performanceApi';
+import { useUpdateMachineStatusMutation } from '../../entities/performance/api/performanceApi';
+
 
 interface FailureFormModalProps {
     open: boolean;

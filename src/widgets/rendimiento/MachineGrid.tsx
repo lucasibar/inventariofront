@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Typography, Skeleton } from '@mui/material';
-import { Machine } from '../../../entities/performance/api/performanceApi';
+import type { Machine } from '../../entities/performance/api/performanceApi';
+
 import { MachineCard } from './MachineCard';
 
 interface MachineGridProps {

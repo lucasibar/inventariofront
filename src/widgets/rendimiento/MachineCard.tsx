@@ -1,6 +1,7 @@
 import React from 'react';
 import { Paper, Typography, Box, Tooltip } from '@mui/material';
-import { Machine } from '../../../entities/performance/api/performanceApi';
+import type { Machine } from '../../entities/performance/api/performanceApi';
+
 
 interface MachineCardProps {
     machine: Machine;
