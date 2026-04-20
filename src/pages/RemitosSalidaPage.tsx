@@ -4,7 +4,7 @@ import { RemitoDetailModal } from '../features/remitos/ui/RemitoDetailModal';
 import { useGetOrdersQuery } from '../features/orders/api/orders.api';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
 import { useGetItemsQuery } from '../features/items/api/items.api';
-import { PageHeader, Card, Btn, Input, Select, Modal, Table, Badge } from './common/ui';
+import { PageHeader, Card, Btn, Input, Select, SearchSelect, Modal, Table, Badge } from './common/ui';
 
 export default function RemitosSalidaPage() {
     const { data: remitos = [], isLoading } = useGetRemitosSalidaQuery();
@@ -125,8 +125,8 @@ export default function RemitosSalidaPage() {
                         </div>
                         {lines.map((l: any, i: number) => (
                             <div key={i} style={{ display: 'grid', gridTemplateColumns: '3fr 1fr 1fr auto', gap: '8px', marginBottom: '8px', alignItems: 'end' }}>
-                                <Select label="Material" value={l.itemId} onChange={v => setLines(p => p.map((x, j) => j === i ? { ...x, itemId: v } : x))}
-                                    options={[{ value: '', label: 'Seleccionar...' }, ...items.map((it: any) => ({ value: it.id, label: `${it.codigoInterno} — ${it.descripcion}` }))]} />
+                                <SearchSelect label="Material" value={l.itemId} onChange={v => setLines(p => p.map((x, j) => j === i ? { ...x, itemId: v } : x))}
+                                    options={[{ value: '', label: 'Seleccionar...' }, ...items.map((it: any) => ({ value: it.id, label: `${it.codigoInterno} — ${it.descripcion}` }))]} placeholder="Buscar material..." />
                                 <Input label="Cant. Principal" type="number" value={l.qtyPrincipal} onChange={v => setLines(p => p.map((x, j) => j === i ? { ...x, qtyPrincipal: v } : x))} />
                                 <Input label="Secundaria" type="number" value={l.qtySecundaria} onChange={v => setLines(p => p.map((x, j) => j === i ? { ...x, qtySecundaria: v } : x))} />
                                 <Btn small variant="danger" onClick={() => setLines(p => p.filter((_, j) => j !== i))} style={{ alignSelf: 'flex-end' }}>✕</Btn>

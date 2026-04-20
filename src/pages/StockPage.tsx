@@ -11,7 +11,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGetDepotsQuery } from '../features/depots/api/depots.api';
 import { useGetItemsQuery } from '../features/items/api/items.api';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
-import { PageHeader, Select, Spinner, Btn, Modal, Input, EditableCell, useIsMobile } from './common/ui';
+import { PageHeader, Select, SearchSelect, Spinner, Btn, Modal, Input, EditableCell, useIsMobile } from './common/ui';
 import { CreateItemDialog } from '../features/remitos/ui/CreateItemDialog';
 import { CreatePartnerDialog } from '../features/remitos/ui/CreatePartnerDialog';
 import { useSelector } from 'react-redux';
@@ -133,8 +133,13 @@ export default function StockPage() {
 
     const qaFilteredItems = useMemo(() => {
         if (!qaSupplier) return items;
-        return items.filter((i: any) => i.supplierId === qaSupplier);
+        return items.filter((i: any) => !i.supplierId || i.supplierId === qaSupplier);
     }, [items, qaSupplier]);
+
+    const supplierOptions = useMemo(() => [
+        { value: '', label: 'Seleccionar...' },
+        ...partners.filter((p: any) => p.type === 'SUPPLIER' || p.type === 'BOTH').map((p: any) => ({ value: p.id, label: p.name }))
+    ], [partners]);
 
     const qaSelectedItem = useMemo(() => items.find((i: any) => i.id === qaItem), [items, qaItem]);
 
@@ -409,11 +414,11 @@ export default function StockPage() {
                             <Select label="Posición" value={qaPosition} onChange={setQaPosition} options={[{ value: '', label: 'Seleccionar...' }, ...(availableDepots.find((d: any) => d.id === (qaDepot || (availableDepots.length === 1 ? availableDepots[0].id : '')))?.positions?.map((p: any) => ({ value: p.id, label: p.codigo })) || [])]} style={{ flex: 1 }} />
                         </div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
-                            <Select label="Proveedor" value={qaSupplier} onChange={val => { setQaSupplier(val); setQaItem(''); }} options={[{ value: '', label: 'Seleccionar...' }, ...partners.filter((p: any) => p.isSupplier).map((p: any) => ({ value: p.id, label: p.name }))]} style={{ flex: 1 }} />
+                            <SearchSelect label="Proveedor" value={qaSupplier} onChange={val => { setQaSupplier(val); setQaItem(''); }} options={supplierOptions} placeholder="Buscar proveedor..." style={{ flex: 1 }} />
                             <Btn small variant="secondary" onClick={() => setCreatePartnerModal(true)}>+</Btn>
                         </div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
-                            <Select label="Material" value={qaItem} onChange={setQaItem} options={[{ value: '', label: 'Seleccionar...' }, ...qaFilteredItems.map((i: any) => ({ value: i.id, label: `${i.codigoInterno} - ${i.descripcion}` }))]} style={{ flex: 1 }} />
+                            <SearchSelect label="Material" value={qaItem} onChange={setQaItem} options={[{ value: '', label: 'Seleccionar...' }, ...qaFilteredItems.map((i: any) => ({ value: i.id, label: `${i.codigoInterno} - ${i.descripcion}` }))]} placeholder="Buscar material..." style={{ flex: 1 }} />
                             <Btn small variant="secondary" onClick={() => setCreateItemModal(true)}>+</Btn>
                         </div>
                         <Input label="Lote" value={qaLot} onChange={setQaLot} />

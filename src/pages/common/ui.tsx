@@ -131,6 +131,113 @@ export function Select({ label, value, onChange, options, style, disabled }: {
     );
 }
 
+export function SearchSelect({ label, value, onChange, options, style, disabled, placeholder }: {
+    label?: string; value: string; onChange: (v: string) => void;
+    options: { value: string; label: string }[]; style?: React.CSSProperties;
+    disabled?: boolean; placeholder?: string;
+}) {
+    const [search, setSearch] = useState('');
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    const selectedLabel = options.find(o => o.value === value)?.label || '';
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) {
+                setOpen(false);
+                setSearch('');
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const filtered = options.filter(o => {
+        if (!search) return true;
+        return o.label.toLowerCase().includes(search.toLowerCase());
+    });
+
+    const handleSelect = (val: string) => {
+        onChange(val);
+        setOpen(false);
+        setSearch('');
+    };
+
+    const handleClear = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onChange('');
+        setSearch('');
+        setOpen(false);
+    };
+
+    return (
+        <div style={{ position: 'relative', ...style }} ref={ref}>
+            {label && <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>{label}</label>}
+            <div
+                onClick={() => { if (!disabled) { setOpen(true); setTimeout(() => inputRef.current?.focus(), 50); } }}
+                style={{
+                    width: '100%', background: '#0f1117', border: `1px solid ${open ? '#6366f1' : '#374151'}`, borderRadius: '8px',
+                    padding: '0', color: '#f3f4f6', fontSize: '13px', boxSizing: 'border-box',
+                    opacity: disabled ? 0.6 : 1, cursor: disabled ? 'not-allowed' : 'pointer',
+                    display: 'flex', alignItems: 'center', position: 'relative', transition: 'border-color 0.2s',
+                }}
+            >
+                <input
+                    ref={inputRef}
+                    value={open ? search : selectedLabel}
+                    onChange={e => { setSearch(e.target.value); if (!open) setOpen(true); }}
+                    onFocus={() => setOpen(true)}
+                    placeholder={value ? selectedLabel : (placeholder || 'Buscar...')}
+                    disabled={disabled}
+                    style={{
+                        flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                        color: '#f3f4f6', fontSize: '13px', padding: '8px 10px', boxSizing: 'border-box',
+                        cursor: disabled ? 'not-allowed' : 'text',
+                    }}
+                />
+                {value && !open && (
+                    <button onClick={handleClear} style={{
+                        background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer',
+                        padding: '0 8px', fontSize: '14px', lineHeight: 1, display: 'flex', alignItems: 'center'
+                    }}>✕</button>
+                )}
+                <span style={{ padding: '0 8px', color: '#4b5563', fontSize: '10px', pointerEvents: 'none' }}>▼</span>
+            </div>
+            {open && (
+                <div style={{
+                    position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '4px',
+                    background: '#1a1d2e', border: '1px solid #374151', borderRadius: '8px',
+                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)', zIndex: 200,
+                    maxHeight: '200px', overflowY: 'auto',
+                }}>
+                    {filtered.length === 0 && (
+                        <div style={{ padding: '12px', textAlign: 'center', color: '#4b5563', fontSize: '12px' }}>Sin resultados</div>
+                    )}
+                    {filtered.map((o, i) => (
+                        <div
+                            key={o.value || `empty-${i}`}
+                            onClick={() => handleSelect(o.value)}
+                            style={{
+                                padding: '8px 12px', fontSize: '13px', cursor: 'pointer',
+                                color: o.value === value ? '#a5b4fc' : '#d1d5db',
+                                background: o.value === value ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                                borderBottom: i === filtered.length - 1 ? 'none' : '1px solid #1e2133',
+                                transition: 'background 0.1s',
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(99, 102, 241, 0.15)'}
+                            onMouseLeave={e => e.currentTarget.style.background = o.value === value ? 'rgba(99, 102, 241, 0.1)' : 'transparent'}
+                        >
+                            {o.label}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 export function GroupedSelect({ label, value, onChange, groups, style }: {
     label?: string; value: string; onChange: (v: string) => void;
     groups: { groupLabel: string; options: { value: string; label: string }[] }[];
