@@ -5,7 +5,8 @@ import {
     List, ListItem, ListItemText, Chip
 } from '@mui/material';
 import type { Machine } from '../../entities/performance/api/performanceApi';
-import { useGetMachineKPIsQuery } from '../../entities/performance/api/performanceApi';
+import { useGetLogsQuery } from '../../entities/performance/api/performanceApi';
+import { calculateKPIs } from './utils/kpiUtils';
 
 
 interface MachineDetailModalProps {
@@ -18,12 +19,24 @@ interface MachineDetailModalProps {
 
 
 export const MachineDetailModal: React.FC<MachineDetailModalProps> = ({ open, onClose, machine, onReportFailure, onSolve }) => {
-    const { data: kpis, isLoading } = useGetMachineKPIsQuery(
-        { id: machine?.id || '' }, 
+    // Default range: Last Month
+    const startDate = new Date(new Date().setMonth(new Date().getMonth() - 1));
+    const endDate = new Date();
+
+    const { data: logs, isLoading } = useGetLogsQuery(
+        { 
+            machineId: machine?.id || '', 
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString()
+        }, 
         { skip: !machine }
     );
 
     if (!machine) return null;
+
+    // Calculate KPIs locally in the Frontend
+    const kpis = logs ? calculateKPIs(logs, startDate, endDate, machine.id) : null;
+
 
     const getStatusColor = (status: string) => {
         switch (status) {

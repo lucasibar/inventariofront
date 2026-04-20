@@ -26,6 +26,8 @@ import UsersPage from './pages/UsersPage';
 import AdminMovementsPage from './pages/AdminMovementsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import RendimientoPage from './pages/RendimientoPage';
+import { HistorialRendimientoPage } from './pages/HistorialRendimientoPage';
+
 
 
 import './App.css';
@@ -75,6 +77,8 @@ function App() {
                 <Route path="/movimientos" element={<MovimientosPage />} />
                 <Route path="/tasks" element={<WorkspaceTasksPage />} />
                 <Route path="/rendimiento" element={<RendimientoPage />} />
+                <Route path="/rendimiento/historial" element={<HistorialRendimientoPage />} />
+
             </Route>
 
 

@@ -81,8 +81,31 @@ export const performanceApi = api.injectEndpoints({
             },
             providesTags: (result, error, { id }) => [{ type: 'Performance', id: 'KPI' }],
         }),
+        getLogs: builder.query<PerformanceLog[], { plantId?: string; machineId?: string; startDate?: string; endDate?: string }>({
+            query: (params) => ({
+                url: 'performance/logs',
+                params
+            }),
+            providesTags: ['Performance'],
+        }),
+        updateLog: builder.mutation<PerformanceLog, { id: string; observation?: string; failureType?: string }>({
+            query: ({ id, ...body }) => ({
+                url: `performance/logs/${id}`,
+                method: 'PATCH',
+                body,
+            }),
+            invalidatesTags: ['Performance'],
+        }),
+        deleteLog: builder.mutation<void, string>({
+            query: (id) => ({
+                url: `performance/logs/${id}`,
+                method: 'DELETE',
+            }),
+            invalidatesTags: ['Performance'],
+        }),
     }),
 });
+
 
 
 export const {
@@ -91,6 +114,10 @@ export const {
     useGetMachinesQuery,
     useGetMetricsQuery,
     useGetMachineKPIsQuery,
+    useGetLogsQuery,
+    useUpdateLogMutation,
+    useDeleteLogMutation,
     useUpdateMachineStatusMutation,
 } = performanceApi;
+
 

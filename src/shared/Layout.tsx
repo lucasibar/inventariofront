@@ -27,8 +27,10 @@ const navGroups = [
         icon: '⚙️',
         items: [
             { to: '/rendimiento', label: '📈 Rendimiento' },
+            { to: '/rendimiento/historial', label: '📜 Historial de Registros' },
         ]
     },
+
     {
         id: 'informes',
         label: 'Informes',
