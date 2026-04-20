@@ -104,6 +104,10 @@ export const stockApi = api.injectEndpoints({
             query: (id) => ({ url: `combos-compra/${id}`, method: 'DELETE' }),
             invalidatesTags: ['Dashboard'],
         }),
+        updateCombo: builder.mutation<any, { id: string; itemIds: string[] }>({
+            query: ({ id, ...body }) => ({ url: `combos-compra/${id}`, method: 'PATCH', body }),
+            invalidatesTags: ['Dashboard'],
+        }),
         deleteAllItemStock: builder.mutation<void, { itemId: string; fecha: string; observaciones?: string }>({
             query: ({ itemId, ...body }) => ({ url: `stock/item/${itemId}`, method: 'DELETE', body }),
             invalidatesTags: ['Stock'],
@@ -143,6 +147,7 @@ export const {
     useGetComboBreakdownQuery,
     useCreateComboMutation,
     useDeleteComboMutation,
+    useUpdateComboMutation,
     useDeleteAllItemStockMutation,
     useGetRecentMovementsQuery,
     useReverseMovementMutation,

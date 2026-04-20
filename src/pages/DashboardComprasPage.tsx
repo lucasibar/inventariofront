@@ -4,7 +4,8 @@ import {
     useGetCombosQuery, 
     useCreateComboMutation, 
     useDeleteComboMutation,
-    useGetComboBreakdownQuery
+    useGetComboBreakdownQuery,
+    useUpdateComboMutation
 } from '../features/stock/api/stock.api';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
 import { useGetItemsQuery } from '../features/items/api/items.api';
@@ -19,9 +20,11 @@ export default function DashboardComprasPage() {
     
     const [createCombo] = useCreateComboMutation();
     const [deleteCombo] = useDeleteComboMutation();
+    const [updateCombo] = useUpdateComboMutation();
 
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showBreakdownId, setShowBreakdownId] = useState<string | null>(null);
+    const [editComboId, setEditComboId] = useState<string | null>(null);
     
     // Create Combo State
     const [newCombo, setNewCombo] = useState({ title: '', supplierId: '', itemIds: [] as string[] });
@@ -99,6 +102,7 @@ export default function DashboardComprasPage() {
                                 </div>
                                 <ActionMenu options={[
                                     { label: 'Ver Detalle', icon: '🔍', onClick: () => setShowBreakdownId(combo.id) },
+                                    { label: 'Editar Materiales', icon: '✏️', onClick: () => setEditComboId(combo.id) },
                                     { label: 'Eliminar Combo', icon: '🗑️', color: '#ef4444', onClick: () => {
                                         if (window.confirm('¿Eliminar este combo?')) deleteCombo(combo.id);
                                     }}
@@ -111,7 +115,7 @@ export default function DashboardComprasPage() {
                             }}>
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     <span style={{ color: combo.deficit > 0 ? '#fca5a5' : '#a5b4fc', fontSize: '10px', fontWeight: 600 }}>STOCK TOTAL</span>
-                                    <span style={{ color: 'white', fontSize: '16px', fontWeight: 800 }}>{Number(combo.totalQtyPrincipal || 0).toLocaleString('es-AR', { maximumFractionDigits: 1 })} kg</span>
+                                    <span style={{ color: 'white', fontSize: '16px', fontWeight: 800 }}>{Number(combo.totalStock || 0).toLocaleString('es-AR', { maximumFractionDigits: 1 })} {combo.unitLabel || 'kg'}</span>
                                 </div>
                                 <div style={{ height: '30px', width: '1px', background: 'rgba(255,255,255,0.08)' }}></div>
                                 <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'right' }}>
@@ -267,6 +271,19 @@ export default function DashboardComprasPage() {
             {showBreakdownId && (
                 <BreakdownModal id={showBreakdownId} onClose={() => setShowBreakdownId(null)} />
             )}
+
+            {/* Edit Combo Materials Modal */}
+            {editComboId && (
+                <EditComboModal 
+                    combo={combos.find((c: any) => c.id === editComboId)} 
+                    items={items} 
+                    onClose={() => setEditComboId(null)} 
+                    onSave={async (itemIds: string[]) => {
+                        await updateCombo({ id: editComboId, itemIds });
+                        setEditComboId(null);
+                    }}
+                />
+            )}
         </div>
     );
 }
@@ -335,6 +352,100 @@ function BreakdownModal({ id, onClose }: { id: string, onClose: () => void }) {
                     <Btn variant="secondary" onClick={onClose} style={{ alignSelf: 'flex-end' }}>Cerrar Vista</Btn>
                 </div>
             )}
+        </Modal>
+    );
+}
+
+function EditComboModal({ combo, items, onClose, onSave }: { combo: any; items: any[]; onClose: () => void; onSave: (itemIds: string[]) => Promise<void> }) {
+    const [selectedIds, setSelectedIds] = useState<string[]>(combo?.itemIds || []);
+    const [search, setSearch] = useState('');
+    const [saving, setSaving] = useState(false);
+
+    if (!combo) return null;
+
+    const filteredItems = items.filter(i =>
+        i.descripcion.toLowerCase().includes(search.toLowerCase()) ||
+        i.codigoInterno.toLowerCase().includes(search.toLowerCase())
+    );
+
+    const handleSave = async () => {
+        setSaving(true);
+        await onSave(selectedIds);
+        setSaving(false);
+    };
+
+    // Separate into selected and unselected for better UX
+    const selectedItems = items.filter(i => selectedIds.includes(i.id));
+    const unselectedFiltered = filteredItems.filter(i => !selectedIds.includes(i.id));
+
+    return (
+        <Modal title={`Editar Materiales — ${combo.title}`} onClose={onClose}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {/* Current materials */}
+                <div>
+                    <label style={{ color: '#9ca3af', fontSize: '12px', fontWeight: 500, marginBottom: '8px', display: 'block' }}>
+                        Materiales en el combo ({selectedIds.length})
+                    </label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {selectedItems.length === 0 && <span style={{ color: '#4b5563', fontSize: '12px' }}>Ningún material seleccionado</span>}
+                        {selectedItems.map(item => (
+                            <span key={item.id} style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)',
+                                borderRadius: '6px', padding: '4px 10px', fontSize: '12px', color: '#a5b4fc'
+                            }}>
+                                {item.codigoInterno} — {item.descripcion}
+                                <button
+                                    onClick={() => setSelectedIds(prev => prev.filter(id => id !== item.id))}
+                                    style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', padding: 0, lineHeight: 1 }}
+                                    title="Quitar del combo"
+                                >✕</button>
+                            </span>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Search and add */}
+                <div>
+                    <label style={{ color: '#9ca3af', fontSize: '12px', fontWeight: 500, marginBottom: '8px', display: 'block' }}>Agregar materiales</label>
+                    <input
+                        type="text"
+                        className="search-mini"
+                        placeholder="Buscar por nombre o código..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                    />
+                    <div style={{ maxHeight: '200px', overflow: 'auto', background: '#0f1117', borderRadius: '8px', border: '1px solid #374151', padding: '8px' }}>
+                        {unselectedFiltered.map(item => (
+                            <div
+                                key={item.id}
+                                onClick={() => setSelectedIds(prev => [...prev, item.id])}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '10px', padding: '8px',
+                                    borderBottom: '1px solid #1e2133', cursor: 'pointer', color: '#d1d5db', fontSize: '13px',
+                                    borderRadius: '4px', transition: 'background 0.15s'
+                                }}
+                                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99, 102, 241, 0.1)')}
+                                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                            >
+                                <span style={{ color: '#10b981', fontSize: '16px' }}>+</span>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: 500 }}>{item.descripcion}</div>
+                                    <div style={{ fontSize: '11px', color: '#6b7280' }}>{item.codigoInterno} • {item.unidadPrincipal}</div>
+                                </div>
+                            </div>
+                        ))}
+                        {unselectedFiltered.length === 0 && <p style={{ color: '#4b5563', textAlign: 'center', padding: '10px', fontSize: '12px' }}>No se encontraron materiales.</p>}
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                    <Btn variant="secondary" onClick={onClose}>Cancelar</Btn>
+                    <Btn onClick={handleSave} disabled={saving || selectedIds.length === 0}>
+                        {saving ? 'Guardando...' : 'Guardar Cambios'}
+                    </Btn>
+                </div>
+            </div>
         </Modal>
     );
 }
