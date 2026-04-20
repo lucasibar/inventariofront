@@ -1,5 +1,5 @@
 
-import { useForm, FormProvider, Controller } from 'react-hook-form';
+import { useForm, FormProvider, Controller, type SubmitHandler } from 'react-hook-form';
 import { Box, Button, TextField, Typography, MenuItem, Divider, IconButton, Tooltip, Autocomplete } from '@mui/material';
 import { useCreateRemitoMutation, useGetDepotsQuery, useLazySearchPartnersQuery } from '../api/remito.api';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
@@ -40,7 +40,7 @@ export const CreateRemitoForm = () => {
 
     const selectedSupplierId = methods.watch('supplierId');
 
-    const onSubmit = async (data: CreateRemitoDto) => {
+    const onSubmit: SubmitHandler<CreateRemitoDto> = async (data) => {
         try {
             if (!data.depotId) {
                 alert('Debe seleccionar un depósito');

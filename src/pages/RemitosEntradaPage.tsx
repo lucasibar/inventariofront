@@ -6,7 +6,7 @@ import {
 } from '../features/remitos/api/remito.api';
 import { CreateRemitoForm } from '../features/remitos/ui/CreateRemitoForm';
 import { RemitoDetailModal } from '../features/remitos/ui/RemitoDetailModal';
-import { PageHeader, Card, Btn, Table, Badge, Spinner } from './common/ui';
+import { PageHeader, Card, Btn, Table, Badge } from './common/ui';
 
 export default function RemitosEntradaPage() {
     const { data: remitos = [], isLoading, isError } = useGetRemitosEntradaQuery();

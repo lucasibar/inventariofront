@@ -29,6 +29,9 @@ export default function RemitosSalidaPage() {
     const [previewData, setPreviewData] = useState<any>(null);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
+    const [clientId, setClientId] = useState('');
+    const [newClient, setNewClient] = useState(false);
+    const [clientName, setClientName] = useState('');
     const [selectedRemito, setSelectedRemito] = useState<any>(null);
     const [showDetail, setShowDetail] = useState(false);
     const [triggerGetDetail] = useLazyGetRemitoSalidaQuery();

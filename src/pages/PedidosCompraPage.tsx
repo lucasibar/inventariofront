@@ -7,7 +7,7 @@ import {
 } from '../features/purchase-orders/api/purchase-orders.api';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
 import { useGetItemsQuery } from '../features/items/api/items.api';
-import { PageHeader, Card, Btn, Input, Select, SearchSelect, Modal, Table, Badge, Spinner } from './common/ui';
+import { PageHeader, Card, Btn, Input, SearchSelect, Modal, Table, Badge, Spinner } from './common/ui';
 
 export default function PedidosCompraPage() {
     const { data: orders = [], isLoading } = useGetPurchaseOrdersQuery();

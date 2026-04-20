@@ -9,6 +9,7 @@ export interface CreateRemitoDto {
     supplierId?: string;
     supplierName?: string;
     taxId?: string; // Moving CUIT here
+    observaciones?: string;
     lines: RemitoLineDto[];
 }
 

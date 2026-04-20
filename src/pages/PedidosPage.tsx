@@ -1,6 +1,11 @@
+import { useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '../entities/auth/model/authSlice';
-import { PageHeader, Card, Btn, Input, Select, SearchSelect, Modal, Table, Badge, Spinner } from './common/ui';
+import { useGetOrdersQuery, useCreateOrderMutation, useDeleteOrderMutation } from '../features/orders/api/orders.api';
+import { useGetPartnersQuery } from '../features/partners/api/partners.api';
+import { useGetItemsQuery } from '../features/items/api/items.api';
+import { useGetAlertsQuery } from '../features/stock/api/stock.api';
+import { PageHeader, Card, Btn, Input, SearchSelect, Modal, Table, Badge, Spinner } from './common/ui';
 
 export default function PedidosPage() {
     const { data: orders = [], isLoading } = useGetOrdersQuery();
@@ -47,7 +52,7 @@ export default function PedidosPage() {
         try {
             const dto: any = {
                 fecha, observaciones,
-                lines: lines.filter(l => l.itemId).map(l => ({ itemId: l.itemId, kilosPedidos: Number(l.kilosPedidos) })),
+                lines: lines.filter((l: any) => l.itemId).map((l: any) => ({ itemId: l.itemId, kilosPedidos: Number(l.kilosPedidos) })),
             };
             if (newClient) dto.clientName = clientName;
             else dto.clientId = clientId;
@@ -76,7 +81,7 @@ export default function PedidosPage() {
 
             {isLoading ? <Spinner /> : grouped.length === 0 ? (
                 <p style={{ color: '#4b5563', textAlign: 'center', padding: '32px', fontSize: '14px' }}>Todavía no hay datos cargados</p>
-            ) : grouped.map(group => (
+            ) : grouped.map((group: any) => (
                 <div key={group.clientName} style={{ marginBottom: '24px' }}>
                     <h3 style={{ color: '#a5b4fc', fontSize: '14px', fontWeight: 700, margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         🤝 {group.clientName}
@@ -156,12 +161,12 @@ export default function PedidosPage() {
                             <label style={{ color: '#9ca3af', fontSize: '12px' }}>Materiales</label>
                             <Btn small onClick={() => setLines(p => [...p, { itemId: '', kilosPedidos: '' }])}>+ Material</Btn>
                         </div>
-                        {lines.map((l, i) => (
+                        {lines.map((l: any, i: number) => (
                             <div key={i} style={{ display: 'grid', gridTemplateColumns: '3fr 1fr auto', gap: '8px', marginBottom: '8px', alignItems: 'end' }}>
-                                <SearchSelect label="Material" value={l.itemId} onChange={v => setLines(p => p.map((x, j) => j === i ? { ...x, itemId: v } : x))}
+                                <SearchSelect label="Material" value={l.itemId} onChange={v => setLines(p => p.map((x: any, j: number) => j === i ? { ...x, itemId: v } : x))}
                                     options={[{ value: '', label: 'Seleccionar...' }, ...items.map((it: any) => ({ value: it.id, label: `${it.codigoInterno} — ${it.descripcion}` }))]} placeholder="Buscar material..." />
-                                <Input label="Kilos" type="number" value={l.kilosPedidos} onChange={v => setLines(p => p.map((x, j) => j === i ? { ...x, kilosPedidos: v } : x))} />
-                                <Btn small variant="danger" onClick={() => setLines(p => p.filter((_, j) => j !== i))} style={{ alignSelf: 'flex-end' }}>✕</Btn>
+                                <Input label="Kilos" type="number" value={l.kilosPedidos} onChange={v => setLines(p => p.map((x: any, j: number) => j === i ? { ...x, kilosPedidos: v } : x))} />
+                                <Btn small variant="danger" onClick={() => setLines(p => p.filter((_: any, j: number) => j !== i))} style={{ alignSelf: 'flex-end' }}>✕</Btn>
                             </div>
                         ))}
                     </div>
