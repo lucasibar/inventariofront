@@ -167,7 +167,7 @@ export default function StockPage() {
         } catch (e: any) { alert(e?.data?.message || 'Error al eliminar línea de stock'); }
     };
 
-    const { data: rawStock = [], isFetching, isLoading } = useGetStockQuery({ depotId: depotId || undefined, limit: 1000 }, { skip: !depotId });
+    const { data: rawStock = [], isFetching, isLoading } = useGetStockQuery({ depotId: depotId || undefined }, { skip: !depotId });
 
     const { groupedData, generalMetrics } = useMemo(() => {
         const general = { kilos: 0, units: 0, positions: new Set<string>() };
