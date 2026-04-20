@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
     Dialog, DialogTitle, DialogContent, DialogActions, 
-    Button, Typography, Box, Grid, Divider 
+    Button, Typography, Box, Divider 
 } from '@mui/material';
 import type { Machine } from '../../entities/performance/api/performanceApi';
 
