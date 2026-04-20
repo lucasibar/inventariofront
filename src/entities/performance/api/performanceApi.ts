@@ -19,9 +19,25 @@ export interface Machine {
     status: 'SOLVED' | 'ELECTRICAL' | 'MECHANICAL' | 'SUCTION' | 'YARN_SHORTAGE';
     lastObservation?: string;
     lastChangeBy?: string;
-    plantId: string;
     typeId: string;
 }
+
+export interface PerformanceLog {
+    id: string;
+    machineId: string;
+    fromStatus: string;
+    toStatus: string;
+    failureType?: string;
+    observation?: string;
+    generatedBy: string;
+    timestamp: string;
+    machine?: {
+        number: number;
+        codigoInterno: string;
+        plant?: { name: string };
+    };
+}
+
 
 export interface Metrics {
     total: number;
@@ -79,7 +95,8 @@ export const performanceApi = api.injectEndpoints({
                 const queryStr = params.toString();
                 return queryStr ? `${url}?${queryStr}` : url;
             },
-            providesTags: (result, error, { id }) => [{ type: 'Performance', id: 'KPI' }],
+            providesTags: (_res, _err, { id }) => [{ type: 'Performance', id: 'KPI' }],
+
         }),
         getLogs: builder.query<PerformanceLog[], { plantId?: string; machineId?: string; startDate?: string; endDate?: string }>({
             query: (params) => ({

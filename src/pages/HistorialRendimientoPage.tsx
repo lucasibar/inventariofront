@@ -92,8 +92,9 @@ export const HistorialRendimientoPage: React.FC = () => {
                     sx={{ minWidth: 200 }}
                     size="small"
                 >
-                    {plants?.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}
+                    {plants ? plants.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>) : <MenuItem value="" disabled>Cargando...</MenuItem>}
                 </TextField>
+
 
                 <TextField
                     label="Desde"
