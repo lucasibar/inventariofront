@@ -30,6 +30,20 @@ export interface Metrics {
     byStatus: { status: string; count: string }[];
 }
 
+export interface MachineKPI {
+    uptime: string;
+    downtime: string;
+    availability: string;
+    mtbf: string;
+    mttr: string;
+    mttf: string;
+    failures: number;
+    repairs: number;
+    oee: string;
+    history: any[];
+}
+
+
 export const performanceApi = api.injectEndpoints({
     endpoints: (builder) => ({
         getPlants: builder.query<Plant[], void>({
@@ -56,13 +70,27 @@ export const performanceApi = api.injectEndpoints({
             }),
             invalidatesTags: ['Performance'],
         }),
+        getMachineKPIs: builder.query<MachineKPI, { id: string; startDate?: string; endDate?: string }>({
+            query: ({ id, startDate, endDate }) => {
+                let url = `performance/machines/${id}/metrics`;
+                const params = new URLSearchParams();
+                if (startDate) params.append('startDate', startDate);
+                if (endDate) params.append('endDate', endDate);
+                const queryStr = params.toString();
+                return queryStr ? `${url}?${queryStr}` : url;
+            },
+            providesTags: (result, error, { id }) => [{ type: 'Performance', id: 'KPI' }],
+        }),
     }),
 });
+
 
 export const {
     useGetPlantsQuery,
     useGetMachineTypesQuery,
     useGetMachinesQuery,
     useGetMetricsQuery,
+    useGetMachineKPIsQuery,
     useUpdateMachineStatusMutation,
 } = performanceApi;
+
