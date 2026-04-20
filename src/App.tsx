@@ -25,6 +25,8 @@ import StockPage from './pages/StockPage';
 import UsersPage from './pages/UsersPage';
 import AdminMovementsPage from './pages/AdminMovementsPage';
 import NotificationsPage from './pages/NotificationsPage';
+import RendimientoPage from './pages/RendimientoPage';
+
 
 import './App.css';
 
@@ -72,7 +74,9 @@ function App() {
                 <Route path="/stock" element={<StockPage />} />
                 <Route path="/movimientos" element={<MovimientosPage />} />
                 <Route path="/tasks" element={<WorkspaceTasksPage />} />
+                <Route path="/rendimiento" element={<RendimientoPage />} />
             </Route>
+
 
             {/* Rutas compartidas o especiales */}
             <Route path="/deposito" element={<DepositoPage />} />

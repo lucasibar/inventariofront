@@ -23,7 +23,9 @@ const navItems = [
     { to: '/users', label: '👥 Usuarios' },
     { to: '/tasks', label: '✅ Tareas' },
     { to: '/admin/movements', label: '🛡️ Auditoría' },
+    { to: '/rendimiento', label: '⚙️ Rendimiento' },
 ];
+
 
 const navStyle = (isActive: boolean, isMobile: boolean): React.CSSProperties => ({
     display: 'flex', alignItems: 'center', gap: '12px',
@@ -66,7 +68,8 @@ export default function Layout() {
 
     const filteredNavItems = navItems.filter(item => {
         if (isAdmin) return true;
-        if (isOperario) return ['/movimientos', '/stock', '/deposito/auditoria-picking', '/remitos-salida', '/tasks', '/deposito'].includes(item.to);
+        if (isOperario) return ['/movimientos', '/stock', '/deposito/auditoria-picking', '/remitos-salida', '/tasks', '/deposito', '/rendimiento'].includes(item.to);
+
         if (isCompras) return ['/dashboard', '/remitos-entrada', '/items', '/dashboard/capacity', '/dashboard/volumes', '/socios', '/pedidos-compra'].includes(item.to);
         return false;
     });
