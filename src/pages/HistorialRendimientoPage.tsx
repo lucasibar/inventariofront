@@ -15,6 +15,8 @@ import {
 } from '../entities/performance/api/performanceApi';
 import { useSelector } from 'react-redux';
 import { selectIsAdmin } from '../entities/auth/model/authSlice';
+import { PageHeader, Card, Btn, Select } from './common/ui';
+
 
 export const HistorialRendimientoPage: React.FC = () => {
     const isAdmin = useSelector(selectIsAdmin);
@@ -26,17 +28,52 @@ export const HistorialRendimientoPage: React.FC = () => {
 
     // Data Queries
     const { data: plants } = useGetPlantsQuery();
-    const { data: logs, isLoading, refetch } = useGetLogsQuery({
+    const { data: logs, isLoading, isFetching, refetch } = useGetLogsQuery({
         plantId: selectedPlantId,
         startDate: startDate ? new Date(startDate).toISOString() : undefined,
-        endDate: endDate ? new Date(endDate).toISOString() : undefined,
+        endDate: endDate ? new Date(new Date(endDate).setHours(23, 59, 59, 999)).toISOString() : undefined,
     }, { skip: !selectedPlantId });
+
 
     // Mutations
     const [updateLog] = useUpdateLogMutation();
     const [deleteLog] = useDeleteLogMutation();
 
+    const plantOptions = React.useMemo(() => 
+        (plants || []).map(p => ({ value: p.id, label: p.name })), 
+    [plants]);
+
+    const handleExport = () => {
+        if (!logs || logs.length === 0) return;
+        
+        const headers = ['Fecha', 'Maquina', 'Planta', 'Estado Ant', 'Estado Nuevo', 'Falla', 'Responsable', 'Observacion'];
+        const csvContent = [
+            headers.join(','),
+            ...logs.map(log => [
+                new Date(log.timestamp).toLocaleString(),
+                log.machine?.number,
+                log.machine?.plant?.name || 'N/A',
+                log.fromStatus,
+                log.toStatus,
+                log.failureType || 'N/A',
+                log.generatedBy,
+                `"${(log.observation || '').replace(/"/g, '""')}"`
+            ].join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `historial_rendimiento_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     // UI State
+
     const [editModal, setEditModal] = useState<{ open: boolean; logId: string; observation: string; failureType: string }>({
         open: false, logId: '', observation: '', failureType: ''
     });
@@ -66,56 +103,71 @@ export const HistorialRendimientoPage: React.FC = () => {
     };
 
     return (
-        <Box sx={{ p: 4, bgcolor: '#0f111a', minHeight: '100vh', color: 'white' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-                <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 800, mb: 1 }}>Historial de Producción</Typography>
-                    <Typography variant="body2" color="text.secondary">Auditoría y gestión de eventos de máquinas</Typography>
-                </Box>
-                <Button 
-                    startIcon={<Refresh />} 
-                    variant="outlined" 
-                    onClick={() => refetch()}
-                    sx={{ color: 'rgba(255,255,255,0.7)', borderColor: 'rgba(255,255,255,0.1)' }}
+        <Box sx={{ p: 3, maxWidth: '1400px', margin: '0 auto', minHeight: '100vh', color: 'white' }}>
+            <PageHeader 
+                title="Historial de Producción" 
+                subtitle="Auditoría y control de eventos de maquinaria"
+            >
+                <Btn 
+                    variant="secondary" 
+                    onClick={handleExport}
+                    disabled={!logs || logs.length === 0}
+                    style={{ background: 'rgba(99,102,241,0.1)', color: '#a5b4fc', border: '1px solid #6366f144' }}
                 >
-                    Refrescar
-                </Button>
-            </Box>
+                    📥 Exportar CSV
+                </Btn>
+                <Btn 
+                    variant="secondary" 
+                    onClick={() => selectedPlantId && refetch()} 
+                    disabled={!selectedPlantId || isLoading || isFetching}
+                    style={{ padding: '8px 12px' }}
+                >
+                    🔄 Refrescar
+                </Btn>
+
+            </PageHeader>
 
             {/* Filters Bar */}
-            <Paper sx={{ p: 3, mb: 4, bgcolor: '#1a1d2e', borderRadius: '16px', display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-                <TextField
-                    select
-                    label="Planta"
-                    value={selectedPlantId}
-                    onChange={(e) => setSelectedPlantId(e.target.value)}
-                    sx={{ minWidth: 200 }}
-                    size="small"
-                >
-                    {plants ? plants.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>) : <MenuItem value="" disabled>Cargando...</MenuItem>}
-                </TextField>
+            <Card style={{ p: 3, mb: 4, display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end', padding: '20px' }}>
+                <Box sx={{ minWidth: '200px' }}>
+                    <Select 
+                        label="Planta"
+                        value={selectedPlantId}
+                        onChange={setSelectedPlantId}
+                        options={plantOptions}
+                    />
+                </Box>
+                
+                <Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>Desde</Typography>
+                    <input 
+                        type="date" 
+                        value={startDate} 
+                        onChange={(e) => setStartDate(e.target.value)}
+                        style={{ background: '#0f1117', border: '1px solid #374151', padding: '8px', color: 'white', borderRadius: '8px', fontSize: '13px' }}
+                    />
+                </Box>
 
+                <Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>Hasta</Typography>
+                    <input 
+                        type="date" 
+                        value={endDate} 
+                        onChange={(e) => setEndDate(e.target.value)}
+                        style={{ background: '#0f1117', border: '1px solid #374151', padding: '8px', color: 'white', borderRadius: '8px', fontSize: '13px' }}
+                    />
+                </Box>
 
-                <TextField
-                    label="Desde"
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    size="small"
-                    InputLabelProps={{ shrink: true }}
-                />
+                <Box sx={{ ml: 'auto' }}>
+                    <Btn variant="secondary" onClick={() => {
+                        setStartDate(new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0]);
+                        setEndDate(new Date().toISOString().split('T')[0]);
+                    }} style={{ padding: '8px 15px' }}>
+                        Hoy
+                    </Btn>
+                </Box>
+            </Card>
 
-                <TextField
-                    label="Hasta"
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    size="small"
-                    InputLabelProps={{ shrink: true }}
-                />
-
-                <IconButton color="primary"><FilterList /></IconButton>
-            </Paper>
 
             {/* Logs Table */}
             <TableContainer component={Paper} sx={{ bgcolor: '#1a1d2e', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -139,7 +191,11 @@ export const HistorialRendimientoPage: React.FC = () => {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {logs?.map((log) => (
+                            {(isLoading || isFetching) ? (
+                                <TableRow><TableCell colSpan={7} align="center"><CircularProgress size={24} sx={{ my: 4 }} /></TableCell></TableRow>
+                            ) : (logs?.length === 0) ? (
+                                <TableRow><TableCell colSpan={7} align="center"><Typography sx={{ my: 4, color: 'text.secondary' }}>No se encontraron registros para este rango.</Typography></TableCell></TableRow>
+                            ) : logs?.map((log) => (
                                 <TableRow key={log.id} sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' } }}>
                                     <TableCell sx={{ color: 'white', fontWeight: 700 }}>
                                         #{log.machine?.number} ({log.machine?.codigoInterno})

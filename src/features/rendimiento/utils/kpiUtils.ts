@@ -1,4 +1,6 @@
-import { PerformanceLog, MachineKPI as MachineKPIs, Machine } from '../api/performanceApi';
+import type { PerformanceLog, MachineKPI as MachineKPIs, Machine } from '../../../entities/performance/api/performanceApi';
+
+
 
 type MachineStatus = Machine['status'];
 
@@ -13,9 +15,11 @@ export const calculateKPIs = (logs: PerformanceLog[], startDate: Date, endDate: 
     const sortedLogs = [...logs].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     
     // We use machine creation date or start date as the base
-    const machineCreatedDate = new Date(machineCreatedAt);
+    const parsedCreatedDate = new Date(machineCreatedAt);
+    const machineCreatedDate = isNaN(parsedCreatedDate.getTime()) ? startDate : parsedCreatedDate;
     const effectiveStart = startDate > machineCreatedDate ? startDate : machineCreatedDate;
     const effectiveEnd = endDate;
+
     const totalPeriodMs = effectiveEnd.getTime() - effectiveStart.getTime();
 
     if (totalPeriodMs <= 0) {
@@ -84,6 +88,94 @@ export const calculateKPIs = (logs: PerformanceLog[], startDate: Date, endDate: 
     };
 };
 
+export const calculatePlantKPIs = (logs: PerformanceLog[], totalMachines: number, startDate: Date, endDate: Date): MachineKPIs => {
+    if (totalMachines <= 0) return emptyKPIs();
+    
+    const logsByMachine: Record<string, PerformanceLog[]> = {};
+    logs.forEach(log => {
+        if (!logsByMachine[log.machineId]) logsByMachine[log.machineId] = [];
+        logsByMachine[log.machineId].push(log);
+    });
+
+    const totalPeriodMs = endDate.getTime() - startDate.getTime();
+    if (totalPeriodMs <= 0) return emptyKPIs();
+
+    let totalUptimeMs = 0;
+    let totalDowntimeMs = 0;
+    let totalFailures = 0;
+    let totalRepairs = 0;
+    let totalReparationTimeMs = 0;
+
+    // For each machine index (up to totalMachines)
+    // We assume machines without logs were SOLVED (100% uptime)
+    // For machines WITH logs, we calculate their specific uptime/downtime
+    
+    // 1. Calculate for machines with logs
+    Object.values(logsByMachine).forEach(mLogs => {
+        const kpis = calculateKPIs(mLogs, startDate, endDate, startDate.toISOString());
+        // We need the raw MS, so we might need a version of calculateKPIs that returns them
+        // or just re-calculate here for simplicity
+        
+        // --- Re-calculation block for plant-wide aggregation ---
+        let mUptime = 0;
+        let mDowntime = 0;
+        let mFailures = 0;
+        let mRepairs = 0;
+        let mRepairTime = 0;
+        
+        const sorted = [...mLogs].sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        let currentStatus = 'SOLVED';
+        let lastTime = startDate.getTime();
+        
+        for (const log of sorted) {
+            const time = new Date(log.timestamp).getTime();
+            if (time < startDate.getTime()) { currentStatus = log.toStatus; continue; }
+            if (time > endDate.getTime()) break;
+            
+            const duration = time - lastTime;
+            if (currentStatus === 'SOLVED') mUptime += duration;
+            else {
+                mDowntime += duration;
+                if (log.toStatus === 'SOLVED') { mRepairs++; mRepairTime += duration; }
+            }
+            if (currentStatus === 'SOLVED' && log.toStatus !== 'SOLVED') mFailures++;
+            currentStatus = log.toStatus;
+            lastTime = time;
+        }
+        const finalGap = endDate.getTime() - lastTime;
+        if (currentStatus === 'SOLVED') mUptime += finalGap;
+        else mDowntime += finalGap;
+        // --- End re-calculation ---
+
+        totalUptimeMs += mUptime;
+        totalDowntimeMs += mDowntime;
+        totalFailures += mFailures;
+        totalRepairs += mRepairs;
+        totalReparationTimeMs += mRepairTime;
+    });
+
+    // 2. Add 100% uptime for machines without logs
+    const machinesWithLogs = Object.keys(logsByMachine).length;
+    const machinesWithoutLogs = Math.max(0, totalMachines - machinesWithLogs);
+    totalUptimeMs += machinesWithoutLogs * totalPeriodMs;
+
+    const totalPossibleMs = totalMachines * totalPeriodMs;
+    const globalAvailability = (totalUptimeMs / totalPossibleMs) * 100;
+    
+    return {
+        uptime: formatDuration(totalUptimeMs),
+        downtime: formatDuration(totalDowntimeMs),
+        availability: globalAvailability.toFixed(2) + '%',
+        mtbf: formatDuration(totalFailures > 0 ? totalUptimeMs / totalFailures : totalUptimeMs),
+        mttr: formatDuration(totalRepairs > 0 ? totalReparationTimeMs / totalRepairs : (totalDowntimeMs > 0 ? totalDowntimeMs : 0)),
+        mttf: formatDuration(totalFailures > 0 ? totalUptimeMs / totalFailures : totalUptimeMs),
+        failures: totalFailures,
+        repairs: totalRepairs,
+        oee: (globalAvailability * 0.9 * 0.99).toFixed(2) + '%',
+        history: logs.slice(-10).reverse()
+    };
+};
+
 const emptyKPIs = (): MachineKPIs => ({
     uptime: '0s', downtime: '0s', availability: '100%', 
     mtbf: '0s', mttr: '0s', mttf: '0s', failures: 0, repairs: 0, 
@@ -102,3 +194,4 @@ export const formatDuration = (ms: number): string => {
     if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
     return `${seconds}s`;
 };
+

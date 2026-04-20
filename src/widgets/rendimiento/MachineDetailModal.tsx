@@ -16,27 +16,36 @@ interface MachineDetailModalProps {
     machine: Machine | null;
     onReportFailure: (machine: Machine) => void;
     onSolve: (machine: Machine) => void;
+    globalStartDate: string;
+    globalEndDate: string;
 }
 
 
-export const MachineDetailModal: React.FC<MachineDetailModalProps> = ({ open, onClose, machine, onReportFailure, onSolve }) => {
-    // Default range: Last Month
-    const startDate = new Date(new Date().setMonth(new Date().getMonth() - 1));
-    const endDate = new Date();
-
+export const MachineDetailModal: React.FC<MachineDetailModalProps> = ({ 
+    open, onClose, machine, onReportFailure, onSolve, globalStartDate, globalEndDate 
+}) => {
+    
     const { data: logs, isLoading } = useGetLogsQuery(
         { 
             machineId: machine?.id || '', 
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString()
+            startDate: new Date(globalStartDate).toISOString(),
+            endDate: new Date(new Date(globalEndDate).setHours(23, 59, 59, 999)).toISOString()
         }, 
-        { skip: !machine }
+        { skip: !machine || !open }
     );
+
+
+
+    const kpis = React.useMemo(() => {
+        if (!logs || !machine) return null;
+        const start = new Date(globalStartDate);
+        const end = new Date(new Date(globalEndDate).setHours(23, 59, 59, 999));
+        return calculateKPIs(logs, start, end, machine.createdAt || machine.id);
+    }, [logs, globalStartDate, globalEndDate, machine?.createdAt, machine?.id]);
 
     if (!machine) return null;
 
-    // Calculate KPIs locally in the Frontend
-    const kpis = logs ? calculateKPIs(logs, startDate, endDate, machine.id) : null;
+
 
 
     const getStatusColor = (status: string) => {
@@ -44,6 +53,8 @@ export const MachineDetailModal: React.FC<MachineDetailModalProps> = ({ open, on
             case 'SOLVED': return '#10b981';
             case 'MECHANICAL': return '#ef4444';
             case 'ELECTRICAL': return '#f59e0b';
+            case 'SUCTION': return '#8b5cf6';
+            case 'YARN_SHORTAGE': return '#eab308';
             default: return '#6366f1';
         }
     };
@@ -58,8 +69,12 @@ export const MachineDetailModal: React.FC<MachineDetailModalProps> = ({ open, on
                 alignItems: 'center'
             }}>
                 <Box>
-                    <Typography variant="h5" color="white" sx={{ fontWeight: 800 }}>MÁQUINA {machine.number}</Typography>
-                    <Typography variant="caption" color="text.secondary">ID: {machine.id}</Typography>
+                    <Typography variant="h5" color="white" sx={{ fontWeight: 800 }}>
+                        {machine.nombre || `MÁQUINA ${machine.number}`}
+                    </Typography>
+                    <Typography variant="body2" color="primary" sx={{ fontWeight: 600 }}>
+                        CÓDIGO: {machine.codigoInterno}
+                    </Typography>
                 </Box>
                 <Chip 
                     label={machine.status} 
@@ -78,7 +93,7 @@ export const MachineDetailModal: React.FC<MachineDetailModalProps> = ({ open, on
                     {/* Main Metrics Area */}
                     <Box>
                         <Typography variant="subtitle2" color="primary" sx={{ mb: 2, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>
-                            Indicadores Clave (KPIs) - Último Mes
+                            Métricas del Periodo Seleccionado
                         </Typography>
 
                         {isLoading ? (
@@ -86,13 +101,13 @@ export const MachineDetailModal: React.FC<MachineDetailModalProps> = ({ open, on
                         ) : (
                             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                                 <MetricCard label="Disponibilidad" value={kpis?.availability || '0%'} color="#34d399" />
-                                <MetricCard label="OEE (Calculado)" value={kpis?.oee || '0%'} color="#60a5fa" subLabel="Disponibilidad x Rendimiento x Calidad" />
-                                <MetricCard label="MTBF" value={kpis?.mtbf || '0s'} color="#818cf8" subLabel="Tiempo entre fallas" />
-                                <MetricCard label="MTTR" value={kpis?.mttr || '0s'} color="#f87171" subLabel="Tiempo de reparación" />
-                                <MetricCard label="MTTF" value={kpis?.mttf || '0s'} color="#fbbf24" subLabel="Tiempo hasta falla" />
+                                <MetricCard label="OEE (Calculado)" value={kpis?.oee || '0%'} color="#60a5fa" />
+                                <MetricCard label="MTBF" value={kpis?.mtbf || '0s'} color="#818cf8" />
+                                <MetricCard label="MTTR" value={kpis?.mttr || '0s'} color="#f87171" />
                                 <MetricCard label="Fallas Totales" value={kpis?.failures.toString() || '0'} color="#94a3b8" />
                             </Box>
                         )}
+
 
                         <Box sx={{ mt: 4 }}>
                             <Typography variant="subtitle2" color="primary" sx={{ mb: 1, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>

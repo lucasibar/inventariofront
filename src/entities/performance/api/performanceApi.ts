@@ -19,8 +19,11 @@ export interface Machine {
     status: 'SOLVED' | 'ELECTRICAL' | 'MECHANICAL' | 'SUCTION' | 'YARN_SHORTAGE';
     lastObservation?: string;
     lastChangeBy?: string;
+    plantId: string;
     typeId: string;
+    createdAt: string;
 }
+
 
 export interface PerformanceLog {
     id: string;
@@ -84,8 +87,9 @@ export const performanceApi = api.injectEndpoints({
                 method: 'POST',
                 body,
             }),
-            invalidatesTags: ['Performance'],
+            invalidatesTags: ['Performance', 'Machine'],
         }),
+
         getMachineKPIs: builder.query<MachineKPI, { id: string; startDate?: string; endDate?: string }>({
             query: ({ id, startDate, endDate }) => {
                 let url = `performance/machines/${id}/metrics`;

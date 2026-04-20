@@ -33,53 +33,84 @@ const getStatusLabel = (status: string) => {
 export const MachineCard: React.FC<MachineCardProps> = ({ machine, onClick }) => {
     const color = getStatusColor(machine.status);
     const isFailed = machine.status !== 'SOLVED';
+    
+    // Status duration
+    const [timeInStatus, setTimeInStatus] = React.useState('');
+    
+    React.useEffect(() => {
+        const updateTime = () => {
+            const start = new Date(machine.updatedAt).getTime();
+            const now = new Date().getTime();
+            const diff = now - start;
+            
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(minutes / 60);
+            
+            if (hours > 0) setTimeInStatus(`${hours}h ${minutes % 60}m`);
+            else setTimeInStatus(`${minutes}m`);
+        };
+        
+        updateTime();
+        const interval = setInterval(updateTime, 60000);
+        return () => clearInterval(interval);
+    }, [machine.updatedAt]);
 
     return (
         <Tooltip title={`${getStatusLabel(machine.status)}${machine.lastObservation ? `: ${machine.lastObservation}` : ''}`}>
-            <Paper
-                elevation={3}
-                onClick={() => onClick(machine)}
-                sx={{
-                    width: '60px',
-                    height: '60px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    bgcolor: isFailed ? color : 'rgba(16, 185, 129, 0.1)',
-                    border: `1px solid ${color}`,
-                    transition: 'all 0.2s ease-in-out',
-                    '&:hover': {
-                        transform: 'scale(1.05)',
-                        boxShadow: `0 0 15px ${color}`,
-                        bgcolor: isFailed ? color : 'rgba(16, 185, 129, 0.2)',
-                    },
-                    borderRadius: '8px',
-                    position: 'relative'
-                }}
-            >
-                <Typography 
-                    variant="h6" 
-                    sx={{ 
-                        color: isFailed ? '#fff' : color, 
-                        fontWeight: 'bold',
-                        fontSize: '1.1rem'
+            <Box sx={{ position: 'relative' }}>
+                <Paper
+                    elevation={3}
+                    onClick={() => onClick(machine)}
+                    sx={{
+                        width: '65px',
+                        height: '65px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        bgcolor: isFailed ? color : 'rgba(16, 185, 129, 0.05)',
+                        border: `1px solid ${isFailed ? color : color + '44'}`,
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        position: 'relative',
+                        zIndex: 2,
+                        '&:hover': {
+                            transform: 'translateY(-4px) scale(1.1)',
+                            boxShadow: `0 8px 15px ${isFailed ? color + '66' : 'rgba(0,0,0,0.3)'}`,
+                            bgcolor: isFailed ? color : 'rgba(16, 185, 129, 0.15)',
+                        },
+                        animation: isFailed ? 'pulse 2s infinite' : 'none',
+                        '@keyframes pulse': {
+                            '0%': { boxShadow: `0 0 0 0 ${color}66` },
+                            '70%': { boxShadow: `0 0 0 10px ${color}00` },
+                            '100%': { boxShadow: `0 0 0 0 ${color}00` }
+                        },
+                        borderRadius: '12px',
                     }}
                 >
-                    {machine.number}
-                </Typography>
-                
-                {isFailed && (
-                   <Box sx={{ 
-                       width: '6px', 
-                       height: '6px', 
-                       bgcolor: '#fff', 
-                       borderRadius: '50%', 
-                       mt: 0.5 
-                   }} />
-                )}
-            </Paper>
+                    <Typography 
+                        variant="h6" 
+                        sx={{ 
+                            color: isFailed ? '#fff' : color, 
+                            fontWeight: 900,
+                            fontSize: '1.2rem',
+                            lineHeight: 1
+                        }}
+                    >
+                        {machine.number}
+                    </Typography>
+                    
+                    <Typography variant="caption" sx={{ 
+                        fontSize: '9px', 
+                        mt: 0.5, 
+                        color: isFailed ? 'rgba(255,255,255,0.8)' : 'text.secondary',
+                        fontWeight: 600
+                    }}>
+                        {timeInStatus}
+                    </Typography>
+                </Paper>
+            </Box>
         </Tooltip>
     );
 };
+
