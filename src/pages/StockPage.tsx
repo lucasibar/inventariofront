@@ -533,7 +533,14 @@ export default function StockPage() {
                         <div style={{ display: 'flex', gap: '8px' }}>
                             <Input label={`Cantidad (${despachoEntry.batch.item.unidadPrincipal})`} type="number" value={despachoQty} onChange={setDespachoQty} style={{ flex: 1 }} />
                             {despachoEntry.batch.item.unidadSecundaria && (
-                                <Input label={`Sec. (${despachoEntry.batch.item.unidadSecundaria})`} type="number" value={despachoQtySec} onChange={setDespachoQtySec} style={{ flex: 1 }} />
+                                <div style={{ flex: 1 }}>
+                                    <Input label={`Sec. (${despachoEntry.batch.item.unidadSecundaria})`} type="number" value={despachoQtySec} onChange={setDespachoQtySec} />
+                                    {despachoQtySec && Number(despachoEntry.qtySecundaria) > 0 && (
+                                        <div style={{ fontSize: '10px', color: '#6366f1', marginTop: '4px', textAlign: 'right' }}>
+                                            ≈ {((Number(despachoEntry.qtyPrincipal) / Number(despachoEntry.qtySecundaria)) * Number(despachoQtySec)).toFixed(2)} {despachoEntry.batch.item.unidadPrincipal}
+                                        </div>
+                                    )}
+                                </div>
                             )}
                         </div>
 

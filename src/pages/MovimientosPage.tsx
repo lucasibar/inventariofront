@@ -1,15 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import { useGetDepotsQuery } from '../features/depots/api/depots.api';
-import {
-    useGetStockQuery,
-    useBulkMoveStockMutation,
-    useAdjustStockMutation,
-    useReassignBatchMutation,
-    useLazyCheckBatchQuery,
-    useQuickAddStockMutation,
-    useDeleteStockMutation
-} from '../features/stock/api/stock.api';
+import { useGetStockQuery, useBulkMoveStockMutation, useAdjustStockMutation, useReassignBatchMutation, useLazyCheckBatchQuery, useQuickAddStockMutation, useDeleteStockMutation } from '../features/stock/api/stock.api';
+import { useDespachoDirectoMutation } from '../features/remitosSalida/api/remitos-salida.api';
 import { useGetItemsQuery } from '../features/items/api/items.api';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
 import { PageHeader, Card, Table, Select, SearchSelect, Input, Btn, Modal, EditableCell, useIsMobile, Badge } from './common/ui';
@@ -97,6 +90,63 @@ export default function MovimientosPage() {
     const [partialMoveModal, setPartialMoveModal] = useState(false);
     const [pendingItems, setPendingItems] = useState<any[]>([]);
     const [sourceSide, setSourceSide] = useState<'left' | 'right' | null>(null);
+
+    // Despacho Directo state
+    const [despachoDirecto] = useDespachoDirectoMutation();
+    const [despachoModal, setDespachoModal] = useState(false);
+    const [despachoEntry, setDespachoEntry] = useState<any>(null);
+    const [despachoQty, setDespachoQty] = useState('');
+    const [despachoQtySec, setDespachoQtySec] = useState('');
+    const [despachoClient, setDespachoClient] = useState('');
+    const [despachoClientName, setDespachoClientName] = useState('');
+    const [despachoNewClient, setDespachoNewClient] = useState(false);
+    const [despachoFecha, setDespachoFecha] = useState(new Date().toISOString().split('T')[0]);
+    const [despachoSaving, setDespachoSaving] = useState(false);
+
+    const clientOptions = useMemo(() => [
+        { value: '', label: 'Seleccionar cliente...' },
+        ...(isAdmin ? [{ value: '__new__', label: '+ Nuevo cliente' }] : []),
+        ...partners.filter((p: any) => p.type === 'CLIENT' || p.type === 'BOTH').map((p: any) => ({ value: p.id, label: p.name }))
+    ], [partners, isAdmin]);
+
+    const openDespacho = (entry: any) => {
+        setDespachoEntry(entry);
+        setDespachoQty('');
+        setDespachoQtySec('');
+        setDespachoClient('');
+        setDespachoClientName('');
+        setDespachoNewClient(false);
+        setDespachoFecha(new Date().toISOString().split('T')[0]);
+        setDespachoModal(true);
+    };
+
+    const handleDespachoSubmit = async () => {
+        if (!despachoEntry || !despachoQty) return;
+        if (!despachoClient && !despachoClientName) { alert('Seleccioná un cliente'); return; }
+        setDespachoSaving(true);
+        try {
+            const result = await despachoDirecto({
+                fecha: despachoFecha,
+                clientId: despachoNewClient ? undefined : despachoClient,
+                clientName: despachoNewClient ? despachoClientName : undefined,
+                depositoId: despachoEntry.posicion?.depot?.id || despachoEntry.posicion?.depotId,
+                posicionId: despachoEntry.posicionId || despachoEntry.posicion?.id,
+                itemId: despachoEntry.batch.item.id,
+                lotId: despachoEntry.batch.id,
+                qtyPrincipal: Number(despachoQty),
+                qtySecundaria: despachoQtySec ? Number(despachoQtySec) : undefined,
+            }).unwrap();
+            alert(`✅ Despachado. Remito: ${result.numero}`);
+            setDespachoModal(false);
+            // Refetch to update UI
+            refetchLeft();
+            refetchRight();
+        } catch (e: any) {
+            alert(e?.data?.message || 'Error al despachar');
+        } finally {
+            setDespachoSaving(false);
+        }
+    };
 
     const toggleSelect = (id: string, side: 'left' | 'right') => {
         if (side === 'left') {
@@ -330,32 +380,39 @@ export default function MovimientosPage() {
                 <EditableCell numeric value={Number(entry.qtySecundaria || 0).toFixed(0)} onSave={(val) => handleAdjustQty(entry, val, 'secundaria')} inputStyle={isMobile ? { minWidth: '40px' } : undefined} />
                 {!isMobile && <span style={{fontSize: '9px', opacity: 0.6, marginLeft: '4px'}}>{entry.batch.item.unidadSecundaria}</span>}
             </div>,
-            isAdmin && (
+            <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
                 <button 
-                    onClick={(e) => { e.stopPropagation(); handleDeleteLine(entry); }} 
-                    style={{ 
-                        background: 'rgba(239, 68, 68, 0.1)', 
-                        border: '1px solid rgba(239, 68, 68, 0.2)', 
-                        color: '#ef4444', 
-                        cursor: 'pointer', 
-                        width: '28px',
-                        height: '28px',
-                        borderRadius: '6px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '14px',
-                        transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = '#ef4444'; e.currentTarget.style.color = 'white'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.color = '#ef4444'; }}
-                    title="Eliminar Registro"
-                >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6" />
-                    </svg>
-                </button>
-            )
+                    onClick={(e) => { e.stopPropagation(); openDespacho(entry); }} 
+                    style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '14px', padding: '4px' }}
+                    title="Despachar (remito de salida)"
+                >📦</button>
+                {isAdmin && (
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); handleDeleteLine(entry); }} 
+                        style={{ 
+                            background: 'rgba(239, 68, 68, 0.1)', 
+                            border: '1px solid rgba(239, 68, 68, 0.2)', 
+                            color: '#ef4444', 
+                            cursor: 'pointer', 
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '12px',
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = '#ef4444'; e.currentTarget.style.color = 'white'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.color = '#ef4444'; }}
+                        title="Eliminar Registro"
+                    >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6" />
+                        </svg>
+                    </button>
+                )}
+            </div>
         ];
     });
 
@@ -467,17 +524,18 @@ export default function MovimientosPage() {
                             options={[{ value: '', label: 'Seleccionar' }, ...availableDepots.map((d: any) => ({ value: d.id, label: d.nombre }))]}
                             style={{ flex: 1 }}
                         />
-                        <Select
+                        <SearchSelect
                             label="Posición"
                             value={posicionIdLeft}
                             onChange={val => { setPosicionIdLeft(val); setSelectedLeft([]); }}
-                            options={[{ value: '', label: 'Seleccionar' }, ...posOptionsLeft]}
+                            options={posOptionsLeft}
+                            placeholder="Buscar posición..."
                             style={{ flex: 1 }}
                         />
                     </div>
                     <div style={{ opacity: fetchingLeft ? 0.6 : 1, transition: 'opacity 0.2s' }}>
                         {depositoIdLeft && posicionIdLeft ? (
-                            <Table loading={fetchingLeft} cols={buildCols('left')} rows={buildRows(stockLeft, 'left')} minWidth={isMobile ? '300px' : '600px'} />
+                            <Table loading={fetchingLeft} cols={buildCols('left')} rows={buildRows(stockLeft, 'left')} />
                         ) : (
                             <div style={{ padding: '40px', textAlign: 'center', color: '#4b5563', fontSize: '13px' }}>Seleccioná un depósito y posición</div>
                         )}
@@ -520,17 +578,18 @@ export default function MovimientosPage() {
                             options={[{ value: '', label: 'Seleccionar' }, ...availableDepots.map((d: any) => ({ value: d.id, label: d.nombre }))]}
                             style={{ flex: 1 }}
                         />
-                        <Select
+                        <SearchSelect
                             label="Posición"
                             value={posicionIdRight}
                             onChange={val => { setPosicionIdRight(val); setSelectedRight([]); }}
-                            options={[{ value: '', label: 'Seleccionar' }, ...posOptionsRight]}
+                            options={posOptionsRight}
+                            placeholder="Buscar posición..."
                             style={{ flex: 1 }}
                         />
                     </div>
                     <div style={{ opacity: fetchingRight ? 0.6 : 1, transition: 'opacity 0.2s' }}>
                         {depositoIdRight && posicionIdRight ? (
-                            <Table loading={fetchingRight} cols={buildCols('right')} rows={buildRows(stockRight, 'right')} minWidth={isMobile ? '300px' : '600px'} />
+                            <Table loading={fetchingRight} cols={buildCols('right')} rows={buildRows(stockRight, 'right')} />
                         ) : (
                             <div style={{ padding: '40px', textAlign: 'center', color: '#4b5563', fontSize: '13px' }}>Seleccioná un depósito y posición</div>
                         )}
@@ -544,7 +603,14 @@ export default function MovimientosPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <div style={{ display: 'flex', gap: '12px' }}>
                             <Select label="Depósito" value={qaDepot} onChange={val => { setQaDepot(val); setQaPosition(''); }} options={[{ value: '', label: 'Seleccionar' }, ...availableDepots.map((d: any) => ({ value: d.id, label: d.nombre }))]} style={{ flex: 1 }} />
-                            <Select label="Posición" value={qaPosition} onChange={setQaPosition} options={[{ value: '', label: 'Seleccionar' }, ...posOptionsLeftModal]} style={{ flex: 1 }} />
+                            <SearchSelect 
+                                label="Posición" 
+                                value={qaPosition} 
+                                onChange={setQaPosition} 
+                                options={posOptionsLeftModal} 
+                                placeholder="Buscar posición..."
+                                style={{ flex: 1 }} 
+                            />
                         </div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
                             <SearchSelect label="Proveedor" value={qaSupplier} onChange={val => { setQaSupplier(val); setQaItem(''); }} options={supplierOptions} placeholder="Buscar proveedor..." style={{ flex: 1 }} />
@@ -594,11 +660,16 @@ export default function MovimientosPage() {
                                         </label>
                                         <Input value={item.qtyP} type="number" onChange={(val) => updatePendingItem(idx, 'qtyP', val)} />
                                     </div>
-                                    <div>
+                                    <div style={{ flex: 1 }}>
                                         <label style={{ display: 'block', fontSize: '10px', color: '#6b7280', marginBottom: '4px', textTransform: 'uppercase' }}>
                                             {item.unidadS}
                                         </label>
                                         <Input value={item.qtyS} type="number" onChange={(val) => updatePendingItem(idx, 'qtyS', val)} />
+                                        {item.qtyS && Number(item.totalSecundaria) > 0 && (
+                                            <div style={{ fontSize: '10px', color: '#6366f1', marginTop: '4px', textAlign: 'right' }}>
+                                                ≈ {((Number(item.totalPrincipal) / Number(item.totalSecundaria)) * Number(item.qtyS)).toFixed(2)} {item.unidadP}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -608,6 +679,65 @@ export default function MovimientosPage() {
                     <div style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
                         <Btn style={{ flex: 1, background: '#1f2937' }} onClick={() => setPartialMoveModal(false)}>Cancelar</Btn>
                         <Btn style={{ flex: 1 }} onClick={handleConfirmPartialMove}>Confirmar Movimiento</Btn>
+                    </div>
+                </Modal>
+            )}
+
+            {despachoModal && despachoEntry && (
+                <Modal title="Despacho Directo" onClose={() => setDespachoModal(false)}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        <div style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '10px', padding: '12px' }}>
+                            <div style={{ fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', marginBottom: '4px' }}>Material seleccionado</div>
+                            <div style={{ color: '#f3f4f6', fontWeight: 700 }}>{despachoEntry.batch.item.descripcion}</div>
+                            <div style={{ fontSize: '12px', color: '#a5b4fc', marginTop: '2px' }}>
+                                📍 {despachoEntry.posicion?.codigo || 'S/P'} &middot; Lote: {despachoEntry.batch.lotNumber || '—'} &middot; Disp: {Number(despachoEntry.qtyPrincipal).toFixed(1)} {despachoEntry.batch.item.unidadPrincipal}
+                            </div>
+                        </div>
+
+                        <SearchSelect
+                            label="Cliente"
+                            value={despachoNewClient ? '__new__' : despachoClient}
+                            onChange={v => { 
+                                if (v === '__new__') { 
+                                    if (!isAdmin) { alert('Solo los administradores pueden crear clientes nuevos'); return; }
+                                    setDespachoNewClient(true); 
+                                    setDespachoClient(''); 
+                                } else { 
+                                    setNewClient(false); 
+                                    setDespachoClient(v); 
+                                }
+                            }}
+                            options={clientOptions}
+                            placeholder="Buscar cliente..."
+                        />
+                        {despachoNewClient && isAdmin && <Input label="Nombre del nuevo cliente" value={despachoClientName} onChange={setDespachoClientName} />}
+
+                        <Input label="Fecha" type="date" value={despachoFecha} onChange={setDespachoFecha} />
+
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <Input label={`Cantidad (${despachoEntry.batch.item.unidadPrincipal})`} type="number" value={despachoQty} onChange={setDespachoQty} style={{ flex: 1 }} />
+                            {despachoEntry.batch.item.unidadSecundaria && (
+                                <div style={{ flex: 1 }}>
+                                    <Input label={`Sec. (${despachoEntry.batch.item.unidadSecundaria})`} type="number" value={despachoQtySec} onChange={setDespachoQtySec} />
+                                    {despachoQtySec && Number(despachoEntry.qtySecundaria) > 0 && (
+                                        <div style={{ fontSize: '10px', color: '#6366f1', marginTop: '4px', textAlign: 'right' }}>
+                                            ≈ {((Number(despachoEntry.qtyPrincipal) / Number(despachoEntry.qtySecundaria)) * Number(despachoQtySec)).toFixed(2)} {despachoEntry.batch.item.unidadPrincipal}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        <div style={{ fontSize: '11px', color: '#6b7280', fontStyle: 'italic' }}>
+                            💡 Si ya existe un remito de salida para esta fecha y cliente, se agregará automáticamente.
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #2a2d3e', paddingTop: '12px' }}>
+                            <Btn variant="secondary" onClick={() => setDespachoModal(false)}>Cancelar</Btn>
+                            <Btn onClick={handleDespachoSubmit} disabled={despachoSaving || !despachoQty}>
+                                {despachoSaving ? 'Despachando...' : '📦 Despachar'}
+                            </Btn>
+                        </div>
                     </div>
                 </Modal>
             )}

@@ -298,14 +298,14 @@ export function Spinner() {
     );
 }
 
-export function Table({ cols, rows, loading, minWidth = '600px' }: { cols: (string | React.ReactNode)[]; rows: (string | React.ReactNode)[][]; loading?: boolean; minWidth?: string }) {
+export function Table({ cols, rows, loading, minWidth = '100%' }: { cols: (string | React.ReactNode)[]; rows: (string | React.ReactNode)[][]; loading?: boolean; minWidth?: string }) {
     return (
         <div style={{ width: '100%', overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth }}>
                 <thead>
                     <tr style={{ borderBottom: '1px solid #2a2d3e' }}>
                         {cols.map((c, i) => (
-                            <th key={i} style={{ padding: '12px 16px', color: '#6b7280', fontSize: '11px', fontWeight: 600, textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{c}</th>
+                            <th key={i} style={{ padding: '10px 12px', color: '#6b7280', fontSize: '11px', fontWeight: 600, textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{c}</th>
                         ))}
                     </tr>
                 </thead>
@@ -319,7 +319,7 @@ export function Table({ cols, rows, loading, minWidth = '600px' }: { cols: (stri
                     {rows.map((row, i) => (
                         <tr key={i} style={{ borderBottom: '1px solid #1e2133', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
                             {row.map((cell, j) => (
-                                <td key={j} style={{ padding: '14px 16px', color: '#d1d5db', fontSize: '13px' }}>{cell}</td>
+                                <td key={j} style={{ padding: '10px 12px', color: '#d1d5db', fontSize: '13px' }}>{cell}</td>
                             ))}
                         </tr>
                     ))}

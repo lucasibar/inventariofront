@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useDeferredValue } from 'react';
 import { useSelector } from 'react-redux';
 import { useGetItemsQuery } from '../features/items/api/items.api';
 import { useGetDepotsQuery, useCreateDepotMutation, useUpdateDepotMutation, useCreatePositionMutation, useUpdatePositionMutation } from '../features/depots/api/depots.api';
@@ -182,17 +182,22 @@ export default function DepositoPage() {
     const [posFilterItem, setPosFilterItem] = useState('');
     const [expandedPosId, setExpandedPosId] = useState<string | null>(null);
 
-    const selectedDepot = Array.isArray(depots) ? depots.find(d => d.id === selectedDepotId) : null;
+    const deferredPosSearch = useDeferredValue(posSearch);
+
+    const selectedDepot = useMemo(() => 
+        Array.isArray(depots) ? depots.find(d => d.id === selectedDepotId) : null
+    , [depots, selectedDepotId]);
     
-    const filteredPositions = (selectedDepot?.positions || []).filter((p: any) => {
-        const matchSearch = p.codigo?.toLowerCase().includes(posSearch.toLowerCase()) || false;
-        const matchCat = !posFilterCat || p.categoria === posFilterCat;
-        
-        // Filter by any restriction matching the category
-        const matchItem = !posFilterItem || (p.restrictions || []).some((r: any) => r.type === 'CATEGORY' && r.value === posFilterItem);
-        
-        return matchSearch && matchCat && matchItem;
-    });
+    const filteredPositions = useMemo(() => {
+        if (!selectedDepot) return [];
+        const search = deferredPosSearch.toLowerCase();
+        return (selectedDepot.positions || []).filter((p: any) => {
+            const matchSearch = p.codigo?.toLowerCase().includes(search) || false;
+            const matchCat = !posFilterCat || p.categoria === posFilterCat;
+            const matchItem = !posFilterItem || (p.restrictions || []).some((r: any) => r.type === 'CATEGORY' && r.value === posFilterItem);
+            return matchSearch && matchCat && matchItem;
+        });
+    }, [selectedDepot, deferredPosSearch, posFilterCat, posFilterItem]);
 
     if (!isAdmin) {
         return (
