@@ -100,7 +100,7 @@ export const performanceApi = api.injectEndpoints({
                 const queryStr = params.toString();
                 return queryStr ? `${url}?${queryStr}` : url;
             },
-            providesTags: (_res, _err, { id }) => [{ type: 'Performance', id: 'KPI' }],
+            providesTags: (_res, _err) => [{ type: 'Performance', id: 'KPI' }],
 
         }),
         getLogs: builder.query<PerformanceLog[], { plantId?: string; machineId?: string; startDate?: string; endDate?: string }>({
