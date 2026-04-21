@@ -20,7 +20,7 @@ export const itemsApi = api.injectEndpoints({
             query: ({ id, data }) => ({ url: `items/${id}`, method: 'PUT', body: data }),
             invalidatesTags: ['Items'],
         }),
-        bulkAssignBoxType: builder.mutation<number, { boxTypeId: string; supplierId?: string; category?: string; itemId?: string }>({
+        bulkAssignBoxType: builder.mutation<number, { boxTypeId: string; supplierId?: string; categoryId?: string }>({
             query: (body) => ({ url: 'items/bulk-box-type', method: 'POST', body }),
             invalidatesTags: ['Items'],
         }),
