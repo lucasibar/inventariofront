@@ -8,6 +8,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import SendIcon from '@mui/icons-material/Send';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import ReactMarkdown from 'react-markdown';
+import { rawBase } from '../../shared/api';
 
 interface Message {
     role: 'user' | 'assistant';
@@ -39,11 +40,20 @@ export const AiChatBot: React.FC = () => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('/api/ai/chat', {
+            const token = sessionStorage.getItem('token');
+            const response = await fetch(`${rawBase.replace(/\/$/, '')}/ai/chat`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
                 body: JSON.stringify({ message: userMsg, history: messages }),
             });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Error en el servidor');
+            }
 
             const data = await response.json();
             setMessages([...newMessages, { role: 'assistant', content: data.response }]);

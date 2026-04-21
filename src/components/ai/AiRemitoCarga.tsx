@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Button, CircularProgress, Tooltip } from '@mui/material';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import { rawBase } from '../shared/api';
 
 interface AiRemitoCargaProps {
     onExtracted: (data: any) => void;
@@ -18,9 +19,12 @@ export const AiRemitoCarga: React.FC<AiRemitoCargaProps> = ({ onExtracted }) => 
         formData.append('file', file);
 
         try {
-            // Asumimos que el backend está en el mismo host o manejado por proxy
-            const response = await fetch('/api/ai/process-remito', {
+            const token = sessionStorage.getItem('token');
+            const response = await fetch(`${rawBase.replace(/\/$/, '')}/ai/process-remito`, {
                 method: 'POST',
+                headers: {
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
                 body: formData,
             });
 
