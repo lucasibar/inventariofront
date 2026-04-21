@@ -15,7 +15,7 @@ import { MachineGrid } from '../widgets/rendimiento/MachineGrid';
 import { FailureFormModal } from '../features/rendimiento/FailureFormModal';
 import { SolveConfirmationModal } from '../features/rendimiento/SolveConfirmationModal';
 import { MachineDetailModal } from '../widgets/rendimiento/MachineDetailModal';
-import { calculateKPIs, calculatePlantKPIs } from '../features/rendimiento/utils/kpiUtils';
+import { calculatePlantKPIs } from '../features/rendimiento/utils/kpiUtils';
 
 
 
@@ -305,8 +305,7 @@ const KPICard = ({ label, value, subtext, color, loading, error }: any) => (
         background: 'rgba(255,255,255,0.02)',
         border: '1px solid rgba(255,255,255,0.05)',
         transition: 'all 0.3s ease',
-        position: 'relative',
-        '&:hover': { background: 'rgba(255,255,255,0.04)', borderColor: color + '44' }
+        position: 'relative'
     }}>
         <Typography variant="caption" sx={{ color: color, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', display: 'block', mb: 2 }}>
             {label}

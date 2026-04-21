@@ -705,7 +705,7 @@ export default function MovimientosPage() {
                                     setDespachoNewClient(true); 
                                     setDespachoClient(''); 
                                 } else { 
-                                    setNewClient(false); 
+                                    setDespachoNewClient(false); 
                                     setDespachoClient(v); 
                                 }
                             }}

@@ -22,6 +22,7 @@ export interface Machine {
     plantId: string;
     typeId: string;
     createdAt: string;
+    updatedAt: string;
 }
 
 

@@ -33,7 +33,7 @@ export const calculateKPIs = (logs: PerformanceLog[], startDate: Date, endDate: 
     for (const log of sortedLogs) {
         const logTime = new Date(log.timestamp).getTime();
         if (logTime < effectiveStart.getTime()) {
-            currentStatus = log.toStatus;
+            currentStatus = log.toStatus as MachineStatus;
         } else {
             break;
         }
@@ -58,7 +58,7 @@ export const calculateKPIs = (logs: PerformanceLog[], startDate: Date, endDate: 
             }
         }
 
-        currentStatus = log.toStatus;
+        currentStatus = log.toStatus as MachineStatus;
         lastTime = logTime;
     }
 
@@ -112,7 +112,7 @@ export const calculatePlantKPIs = (logs: PerformanceLog[], totalMachines: number
     
     // 1. Calculate for machines with logs
     Object.values(logsByMachine).forEach(mLogs => {
-        const kpis = calculateKPIs(mLogs, startDate, endDate, startDate.toISOString());
+        calculateKPIs(mLogs, startDate, endDate, startDate.toISOString());
         // We need the raw MS, so we might need a version of calculateKPIs that returns them
         // or just re-calculate here for simplicity
         

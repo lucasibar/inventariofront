@@ -104,7 +104,13 @@ export default function AuditoriaPickingPage() {
     }, [stock]);
 
     const handleSubmit = async () => {
-        const itemsToSubmit = [];
+        const itemsToSubmit: { 
+            depositoId: string; 
+            posicionId: string; 
+            itemId: string; 
+            lotId: string | null; 
+            faltantePrincipal: number; 
+        }[] = [];
 
         for (const bal of sortedStock) {
             const key = `${bal.depositoId}-${bal.posicionId}-${bal.itemId}-${bal.lotId}`;
@@ -118,7 +124,7 @@ export default function AuditoriaPickingPage() {
                     posicionId: bal.posicionId,
                     itemId: bal.itemId,
                     lotId: bal.lotId,
-                    qtyPrincipalFaltante: faltante
+                    faltantePrincipal: faltante
                 });
             }
         }
@@ -269,7 +275,7 @@ export default function AuditoriaPickingPage() {
                                     setDespachoNewClient(true); 
                                     setDespachoClient(''); 
                                 } else { 
-                                    setNewClient(false); 
+                                    setDespachoNewClient(false); 
                                     setDespachoClient(v); 
                                 }
                             }}

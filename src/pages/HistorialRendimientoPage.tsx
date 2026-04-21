@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { 
     Box, Typography, Paper, Table, TableBody, TableCell, 
     TableContainer, TableHead, TableRow, IconButton, 
-    TextField, MenuItem, Button, Chip, Dialog, 
+    TextField, Button, Chip, Dialog, 
     DialogTitle, DialogContent, DialogActions, Alert,
     CircularProgress
 } from '@mui/material';
-import { Delete, Edit, Refresh, FilterList } from '@mui/icons-material';
+import { Delete, Edit } from '@mui/icons-material';
 import { 
     useGetLogsQuery, 
     useGetPlantsQuery, 
@@ -128,7 +128,7 @@ export const HistorialRendimientoPage: React.FC = () => {
             </PageHeader>
 
             {/* Filters Bar */}
-            <Card style={{ p: 3, mb: 4, display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end', padding: '20px' }}>
+            <Card style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end', padding: '20px', marginBottom: '32px' }}>
                 <Box sx={{ minWidth: '200px' }}>
                     <Select 
                         label="Planta"
