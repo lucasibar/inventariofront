@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Box, Button, CircularProgress, Typography, Tooltip } from '@mui/material';
+import { Box, Button, CircularProgress, Tooltip } from '@mui/material';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 interface AiRemitoCargaProps {
     onExtracted: (data: any) => void;
