@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useGetItemsQuery, useCreateItemMutation, useUpdateItemMutation, useDeleteItemMutation } from '../features/items/api/items.api';
+import { useGetItemsQuery, useCreateItemMutation, useUpdateItemMutation, useDeleteItemMutation, useGetItemCategoriesQuery } from '../features/items/api/items.api';
 import { PageHeader, Card, Btn, Input, Select, SearchSelect, Modal, Table, Badge, SearchBar, Spinner } from './common/ui';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
 import { useGetBoxTypesQuery } from '../features/items/api/box-types.api';
@@ -28,18 +28,18 @@ const TONOS = [
     { value: 'NEGRO', label: '⬛ Negro' },
 ];
 
-const CATEGORIAS = [
+/* const CATEGORIAS = [
     { value: 'MATERIA PRIMA', label: '📦 Materia Prima' },
     { value: 'PRODUCTO TERMINADO', label: '🏭 Producto Terminado' },
     { value: 'INSUMO', label: '🛠 Insumo' },
     { value: 'REPUESTO', label: '⚙️ Repuesto' },
     { value: 'OTROS', label: '✨ Otros' },
-];
+]; */
 
 const emptyForm = () => ({ 
     codigoInterno: '', 
     descripcion: '', 
-    categoria: 'MATERIA PRIMA', 
+    categoryId: '', 
     rotacion: 'MEDIA', 
     stockMinimo: '', 
     unidadPrincipal: 'KG', 
@@ -63,7 +63,7 @@ export default function MaterialesPage() {
                 it.descripcion.toLowerCase().includes(word) || 
                 it.codigoInterno.toLowerCase().includes(word) ||
                 (it.supplier?.name || '').toLowerCase().includes(word) ||
-                it.categoria.toLowerCase().includes(word)
+                (it.category?.nombre || it.categoria || '').toLowerCase().includes(word)
             );
         });
     }, [items, q]);
@@ -84,7 +84,7 @@ export default function MaterialesPage() {
         setForm({ 
             codigoInterno: item.codigoInterno, 
             descripcion: item.descripcion, 
-            categoria: item.categoria, 
+            categoryId: item.categoryId || '', 
             rotacion: item.rotacion, 
             stockMinimo: item.stockMinimo ?? '', 
             unidadPrincipal: item.unidadPrincipal, 
@@ -116,6 +116,8 @@ export default function MaterialesPage() {
         setSaving(false);
     };
 
+    const { data: allCategories = [] } = useGetItemCategoriesQuery(''); // Global categories
+    
     return (
         <div className="materiales-container" style={{ padding: '24px', maxWidth: '1240px', margin: '0 auto' }}>
             <style>{`
@@ -226,7 +228,12 @@ export default function MaterialesPage() {
                             <Input label="Descripción" value={form.descripcion} onChange={v => setForm(p => ({ ...p, descripcion: v }))} />
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                            <Select label="Categoría" value={form.categoria} onChange={v => setForm(p => ({ ...p, categoria: v }))} options={CATEGORIAS} />
+                            <Select 
+                                label="Categoría" 
+                                value={form.categoryId} 
+                                onChange={v => setForm(p => ({ ...p, categoryId: v }))} 
+                                options={allCategories.map((c: any) => ({ value: c.id, label: c.nombre }))}
+                            />
                             <Select label="Rotación" value={form.rotacion} onChange={v => setForm(p => ({ ...p, rotacion: v }))} options={ROTACIONES} />
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>

@@ -368,7 +368,8 @@ export default function StockPage() {
                 <div className="stock-grid">
                     {groupedData.map((group) => {
                         const isExpanded = expandedMaterials.includes(group.item.id);
-                        const titleText = `${group.item.categoria || '-'} ${group.item.descripcion}`.toLowerCase();
+                        const categoryName = group.item.category?.nombre || group.item.categoria || '-';
+                        const titleText = `${categoryName} ${group.item.descripcion}`.toLowerCase();
                         const subTitleText = (group.supplier?.name || 'Sin proveedor').toLowerCase();
 
                         return (
