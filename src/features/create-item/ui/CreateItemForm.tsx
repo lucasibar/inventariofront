@@ -26,7 +26,7 @@ export const CreateItemForm = ({ onSuccess }: CreateItemFormProps) => {
             categoryId: '', // New default
             unidadPrincipal: 'UNIDAD',
             cantidadPrincipal: 1,
-            unidadSecundaria: '' || null, 
+            unidadSecundaria: '', 
             cantidadSecundaria: 0,
             trackLot: false,
         },

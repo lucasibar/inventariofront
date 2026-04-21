@@ -50,7 +50,6 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                 ...prev,
                 supplierId: initialSupplierId || '',
                 supplierName: initialSupplierName || '',
-                categoria: ''
             }));
         }
     }, [open, initialSupplierId, initialSupplierName]);
@@ -67,7 +66,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
             setForm({
                 codigoInterno: '',
                 descripcion: '',
-                categoria: 'MATERIA PRIMA',
+                categoryId: '',
                 rotacion: 'MEDIA',
                 stockMinimo: '',
                 unidadPrincipal: 'KG',
@@ -126,7 +125,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                     <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }}>
                         <Autocomplete
                             value={categories.find(c => c.id === form.categoryId) || null}
-                            onChange={async (event, newValue) => {
+                            onChange={async (_, newValue) => {
                                 if (typeof newValue === 'string') {
                                     // This shouldn't happen with the new logic, but handle just in case
                                 } else if (newValue && newValue.inputValue) {

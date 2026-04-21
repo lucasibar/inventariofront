@@ -85,13 +85,20 @@ const BulkAssignModal = ({ onClose, boxTypes }: { onClose: () => void, boxTypes:
     const [bulkAssign] = useBulkAssignBoxTypeMutation();
     const [targetBoxId, setTargetBoxId] = useState(boxTypes[0]?.id || '');
     const [supplierId, setSupplierId] = useState('');
-    const [category, setCategory] = useState('');
+    const [categoryId, setCategoryId] = useState('');
     const [selectedItemId, setSelectedItemId] = useState('');
     const [processing, setProcessing] = useState(false);
 
-    const { data: allItems = [], isLoading: loadingItems } = useGetItemsQuery({ categoria: category || undefined });
+    const { data: allItems = [], isLoading: loadingItems } = useGetItemsQuery({ categoryId: categoryId || undefined });
     const filteredItems = useMemo(() => allItems.filter(it => !supplierId || it.supplierId === supplierId), [allItems, supplierId]);
-    const categories = useMemo(() => Array.from(new Set(allItems.map(it => it.categoria))).map(c => ({ value: c, label: c })), [allItems]);
+    const categories = useMemo(() => {
+        const map = new Map();
+        allItems.forEach(it => {
+            const cat = it.category || { id: '', nombre: it.categoria || 'Sin categoría' };
+            if (cat.id) map.set(cat.id, cat.nombre);
+        });
+        return Array.from(map.entries()).map(([id, name]) => ({ value: id, label: name }));
+    }, [allItems]);
 
     const handleBulk = async (single?: boolean) => {
         if (!targetBoxId) return alert('Selecciona una caja');
@@ -101,7 +108,7 @@ const BulkAssignModal = ({ onClose, boxTypes }: { onClose: () => void, boxTypes:
             const count = await bulkAssign({ 
                 boxTypeId: targetBoxId, 
                 supplierId: single ? undefined : (supplierId || undefined), 
-                category: single ? undefined : (category || undefined),
+                categoryId: single ? undefined : (categoryId || undefined),
                 itemId: single ? selectedItemId : undefined
             }).unwrap();
             alert(`¡Éxito! Se actualizaron ${count} materiales.`);
@@ -123,7 +130,7 @@ const BulkAssignModal = ({ onClose, boxTypes }: { onClose: () => void, boxTypes:
                     </section>
                     <section>
                         <h4 style={{ color: '#f3f4f6', fontSize: '14px', marginBottom: '8px' }}>3. Categoría</h4>
-                        <Select value={category} onChange={v => { setCategory(v); setSelectedItemId(''); }} options={[{ value: '', label: 'Todas' }, ...categories]} />
+                        <Select value={categoryId} onChange={v => { setCategoryId(v); setSelectedItemId(''); }} options={[{ value: '', label: 'Todas' }, ...categories]} />
                     </section>
                 </div>
                 <section>

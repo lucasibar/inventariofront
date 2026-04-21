@@ -500,7 +500,7 @@ export default function StockPage() {
             <CreateItemDialog 
                 open={createItemModal} 
                 onClose={() => setCreateItemModal(false)} 
-                depositoId={depositoId}
+                depositoId={depotId}
                 onSuccess={(newItem: any) => { setQaItem(newItem.id); }} 
             />
             <CreatePartnerDialog open={createPartnerModal} onClose={() => setCreatePartnerModal(false)} onSuccess={(newPartner: any) => { setQaSupplier(newPartner.id); }} />
