@@ -206,7 +206,9 @@ export default function MovimientosPage() {
             unidadS: m.batch.item.unidadSecundaria,
             maxP: Number(m.qtyPrincipal),
             qtyP: String(m.qtyPrincipal),
-            qtyS: String(m.qtySecundaria || 0)
+            qtyS: String(m.qtySecundaria || 0),
+            totalPrincipal: m.qtyPrincipal,
+            totalSecundaria: m.qtySecundaria || 0
         })));
         setSourceSide(source);
         setPartialMoveModal(true);
@@ -665,7 +667,7 @@ export default function MovimientosPage() {
                                             {item.unidadS}
                                         </label>
                                         <Input value={item.qtyS} type="number" onChange={(val) => updatePendingItem(idx, 'qtyS', val)} />
-                                        {item.qtyS && Number(item.totalSecundaria) > 0 && (
+                                        {Number(item.qtyS) > 0 && Number(item.totalSecundaria) > 0 && (
                                             <div style={{ fontSize: '10px', color: '#6366f1', marginTop: '4px', textAlign: 'right' }}>
                                                 ≈ {((Number(item.totalPrincipal) / Number(item.totalSecundaria)) * Number(item.qtyS)).toFixed(2)} {item.unidadP}
                                             </div>
@@ -719,7 +721,7 @@ export default function MovimientosPage() {
                             {despachoEntry.batch.item.unidadSecundaria && (
                                 <div style={{ flex: 1 }}>
                                     <Input label={`Sec. (${despachoEntry.batch.item.unidadSecundaria})`} type="number" value={despachoQtySec} onChange={setDespachoQtySec} />
-                                    {despachoQtySec && Number(despachoEntry.qtySecundaria) > 0 && (
+                                    {Number(despachoQtySec) > 0 && Number(despachoEntry.qtySecundaria) > 0 && (
                                         <div style={{ fontSize: '10px', color: '#6366f1', marginTop: '4px', textAlign: 'right' }}>
                                             ≈ {((Number(despachoEntry.qtyPrincipal) / Number(despachoEntry.qtySecundaria)) * Number(despachoQtySec)).toFixed(2)} {despachoEntry.batch.item.unidadPrincipal}
                                         </div>

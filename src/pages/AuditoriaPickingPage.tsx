@@ -285,7 +285,7 @@ export default function AuditoriaPickingPage() {
                             {(despachoEntry.batch?.item?.unidadSecundaria || despachoEntry.qtySecundaria !== undefined) && (
                                 <div style={{ flex: 1 }}>
                                     <Input label={`Sec. (${despachoEntry.batch?.item?.unidadSecundaria || 'Un'})`} type="number" value={despachoQtySec} onChange={setDespachoQtySec} />
-                                    {despachoQtySec && Number(despachoEntry.qtySecundaria) > 0 && (
+                                    {Number(despachoQtySec) > 0 && Number(despachoEntry.qtySecundaria) > 0 && (
                                         <div style={{ fontSize: '10px', color: '#6366f1', marginTop: '4px', textAlign: 'right' }}>
                                             ≈ {((Number(despachoEntry.qtyPrincipal) / Number(despachoEntry.qtySecundaria)) * Number(despachoQtySec)).toFixed(2)} {despachoEntry.batch?.item?.unidadPrincipal || 'Kg'}
                                         </div>
