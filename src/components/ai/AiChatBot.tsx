@@ -41,13 +41,15 @@ export const AiChatBot: React.FC = () => {
 
         try {
             const token = sessionStorage.getItem('token');
+            // Enviamos el historial pero filtrando el primer mensaje de saludo del asistente si existe
+            const historyToSend = messages.slice(1);
             const response = await fetch(`${rawBase.replace(/\/$/, '')}/ai/chat`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
                     ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 },
-                body: JSON.stringify({ message: userMsg, history: messages }),
+                body: JSON.stringify({ message: userMsg, history: historyToSend }),
             });
 
             if (!response.ok) {
