@@ -86,7 +86,7 @@ export default function Layout() {
 
     // Sync alerts data with notifications slice
     useEffect(() => {
-        if (alerts.length >= 0) {
+        if (alerts && Array.isArray(alerts)) {
             dispatch(setCurrentAlerts(alerts));
         }
     }, [alerts, dispatch]);
