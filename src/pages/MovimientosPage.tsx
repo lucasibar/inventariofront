@@ -292,11 +292,12 @@ export default function MovimientosPage() {
     };
 
     const handleDeleteLine = async (row: any) => {
-        if (!window.confirm('¿Estás seguro de eliminar TODO este balance?')) return;
+        const qtyDesc = `${Number(row.qtyPrincipal).toFixed(1)} ${row.batch.item.unidadPrincipal}`;
+        if (!window.confirm(`¿Estás seguro de eliminar este registro de stock?\nSe registrará un movimiento de ajuste negativo por ${qtyDesc} para dejar la posición en cero.`)) return;
         try {
             await deleteStock({
-                depositoId: row.posicion.depotId,
-                posicionId: row.posicion.id,
+                depositoId: row.depositoId,
+                posicionId: row.posicionId,
                 itemId: row.batch.item.id,
                 lotId: row.batch.id,
                 fecha: new Date().toISOString()
@@ -312,8 +313,8 @@ export default function MovimientosPage() {
         if (diff === 0) return;
         try {
             await adjustStock({
-                depositoId: row.posicion.depotId,
-                posicionId: row.posicion.id,
+                depositoId: row.depositoId,
+                posicionId: row.posicionId,
                 itemId: row.batch.item.id,
                 lotId: row.batch.id,
                 qtyPrincipal: field === 'principal' ? diff : 0,
@@ -334,8 +335,8 @@ export default function MovimientosPage() {
                 if (!window.confirm(`La partida "${val}" no existe. Se creará una nueva. ¿Continuar?`)) return;
             }
             await reassignBatch({
-                depositoId: row.posicion.depotId,
-                posicionId: row.posicion.id,
+                depositoId: row.depositoId,
+                posicionId: row.posicionId,
                 itemId: row.batch.item.id,
                 currentLotId: row.batch.id,
                 newLotNumber: val.trim(),
