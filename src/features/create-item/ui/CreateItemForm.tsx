@@ -10,7 +10,7 @@ import {
     Paper,
     Grid
 } from '@mui/material';
-import { ItemCategory, useCreateItemMutation } from '../../../entities/item';
+import { useCreateItemMutation, useGetItemCategoriesQuery } from '../../items/api/items.api';
 
 interface CreateItemFormProps {
     onSuccess?: () => void;
@@ -18,6 +18,7 @@ interface CreateItemFormProps {
 
 export const CreateItemForm = ({ onSuccess }: CreateItemFormProps) => {
     const [createItem, { isLoading }] = useCreateItemMutation();
+    const { data: categories = [] } = useGetItemCategoriesQuery(''); // Global
     const { control, handleSubmit, reset } = useForm({
         defaultValues: {
             codigoInterno: '',
@@ -76,13 +77,13 @@ export const CreateItemForm = ({ onSuccess }: CreateItemFormProps) => {
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
                         <Controller
-                            name="categoria"
+                            name="categoryId"
                             control={control}
                             render={({ field }) => (
                                 <TextField {...field} select label="Categoría" fullWidth>
-                                    {Object.values(ItemCategory).map((cat) => (
-                                        <MenuItem key={cat} value={cat}>
-                                            {cat}
+                                    {categories.map((cat: any) => (
+                                        <MenuItem key={cat.id} value={cat.id}>
+                                            {cat.nombre}
                                         </MenuItem>
                                     ))}
                                 </TextField>
