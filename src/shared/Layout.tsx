@@ -5,6 +5,7 @@ import { useGetAlertsQuery } from '../features/stock/api/stock.api';
 import { logout, selectCurrentUser } from '../entities/auth/model/authSlice';
 import { setCurrentAlerts, selectHasUnreadNotifications } from '../entities/notifications/notificationsSlice';
 import { useIsMobile } from '../pages/common/ui';
+import { AiChatBot } from '../components/ai/AiChatBot';
 
 const navGroups = [
     {
@@ -377,6 +378,7 @@ export default function Layout() {
             }}>
                 <Outlet />
             </main>
+            <AiChatBot />
         </div>
     );
 }

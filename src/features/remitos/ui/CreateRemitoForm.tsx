@@ -7,8 +7,11 @@ import { ItemsField } from './ItemsField';
 import { CreatePartnerDialog } from './CreatePartnerDialog';
 import type { CreateRemitoDto } from '../model/create-remito.dto';
 import { useState, useMemo, useEffect } from 'react';
+import { AiRemitoCarga } from '../../../components/ai/AiRemitoCarga';
+import { useGetItemsQuery } from '../../items/api/items.api';
 
 export const CreateRemitoForm = () => {
+    const { data: allItems = [] } = useGetItemsQuery({});
     const methods = useForm<CreateRemitoDto>({
         defaultValues: {
             numero: '',
@@ -96,6 +99,44 @@ export const CreateRemitoForm = () => {
             <Typography variant="body1" sx={{ mb: 4, color: 'text.secondary', fontWeight: 500 }}>
                 Ingrese los datos del documento y los materiales recibidos.
             </Typography>
+
+            <AiRemitoCarga onExtracted={(data) => {
+                if (data.numero) methods.setValue('numero', data.numero);
+                if (data.fecha) methods.setValue('fecha', data.fecha);
+                if (data.observaciones) methods.setValue('observaciones', data.observaciones);
+                
+                if (data.supplierName) {
+                    const found = (partners as any[]).find(p => p.name.toLowerCase().includes(data.supplierName.toLowerCase()));
+                    if (found) {
+                        methods.setValue('supplierId', found.id);
+                        methods.setValue('supplierName', found.name);
+                        methods.setValue('taxId', found.taxId || '');
+                    } else {
+                        methods.setValue('supplierName', data.supplierName);
+                        methods.setValue('taxId', data.supplierTaxId || '');
+                        methods.setValue('supplierId', undefined);
+                    }
+                }
+
+                if (data.lines && data.lines.length > 0) {
+                    const mappedLines = data.lines.map((line: any) => {
+                        const it = allItems.find((item: any) => 
+                            item.codigoInterno === line.codigoInterno || 
+                            item.descripcion.toLowerCase().includes(line.descripcion?.toLowerCase())
+                        );
+                        return {
+                            codigoInterno: it?.codigoInterno || line.codigoInterno || '',
+                            descripcion: it?.descripcion || line.descripcion || '',
+                            qtyPrincipal: line.qtyPrincipal || 0,
+                            qtySecundaria: line.qtySecundaria || 0,
+                            lotNumber: line.lotNumber || '',
+                            itemId: it?.id,
+                            categoria: it?.categoria || 'SUPPLY'
+                        };
+                    });
+                    methods.setValue('lines', mappedLines);
+                }
+            }} />
 
             <FormProvider {...methods}>
                 <Box component="form" onSubmit={methods.handleSubmit(onSubmit)}>
