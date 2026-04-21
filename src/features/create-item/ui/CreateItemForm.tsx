@@ -22,10 +22,10 @@ export const CreateItemForm = ({ onSuccess }: CreateItemFormProps) => {
         defaultValues: {
             codigoInterno: '',
             descripcion: '',
-            categoria: ItemCategory.SUPPLY, // Default
+            categoryId: '', // New default
             unidadPrincipal: 'UNIDAD',
             cantidadPrincipal: 1,
-            unidadSecundaria: '', // Optional
+            unidadSecundaria: '' || null, 
             cantidadSecundaria: 0,
             trackLot: false,
         },

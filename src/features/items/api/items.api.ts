@@ -2,11 +2,11 @@ import { api } from '../../../shared/api';
 
 export const itemsApi = api.injectEndpoints({
     endpoints: (builder) => ({
-        getItems: builder.query<any[], { q?: string; categoria?: string; boxTypeId?: string }>({
-            query: ({ q, categoria, boxTypeId } = {}) => {
+        getItems: builder.query<any[], { q?: string; categoryId?: string; boxTypeId?: string }>({
+            query: ({ q, categoryId, boxTypeId } = {}) => {
                 const params = new URLSearchParams();
                 if (q) params.set('q', q);
-                if (categoria) params.set('categoria', categoria);
+                if (categoryId) params.set('categoryId', categoryId);
                 if (boxTypeId) params.set('boxTypeId', boxTypeId);
                 return `items?${params.toString()}`;
             },
@@ -28,6 +28,14 @@ export const itemsApi = api.injectEndpoints({
             query: (id) => ({ url: `items/${id}`, method: 'DELETE' }),
             invalidatesTags: ['Items'],
         }),
+        getItemCategories: builder.query<any[], string | void>({
+            query: (depositoId) => `items/categories${depositoId ? `?depositoId=${depositoId}` : ''}`,
+            providesTags: ['Items'], // Reuse items tag or create Category tag
+        }),
+        createItemCategory: builder.mutation<any, { nombre: string; depositoId: string }>({
+            query: (body) => ({ url: 'items/categories', method: 'POST', body }),
+            invalidatesTags: ['Items'],
+        }),
     }),
 });
 
@@ -37,5 +45,7 @@ export const {
     useCreateItemMutation, 
     useUpdateItemMutation, 
     useDeleteItemMutation,
-    useBulkAssignBoxTypeMutation
+    useBulkAssignBoxTypeMutation,
+    useGetItemCategoriesQuery,
+    useCreateItemCategoryMutation
 } = itemsApi;

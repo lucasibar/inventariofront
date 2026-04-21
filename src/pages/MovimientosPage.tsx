@@ -636,7 +636,12 @@ export default function MovimientosPage() {
                 </Modal>
             )}
 
-            <CreateItemDialog open={createItemModal} onClose={() => setCreateItemModal(false)} onSuccess={(newItem: any) => { setQaItem(newItem.id); }} />
+            <CreateItemDialog 
+                open={createItemModal} 
+                onClose={() => setCreateItemModal(false)} 
+                depositoId={qaDepot}
+                onSuccess={(newItem: any) => { setQaItem(newItem.id); }} 
+            />
             <CreatePartnerDialog open={createPartnerModal} onClose={() => setCreatePartnerModal(false)} onSuccess={(newPartner: any) => { setQaSupplier(newPartner.id); }} />
             {/* Partial Move Modal */}
             {partialMoveModal && (

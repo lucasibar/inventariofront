@@ -4,9 +4,11 @@ import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     Button, TextField, MenuItem, Typography, Box
 } from '@mui/material';
-import { useCreateItemMutation } from '../../items/api/items.api';
+import { useCreateItemMutation, useGetItemCategoriesQuery, useCreateItemCategoryMutation } from '../../items/api/items.api';
 import { useLazySearchPartnersQuery } from '../api/remito.api';
-import { Autocomplete } from '@mui/material';
+import { Autocomplete, createFilterOptions } from '@mui/material';
+
+const filter = createFilterOptions<any>();
 
 const ROTACIONES = [
     { value: 'ALTA', label: '🔴 Alta' },
@@ -21,15 +23,19 @@ interface CreateItemDialogProps {
     onSuccess?: (newItem: any) => void;
     initialSupplierId?: string;
     initialSupplierName?: string;
+    depositoId?: string; // New prop
 }
 
-export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, initialSupplierName }: CreateItemDialogProps) => {
+export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, initialSupplierName, depositoId }: CreateItemDialogProps) => {
     const [createItem, { isLoading }] = useCreateItemMutation();
+    const { data: categories = [], isLoading: isLoadingCats } = useGetItemCategoriesQuery(depositoId || '', { skip: !depositoId });
+    const [createCategory] = useCreateItemCategoryMutation();
+
     const [triggerSearch, { data: partners = [], isFetching: isSearchingPartners }] = useLazySearchPartnersQuery();
     const [form, setForm] = useState({
         codigoInterno: '',
         descripcion: '',
-        categoria: 'MATERIA PRIMA',
+        categoryId: '',
         rotacion: 'MEDIA',
         stockMinimo: '',
         unidadPrincipal: 'KG',
@@ -44,7 +50,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                 ...prev,
                 supplierId: initialSupplierId || '',
                 supplierName: initialSupplierName || '',
-                categoria: 'MATERIA PRIMA'
+                categoria: ''
             }));
         }
     }, [open, initialSupplierId, initialSupplierName]);
@@ -115,6 +121,64 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                             value={form.descripcion}
                             InputLabelProps={{ shrink: true }}
                             onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+                        />
+                    </Box>
+                    <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }}>
+                        <Autocomplete
+                            value={categories.find(c => c.id === form.categoryId) || null}
+                            onChange={async (event, newValue) => {
+                                if (typeof newValue === 'string') {
+                                    // This shouldn't happen with the new logic, but handle just in case
+                                } else if (newValue && newValue.inputValue) {
+                                    if (depositoId) {
+                                        try {
+                                            const res = await createCategory({ nombre: newValue.inputValue, depositoId }).unwrap();
+                                            setForm({ ...form, categoryId: res.id });
+                                        } catch (e) {
+                                            alert('Error creando categoría');
+                                        }
+                                    } else {
+                                        alert('Debe seleccionar un depósito primero');
+                                    }
+                                } else {
+                                    setForm({ ...form, categoryId: newValue?.id || '' });
+                                }
+                            }}
+                            filterOptions={(options, params) => {
+                                const filtered = filter(options, params);
+                                const { inputValue } = params;
+                                const isExisting = options.some((option) => inputValue === option.nombre);
+                                if (inputValue !== '' && !isExisting) {
+                                    filtered.push({
+                                        inputValue,
+                                        nombre: `Añadir "${inputValue}"`,
+                                    });
+                                }
+                                return filtered;
+                            }}
+                            selectOnFocus
+                            clearOnBlur
+                            handleHomeEndKeys
+                            id="category-autocomplete"
+                            options={categories}
+                            getOptionLabel={(option) => {
+                                if (typeof option === 'string') return option;
+                                if (option.inputValue) return option.inputValue;
+                                return option.nombre;
+                            }}
+                            renderOption={(props, option) => <li {...props}>{option.nombre}</li>}
+                            freeSolo
+                            loading={isLoadingCats}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Categoría"
+                                    required
+                                    variant="filled"
+                                    fullWidth
+                                    placeholder="Seleccionar o crear..."
+                                />
+                            )}
                         />
                     </Box>
                     <Box>
