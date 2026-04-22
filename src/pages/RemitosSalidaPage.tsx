@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '../entities/auth/model/authSlice';
 import { useGetRemitosSalidaQuery, usePreviewRemitoSalidaMutation, useCreateRemitoSalidaMutation, useDeleteRemitoSalidaMutation, useLazyGetRemitoSalidaQuery } from '../features/remitosSalida/api/remitos-salida.api';
 import { RemitoDetailModal } from '../features/remitos/ui/RemitoDetailModal';
+import { CreatePartnerDialog } from '../features/remitos/ui/CreatePartnerDialog';
 import { useGetOrdersQuery } from '../features/orders/api/orders.api';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
 import { useGetItemsQuery } from '../features/items/api/items.api';
@@ -32,6 +33,7 @@ export default function RemitosSalidaPage() {
     const [clientId, setClientId] = useState('');
     const [newClient, setNewClient] = useState(false);
     const [clientName, setClientName] = useState('');
+    const [partnerModalOpen, setPartnerModalOpen] = useState(false);
     const [selectedRemito, setSelectedRemito] = useState<any>(null);
     const [showDetail, setShowDetail] = useState(false);
     const [triggerGetDetail] = useLazyGetRemitoSalidaQuery();
@@ -124,8 +126,7 @@ export default function RemitosSalidaPage() {
                             onChange={v => {
                                 if (v === '__new__') {
                                     if (!isAdmin) { alert('Solo administradores pueden crear clientes'); return; }
-                                    setNewClient(true);
-                                    setClientId('');
+                                    setPartnerModalOpen(true);
                                 } else {
                                     setNewClient(false);
                                     setClientId(v);
@@ -135,7 +136,6 @@ export default function RemitosSalidaPage() {
                             placeholder="Buscar cliente..."
                             style={{ marginTop: '6px' }}
                         />
-                        {newClient && isAdmin && <Input style={{ marginTop: '8px' }} label="Nombre" value={clientName} onChange={setClientName} />}
                     </div>
 
                     <Input label="Observaciones (opcional)" value={observaciones} onChange={setObservaciones} style={{ marginBottom: '16px' }} />
@@ -194,6 +194,16 @@ export default function RemitosSalidaPage() {
                 open={showDetail} 
                 onClose={() => setShowDetail(false)} 
                 remito={selectedRemito} 
+            />
+
+            <CreatePartnerDialog
+                open={partnerModalOpen}
+                onClose={() => setPartnerModalOpen(false)}
+                defaultType="CLIENT"
+                onSuccess={(p) => {
+                    setClientId(p.id);
+                    setNewClient(false);
+                }}
             />
         </div>
     );

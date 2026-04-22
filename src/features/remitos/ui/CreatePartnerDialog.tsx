@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     Button, TextField, Box, MenuItem
@@ -9,15 +9,22 @@ interface CreatePartnerDialogProps {
     open: boolean;
     onClose: () => void;
     onSuccess: (partner: any) => void;
+    defaultType?: 'SUPPLIER' | 'CLIENT' | 'BOTH';
 }
 
-export const CreatePartnerDialog = ({ open, onClose, onSuccess }: CreatePartnerDialogProps) => {
+export const CreatePartnerDialog = ({ open, onClose, onSuccess, defaultType = 'SUPPLIER' }: CreatePartnerDialogProps) => {
     const [createPartner, { isLoading }] = useCreatePartnerMutation();
     const [form, setForm] = useState({
         name: '',
         taxId: '',
-        type: 'SUPPLIER' as 'SUPPLIER' | 'CLIENT' | 'BOTH'
+        type: defaultType
     });
+
+    useEffect(() => {
+        if (open) {
+            setForm({ name: '', taxId: '', type: defaultType });
+        }
+    }, [open, defaultType]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -26,7 +33,7 @@ export const CreatePartnerDialog = ({ open, onClose, onSuccess }: CreatePartnerD
             alert('Socio creado con éxito');
             onSuccess(result);
             onClose();
-            setForm({ name: '', taxId: '', type: 'SUPPLIER' });
+            setForm({ name: '', taxId: '', type: defaultType });
         } catch (err) {
             console.error(err);
             alert('Error al crear el socio');

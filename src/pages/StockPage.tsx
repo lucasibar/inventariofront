@@ -361,11 +361,12 @@ export default function StockPage() {
                         />
                     </div>
                     <div style={{ flex: 1 }}>
-                        <Select
+                        <SearchSelect
                             label="Posición"
                             value={positionId}
                             onChange={setPositionId}
                             options={[{ value: '', label: 'Todas las posiciones' }, ...(availableDepots.find(d => d.id === depotId)?.positions || []).filter((p: any) => p.activo).map((p: any) => ({ value: p.id, label: p.codigo }))] }
+                            placeholder="Buscar posición..."
                         />
                     </div>
                     {!isMobile && (

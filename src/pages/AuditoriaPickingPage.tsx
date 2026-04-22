@@ -229,7 +229,9 @@ export default function AuditoriaPickingPage() {
                                     >📦 Despachar</button>
                                 </div>
                                 <div style={{ fontSize: '15px', fontWeight: 600, color: '#f3f4f6' }}>
+                                    {bal.batch?.item?.category?.nombre ? `${bal.batch.item.category.nombre} - ` : ''}
                                     {bal.batch?.item?.descripcion || 'Item Desconocido'}
+                                    {bal.batch?.supplier?.name ? ` - ${bal.batch.supplier.name}` : ''}
                                 </div>
                                 
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#1a1d2e', padding: '8px 12px', borderRadius: '6px' }}>
@@ -278,7 +280,11 @@ export default function AuditoriaPickingPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                         <div style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '10px', padding: '12px' }}>
                             <div style={{ fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', marginBottom: '4px' }}>Material seleccionado</div>
-                            <div style={{ color: '#f3f4f6', fontWeight: 700 }}>{despachoEntry.batch?.item?.descripcion || despachoEntry.item?.descripcion}</div>
+                            <div style={{ color: '#f3f4f6', fontWeight: 700 }}>
+                                {despachoEntry.batch?.item?.category?.nombre ? `${despachoEntry.batch.item.category.nombre} - ` : ''}
+                                {despachoEntry.batch?.item?.descripcion || despachoEntry.item?.descripcion}
+                                {despachoEntry.batch?.supplier?.name ? ` - ${despachoEntry.batch.supplier.name}` : ''}
+                            </div>
                             <div style={{ fontSize: '12px', color: '#a5b4fc', marginTop: '2px' }}>
                                 📍 {despachoEntry.posicion?.codigo || 'S/P'} &middot; Lote: {despachoEntry.batch?.lotNumber || '—'} &middot; Disp: {Number(despachoEntry.qtyPrincipal).toFixed(1)} {despachoEntry.batch?.item?.unidadPrincipal || 'Kg'}
                             </div>
