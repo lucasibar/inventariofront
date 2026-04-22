@@ -79,7 +79,8 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                 options={availableItems}
                                 getOptionLabel={(option: any) => {
                                     if (option.__isCreateOption) return option.descripcion;
-                                    return `${option.codigoInterno} - ${option.descripcion}`;
+                                    const cat = option.categoria ? `[${option.categoria}] ` : '';
+                                    return `${cat}${option.codigoInterno} - ${option.descripcion}`;
                                 }}
                                 filterOptions={(options, { inputValue }) => {
                                     const search = inputValue.toLowerCase();
@@ -114,7 +115,7 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                         <ListItem {...props} key={option.id}>
                                             <ListItemText
                                                 primary={option.codigoInterno}
-                                                secondary={option.descripcion}
+                                                secondary={`${option.categoria ? `[${option.categoria}] ` : ''}${option.descripcion}`}
                                             />
                                         </ListItem>
                                     );

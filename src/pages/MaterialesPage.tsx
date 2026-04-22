@@ -161,7 +161,9 @@ export default function MaterialesPage() {
                     cols={['Material', 'Proveedor', 'Categoría', 'Rotación', 'Caja', 'Lim./Caja', 'Mín / Máx', 'Unid.', 'Tono', '']}
                     rows={filteredItems.map((it: any) => [
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ color: '#f3f4f6', fontWeight: 600 }}>{it.descripcion}</span>
+                            <span style={{ color: '#f3f4f6', fontWeight: 600, whiteSpace: 'normal', maxWidth: '200px', lineHeight: '1.2' }}>
+                                {it.categoria ? `[${it.categoria}] ` : ''}{it.descripcion}
+                            </span>
                             <code style={{ color: '#a5b4fc', fontSize: '11px' }}>{it.codigoInterno}</code>
                         </div>,
                         <div style={{ fontSize: '12px', color: '#9ca3af' }}>{it.supplier?.name || <span style={{ opacity: 0.5 }}>S/P</span>}</div>,
@@ -196,7 +198,9 @@ export default function MaterialesPage() {
                     <div key={it.id} className="material-card">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span style={{ color: '#f3f4f6', fontWeight: 600, fontSize: '15px' }}>{it.descripcion}</span>
+                                <span style={{ color: '#f3f4f6', fontWeight: 600, fontSize: '15px' }}>
+                                    {it.categoria ? `[${it.categoria}] ` : ''}{it.descripcion}
+                                </span>
                                 <code style={{ color: '#a5b4fc', fontSize: '12px' }}>{it.codigoInterno}</code>
                             </div>
                             <Badge color={ROT_COLORS[it.rotacion] ?? '#6b7280'}>{it.rotacion}</Badge>

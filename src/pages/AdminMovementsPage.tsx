@@ -86,7 +86,9 @@ export default function AdminMovementsPage() {
             <Badge color={style.color}>{style.label}</Badge>,
             <span style={{ fontWeight: 600 }}>{m.deposito?.nombre || '—'}</span>,
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontWeight: 600, color: '#f3f4f6' }}>{m.item?.descripcion || '—'}</span>
+                <span style={{ fontWeight: 600, color: '#f3f4f6', whiteSpace: 'normal', maxWidth: '180px', lineHeight: '1.2' }}>
+                    {m.item?.categoria ? `[${m.item.categoria}] ` : ''}{m.item?.descripcion || '—'}
+                </span>
                 <code style={{ fontSize: '11px', color: '#a5b4fc' }}>Lote: {m.batch?.lotNumber || '—'}</code>
             </div>,
             <span style={{ fontWeight: 600 }}>{m.posicion?.codigo || 'S/P'}</span>,
@@ -186,7 +188,7 @@ export default function AdminMovementsPage() {
                         label="🏷️ Material"
                         value={itemId}
                         onChange={setItemId}
-                        options={[{ value: '', label: 'Todos los materiales' }, ...rawItems.map((i: any) => ({ value: i.id, label: `${i.codigoInterno} - ${i.descripcion}` }))]}
+                        options={[{ value: '', label: 'Todos los materiales' }, ...rawItems.map((i: any) => ({ value: i.id, label: `${i.categoria ? `[${i.categoria}] ` : ''}${i.codigoInterno} - ${i.descripcion}` }))]}
                         placeholder="Buscar material..."
                     />
                     <Input

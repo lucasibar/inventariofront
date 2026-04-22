@@ -371,7 +371,9 @@ export default function MovimientosPage() {
                 className="clickable-material"
                 onClick={() => navigate(`/stock?q=${encodeURIComponent(entry.batch.item.descripcion)}`)}
             >
-                <div style={{ fontWeight: 600, color: '#6366f1', whiteSpace: isMobile ? 'nowrap' : 'normal', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: isMobile ? '60px' : 'none' }}>{entry.batch.item.descripcion}</div>
+                <div style={{ fontWeight: 600, color: '#6366f1', whiteSpace: 'normal', maxWidth: isMobile ? '80px' : '150px', lineHeight: '1.2' }}>
+                    {entry.batch.item.categoria ? `[${entry.batch.item.categoria}] ` : ''}{entry.batch.item.descripcion}
+                </div>
                 {!isMobile && <code style={{ fontSize: '10px', opacity: 0.8 }}>{entry.batch.item.codigoInterno}</code>}
             </div>,
             <EditableCell value={entry.batch.lotNumber} onSave={(val) => handleUpdateBatch(entry, val)} inputStyle={isMobile ? { minWidth: '40px' } : undefined} />,
@@ -426,7 +428,7 @@ export default function MovimientosPage() {
     return (
         <div style={{ 
             padding: isMobile ? '12px' : '24px', 
-            maxWidth: '1600px', 
+            maxWidth: '100%', 
             margin: '0 auto',
             boxSizing: 'border-box',
             width: '100%',
@@ -620,7 +622,7 @@ export default function MovimientosPage() {
                             <Btn variant="secondary" onClick={() => setCreatePartnerModal(true)}>+</Btn>
                         </div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
-                            <SearchSelect label="Material" value={qaItem} onChange={setQaItem} options={[{ value: '', label: 'Seleccionar' }, ...qaFilteredItems.map((i: any) => ({ value: i.id, label: `${i.codigoInterno} - ${i.descripcion}` }))]} placeholder="Buscar material..." style={{ flex: 1 }} />
+                            <SearchSelect label="Material" value={qaItem} onChange={setQaItem} options={[{ value: '', label: 'Seleccionar' }, ...qaFilteredItems.map((i: any) => ({ value: i.id, label: `${i.categoria ? `[${i.categoria}] ` : ''}${i.codigoInterno} - ${i.descripcion}` }))]} placeholder="Buscar material..." style={{ flex: 1 }} />
                             <Btn variant="secondary" onClick={() => setCreateItemModal(true)}>+</Btn>
                         </div>
                         <Input label="Lote" value={qaLot} onChange={setQaLot} />
