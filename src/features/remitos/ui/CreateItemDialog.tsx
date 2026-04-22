@@ -4,7 +4,7 @@ import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     Button, TextField, MenuItem, Typography, Box
 } from '@mui/material';
-import { useCreateItemMutation, useGetItemCategoriesQuery, useCreateItemCategoryMutation } from '../../items/api/items.api';
+import { useCreateItemMutation, useUpdateItemMutation, useGetItemCategoriesQuery, useCreateItemCategoryMutation } from '../../items/api/items.api';
 import { useLazySearchPartnersQuery } from '../api/remito.api';
 import { Autocomplete, createFilterOptions } from '@mui/material';
 
@@ -115,10 +115,14 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                 categoryId: '',
                 rotacion: 'MEDIA',
                 stockMinimo: '',
+                stockMaximo: '',
+                kilosPorCaja: '',
                 unidadPrincipal: 'KG',
                 unidadSecundaria: '',
+                tono: '',
+                boxTypeId: '',
                 supplierId: '',
-                supplierName: ''
+                supplierName: '',
             });
         } catch (err: any) {
             setError(err?.data?.message || 'Error al crear el material');

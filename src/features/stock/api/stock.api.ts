@@ -128,6 +128,10 @@ export const stockApi = api.injectEndpoints({
             query: (id) => ({ url: `movimientos/${id}/cancel`, method: 'POST' }),
             invalidatesTags: ['Stock'],
         }),
+        updateBatchObservations: builder.mutation<void, { id: string; observaciones: string | null }>({
+            query: ({ id, observaciones }) => ({ url: `stock/batch/${id}/observations`, method: 'PATCH', body: { observaciones } }),
+            invalidatesTags: ['Stock'],
+        }),
     }),
 });
 

@@ -89,6 +89,7 @@ export default function StockPage() {
 
     const [adjustStock] = useAdjustStockMutation();
     const [reassignBatch] = useReassignBatchMutation();
+    const [checkBatch] = useLazyCheckBatchQuery();
     const [updateBatchObservations] = useUpdateBatchObservationsMutation();
     const [despachoDirecto] = useDespachoDirectoMutation();
 
