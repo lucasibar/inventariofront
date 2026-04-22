@@ -32,7 +32,7 @@ export default function RemitosSalidaPage() {
     const [error, setError] = useState('');
     const [clientId, setClientId] = useState('');
     const [newClient, setNewClient] = useState(false);
-    const [clientName, setClientName] = useState('');
+    const [clientName] = useState('');
     const [partnerModalOpen, setPartnerModalOpen] = useState(false);
     const [selectedRemito, setSelectedRemito] = useState<any>(null);
     const [showDetail, setShowDetail] = useState(false);

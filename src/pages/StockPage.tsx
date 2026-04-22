@@ -74,7 +74,7 @@ export default function StockPage() {
 
     const { data: items = [] } = useGetItemsQuery({});
     const { data: partners = [] } = useGetPartnersQuery({});
-    const { data: categories = [] } = useGetItemCategoriesQuery(depotId || '', { skip: !depotId });
+    useGetItemCategoriesQuery(depotId || '', { skip: !depotId });
     const [quickAddStock] = useQuickAddStockMutation();
     const [deleteStock] = useDeleteStockMutation();
 
