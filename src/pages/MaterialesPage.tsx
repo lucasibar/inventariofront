@@ -81,7 +81,7 @@ export default function MaterialesPage() {
                     rows={filteredItems.map((it: any) => [
                         <div key="mat" style={{ display: 'flex', flexDirection: 'column' }}>
                             <span style={{ color: '#f3f4f6', fontWeight: 600, whiteSpace: 'normal', maxWidth: '200px', lineHeight: '1.2' }}>
-                                {it.category?.nombre ? `[${it.category.nombre}] ` : ''}{it.descripcion}
+                                {it.category?.nombre ? `${it.category.nombre} - ` : ''}{it.descripcion}
                             </span>
                             <code style={{ color: '#a5b4fc', fontSize: '11px' }}>{it.codigoInterno}</code>
                         </div>,
@@ -118,7 +118,7 @@ export default function MaterialesPage() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <span style={{ color: '#f3f4f6', fontWeight: 600, fontSize: '15px' }}>
-                                    {it.category?.nombre ? `[${it.category.nombre}] ` : ''}{it.descripcion}
+                                    {it.category?.nombre ? `${it.category.nombre} - ` : ''}{it.descripcion}
                                 </span>
                                 <code style={{ color: '#a5b4fc', fontSize: '12px' }}>{it.codigoInterno}</code>
                             </div>
@@ -126,7 +126,7 @@ export default function MaterialesPage() {
                         </div>
                         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                             <Badge color="#34d399">{it.supplier?.name || 'Sin Proveedor'}</Badge>
-                            <Badge>{it.category?.nombre || 'General'}</Badge>
+                            <Badge color="#6366f1">{it.category?.nombre || 'General'}</Badge>
                             {it.boxType && <Badge color="#6366f1">📦 {it.boxType.nombre}</Badge>}
                         </div>
                         <div style={{ borderTop: '1px solid #1e2133', paddingTop: '12px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

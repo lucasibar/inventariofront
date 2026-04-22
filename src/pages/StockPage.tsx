@@ -397,7 +397,7 @@ export default function StockPage() {
                     {groupedData.map((group) => {
                         const isExpanded = expandedMaterials.includes(group.item.id);
                         const categoryName = group.item.category?.nombre || group.item.categoria || '';
-                        const titleText = `${categoryName ? `[${categoryName}] ` : ''}${group.item.descripcion}`.toLowerCase();
+                        const titleText = `${categoryName ? `${categoryName} - ` : ''}${group.item.descripcion}`.toLowerCase();
                         const subTitleText = (group.supplier?.name || 'Sin proveedor').toLowerCase();
 
                         return (
@@ -529,7 +529,7 @@ export default function StockPage() {
                             <Btn small variant="secondary" onClick={() => setCreatePartnerModal(true)}>+</Btn>
                         </div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
-                            <SearchSelect label="Material" value={qaItem} onChange={setQaItem} options={[{ value: '', label: 'Seleccionar...' }, ...qaFilteredItems.map((i: any) => ({ value: i.id, label: `${i.categoria ? `[${i.categoria}] ` : ''}${i.codigoInterno} - ${i.descripcion}` }))]} placeholder="Buscar material..." style={{ flex: 1 }} />
+                            <SearchSelect label="Material" value={qaItem} onChange={setQaItem} options={[{ value: '', label: 'Seleccionar...' }, ...qaFilteredItems.map((i: any) => ({ value: i.id, label: `${i.category?.nombre ? `${i.category.nombre} - ` : ''}${i.codigoInterno} - ${i.descripcion}` }))]} placeholder="Buscar material..." style={{ flex: 1 }} />
                             <Btn small variant="secondary" onClick={() => setCreateItemModal(true)}>+</Btn>
                         </div>
                         <Input label="Lote" value={qaLot} onChange={setQaLot} />
