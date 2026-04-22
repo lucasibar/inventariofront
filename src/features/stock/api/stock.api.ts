@@ -5,6 +5,7 @@ export const stockApi = api.injectEndpoints({
         getStock: builder.query<any[], {
             depotId?: string; positionId?: string; supplierId?: string;
             itemId?: string; lotNumber?: string; q?: string; categoria?: string;
+            categoryId?: string;
             limit?: number;
         }>({
             query: (f = {}) => {

@@ -17,7 +17,7 @@ export default function MaterialesPage() {
                 it.descripcion.toLowerCase().includes(word) || 
                 it.codigoInterno.toLowerCase().includes(word) ||
                 (it.supplier?.name || '').toLowerCase().includes(word) ||
-                (it.category?.nombre || it.categoria || '').toLowerCase().includes(word)
+                (it.category?.nombre || '').toLowerCase().includes(word)
             );
         });
     }, [items, q]);
@@ -81,12 +81,12 @@ export default function MaterialesPage() {
                     rows={filteredItems.map((it: any) => [
                         <div key="mat" style={{ display: 'flex', flexDirection: 'column' }}>
                             <span style={{ color: '#f3f4f6', fontWeight: 600, whiteSpace: 'normal', maxWidth: '200px', lineHeight: '1.2' }}>
-                                {it.categoria ? `[${it.categoria}] ` : ''}{it.descripcion}
+                                {it.category?.nombre ? `[${it.category.nombre}] ` : ''}{it.descripcion}
                             </span>
                             <code style={{ color: '#a5b4fc', fontSize: '11px' }}>{it.codigoInterno}</code>
                         </div>,
                         <div key="sup" style={{ fontSize: '12px', color: '#9ca3af' }}>{it.supplier?.name || <span style={{ opacity: 0.5 }}>S/P</span>}</div>,
-                        <div key="cat" style={{ fontSize: '12px', color: '#9ca3af' }}>{it.categoria}</div>,
+                        <div key="cat" style={{ fontSize: '12px', color: '#9ca3af' }}>{it.category?.nombre || '—'}</div>,
                         <Badge key="rot" color={ROT_COLORS[it.rotacion] ?? '#6b7280'}>{it.rotacion}</Badge>,
                         <div key="box" style={{ fontSize: '12px', color: '#a5b4fc' }}>{it.boxType?.nombre || <span style={{ opacity: 0.4 }}>Sin asignar</span>}</div>,
                         <div key="lim" style={{ fontSize: '12px', color: '#e5e7eb' }}>{it.kilosPorCaja ? `${it.kilosPorCaja} kg/cj` : '—'}</div>,
@@ -118,7 +118,7 @@ export default function MaterialesPage() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <span style={{ color: '#f3f4f6', fontWeight: 600, fontSize: '15px' }}>
-                                    {it.categoria ? `[${it.categoria}] ` : ''}{it.descripcion}
+                                    {it.category?.nombre ? `[${it.category.nombre}] ` : ''}{it.descripcion}
                                 </span>
                                 <code style={{ color: '#a5b4fc', fontSize: '12px' }}>{it.codigoInterno}</code>
                             </div>
@@ -126,7 +126,7 @@ export default function MaterialesPage() {
                         </div>
                         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                             <Badge color="#34d399">{it.supplier?.name || 'Sin Proveedor'}</Badge>
-                            <Badge>{it.categoria}</Badge>
+                            <Badge>{it.category?.nombre || 'General'}</Badge>
                             {it.boxType && <Badge color="#6366f1">📦 {it.boxType.nombre}</Badge>}
                         </div>
                         <div style={{ borderTop: '1px solid #1e2133', paddingTop: '12px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

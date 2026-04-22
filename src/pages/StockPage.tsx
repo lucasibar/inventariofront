@@ -13,6 +13,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGetDepotsQuery } from '../features/depots/api/depots.api';
 import { useGetItemsQuery } from '../features/items/api/items.api';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
+import { useGetItemCategoriesQuery } from '../features/items/api/items.api';
 import { PageHeader, Select, SearchSelect, Spinner, Btn, Modal, Input, EditableCell, useIsMobile } from './common/ui';
 import { CreateItemDialog } from '../features/remitos/ui/CreateItemDialog';
 import { CreatePartnerDialog } from '../features/remitos/ui/CreatePartnerDialog';
@@ -27,6 +28,7 @@ export default function StockPage() {
     const navigate = useNavigate();
 
     const [depotId, setDepotId] = useState<string>(() => sessionStorage.getItem('selectedDepotId') || '');
+    const [categoryId, setCategoryId] = useState<string>('');
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [expandedMaterials, setExpandedMaterials] = useState<string[]>([]);
 
@@ -72,6 +74,7 @@ export default function StockPage() {
 
     const { data: items = [] } = useGetItemsQuery({});
     const { data: partners = [] } = useGetPartnersQuery({});
+    const { data: categories = [] } = useGetItemCategoriesQuery(depotId || '', { skip: !depotId });
     const [quickAddStock] = useQuickAddStockMutation();
     const [deleteStock] = useDeleteStockMutation();
 
@@ -241,7 +244,10 @@ export default function StockPage() {
         } catch (e: any) { alert(e?.data?.message || 'Error al eliminar línea de stock'); }
     };
 
-    const { data: rawStock = [], isFetching, isLoading } = useGetStockQuery({ depotId: depotId || undefined }, { skip: !depotId });
+    const { data: rawStock = [], isFetching, isLoading } = useGetStockQuery({ 
+        depotId: depotId || undefined,
+        categoryId: categoryId || undefined,
+    }, { skip: !depotId });
 
     const { groupedData, generalMetrics } = useMemo(() => {
         const general = { kilos: 0, units: 0, positions: new Set<string>() };
@@ -351,6 +357,14 @@ export default function StockPage() {
                             placeholder="Buscar..."
                             value={searchTerm}
                             onChange={setSearchTerm}
+                        />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <Select
+                            label="Categoría"
+                            value={categoryId}
+                            onChange={setCategoryId}
+                            options={[{ value: '', label: 'Todas las categorías' }, ...categories.map((c: any) => ({ value: c.id, label: c.nombre }))]}
                         />
                     </div>
                     {!isMobile && (
