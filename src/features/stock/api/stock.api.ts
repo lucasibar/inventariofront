@@ -142,6 +142,7 @@ export const {
     useDeleteStockMutation,
     useReassignBatchMutation,
     useLazyCheckBatchQuery,
+    useUpdateBatchObservationsMutation,
     useSubmitPickingAuditMutation,
     useGetCombosQuery,
     useGetComboBreakdownQuery,

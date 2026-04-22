@@ -6,6 +6,7 @@ import {
     useAdjustStockMutation,
     useReassignBatchMutation,
     useLazyCheckBatchQuery,
+    useUpdateBatchObservationsMutation,
 } from '../features/stock/api/stock.api';
 import { useDespachoDirectoMutation } from '../features/remitosSalida/api/remitos-salida.api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -88,8 +89,11 @@ export default function StockPage() {
 
     const [adjustStock] = useAdjustStockMutation();
     const [reassignBatch] = useReassignBatchMutation();
-    const [checkBatch] = useLazyCheckBatchQuery();
+    const [updateBatchObservations] = useUpdateBatchObservationsMutation();
     const [despachoDirecto] = useDespachoDirectoMutation();
+
+    const [obsModal, setObsModal] = useState({ open: false, batchId: '', text: '' });
+    const [obsSaving, setObsSaving] = useState(false);
 
     // Despacho Directo state
     const [despachoModal, setDespachoModal] = useState(false);
@@ -184,6 +188,15 @@ export default function StockPage() {
                 fecha: new Date().toISOString(),
             }).unwrap();
         } catch (e: any) { alert(e?.data?.message || 'Error al reasignar partida'); }
+    };
+
+    const handleUpdateObs = async () => {
+        setObsSaving(true);
+        try {
+            await updateBatchObservations({ id: obsModal.batchId, observaciones: obsModal.text }).unwrap();
+            setObsModal({ open: false, batchId: '', text: '' });
+        } catch (e: any) { alert(e?.data?.message || 'Error al guardar observación'); }
+        setObsSaving(false);
     };
 
     const qaFilteredItems = useMemo(() => {
@@ -429,7 +442,27 @@ export default function StockPage() {
                                                                     {entry.posicion?.codigo || 'S/P'}
                                                                 </td>
                                                                 <td onClick={(e) => e.stopPropagation()}>
-                                                                    <EditableCell value={entry.batch?.lotNumber || ''} onSave={(val) => handleReassignBatch(entry, val)} style={isOldest ? { color: '#fbbf24', fontWeight: 700 } : undefined} />
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                        <EditableCell value={entry.batch?.lotNumber || ''} onSave={(val) => handleReassignBatch(entry, val)} style={isOldest ? { color: '#fbbf24', fontWeight: 700 } : undefined} />
+                                                                        {entry.batch?.observaciones && (
+                                                                            <span 
+                                                                                onClick={() => {
+                                                                                    alert(`Observación: ${entry.batch.observaciones}`);
+                                                                                }}
+                                                                                style={{ color: '#ef4444', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' }}
+                                                                                title="Ver observación"
+                                                                            >
+                                                                                ✔️
+                                                                            </span>
+                                                                        )}
+                                                                        <button 
+                                                                            onClick={() => setObsModal({ open: true, batchId: entry.batch?.id, text: entry.batch?.observaciones || '' })}
+                                                                            style={{ background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', fontSize: '10px', padding: '2px' }}
+                                                                            title="Editar observación"
+                                                                        >
+                                                                            📝
+                                                                        </button>
+                                                                    </div>
                                                                 </td>
                                                                 <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
                                                                     <EditableCell numeric value={Number(entry.qtyPrincipal).toFixed(1)} onSave={(val) => handleAdjustQty(entry, val, 'principal')} />
@@ -559,6 +592,25 @@ export default function StockPage() {
                             <Btn onClick={handleDespachoSubmit} disabled={despachoSaving || !despachoQty}>
                                 {despachoSaving ? 'Despachando...' : '📦 Despachar'}
                             </Btn>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+            {obsModal.open && (
+                <Modal title="Observación de Partida" onClose={() => setObsModal({ open: false, batchId: '', text: '' })}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <textarea 
+                            value={obsModal.text} 
+                            onChange={e => setObsModal(p => ({ ...p, text: e.target.value }))}
+                            placeholder="Escribí aquí cualquier nota sobre esta partida..."
+                            style={{ 
+                                width: '100%', minHeight: '120px', background: '#0f1117', border: '1px solid #2a2d3e', 
+                                color: '#f3f4f6', borderRadius: '8px', padding: '12px', outline: 'none', fontFamily: 'inherit'
+                            }}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                            <Btn variant="secondary" onClick={() => setObsModal({ open: false, batchId: '', text: '' })}>Cancelar</Btn>
+                            <Btn onClick={handleUpdateObs} disabled={obsSaving}>{obsSaving ? 'Guardando...' : 'Guardar Observación'}</Btn>
                         </div>
                     </div>
                 </Modal>
