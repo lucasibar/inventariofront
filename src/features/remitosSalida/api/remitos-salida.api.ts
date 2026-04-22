@@ -35,7 +35,20 @@ export const remitosSalidaApi = api.injectEndpoints({
             query: (body) => ({ url: 'remitos-salida/despacho-directo', method: 'POST', body }),
             invalidatesTags: ['RemitosSalida', 'Stock'],
         }),
+        deleteRemitoSalidaLine: builder.mutation<void, string>({
+            query: (movementId) => ({ url: `remitos-salida/line/${movementId}`, method: 'DELETE' }),
+            invalidatesTags: ['RemitosSalida', 'Stock'],
+        }),
     }),
 });
 
-export const { useGetRemitosSalidaQuery, useGetRemitoSalidaQuery, useLazyGetRemitoSalidaQuery, usePreviewRemitoSalidaMutation, useCreateRemitoSalidaMutation, useDeleteRemitoSalidaMutation, useDespachoDirectoMutation } = remitosSalidaApi;
+export const { 
+    useGetRemitosSalidaQuery, 
+    useGetRemitoSalidaQuery, 
+    useLazyGetRemitoSalidaQuery, 
+    usePreviewRemitoSalidaMutation, 
+    useCreateRemitoSalidaMutation, 
+    useDeleteRemitoSalidaMutation, 
+    useDespachoDirectoMutation,
+    useDeleteRemitoSalidaLineMutation
+} = remitosSalidaApi;

@@ -23,11 +23,14 @@ interface CreateItemDialogProps {
     onSuccess?: (newItem: any) => void;
     initialSupplierId?: string;
     initialSupplierName?: string;
-    depositoId?: string; // New prop
+    depositoId?: string;
+    editTarget?: any; // New prop for editing
 }
 
-export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, initialSupplierName, depositoId }: CreateItemDialogProps) => {
-    const [createItem, { isLoading }] = useCreateItemMutation();
+export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, initialSupplierName, depositoId, editTarget }: CreateItemDialogProps) => {
+    const [createItem, { isLoading: isCreating }] = useCreateItemMutation();
+    const [updateItem, { isLoading: isUpdating }] = useUpdateItemMutation();
+    const isLoading = isCreating || isUpdating;
     const { data: categories = [], isLoading: isLoadingCats } = useGetItemCategoriesQuery(depositoId || '', { skip: !depositoId });
     const [createCategory] = useCreateItemCategoryMutation();
 
@@ -38,30 +41,73 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
         categoryId: '',
         rotacion: 'MEDIA',
         stockMinimo: '',
+        stockMaximo: '', // New
+        kilosPorCaja: '', // New
         unidadPrincipal: 'KG',
         unidadSecundaria: '',
+        tono: '', // New
+        boxTypeId: '', // New
         supplierId: initialSupplierId || '',
         supplierName: initialSupplierName || ''
     });
 
     useEffect(() => {
         if (open) {
-            setForm(prev => ({
-                ...prev,
-                supplierId: initialSupplierId || '',
-                supplierName: initialSupplierName || '',
-            }));
+            if (editTarget) {
+                setForm({
+                    codigoInterno: editTarget.codigoInterno || '',
+                    descripcion: editTarget.descripcion || '',
+                    categoryId: editTarget.categoryId || '',
+                    rotacion: editTarget.rotacion || 'MEDIA',
+                    stockMinimo: editTarget.stockMinimo != null ? String(editTarget.stockMinimo) : '',
+                    stockMaximo: editTarget.stockMaximo != null ? String(editTarget.stockMaximo) : '',
+                    kilosPorCaja: editTarget.kilosPorCaja != null ? String(editTarget.kilosPorCaja) : '',
+                    unidadPrincipal: editTarget.unidadPrincipal || 'KG',
+                    unidadSecundaria: editTarget.unidadSecundaria || '',
+                    tono: editTarget.tono || '',
+                    boxTypeId: editTarget.boxTypeId || '',
+                    supplierId: editTarget.supplierId || '',
+                    supplierName: editTarget.supplier?.name || ''
+                });
+            } else {
+                setForm({
+                    codigoInterno: '',
+                    descripcion: '',
+                    categoryId: '',
+                    rotacion: 'MEDIA',
+                    stockMinimo: '',
+                    stockMaximo: '',
+                    kilosPorCaja: '',
+                    unidadPrincipal: 'KG',
+                    unidadSecundaria: '',
+                    tono: '',
+                    boxTypeId: '',
+                    supplierId: initialSupplierId || '',
+                    supplierName: initialSupplierName || '',
+                });
+            }
+            setError('');
         }
-    }, [open, initialSupplierId, initialSupplierName]);
+    }, [open, initialSupplierId, initialSupplierName, editTarget]);
     const [error, setError] = useState('');
 
     const handleSave = async () => {
         try {
-            const newItem = await createItem({
+            const dto = {
                 ...form,
-                stockMinimo: form.stockMinimo ? Number(form.stockMinimo) : undefined
-            }).unwrap();
-            if (onSuccess) onSuccess(newItem);
+                stockMinimo: form.stockMinimo ? Number(form.stockMinimo) : undefined,
+                stockMaximo: form.stockMaximo ? Number(form.stockMaximo) : undefined,
+                kilosPorCaja: form.kilosPorCaja ? Number(form.kilosPorCaja) : undefined,
+            };
+            
+            let result;
+            if (editTarget) {
+                result = await updateItem({ id: editTarget.id, data: dto }).unwrap();
+            } else {
+                result = await createItem(dto).unwrap();
+            }
+            
+            if (onSuccess) onSuccess(result);
             onClose();
             setForm({
                 codigoInterno: '',
@@ -90,7 +136,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
             }}
         >
             <DialogTitle sx={{ fontWeight: 800, px: 3, pt: 3, color: 'text.primary', letterSpacing: '-0.5px' }}>
-                Nuevo Material
+                {editTarget ? 'Editar Material' : 'Nuevo Material'}
             </DialogTitle>
             <DialogContent sx={{ px: 3 }}>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -196,7 +242,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                     </Box>
                     <Box>
                         <TextField
-                            label="Alerta en kilos"
+                            label="Alerta Stock Mín."
                             type="number"
                             fullWidth
                             variant="filled"
@@ -204,6 +250,50 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                             value={form.stockMinimo}
                             onChange={(e) => setForm({ ...form, stockMinimo: e.target.value })}
                         />
+                    </Box>
+                    <Box>
+                        <TextField
+                            label="Stock Máximo"
+                            type="number"
+                            fullWidth
+                            variant="filled"
+                            value={form.stockMaximo}
+                            onChange={(e) => setForm({ ...form, stockMaximo: e.target.value })}
+                        />
+                    </Box>
+                    <Box>
+                        <TextField
+                            label="Kilos por Caja"
+                            type="number"
+                            fullWidth
+                            variant="filled"
+                            value={form.kilosPorCaja}
+                            onChange={(e) => setForm({ ...form, kilosPorCaja: e.target.value })}
+                        />
+                    </Box>
+                    <Box>
+                        <TextField
+                            select
+                            label="Tono"
+                            fullWidth
+                            variant="filled"
+                            value={form.tono}
+                            onChange={(e) => setForm({ ...form, tono: e.target.value })}
+                        >
+                            <MenuItem value="">Sin tono</MenuItem>
+                            <MenuItem value="AMARILLO">🟡 Amarillo</MenuItem>
+                            <MenuItem value="NARANJA">🟠 Naranja</MenuItem>
+                            <MenuItem value="AZUL">🔵 Azul</MenuItem>
+                            <MenuItem value="ROJO">🔴 Rojo</MenuItem>
+                            <MenuItem value="VERDE">🟢 Verde</MenuItem>
+                            <MenuItem value="MARRÓN">🟫 Marrón</MenuItem>
+                            <MenuItem value="GRIS">🔘 Gris</MenuItem>
+                            <MenuItem value="VIOLETA">🟣 Violeta</MenuItem>
+                            <MenuItem value="ROSA">🌸 Rosa</MenuItem>
+                            <MenuItem value="CELESTE">🩵 Celeste</MenuItem>
+                            <MenuItem value="BLANCO">⬜ Blanco</MenuItem>
+                            <MenuItem value="NEGRO">⬛ Negro</MenuItem>
+                        </TextField>
                     </Box>
                     <Box>
                         <TextField
@@ -267,7 +357,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                     sx={{ fontWeight: 600, px: 3 }}
                     disabled={isLoading || !form.descripcion}
                 >
-                    {isLoading ? 'Guardando...' : 'Crear Material'}
+                    {isLoading ? (editTarget ? 'Actualizando...' : 'Guardando...') : (editTarget ? 'Guardar Cambios' : 'Crear Material')}
                 </Button>
             </DialogActions>
         </Dialog >

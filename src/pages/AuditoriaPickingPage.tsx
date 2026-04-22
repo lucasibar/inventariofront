@@ -14,6 +14,7 @@ export default function AuditoriaPickingPage() {
     const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
 
     const [selectedDepot, setSelectedDepot] = useState<string>('');
+    const [q, setQ] = useState('');
 
     const { data: stock = [], isLoading, isError, refetch } = useGetStockQuery({ 
         categoria: 'PICKING', 
@@ -95,13 +96,22 @@ export default function AuditoriaPickingPage() {
         setPhysicalQty(prev => ({ ...prev, [key]: maxSystem }));
     };
 
-    const sortedStock = useMemo(() => {
-        return [...stock].sort((a, b) => {
+    const filteredStock = useMemo(() => {
+        let result = [...stock];
+        if (q) {
+            const search = q.toLowerCase();
+            result = result.filter((bal: any) => 
+                (bal.batch?.item?.descripcion || '').toLowerCase().includes(search) ||
+                (bal.batch?.item?.codigoInterno || '').toLowerCase().includes(search) ||
+                (bal.posicion?.codigo || '').toLowerCase().includes(search)
+            );
+        }
+        return result.sort((a, b) => {
             const posA = a.posicion?.codigo || '';
             const posB = b.posicion?.codigo || '';
             return posA.localeCompare(posB);
         });
-    }, [stock]);
+    }, [stock, q]);
 
     const handleSubmit = async () => {
         const itemsToSubmit: { 
@@ -112,7 +122,7 @@ export default function AuditoriaPickingPage() {
             faltantePrincipal: number; 
         }[] = [];
 
-        for (const bal of sortedStock) {
+        for (const bal of filteredStock) {
             const key = `${bal.depositoId}-${bal.posicionId}-${bal.itemId}-${bal.lotId}`;
             const sysQty = Number(bal.qtyPrincipal);
             const userQty = physicalQty[key] === '' || physicalQty[key] === undefined ? sysQty : Number(physicalQty[key]);
@@ -159,30 +169,38 @@ export default function AuditoriaPickingPage() {
                 subtitle="Verifica las cantidades físicas reales en las posiciones de picking. Las diferencias se registrarán en un remito de salida consolidado." 
             />
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ color: '#9ca3af', fontSize: '14px' }}>Filtrar por Depósito:</span>
-                    <select 
-                        value={selectedDepot} 
-                        onChange={e => setSelectedDepot(e.target.value)}
-                        style={{ 
-                            background: '#0f1117', border: '1px solid #4b5563', color: '#f3f4f6', 
-                            borderRadius: '6px', padding: '6px 12px', fontSize: '14px', outline: 'none' 
-                        }}
-                    >
-                        <option value="">Todos los depósitos (Picking)</option>
-                        {depots.filter((d: any) => d.activo).map((d: any) => (
-                            <option key={d.id} value={d.id}>{d.nombre}</option>
-                        ))}
-                    </select>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '16px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: '#9ca3af', fontSize: '14px' }}>Filtrar por Depósito:</span>
+                        <select 
+                            value={selectedDepot} 
+                            onChange={e => setSelectedDepot(e.target.value)}
+                            style={{ 
+                                background: '#0f1117', border: '1px solid #4b5563', color: '#f3f4f6', 
+                                borderRadius: '6px', padding: '6px 12px', fontSize: '14px', outline: 'none' 
+                            }}
+                        >
+                            <option value="">Todos los depósitos (Picking)</option>
+                            {depots.filter((d: any) => d.activo).map((d: any) => (
+                                <option key={d.id} value={d.id}>{d.nombre}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <Input 
+                        placeholder="Buscar por material o posición..." 
+                        value={q} 
+                        onChange={setQ} 
+                        style={{ width: '300px' }}
+                    />
                 </div>
 
-                <Btn onClick={handleSubmit} disabled={isSubmitting || sortedStock.length === 0}>
+                <Btn onClick={handleSubmit} disabled={isSubmitting || filteredStock.length === 0}>
                     {isSubmitting ? 'Enviando...' : 'Confirmar Auditoría'}
                 </Btn>
             </div>
 
-            {sortedStock.length === 0 ? (
+            {filteredStock.length === 0 ? (
                 <Card>
                     <div style={{ padding: '32px', textAlign: 'center', color: '#6b7280' }}>
                         No hay mercadería actualmente en posiciones de picking.
@@ -190,7 +208,7 @@ export default function AuditoriaPickingPage() {
                 </Card>
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
-                    {sortedStock.map((bal: any) => {
+                    {filteredStock.map((bal: any) => {
                         const key = `${bal.depositoId}-${bal.posicionId}-${bal.itemId}-${bal.lotId}`;
                         const sysQty = Number(bal.qtyPrincipal);
                         const currentInput = physicalQty[key];

@@ -2,8 +2,10 @@
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     Button, Typography, Box, Table, TableBody,
-    TableCell, TableHead, TableRow, Chip, Divider
+    TableCell, TableHead, TableRow, Chip, Divider, IconButton, Tooltip
 } from '@mui/material';
+import { Undo as RevertIcon } from '@mui/icons-material';
+import { useDeleteRemitoSalidaLineMutation } from '../../remitosSalida/api/remitos-salida.api';
 
 interface RemitoDetailModalProps {
     open: boolean;
@@ -12,7 +14,22 @@ interface RemitoDetailModalProps {
 }
 
 export const RemitoDetailModal = ({ open, onClose, remito }: RemitoDetailModalProps) => {
+    const [revertLine, { isLoading: isReverting }] = useDeleteRemitoSalidaLineMutation();
     if (!remito) return null;
+
+    const isSalida = remito.tipo?.includes('SALIDA');
+    const isActive = remito.status === 'ACTIVO';
+
+    const handleRevertLine = async (line: any) => {
+        if (!window.confirm('¿Estás seguro de que querés revertir este registro? El stock volverá a su posición original.')) return;
+        try {
+            await revertLine(line.id).unwrap();
+            alert('Registro revertido con éxito.');
+            // Note: Since we invalidate RemitosSalida tag, if the parent is watching it should refetch
+        } catch (e: any) {
+            alert(e?.data?.message || 'Error al revertir registro');
+        }
+    };
 
     return (
         <Dialog 
@@ -70,6 +87,7 @@ export const RemitoDetailModal = ({ open, onClose, remito }: RemitoDetailModalPr
                             <TableCell sx={{ fontWeight: 700 }}>Posición</TableCell>
                             <TableCell align="right" sx={{ fontWeight: 700 }}>Kilos</TableCell>
                             <TableCell align="right" sx={{ fontWeight: 700 }}>Unidades</TableCell>
+                            {isSalida && isActive && <TableCell align="center" sx={{ fontWeight: 700 }}>Acciones</TableCell>}
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -101,6 +119,24 @@ export const RemitoDetailModal = ({ open, onClose, remito }: RemitoDetailModalPr
                                 <TableCell align="right">
                                     {(line.qtySecundaria !== undefined && line.qtySecundaria !== null) ? `${Number(line.qtySecundaria).toLocaleString()} un` : '—'}
                                 </TableCell>
+                                {isSalida && isActive && (
+                                    <TableCell align="center">
+                                        {line.status === 'ANULADO' ? (
+                                            <Chip label="REVERTIDO" size="small" color="error" variant="outlined" />
+                                        ) : (
+                                            <Tooltip title="Revertir este registro (Devolver stock)">
+                                                <IconButton 
+                                                    size="small" 
+                                                    color="error" 
+                                                    onClick={() => handleRevertLine(line)}
+                                                    disabled={isReverting}
+                                                >
+                                                    <RevertIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        )}
+                                    </TableCell>
+                                )}
                             </TableRow>
                         ))}
                     </TableBody>
