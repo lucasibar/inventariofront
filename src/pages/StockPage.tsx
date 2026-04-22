@@ -28,7 +28,7 @@ export default function StockPage() {
     const navigate = useNavigate();
 
     const [depotId, setDepotId] = useState<string>(() => sessionStorage.getItem('selectedDepotId') || '');
-    const [categoryId, setCategoryId] = useState<string>('');
+    const [positionId, setPositionId] = useState<string>('');
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [expandedMaterials, setExpandedMaterials] = useState<string[]>([]);
 
@@ -246,7 +246,8 @@ export default function StockPage() {
 
     const { data: rawStock = [], isFetching, isLoading } = useGetStockQuery({ 
         depotId: depotId || undefined,
-        categoryId: categoryId || undefined,
+        positionId: positionId || undefined,
+        q: searchTerm || undefined
     }, { skip: !depotId });
 
     const { groupedData, generalMetrics } = useMemo(() => {
@@ -361,10 +362,10 @@ export default function StockPage() {
                     </div>
                     <div style={{ flex: 1 }}>
                         <Select
-                            label="Categoría"
-                            value={categoryId}
-                            onChange={setCategoryId}
-                            options={[{ value: '', label: 'Todas las categorías' }, ...categories.map((c: any) => ({ value: c.id, label: c.nombre }))]}
+                            label="Posición"
+                            value={positionId}
+                            onChange={setPositionId}
+                            options={[{ value: '', label: 'Todas las posiciones' }, ...(availableDepots.find(d => d.id === depotId)?.positions || []).filter((p: any) => p.activo).map((p: any) => ({ value: p.id, label: p.codigo }))] }
                         />
                     </div>
                     {!isMobile && (

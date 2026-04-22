@@ -31,7 +31,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
     const [createItem, { isLoading: isCreating }] = useCreateItemMutation();
     const [updateItem, { isLoading: isUpdating }] = useUpdateItemMutation();
     const isLoading = isCreating || isUpdating;
-    const { data: categories = [], isLoading: isLoadingCats } = useGetItemCategoriesQuery(depositoId || '', { skip: !depositoId });
+    const { data: categories = [], isLoading: isLoadingCats } = useGetItemCategoriesQuery(depositoId || '');
     const [createCategory] = useCreateItemCategoryMutation();
 
     const [triggerSearch, { data: partners = [], isFetching: isSearchingPartners }] = useLazySearchPartnersQuery();
@@ -210,13 +210,8 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                             handleHomeEndKeys
                             id="category-autocomplete"
                             options={categories}
-                            getOptionLabel={(option) => {
-                                if (typeof option === 'string') return option;
-                                if (option.inputValue) return option.inputValue;
-                                return option.nombre;
-                            }}
-                            renderOption={(props, option) => <li {...props}>{option.nombre}</li>}
-                            freeSolo
+                            getOptionLabel={(option) => option.nombre || ''}
+                            renderOption={(props, option) => <li {...props} key={option.id}>{option.nombre}</li>}
                             loading={isLoadingCats}
                             renderInput={(params) => (
                                 <TextField
