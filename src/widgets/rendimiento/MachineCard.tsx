@@ -25,7 +25,7 @@ const getStatusLabel = (status: string) => {
         case 'REVISAR': return 'Revisar';
         case 'VELOCIDAD_REDUCIDA': return 'V. Reducida';
         case 'PARADA': return 'Parada';
-        case 'ELECTRONIC': return 'Electronic';
+        case 'ELECTRONIC': return 'Electrónica';
         default: return status;
     }
 };
@@ -56,44 +56,61 @@ export const MachineCard: React.FC<MachineCardProps> = ({ machine, onClick }) =>
     }, [machine.updatedAt]);
 
     return (
-        <Tooltip title={`${getStatusLabel(machine.status)}${machine.lastObservation ? `: ${machine.lastObservation}` : ''}`}>
+        <Tooltip 
+            title={
+                <Box sx={{ p: 1 }}>
+                    <Typography variant="subtitle2">{getStatusLabel(machine.status)}</Typography>
+                    {machine.lastObservation && (
+                        <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
+                            Obs: {machine.lastObservation}
+                        </Typography>
+                    )}
+                    {machine.lastChangeBy && (
+                        <Typography variant="caption" display="block" sx={{ opacity: 0.8 }}>
+                            Por: {machine.lastChangeBy}
+                        </Typography>
+                    )}
+                </Box>
+            }
+        >
             <Box sx={{ position: 'relative' }}>
                 <Paper
-                    elevation={3}
+                    elevation={isFailed ? 6 : 1}
                     onClick={() => onClick(machine)}
                     sx={{
-                        width: '65px',
-                        height: '65px',
+                        width: '75px',
+                        height: '75px',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        bgcolor: isFailed ? color : 'rgba(16, 185, 129, 0.05)',
-                        border: `1px solid ${isFailed ? color : color + '44'}`,
-                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        bgcolor: isFailed ? color : 'rgba(16, 185, 129, 0.03)',
+                        border: `2px solid ${isFailed ? color : color + '22'}`,
+                        transition: 'all 0.2s ease-in-out',
                         position: 'relative',
                         zIndex: 2,
                         '&:hover': {
-                            transform: 'translateY(-4px) scale(1.1)',
-                            boxShadow: `0 8px 15px ${isFailed ? color + '66' : 'rgba(0,0,0,0.3)'}`,
-                            bgcolor: isFailed ? color : 'rgba(16, 185, 129, 0.15)',
+                            transform: 'translateY(-4px)',
+                            boxShadow: `0 8px 20px ${color}44`,
+                            border: `2px solid ${color}`,
                         },
                         animation: isFailed ? 'pulse 2s infinite' : 'none',
                         '@keyframes pulse': {
-                            '0%': { boxShadow: `0 0 0 0 ${color}66` },
-                            '70%': { boxShadow: `0 0 0 10px ${color}00` },
+                            '0%': { boxShadow: `0 0 0 0 ${color}44` },
+                            '70%': { boxShadow: `0 0 0 8px ${color}00` },
                             '100%': { boxShadow: `0 0 0 0 ${color}00` }
                         },
-                        borderRadius: '12px',
+                        borderRadius: '16px',
+                        overflow: 'hidden'
                     }}
                 >
                     <Typography 
                         variant="h6" 
                         sx={{ 
                             color: isFailed ? '#fff' : color, 
-                            fontWeight: 900,
-                            fontSize: '1.2rem',
+                            fontWeight: 800,
+                            fontSize: '1.4rem',
                             lineHeight: 1
                         }}
                     >
@@ -102,12 +119,27 @@ export const MachineCard: React.FC<MachineCardProps> = ({ machine, onClick }) =>
                     
                     <Typography variant="caption" sx={{ 
                         fontSize: '9px', 
-                        mt: 0.5, 
-                        color: isFailed ? 'rgba(255,255,255,0.8)' : 'text.secondary',
-                        fontWeight: 600
+                        mt: 0.2, 
+                        color: isFailed ? 'rgba(255,255,255,0.9)' : 'text.secondary',
+                        fontWeight: 700
                     }}>
                         {timeInStatus}
                     </Typography>
+
+                    {isFailed && (
+                        <Box sx={{ 
+                            position: 'absolute', 
+                            bottom: 0, 
+                            width: '100%', 
+                            bgcolor: 'rgba(0,0,0,0.2)', 
+                            py: 0.2,
+                            textAlign: 'center'
+                        }}>
+                            <Typography sx={{ fontSize: '7px', color: '#fff', fontWeight: 900, textTransform: 'uppercase' }}>
+                                {getStatusLabel(machine.status)}
+                            </Typography>
+                        </Box>
+                    )}
                 </Paper>
             </Box>
         </Tooltip>

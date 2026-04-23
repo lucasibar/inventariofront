@@ -112,9 +112,12 @@ export default function RendimientoPage() {
                         <Typography variant="subtitle2" color="text.secondary">
                             Mostrando {machines.length} máquinas de {activeType?.name || '...'}
                         </Typography>
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                            <Badge color="#10b981">Funcionando</Badge>
-                            <Badge color="#ef4444">Falla</Badge>
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                            <Badge color="#10b981">Activa</Badge>
+                            <Badge color="#ef4444">Parada</Badge>
+                            <Badge color="#eab308">Revisar</Badge>
+                            <Badge color="#f472b6">V. Reducida</Badge>
+                            <Badge color="#3b82f6">Electrónica</Badge>
                         </Box>
                     </Box>
                     <Divider sx={{ mb: 2, borderColor: 'rgba(255,255,255,0.05)' }} />

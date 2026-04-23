@@ -25,15 +25,15 @@ export const HistorialRendimientoPage: React.FC = () => {
     
     // Filters State
     const [selectedPlantId, setSelectedPlantId] = useState('');
-    const [startDate, setStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 10)).toISOString().split('T')[0]);
+    const [startDate, setStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
 
     // Data Queries
     const { data: plants } = useGetPlantsQuery();
     const { data: logs, isLoading, isFetching, refetch, error: plantLogsError } = useGetLogsQuery({
         plantId: selectedPlantId,
-        startDate: startDate ? new Date(startDate + 'T00:00:00').toISOString() : undefined,
-        endDate: endDate ? new Date(endDate + 'T23:59:59').toISOString() : undefined,
+        startDate: startDate ? new Date(startDate + 'T00:00:00').toISOString().split('T')[0] : undefined,
+        endDate: endDate ? new Date(endDate + 'T23:59:59').toISOString().split('T')[0] : undefined,
     }, { skip: !selectedPlantId });
 
     const { data: metrics, isLoading: loadingMetrics } = useGetMetricsQuery(
@@ -125,7 +125,7 @@ export const HistorialRendimientoPage: React.FC = () => {
             case 'VELOCIDAD_REDUCIDA': return '#f472b6';
             case 'PARADA': return '#ef4444';
             case 'ELECTRONIC': return '#3b82f6';
-            default: return '#6366f1';
+            default: return '#6b7280';
         }
     };
 
