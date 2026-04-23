@@ -10,29 +10,29 @@ interface MachineCardProps {
 
 const getStatusColor = (status: string) => {
     switch (status) {
-        case 'SOLVED': return '#10b981'; // Green
-        case 'ELECTRICAL': return '#ef4444'; // Red
-        case 'MECHANICAL': return '#f59e0b'; // Orange
-        case 'SUCTION': return '#8b5cf6'; // Purple
-        case 'YARN_SHORTAGE': return '#eab308'; // Yellow/Amber
+        case 'ACTIVA': return '#10b981'; // Green
+        case 'REVISAR': return '#eab308'; // Yellow/Amber
+        case 'VELOCIDAD_REDUCIDA': return '#f472b6'; // Pink
+        case 'PARADA': return '#ef4444'; // Red
+        case 'ELECTRONIC': return '#3b82f6'; // Blue
         default: return '#6b7280'; // Gray
     }
 };
 
 const getStatusLabel = (status: string) => {
     switch (status) {
-        case 'SOLVED': return 'OK';
-        case 'ELECTRICAL': return 'Eléctrico';
-        case 'MECHANICAL': return 'Mecánico';
-        case 'SUCTION': return 'Succión';
-        case 'YARN_SHORTAGE': return 'Falta Hilado';
+        case 'ACTIVA': return 'Activa';
+        case 'REVISAR': return 'Revisar';
+        case 'VELOCIDAD_REDUCIDA': return 'V. Reducida';
+        case 'PARADA': return 'Parada';
+        case 'ELECTRONIC': return 'Electronic';
         default: return status;
     }
 };
 
 export const MachineCard: React.FC<MachineCardProps> = ({ machine, onClick }) => {
     const color = getStatusColor(machine.status);
-    const isFailed = machine.status !== 'SOLVED';
+    const isFailed = machine.status !== 'ACTIVA';
     
     // Status duration
     const [timeInStatus, setTimeInStatus] = React.useState('');

@@ -26,7 +26,7 @@ export const calculateKPIs = (logs: PerformanceLog[], startDate: Date, endDate: 
         return emptyKPIs();
     }
 
-    let currentStatus: MachineStatus = 'SOLVED';
+    let currentStatus: MachineStatus = 'ACTIVA';
     let lastTime = effectiveStart.getTime();
 
     // 1. Determine status at effectiveStart
@@ -47,12 +47,12 @@ export const calculateKPIs = (logs: PerformanceLog[], startDate: Date, endDate: 
         if (logTime > effectiveEnd.getTime()) break;
 
         const duration = logTime - lastTime;
-        if (currentStatus === 'SOLVED') {
+        if (currentStatus === 'ACTIVA') {
             uptimeMs += duration;
-            if (log.toStatus !== 'SOLVED') nFailures++;
+            if (log.toStatus !== 'ACTIVA') nFailures++;
         } else {
             downtimeMs += duration;
-            if (log.toStatus === 'SOLVED') {
+            if (log.toStatus === 'ACTIVA') {
                 nRepairs++;
                 totalTimeToRepairMs += duration;
             }
@@ -64,7 +64,7 @@ export const calculateKPIs = (logs: PerformanceLog[], startDate: Date, endDate: 
 
     // 3. Final gap to end of period
     const finalDuration = effectiveEnd.getTime() - lastTime;
-    if (currentStatus === 'SOLVED') {
+    if (currentStatus === 'ACTIVA') {
         uptimeMs += finalDuration;
     } else {
         downtimeMs += finalDuration;
@@ -107,7 +107,7 @@ export const calculatePlantKPIs = (logs: PerformanceLog[], totalMachines: number
     let totalReparationTimeMs = 0;
 
     // For each machine index (up to totalMachines)
-    // We assume machines without logs were SOLVED (100% uptime)
+    // We assume machines without logs were ACTIVA (100% uptime)
     // For machines WITH logs, we calculate their specific uptime/downtime
     
     // 1. Calculate for machines with logs
@@ -124,7 +124,7 @@ export const calculatePlantKPIs = (logs: PerformanceLog[], totalMachines: number
         let mRepairTime = 0;
         
         const sorted = [...mLogs].sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-        let currentStatus = 'SOLVED';
+        let currentStatus = 'ACTIVA';
         let lastTime = startDate.getTime();
         
         for (const log of sorted) {
@@ -133,17 +133,17 @@ export const calculatePlantKPIs = (logs: PerformanceLog[], totalMachines: number
             if (time > endDate.getTime()) break;
             
             const duration = time - lastTime;
-            if (currentStatus === 'SOLVED') mUptime += duration;
+            if (currentStatus === 'ACTIVA') mUptime += duration;
             else {
                 mDowntime += duration;
-                if (log.toStatus === 'SOLVED') { mRepairs++; mRepairTime += duration; }
+                if (log.toStatus === 'ACTIVA') { mRepairs++; mRepairTime += duration; }
             }
-            if (currentStatus === 'SOLVED' && log.toStatus !== 'SOLVED') mFailures++;
+            if (currentStatus === 'ACTIVA' && log.toStatus !== 'ACTIVA') mFailures++;
             currentStatus = log.toStatus;
             lastTime = time;
         }
         const finalGap = endDate.getTime() - lastTime;
-        if (currentStatus === 'SOLVED') mUptime += finalGap;
+        if (currentStatus === 'ACTIVA') mUptime += finalGap;
         else mDowntime += finalGap;
         // --- End re-calculation ---
 

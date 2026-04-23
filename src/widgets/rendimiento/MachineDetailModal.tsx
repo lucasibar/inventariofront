@@ -50,11 +50,11 @@ export const MachineDetailModal: React.FC<MachineDetailModalProps> = ({
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'SOLVED': return '#10b981';
-            case 'MECHANICAL': return '#ef4444';
-            case 'ELECTRICAL': return '#f59e0b';
-            case 'SUCTION': return '#8b5cf6';
-            case 'YARN_SHORTAGE': return '#eab308';
+            case 'ACTIVA': return '#10b981';
+            case 'REVISAR': return '#eab308';
+            case 'VELOCIDAD_REDUCIDA': return '#f472b6';
+            case 'PARADA': return '#ef4444';
+            case 'ELECTRONIC': return '#3b82f6';
             default: return '#6366f1';
         }
     };
@@ -191,14 +191,14 @@ export const MachineDetailModal: React.FC<MachineDetailModalProps> = ({
                         Cargar Producción
                     </Button>
                     
-                    {machine.status === 'SOLVED' ? (
+                    {machine.status === 'ACTIVA' ? (
                         <Button 
                             variant="contained" 
                             color="error"
                             onClick={() => { onReportFailure(machine); onClose(); }}
                             sx={{ px: 4, fontWeight: 800, borderRadius: '8px', boxShadow: '0 4px 14px 0 rgba(239, 68, 68, 0.39)' }}
                         >
-                            Reportar Falla
+                            Cambiar Estado
                         </Button>
                     ) : (
                         <Button 
@@ -207,7 +207,7 @@ export const MachineDetailModal: React.FC<MachineDetailModalProps> = ({
                             onClick={() => { onSolve(machine); onClose(); }}
                             sx={{ px: 4, fontWeight: 800, borderRadius: '8px', boxShadow: '0 4px 14px 0 rgba(16, 185, 129, 0.39)' }}
                         >
-                            Solucionar Falla
+                            Solucionar / Activar
                         </Button>
                     )}
                 </Box>

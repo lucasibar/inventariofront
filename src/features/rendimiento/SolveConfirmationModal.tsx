@@ -38,7 +38,7 @@ export const SolveConfirmationModal: React.FC<SolveConfirmationModalProps> = ({ 
         try {
             await updateStatus({
                 id: machine.id,
-                status: 'SOLVED',
+                status: 'ACTIVA',
                 observation: data.observation,
                 generatedBy: data.mechanicName
             }).unwrap();
@@ -51,13 +51,13 @@ export const SolveConfirmationModal: React.FC<SolveConfirmationModalProps> = ({ 
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
             <DialogTitle sx={{ bgcolor: '#1a1a1a', borderBottom: '1px solid #333' }}>
-                Poner en Servicio - Máquina {machine?.number}
+                Activar Máquina - Máquina {machine?.number}
             </DialogTitle>
             <form onSubmit={handleSubmit(onSubmit)}>
                 <DialogContent sx={{ bgcolor: '#1a1a1a', pt: 3 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         <Alert severity="info" sx={{ bgcolor: 'rgba(2, 136, 209, 0.1)', color: '#fff' }}>
-                            ¿Estás seguro de generar el cambio a 'Solucionado'?
+                            ¿Estás seguro de poner la máquina en estado 'Activa'?
                         </Alert>
 
                         <Controller

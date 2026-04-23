@@ -16,7 +16,7 @@ export interface Machine {
     number: number;
     codigoInterno: string;
     nombre: string;
-    status: 'SOLVED' | 'ELECTRICAL' | 'MECHANICAL' | 'SUCTION' | 'YARN_SHORTAGE';
+    status: 'ACTIVA' | 'REVISAR' | 'VELOCIDAD_REDUCIDA' | 'PARADA' | 'ELECTRONIC';
     lastObservation?: string;
     lastChangeBy?: string;
     plantId: string;

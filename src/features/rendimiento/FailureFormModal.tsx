@@ -17,10 +17,18 @@ interface FailureFormModalProps {
 }
 
 const failureTypes = [
-    { value: 'ELECTRICAL', label: 'Falla Eléctrica' },
-    { value: 'MECHANICAL', label: 'Falla Mecánica' },
-    { value: 'SUCTION', label: 'Falla Succión' },
-    { value: 'YARN_SHORTAGE', label: 'Falta Hilado' },
+    'Cosedora Cilindro', 'Cosedora Brazo', 'Cosedora Cierre', 'Error electronico',
+    'Error Puesta 0', 'Error Motores', 'Mal vanizado', 'Logo contaminado',
+    'Tejido(Muerde/revienta/pica/tirones)', 'Goma', 'Puntada', 'Transferencia',
+    'Aguja', 'Platina', 'Menguados', 'Corta', 'Electronico', 'Lubricacion',
+    'Mancha', 'Corte', 'REPUESTO', 'Corte de luz.'
+];
+
+const targetStatuses = [
+    { value: 'REVISAR', label: 'Revisar (Amarillo)' },
+    { value: 'VELOCIDAD_REDUCIDA', label: 'Velocidad Reducida (Rosa)' },
+    { value: 'PARADA', label: 'Parada (Rojo)' },
+    { value: 'ELECTRONIC', label: 'Electronic (Azul)' },
 ];
 
 export const FailureFormModal: React.FC<FailureFormModalProps> = ({ open, onClose, machine }) => {
@@ -29,18 +37,20 @@ export const FailureFormModal: React.FC<FailureFormModalProps> = ({ open, onClos
     
     const { control, handleSubmit, reset } = useForm({
         defaultValues: {
-            failureType: 'MECHANICAL',
+            targetStatus: 'PARADA',
+            failureType: 'Mecánico',
             observation: '',
-            generatedBy: user?.name || user?.username || 'Usuario',
+            generatedBy: '',
         }
     });
 
     useEffect(() => {
         if (open) {
             reset({
-                failureType: 'MECHANICAL',
+                targetStatus: 'PARADA',
+                failureType: 'Cosedora Cilindro',
                 observation: '',
-                generatedBy: user?.name || user?.username || 'Usuario',
+                generatedBy: user?.name || user?.username || '',
             });
         }
     }, [open, user, reset]);
@@ -50,7 +60,7 @@ export const FailureFormModal: React.FC<FailureFormModalProps> = ({ open, onClos
         try {
             await updateStatus({
                 id: machine.id,
-                status: data.failureType,
+                status: data.targetStatus,
                 failureType: data.failureType,
                 observation: data.observation,
                 generatedBy: data.generatedBy
@@ -64,11 +74,33 @@ export const FailureFormModal: React.FC<FailureFormModalProps> = ({ open, onClos
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
             <DialogTitle sx={{ bgcolor: '#1a1a1a', borderBottom: '1px solid #333' }}>
-                Reportar Falla - Máquina {machine?.number}
+                Cambiar Estado - Máquina {machine?.number}
             </DialogTitle>
             <form onSubmit={handleSubmit(onSubmit)}>
                 <DialogContent sx={{ bgcolor: '#1a1a1a', pt: 3 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        
+                        <Controller
+                            name="targetStatus"
+                            control={control}
+                            render={({ field }) => (
+                                <TextField
+                                    {...field}
+                                    select
+                                    fullWidth
+                                    label="Nuevo Estado"
+                                    variant="outlined"
+                                    required
+                                >
+                                    {targetStatuses.map((option) => (
+                                        <MenuItem key={option.value} value={option.value}>
+                                            {option.label}
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
+                            )}
+                        />
+
                         <Controller
                             name="failureType"
                             control={control}
@@ -77,12 +109,13 @@ export const FailureFormModal: React.FC<FailureFormModalProps> = ({ open, onClos
                                     {...field}
                                     select
                                     fullWidth
-                                    label="Tipo de Falla"
+                                    label="Tipo de Problema"
                                     variant="outlined"
+                                    required
                                 >
                                     {failureTypes.map((option) => (
-                                        <MenuItem key={option.value} value={option.value}>
-                                            {option.label}
+                                        <MenuItem key={option} value={option}>
+                                            {option}
                                         </MenuItem>
                                     ))}
                                 </TextField>
@@ -96,9 +129,10 @@ export const FailureFormModal: React.FC<FailureFormModalProps> = ({ open, onClos
                                 <TextField
                                     {...field}
                                     fullWidth
-                                    label="Generado por"
+                                    label="Responsable (Mecánico/Calidad)"
                                     variant="outlined"
-                                    disabled
+                                    required
+                                    placeholder="Nombre del responsable"
                                 />
                             )}
                         />
@@ -131,7 +165,7 @@ export const FailureFormModal: React.FC<FailureFormModalProps> = ({ open, onClos
                         color="error" 
                         disabled={isLoading}
                     >
-                        Reportar Falla
+                        Cambiar Estado
                     </Button>
                 </DialogActions>
             </form>

@@ -120,9 +120,11 @@ export const HistorialRendimientoPage: React.FC = () => {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'SOLVED': return '#10b981';
-            case 'MECHANICAL': return '#ef4444';
-            case 'ELECTRICAL': return '#f59e0b';
+            case 'ACTIVA': return '#10b981';
+            case 'REVISAR': return '#eab308';
+            case 'VELOCIDAD_REDUCIDA': return '#f472b6';
+            case 'PARADA': return '#ef4444';
+            case 'ELECTRONIC': return '#3b82f6';
             default: return '#6366f1';
         }
     };
