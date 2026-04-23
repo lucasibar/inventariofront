@@ -27,6 +27,7 @@ import AdminMovementsPage from './pages/AdminMovementsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import RendimientoPage from './pages/RendimientoPage';
 import { HistorialRendimientoPage } from './pages/HistorialRendimientoPage';
+import CargarProduccionPage from './pages/CargarProduccionPage';
 
 
 
@@ -78,6 +79,7 @@ function App() {
                 <Route path="/tasks" element={<WorkspaceTasksPage />} />
                 <Route path="/rendimiento" element={<RendimientoPage />} />
                 <Route path="/rendimiento/historial" element={<HistorialRendimientoPage />} />
+                <Route path="/produccion/cargar" element={<CargarProduccionPage />} />
 
             </Route>
 

@@ -27,6 +27,7 @@ const navGroups = [
         label: 'Producción',
         icon: '⚙️',
         items: [
+            { to: '/produccion/cargar', label: '➕ Cargar Producción' },
             { to: '/rendimiento', label: '📈 Rendimiento' },
             { to: '/rendimiento/historial', label: '📜 Historial de Registros' },
         ]
@@ -108,7 +109,7 @@ export default function Layout() {
         ...group,
         items: group.items.filter(item => {
             if (isAdmin) return true;
-            if (isOperario) return ['/movimientos', '/stock', '/deposito/auditoria-picking', '/remitos-salida', '/tasks', '/deposito', '/rendimiento'].includes(item.to);
+            if (isOperario) return ['/movimientos', '/stock', '/deposito/auditoria-picking', '/remitos-salida', '/tasks', '/deposito', '/rendimiento', '/produccion/cargar'].includes(item.to);
             if (isCompras) return ['/dashboard', '/remitos-entrada', '/items', '/dashboard/capacity', '/dashboard/volumes', '/socios', '/pedidos-compra'].includes(item.to);
             return false;
         })
