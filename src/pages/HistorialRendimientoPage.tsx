@@ -11,11 +11,13 @@ import {
     useGetLogsQuery, 
     useGetPlantsQuery, 
     useUpdateLogMutation, 
-    useDeleteLogMutation 
+    useDeleteLogMutation,
+    useGetMetricsQuery
 } from '../entities/performance/api/performanceApi';
 import { useSelector } from 'react-redux';
 import { selectIsAdmin } from '../entities/auth/model/authSlice';
 import { PageHeader, Card, Btn, Select } from './common/ui';
+import { calculatePlantKPIs } from '../features/rendimiento/utils/kpiUtils';
 
 
 export const HistorialRendimientoPage: React.FC = () => {
@@ -23,16 +25,39 @@ export const HistorialRendimientoPage: React.FC = () => {
     
     // Filters State
     const [selectedPlantId, setSelectedPlantId] = useState('');
-    const [startDate, setStartDate] = useState(new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0]);
+    const [startDate, setStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 10)).toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
 
     // Data Queries
     const { data: plants } = useGetPlantsQuery();
-    const { data: logs, isLoading, isFetching, refetch } = useGetLogsQuery({
+    const { data: logs, isLoading, isFetching, refetch, error: plantLogsError } = useGetLogsQuery({
         plantId: selectedPlantId,
-        startDate: startDate ? new Date(startDate).toISOString() : undefined,
-        endDate: endDate ? new Date(new Date(endDate).setHours(23, 59, 59, 999)).toISOString() : undefined,
+        startDate: startDate ? new Date(startDate + 'T00:00:00').toISOString() : undefined,
+        endDate: endDate ? new Date(endDate + 'T23:59:59').toISOString() : undefined,
     }, { skip: !selectedPlantId });
+
+    const { data: metrics, isLoading: loadingMetrics } = useGetMetricsQuery(
+        { plantId: selectedPlantId || '' },
+        { skip: !selectedPlantId }
+    );
+
+    const plantKPIs = React.useMemo(() => {
+        if (!selectedPlantId || !metrics || !logs) return { availability: '0.0%', oee: '0.0%', mtbf: '0s', mttr: '0s' };
+        
+        const start = new Date(startDate + 'T00:00:00');
+        const end = new Date(endDate + 'T23:59:59');
+
+        if (!logs.length && !isLoading && !isFetching) {
+             return { availability: '100%', oee: '0%', mtbf: '0s', mttr: '0s' };
+        }
+        
+        try {
+            return calculatePlantKPIs(logs, metrics.total, start, end); 
+        } catch (e) {
+            console.error("Error calculating plant KPIs:", e);
+            return { availability: 'Error', oee: 'Error', mtbf: 'Error', mttr: 'Error' };
+        }
+    }, [logs, selectedPlantId, isLoading, isFetching, metrics, startDate, endDate]);
 
 
     // Mutations
@@ -169,6 +194,59 @@ export const HistorialRendimientoPage: React.FC = () => {
             </Card>
 
 
+            {/* Metrics Dashboard */}
+            <Box sx={{ mb: 6 }}>
+                <Typography variant="subtitle2" color="primary" sx={{ mb: 2, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    Estado Actual (Tiempo Real)
+                </Typography>
+                <Box sx={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(4, 1fr)', 
+                    gap: 2, 
+                    mb: 4 
+                }}>
+                    <StatusCard 
+                        label="En Funcionamiento" 
+                        value={metrics?.running || 0} 
+                        icon="✅" 
+                        color="linear-gradient(135deg, #10b981, #059669)" 
+                        loading={loadingMetrics} 
+                    />
+                    <StatusCard 
+                        label="Con Inconveniente" 
+                        value={metrics?.failed || 0} 
+                        icon="⚠️" 
+                        color="linear-gradient(135deg, #ef4444, #dc2626)" 
+                        loading={loadingMetrics} 
+                    />
+                    <StatusCard 
+                        label="Total Máquinas" 
+                        value={metrics?.total || 0} 
+                        icon="🏭" 
+                        color="linear-gradient(135deg, #6366f1, #4f46e5)" 
+                        loading={loadingMetrics} 
+                    />
+                    <StatusCard 
+                        label="Disponibilidad Actual" 
+                        value={metrics?.total ? `${((metrics.running / metrics.total) * 100).toFixed(1)}%` : '0%'} 
+                        icon="📈" 
+                        color="linear-gradient(135deg, #f59e0b, #d97706)" 
+                        loading={loadingMetrics} 
+                    />
+                </Box>
+
+                <Typography variant="subtitle2" color="primary" sx={{ mb: 2, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    Analítica del Período Seleccionado
+                </Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 2 }}>
+                    <KPICard label="Disponibilidad Global" value={plantKPIs?.availability || '0.0%'} subtext="Tiempo productivo real" color="#10b981" loading={isLoading || isFetching} error={!!plantLogsError} />
+                    <KPICard label="OEE (Plant-wide)" value={plantKPIs?.oee || '0.0%'} subtext="Efectividad total" color="#8b5cf6" loading={isLoading || isFetching} error={!!plantLogsError} />
+                    <KPICard label="Confiabilidad (MTBF)" value={plantKPIs?.mtbf || '0s'} subtext="Tiempo promedio entre fallas" color="#60a5fa" loading={isLoading || isFetching} error={!!plantLogsError} />
+                    <KPICard label="Capacidad de Repuesta (MTTR)" value={plantKPIs?.mttr || '0s'} subtext="Tiempo promedio de reparación" color="#f87171" loading={isLoading || isFetching} error={!!plantLogsError} />
+                </Box>
+            </Box>
+
+
             {/* Logs Table */}
             <TableContainer component={Paper} sx={{ bgcolor: '#1a1d2e', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 {isLoading ? (
@@ -266,3 +344,51 @@ export const HistorialRendimientoPage: React.FC = () => {
         </Box>
     );
 };
+
+const StatusCard = ({ label, value, icon, color, loading }: any) => (
+    <Card style={{ 
+        padding: '16px', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#1a1d2e',
+        position: 'relative',
+        overflow: 'hidden',
+        aspectRatio: '1 / 1',
+        textAlign: 'center'
+    }}>
+        <Box sx={{ 
+            position: 'absolute', 
+            top: 0, 
+            left: 0, 
+            width: '4px', 
+            height: '100%', 
+            background: color 
+        }} />
+        <Typography variant="h4" sx={{ mb: 1 }}>{icon}</Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700, mb: 0.5, fontSize: { xs: '10px', sm: '12px' } }}>{label}</Typography>
+        <Typography variant="h4" sx={{ fontWeight: 900, color: '#fff', fontSize: { xs: '1.2rem', sm: '1.5rem', md: '2.125rem' } }}>
+            {loading ? <CircularProgress size={24} /> : value}
+        </Typography>
+    </Card>
+);
+
+const KPICard = ({ label, value, subtext, color, loading, error }: any) => (
+    <Card style={{ 
+        padding: '24px', 
+        background: 'rgba(255,255,255,0.02)',
+        border: '1px solid rgba(255,255,255,0.05)',
+        transition: 'all 0.3s ease',
+        position: 'relative'
+    }}>
+        <Typography variant="caption" sx={{ color: color, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', display: 'block', mb: 2 }}>
+            {label}
+        </Typography>
+        <Typography variant="h2" sx={{ fontWeight: 800, color: error ? '#ef4444' : '#fff', mb: 1 }}>
+            {loading ? <CircularProgress size={24} /> : error ? 'Error' : value}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">{subtext}</Typography>
+        {loading && <Box sx={{ position: 'absolute', top: 10, right: 10 }}><CircularProgress size={12} /></Box>}
+    </Card>
+);

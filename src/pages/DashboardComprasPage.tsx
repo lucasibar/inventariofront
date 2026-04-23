@@ -30,10 +30,17 @@ export default function DashboardComprasPage() {
     const [newCombo, setNewCombo] = useState({ title: '', supplierId: '', itemIds: [] as string[] });
     const [materialSearch, setMaterialSearch] = useState('');
 
-    const filteredItems = items.filter(i => 
-        i.descripcion.toLowerCase().includes(materialSearch.toLowerCase()) ||
-        i.codigoInterno.toLowerCase().includes(materialSearch.toLowerCase())
-    );
+    const filteredItems = items.filter(i => {
+        const matchesSearch = 
+            i.descripcion.toLowerCase().includes(materialSearch.toLowerCase()) ||
+            i.codigoInterno.toLowerCase().includes(materialSearch.toLowerCase()) ||
+            (i.supplier?.name || '').toLowerCase().includes(materialSearch.toLowerCase()) ||
+            (i.categoria || '').toLowerCase().includes(materialSearch.toLowerCase());
+        
+        const matchesSupplier = !newCombo.supplierId || i.supplierId === newCombo.supplierId;
+
+        return matchesSearch && matchesSupplier;
+    });
 
     const handleCreate = async () => {
         if (!newCombo.title || newCombo.itemIds.length === 0) return;
@@ -363,10 +370,17 @@ function EditComboModal({ combo, items, onClose, onSave }: { combo: any; items: 
 
     if (!combo) return null;
 
-    const filteredItems = items.filter(i =>
-        i.descripcion.toLowerCase().includes(search.toLowerCase()) ||
-        i.codigoInterno.toLowerCase().includes(search.toLowerCase())
-    );
+    const filteredItems = items.filter(i => {
+        const matchesSearch = 
+            i.descripcion.toLowerCase().includes(search.toLowerCase()) ||
+            i.codigoInterno.toLowerCase().includes(search.toLowerCase()) ||
+            (i.supplier?.name || '').toLowerCase().includes(search.toLowerCase()) ||
+            (i.categoria || '').toLowerCase().includes(search.toLowerCase());
+        
+        const matchesSupplier = !combo.supplierId || i.supplierId === combo.supplierId;
+
+        return matchesSearch && matchesSupplier;
+    });
 
     const handleSave = async () => {
         setSaving(true);
