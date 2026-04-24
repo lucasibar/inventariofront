@@ -129,7 +129,7 @@ export default function MovimientosPage() {
                 fecha: despachoFecha,
                 clientId: despachoNewClient ? undefined : despachoClient,
                 clientName: despachoNewClient ? despachoClientName : undefined,
-                depositoId: despachoEntry.posicion?.depot?.id || despachoEntry.posicion?.depotId,
+                depositoId: despachoEntry.depositoId || despachoEntry.posicion?.depotId,
                 posicionId: despachoEntry.posicionId || despachoEntry.posicion?.id,
                 itemId: despachoEntry.batch.item.id,
                 lotId: despachoEntry.batch.id,

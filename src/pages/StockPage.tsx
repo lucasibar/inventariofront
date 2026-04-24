@@ -136,7 +136,7 @@ export default function StockPage() {
                 fecha: despachoFecha,
                 clientId: despachoNewClient ? undefined : despachoClient,
                 clientName: despachoNewClient ? despachoClientName : undefined,
-                depositoId: despachoEntry.posicion?.depot?.id || depotId,
+                depositoId: despachoEntry.depositoId || depotId,
                 posicionId: despachoEntry.posicionId,
                 itemId: despachoEntry.batch.item.id,
                 lotId: despachoEntry.lotId,
@@ -160,7 +160,7 @@ export default function StockPage() {
         if (diff === 0) return;
         try {
             await adjustStock({
-                depositoId: entry.posicion?.depot?.id || depotId,
+                depositoId: entry.depositoId || depotId,
                 posicionId: entry.posicionId,
                 itemId: entry.batch.item.id,
                 lotId: entry.lotId,
@@ -175,7 +175,7 @@ export default function StockPage() {
     const handleReassignBatch = async (entry: any, newLotNumber: string) => {
         if (!newLotNumber.trim()) return;
         if (newLotNumber === entry.batch.lotNumber) return;
-        const entryDepotId = entry.posicion?.depot?.id || depotId;
+        const entryDepotId = entry.depositoId || depotId;
         try {
             const result = await checkBatch({ itemId: entry.batch.item.id, lotNumber: newLotNumber, supplierId: entry.batch.supplier?.id }).unwrap();
             if (result.exists) {
@@ -235,7 +235,7 @@ export default function StockPage() {
         if (!window.confirm(`¿Eliminar esta línea de stock (${entry.qtyPrincipal} ${entry.batch.item.unidadPrincipal})?`)) return;
         try {
             await deleteStock({
-                depositoId: entry.posicion?.depot?.id || depotId,
+                depositoId: entry.depositoId || depotId,
                 posicionId: entry.posicionId,
                 itemId: entry.batch.item.id,
                 lotId: entry.lotId,
@@ -454,7 +454,7 @@ export default function StockPage() {
                                                                     style={{ color: '#6366f1', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}
                                                                     onClick={(e) => { 
                                                                         e.stopPropagation(); 
-                                                                        navigate('/movimientos', { state: { depositoId: entry.posicion?.depot?.id || depotId, posicionId: entry.posicion?.id, itemId: entry.batch?.item?.id } });
+                                                                        navigate('/movimientos', { state: { depositoId: entry.depositoId || depotId, posicionId: entry.posicionId, itemId: entry.batch?.item?.id } });
                                                                     }}
                                                                 >
                                                                     {entry.posicion?.codigo || 'S/P'}
