@@ -6,7 +6,7 @@ import {
 } from '@mui/material';
 import { useCreateItemMutation, useUpdateItemMutation, useGetItemCategoriesQuery, useCreateItemCategoryMutation } from '../../items/api/items.api';
 import { useGetBoxTypesQuery } from '../../items/api/box-types.api';
-import { useLazySearchPartnersQuery } from '../api/remito.api';
+import { useGetPartnersQuery } from '../../partners/api/partners.api';
 import { Autocomplete, createFilterOptions } from '@mui/material';
 
 const filter = createFilterOptions<any>();
@@ -35,8 +35,8 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
     const { data: categories = [], isLoading: isLoadingCats } = useGetItemCategoriesQuery(depositoId || '');
     const [createCategory] = useCreateItemCategoryMutation();
     const { data: boxTypes = [] } = useGetBoxTypesQuery();
-
-    const [triggerSearch, { data: partners = [], isFetching: isSearchingPartners }] = useLazySearchPartnersQuery();
+    const { data: partners = [], isLoading: isLoadingPartners } = useGetPartnersQuery({ type: 'SUPPLIER' });
+    
     const [form, setForm] = useState({
         codigoInterno: '',
         descripcion: '',
@@ -337,10 +337,9 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                         <Autocomplete
                             options={partners}
                             getOptionLabel={(option: any) => `${option.name} ${option.taxId ? `(${option.taxId})` : ''}`}
-                            value={form.supplierId ? { id: form.supplierId, name: form.supplierName } : null}
                             isOptionEqualToValue={(option, value) => option.id === value?.id}
-                            loading={isSearchingPartners}
-                            onInputChange={(_, newInputValue) => triggerSearch(newInputValue)}
+                            value={partners.find((p: any) => p.id === form.supplierId) || null}
+                            loading={isLoadingPartners}
                             onChange={(_, newValue) => {
                                 setForm({
                                     ...form,
@@ -352,7 +351,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                                 <TextField
                                     {...params}
                                     label="Proveedor Principal (Opcional)"
-                                    placeholder="Vincular a un proveedor..."
+                                    placeholder="Seleccionar proveedor..."
                                     variant="filled"
                                     fullWidth
                                 />
