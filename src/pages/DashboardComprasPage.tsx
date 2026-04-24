@@ -35,6 +35,7 @@ export default function DashboardComprasPage() {
             i.descripcion.toLowerCase().includes(materialSearch.toLowerCase()) ||
             i.codigoInterno.toLowerCase().includes(materialSearch.toLowerCase()) ||
             (i.supplier?.name || '').toLowerCase().includes(materialSearch.toLowerCase()) ||
+            (i.category?.nombre || '').toLowerCase().includes(materialSearch.toLowerCase()) ||
             (i.categoria || '').toLowerCase().includes(materialSearch.toLowerCase());
         
         const matchesSupplier = !newCombo.supplierId || i.supplierId === newCombo.supplierId;

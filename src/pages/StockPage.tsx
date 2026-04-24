@@ -264,7 +264,8 @@ export default function StockPage() {
                 const lotNum = (entry.batch?.lotNumber || '').toLowerCase();
                 const supplierName = (entry.batch?.supplier?.name || '').toLowerCase();
                 const posCode = (entry.posicion?.codigo || '').toLowerCase();
-                return itemDesc.includes(word) || itemCode.includes(word) || lotNum.includes(word) || supplierName.includes(word) || posCode.includes(word);
+                const categoryName = (entry.batch?.item?.category?.nombre || '').toLowerCase();
+                return itemDesc.includes(word) || itemCode.includes(word) || lotNum.includes(word) || supplierName.includes(word) || posCode.includes(word) || categoryName.includes(word);
             });
         });
 
