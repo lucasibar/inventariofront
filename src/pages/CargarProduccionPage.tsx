@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Box, Typography, TextField, Button, Grid, Divider, IconButton, Tooltip } from '@mui/material';
 import { PageHeader, Card, Badge } from './common/ui';
 import { useDispatch, useSelector } from 'react-redux';
@@ -99,7 +99,7 @@ export default function CargarProduccionPage() {
 
             <Grid container spacing={3}>
                 {/* Panel de Carga */}
-                <Grid item xs={12} lg={7}>
+                <Grid size={{ xs: 12, lg: 7 }}>
                     <Card style={{ padding: '24px' }}>
                         <Typography variant="h6" sx={{ mb: 3, fontWeight: 700, color: '#f3f4f6', display: 'flex', alignItems: 'center', gap: 1 }}>
                             <QrCodeIcon sx={{ color: '#6366f1' }} /> Nueva Entrada
@@ -108,7 +108,7 @@ export default function CargarProduccionPage() {
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                             {/* Escaneos Secuenciales */}
                             <Grid container spacing={2}>
-                                <Grid item xs={12} sm={4}>
+                                <Grid size={{ xs: 12, sm: 4 }}>
                                     <TextField
                                         label="Código Máquina"
                                         fullWidth
@@ -121,7 +121,7 @@ export default function CargarProduccionPage() {
                                         InputProps={{ sx: { borderRadius: '12px', bgcolor: 'rgba(255,255,255,0.03)' } }}
                                     />
                                 </Grid>
-                                <Grid item xs={12} sm={4}>
+                                <Grid size={{ xs: 12, sm: 4 }}>
                                     <TextField
                                         label="Código Tejedor"
                                         fullWidth
@@ -134,7 +134,7 @@ export default function CargarProduccionPage() {
                                         InputProps={{ sx: { borderRadius: '12px', bgcolor: 'rgba(255,255,255,0.03)' } }}
                                     />
                                 </Grid>
-                                <Grid item xs={12} sm={4}>
+                                <Grid size={{ xs: 12, sm: 4 }}>
                                     <TextField
                                         label="Código Bolsa"
                                         fullWidth
@@ -153,7 +153,7 @@ export default function CargarProduccionPage() {
 
                             {/* Cantidades */}
                             <Grid container spacing={2}>
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         label="Docenas Primera"
                                         type="number"
@@ -165,7 +165,7 @@ export default function CargarProduccionPage() {
                                         InputProps={{ sx: { borderRadius: '12px', fontSize: '1.2rem', fontWeight: 600 } }}
                                     />
                                 </Grid>
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         label="Docenas Segunda"
                                         type="number"
@@ -225,7 +225,7 @@ export default function CargarProduccionPage() {
                 </Grid>
 
                 {/* Lista de Sesión */}
-                <Grid item xs={12} lg={5}>
+                <Grid size={{ xs: 12, lg: 5 }}>
                     <Card style={{ padding: '0', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
                         <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
