@@ -34,6 +34,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
     const isLoading = isCreating || isUpdating;
     const { data: categories = [], isLoading: isLoadingCats } = useGetItemCategoriesQuery(depositoId || '');
     const [createCategory] = useCreateItemCategoryMutation();
+    const { data: boxTypes = [] } = useGetBoxTypesQuery();
 
     const [triggerSearch, { data: partners = [], isFetching: isSearchingPartners }] = useLazySearchPartnersQuery();
     const [form, setForm] = useState({
@@ -239,6 +240,23 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                                 <MenuItem key={rot.value} value={rot.value}>{rot.label}</MenuItem>
                             ))}
                         </TextField>
+                    </Box>
+                    <Box>
+                        <Autocomplete
+                            options={boxTypes}
+                            getOptionLabel={(option) => option.nombre}
+                            isOptionEqualToValue={(option, value) => option.id === value.id}
+                            value={boxTypes.find(bt => bt.id === form.boxTypeId) || null}
+                            onChange={(_, newValue) => setForm({ ...form, boxTypeId: newValue?.id || '' })}
+                            renderInput={(params) => (
+                                <TextField 
+                                    {...params} 
+                                    label="Tipo de Embalaje" 
+                                    variant="filled"
+                                    placeholder="Seleccionar caja..."
+                                />
+                            )}
+                        />
                     </Box>
                     <Box>
                         <TextField
