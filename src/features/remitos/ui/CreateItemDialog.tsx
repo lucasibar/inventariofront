@@ -5,6 +5,7 @@ import {
     Button, TextField, MenuItem, Typography, Box
 } from '@mui/material';
 import { useCreateItemMutation, useUpdateItemMutation, useGetItemCategoriesQuery, useCreateItemCategoryMutation } from '../../items/api/items.api';
+import { useGetBoxTypesQuery } from '../../items/api/box-types.api';
 import { useLazySearchPartnersQuery } from '../api/remito.api';
 import { Autocomplete, createFilterOptions } from '@mui/material';
 
