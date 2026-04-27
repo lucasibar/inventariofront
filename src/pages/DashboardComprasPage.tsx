@@ -5,7 +5,8 @@ import {
     useCreateComboMutation, 
     useDeleteComboMutation,
     useGetComboBreakdownQuery,
-    useUpdateComboMutation
+    useUpdateComboMutation,
+    useGetStockQuery
 } from '../features/stock/api/stock.api';
 import { useGetPartnersQuery } from '../features/partners/api/partners.api';
 import { useGetItemsQuery } from '../features/items/api/items.api';
@@ -17,6 +18,37 @@ export default function DashboardComprasPage() {
     const { data: alerts = [] } = useGetAlertsQuery();
     const { data: partners = [] } = useGetPartnersQuery({ type: 'SUPPLIER' });
     const { data: items = [] } = useGetItemsQuery({});
+    const { data: allStock = [], isFetching: fetchingStock } = useGetStockQuery({});
+
+    const exportToExcel = () => {
+        if (allStock.length === 0) return;
+
+        const headers = ['Material', 'Código Interno', 'Categoría', 'Proveedor', 'Partida/Lote', 'Depósito', 'Posición', 'Stock Principal', 'Unidad', 'Stock Secundario', 'Unidad 2'];
+        const rows = allStock.map((row: any) => [
+            row.batch?.item?.descripcion || '',
+            row.batch?.item?.codigoInterno || '',
+            row.batch?.item?.category?.nombre || row.batch?.item?.categoria || '',
+            row.batch?.supplier?.name || '',
+            row.batch?.lotNumber || '',
+            row.deposito?.nombre || row.depot?.nombre || '',
+            row.posicion?.codigo || '',
+            String(Number(row.qtyPrincipal || 0).toFixed(2)),
+            row.batch?.item?.unidadPrincipal || '',
+            String(Number(row.qtySecundaria || 0).toFixed(2)),
+            row.batch?.item?.unidadSecundaria || '',
+        ]);
+
+        const escape = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
+        const csvContent = [headers, ...rows].map(r => r.map(escape).join(',')).join('\n');
+        const bom = '\uFEFF';
+        const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `stock_completo_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+    };
     
     const [createCombo] = useCreateComboMutation();
     const [deleteCombo] = useDeleteComboMutation();
@@ -89,6 +121,9 @@ export default function DashboardComprasPage() {
             `}</style>
 
             <PageHeader title="Dashboard de Compras" subtitle="Control de stock por combos y materiales críticos">
+                <Btn variant="secondary" onClick={exportToExcel} disabled={fetchingStock || allStock.length === 0}>
+                    {fetchingStock ? 'Cargando...' : '⬇️ Exportar Stock'}
+                </Btn>
                 <Btn onClick={() => setShowCreateModal(true)}>+ Nuevo Combo</Btn>
             </PageHeader>
 

@@ -21,6 +21,12 @@ export interface Machine {
     lastChangeBy?: string;
     plantId: string;
     typeId: string;
+    metadata?: {
+        cantidadAgujas?: string | number;
+        tipoCilindro?: string;
+        tipoTrimer?: string;
+        [key: string]: any;
+    };
     createdAt: string;
     updatedAt: string;
 }
@@ -74,8 +80,12 @@ export const performanceApi = api.injectEndpoints({
             query: () => 'performance/types',
             providesTags: ['Performance'],
         }),
-        getMachines: builder.query<Machine[], { plantId: string; typeId: string }>({
-            query: ({ plantId, typeId }) => `performance/machines?plantId=${plantId}&typeId=${typeId}`,
+        getMachines: builder.query<Machine[], { plantId: string; typeId?: string }>({
+            query: ({ plantId, typeId }) => {
+                let url = `performance/machines?plantId=${plantId}`;
+                if (typeId) url += `&typeId=${typeId}`;
+                return url;
+            },
             providesTags: ['Performance'],
         }),
         getMetrics: builder.query<Metrics, { plantId: string }>({
@@ -101,7 +111,18 @@ export const performanceApi = api.injectEndpoints({
                 return queryStr ? `${url}?${queryStr}` : url;
             },
             providesTags: (_res, _err) => [{ type: 'Performance', id: 'KPI' }],
-
+        }),
+        
+        getPlantKPIs: builder.query<MachineKPI, { plantId: string; startDate?: string; endDate?: string }>({
+            query: ({ plantId, startDate, endDate }) => {
+                let url = `performance/plants/${plantId}/kpis`;
+                const params = new URLSearchParams();
+                if (startDate) params.append('startDate', startDate);
+                if (endDate) params.append('endDate', endDate);
+                const queryStr = params.toString();
+                return queryStr ? `${url}?${queryStr}` : url;
+            },
+            providesTags: (_res, _err) => [{ type: 'Performance', id: 'PlantKPI' }],
         }),
         getLogs: builder.query<PerformanceLog[], { plantId?: string; machineId?: string; startDate?: string; endDate?: string }>({
             query: (params) => ({
@@ -136,6 +157,7 @@ export const {
     useGetMachinesQuery,
     useGetMetricsQuery,
     useGetMachineKPIsQuery,
+    useGetPlantKPIsQuery,
     useGetLogsQuery,
     useUpdateLogMutation,
     useDeleteLogMutation,

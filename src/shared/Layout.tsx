@@ -27,9 +27,11 @@ const navGroups = [
         label: 'Producción',
         icon: '⚙️',
         items: [
-            { to: '/produccion/cargar', label: '➕ Cargar Producción' },
-            { to: '/rendimiento', label: '📈 Rendimiento' },
-            { to: '/rendimiento/historial', label: '📜 Historial de Registros' },
+            { to: '/produccion/dashboard', label: '📊 Dashboard' },
+            { to: '/produccion/registro', label: '📋 Registrar' },
+            { to: '/produccion/cargar', label: '➕ Cargar' },
+            { to: '/produccion/historial', label: '📜 Historial' },
+            { to: '/produccion/buscador', label: '🔍 Buscar' },
         ]
     },
 
@@ -109,7 +111,7 @@ export default function Layout() {
         ...group,
         items: group.items.filter(item => {
             if (isAdmin) return true;
-            if (isOperario) return ['/movimientos', '/stock', '/deposito/auditoria-picking', '/remitos-salida', '/tasks', '/deposito', '/rendimiento', '/produccion/cargar'].includes(item.to);
+            if (isOperario) return ['/movimientos', '/stock', '/deposito/auditoria-picking', '/remitos-salida', '/tasks', '/deposito', '/produccion/dashboard', '/produccion/registro', '/produccion/cargar', '/produccion/historial', '/produccion/buscador'].includes(item.to);
             if (isCompras) return ['/dashboard', '/remitos-entrada', '/items', '/dashboard/capacity', '/dashboard/volumes', '/socios', '/pedidos-compra'].includes(item.to);
             return false;
         })
@@ -344,6 +346,30 @@ export default function Layout() {
                                 }}
                             >
                                 +
+                            </button>
+                        )}
+                        {location.pathname === '/produccion/dashboard' && (
+                            <button
+                                onClick={() => document.dispatchEvent(new Event('open-production-filters'))}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: '#9ca3af',
+                                    cursor: 'pointer',
+                                    padding: '6px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}
+                            >
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="4" y1="6" x2="20" y2="6" />
+                                    <circle cx="9" cy="6" r="2.5" fill="#0f1117" />
+                                    <line x1="4" y1="12" x2="20" y2="12" />
+                                    <circle cx="15" cy="12" r="2.5" fill="#0f1117" />
+                                    <line x1="4" y1="18" x2="20" y2="18" />
+                                    <circle cx="9" cy="18" r="2.5" fill="#0f1117" />
+                                </svg>
                             </button>
                         )}
                     </div>

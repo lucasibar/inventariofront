@@ -25,9 +25,13 @@ import StockPage from './pages/StockPage';
 import UsersPage from './pages/UsersPage';
 import AdminMovementsPage from './pages/AdminMovementsPage';
 import NotificationsPage from './pages/NotificationsPage';
-import RendimientoPage from './pages/RendimientoPage';
-import { HistorialRendimientoPage } from './pages/HistorialRendimientoPage';
 import CargarProduccionPage from './pages/CargarProduccionPage';
+
+// New Production Module
+import DashboardProduccionPage from './pages/DashboardProduccionPage';
+import RegistroMaquinasPage from './pages/RegistroMaquinasPage';
+import HistorialRegistrosPage from './pages/HistorialRegistrosPage';
+import BuscadorMaquinaPage from './pages/BuscadorMaquinaPage';
 
 
 
@@ -77,9 +81,11 @@ function App() {
                 <Route path="/stock" element={<StockPage />} />
                 <Route path="/movimientos" element={<MovimientosPage />} />
                 <Route path="/tasks" element={<WorkspaceTasksPage />} />
-                <Route path="/rendimiento" element={<RendimientoPage />} />
-                <Route path="/rendimiento/historial" element={<HistorialRendimientoPage />} />
                 <Route path="/produccion/cargar" element={<CargarProduccionPage />} />
+                <Route path="/produccion/dashboard" element={<DashboardProduccionPage />} />
+                <Route path="/produccion/registro" element={<RegistroMaquinasPage />} />
+                <Route path="/produccion/historial" element={<HistorialRegistrosPage />} />
+                <Route path="/produccion/buscador" element={<BuscadorMaquinaPage />} />
 
             </Route>
 
