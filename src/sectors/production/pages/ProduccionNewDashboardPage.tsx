@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Grid, Paper, Typography, LinearProgress, Divider } from '@mui/material';
+import { Box, Grid, Paper, Typography, LinearProgress } from '@mui/material';
 
 const ProduccionNewDashboardPage: React.FC = () => {
     // Mock Data
@@ -28,7 +28,7 @@ const ProduccionNewDashboardPage: React.FC = () => {
             <Grid container spacing={3}>
                 {/* Main Metrics Cards */}
                 {metrics.map((m) => (
-                    <Grid item xs={12} sm={6} md={4} key={m.label}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }} key={m.label}>
                         <Paper sx={{ 
                             p: 3, 
                             background: 'rgba(255, 255, 255, 0.03)', 
@@ -54,7 +54,7 @@ const ProduccionNewDashboardPage: React.FC = () => {
                 ))}
 
                 {/* Production by Line Chart */}
-                <Grid item xs={12} md={7}>
+                <Grid size={{ xs: 12, md: 7 }}>
                     <Paper sx={{ 
                         p: 4, 
                         background: 'rgba(255, 255, 255, 0.02)', 
@@ -80,7 +80,7 @@ const ProduccionNewDashboardPage: React.FC = () => {
                 </Grid>
 
                 {/* Efficiency Gauge / Summary */}
-                <Grid item xs={12} md={5}>
+                <Grid size={{ xs: 12, md: 5 }}>
                     <Paper sx={{ 
                         p: 4, 
                         background: 'linear-gradient(180deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.02) 100%)', 

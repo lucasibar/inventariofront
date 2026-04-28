@@ -28,7 +28,7 @@ const AdminDashboardPage: React.FC = () => {
             <Grid container spacing={3}>
                 {/* Sector Cards */}
                 {sectors.map((sector) => (
-                    <Grid item xs={12} sm={6} md={4} lg={2} key={sector.name}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }} key={sector.name}>
                         <Paper sx={{ 
                             p: 3, 
                             background: 'rgba(255, 255, 255, 0.03)', 
@@ -51,7 +51,7 @@ const AdminDashboardPage: React.FC = () => {
                 ))}
 
                 {/* Global Metrics */}
-                <Grid item xs={12} md={8}>
+                <Grid size={{ xs: 12, md: 8 }}>
                     <Paper sx={{ 
                         p: 4, 
                         height: '100%',
@@ -63,7 +63,7 @@ const AdminDashboardPage: React.FC = () => {
                         <Typography variant="h6" sx={{ mb: 4, fontWeight: 700 }}>Métricas Globales de Operación</Typography>
                         <Grid container spacing={4}>
                             {stats.map((stat) => (
-                                <Grid item xs={12} sm={6} key={stat.label}>
+                                <Grid size={{ xs: 12, sm: 6 }} key={stat.label}>
                                     <Box sx={{ mb: 2 }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                                             <Typography variant="body2" sx={{ color: '#9ca3af' }}>{stat.label}</Typography>
@@ -90,7 +90,7 @@ const AdminDashboardPage: React.FC = () => {
                 </Grid>
 
                 {/* Recent Activity / Alerts */}
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                     <Paper sx={{ 
                         p: 4, 
                         height: '100%',

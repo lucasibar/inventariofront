@@ -18,7 +18,7 @@ const StockDashboardPage: React.FC = () => {
 
             <Grid container spacing={3}>
                 {metrics.map((m) => (
-                    <Grid item xs={12} sm={6} md={3} key={m.label}>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }} key={m.label}>
                         <Paper sx={{ 
                             p: 3, 
                             background: 'rgba(255, 255, 255, 0.03)', 
@@ -33,7 +33,7 @@ const StockDashboardPage: React.FC = () => {
                     </Grid>
                 ))}
 
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                     <Paper sx={{ 
                         p: 4, 
                         background: 'rgba(255, 255, 255, 0.02)', 

@@ -26,7 +26,7 @@ const RRHHDashboardPage: React.FC = () => {
             <Grid container spacing={3}>
                 {/* General Stats */}
                 {metrics.map((m) => (
-                    <Grid item xs={12} sm={6} md={3} key={m.label}>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }} key={m.label}>
                         <Paper sx={{ 
                             p: 3, 
                             background: 'rgba(255, 255, 255, 0.03)', 
@@ -42,7 +42,7 @@ const RRHHDashboardPage: React.FC = () => {
                 ))}
 
                 {/* Productivity Ranking */}
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                     <Paper sx={{ 
                         p: 4, 
                         background: 'rgba(255, 255, 255, 0.02)', 
@@ -70,7 +70,7 @@ const RRHHDashboardPage: React.FC = () => {
                 </Grid>
 
                 {/* Labor Cost vs Productivity Placeholder */}
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                     <Paper sx={{ 
                         p: 4, 
                         background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%)', 
