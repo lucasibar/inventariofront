@@ -19,6 +19,7 @@ import RemitosEntradaPage from './sectors/warehouse/pages/RemitosEntradaPage';
 import RemitosSalidaPage from './sectors/warehouse/pages/RemitosSalidaPage';
 import AuditoriaPickingPage from './sectors/warehouse/pages/AuditoriaPickingPage';
 import WorkspaceTasksPage from './sectors/warehouse/pages/WorkspaceTasksPage';
+import StockDashboardPage from './sectors/warehouse/pages/StockDashboardPage';
 
 // Sector: Purchasing
 import DashboardComprasPage from './sectors/purchasing/pages/DashboardComprasPage';
@@ -26,12 +27,19 @@ import CapacityDashboardPage from './sectors/purchasing/pages/CapacityDashboardP
 import VolumenesDashboardPage from './sectors/purchasing/pages/VolumenesDashboardPage';
 import PedidosCompraPage from './sectors/purchasing/pages/PedidosCompraPage';
 
-// Sector: Production
+// Sector: Production / Maintenance
 import DashboardProduccionPage from './sectors/production/pages/DashboardProduccionPage';
 import RegistroMaquinasPage from './sectors/production/pages/RegistroMaquinasPage';
 import HistorialRegistrosPage from './sectors/production/pages/HistorialRegistrosPage';
 import BuscadorMaquinaPage from './sectors/production/pages/BuscadorMaquinaPage';
 import CargarProduccionPage from './sectors/production/pages/CargarProduccionPage';
+import ProduccionNewDashboardPage from './sectors/production/pages/ProduccionNewDashboardPage';
+
+// New Sectors Dashboards
+import AdminDashboardPage from './sectors/admin/pages/AdminDashboardPage';
+import VentasDashboardPage from './sectors/sales/pages/VentasDashboardPage';
+import FinanzasDashboardPage from './sectors/finance/pages/FinanzasDashboardPage';
+import RRHHDashboardPage from './sectors/hr/pages/RRHHDashboardPage';
 
 // Other
 import AdminMovementsPage from './sectors/warehouse/pages/AdminMovementsPage';
@@ -73,22 +81,34 @@ function App() {
 
             {/* Rutas exclusivas de ADMIN */}
             <Route element={<PrivateRoute allowedRoles={['ADMIN']} />}>
+                <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
                 <Route path="/users" element={<UsersPage />} />
                 <Route path="/admin/movements" element={<AdminMovementsPage />} />
             </Route>
 
-            {/* Rutas para Operario / Producción / Depósito */}
-            <Route element={<PrivateRoute allowedRoles={['ADMIN', 'OPERATOR']} />}>
+            {/* Rutas para Operario / Producción / Depósito / Nuevos Sectores */}
+            <Route element={<PrivateRoute allowedRoles={['ADMIN', 'OPERATOR', 'COMPRAS']} />}>
+                {/* Inventariado */}
+                <Route path="/stock/dashboard" element={<StockDashboardPage />} />
                 <Route path="/deposito/auditoria-picking" element={<AuditoriaPickingPage />} />
                 <Route path="/remitos-salida" element={<RemitosSalidaPage />} />
                 <Route path="/stock" element={<StockPage />} />
                 <Route path="/movimientos" element={<MovimientosPage />} />
                 <Route path="/tasks" element={<WorkspaceTasksPage />} />
-                <Route path="/produccion/cargar" element={<CargarProduccionPage />} />
-                <Route path="/produccion/dashboard" element={<DashboardProduccionPage />} />
+                
+                {/* Mantenimiento (Ex-Producción) */}
+                <Route path="/mantenimiento/dashboard" element={<DashboardProduccionPage />} />
                 <Route path="/produccion/registro" element={<RegistroMaquinasPage />} />
+                <Route path="/produccion/cargar" element={<CargarProduccionPage />} />
                 <Route path="/produccion/historial" element={<HistorialRegistrosPage />} />
                 <Route path="/produccion/buscador" element={<BuscadorMaquinaPage />} />
+
+                {/* Nuevos Sectores */}
+                <Route path="/produccion-nueva/dashboard" element={<ProduccionNewDashboardPage />} />
+                <Route path="/ventas/dashboard" element={<VentasDashboardPage />} />
+                <Route path="/finanzas/dashboard" element={<FinanzasDashboardPage />} />
+                <Route path="/rrhh/dashboard" element={<RRHHDashboardPage />} />
+                <Route path="/compras/dashboard" element={<DashboardComprasPage />} />
             </Route>
 
             {/* Rutas compartidas o especiales */}

@@ -9,10 +9,21 @@ import { AiChatBot } from '../components/ai/AiChatBot';
 
 const navGroups = [
     {
+        id: 'administracion',
+        label: 'Administración',
+        icon: '📊',
+        items: [
+            { to: '/admin/dashboard', label: '📈 Dashboard General' },
+            { to: '/users', label: '👥 Usuarios' },
+            { to: '/admin/movements', label: '🛡️ Auditoría' },
+        ]
+    },
+    {
         id: 'deposito',
         label: 'Inventariado',
         icon: '🏭',
         items: [
+            { to: '/stock/dashboard', label: '📊 Dashboard Inv' },
             { to: '/stock', label: '📋 Stock' },
             { to: '/movimientos', label: '🔄 Movimientos' },
             { to: '/remitos-entrada', label: '📥 Remitos Entrada' },
@@ -27,7 +38,7 @@ const navGroups = [
         label: 'Mantenimiento',
         icon: '🛠️',
         items: [
-            { to: '/produccion/dashboard', label: '📊 Dashboard' },
+            { to: '/mantenimiento/dashboard', label: '📊 Dashboard Mant' },
             { to: '/produccion/registro', label: '📋 Registrar' },
             { to: '/produccion/cargar', label: '➕ Cargar' },
             { to: '/produccion/historial', label: '📜 Historial' },
@@ -47,7 +58,8 @@ const navGroups = [
         label: 'Compras',
         icon: '🛒',
         items: [
-            { to: '/dashboard', label: '📉 Dashboard Compras' },
+            { to: '/compras/dashboard', label: '📊 Dashboard Comp' },
+            { to: '/dashboard', label: '📉 Matriz Compras' },
             { to: '/dashboard/capacity', label: '📈 Capacidad' },
             { to: '/dashboard/volumes', label: '📦 Volúmenes' },
         ]
@@ -83,8 +95,6 @@ const navGroups = [
         items: [
             { to: '/items', label: '🏷️ Materiales' },
             { to: '/socios', label: '🤝 Socios' },
-            { to: '/users', label: '👥 Usuarios' },
-            { to: '/admin/movements', label: '🛡️ Auditoría' },
         ]
     }
 ];
