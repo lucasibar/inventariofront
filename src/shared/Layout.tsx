@@ -10,7 +10,7 @@ import { AiChatBot } from '../components/ai/AiChatBot';
 const navGroups = [
     {
         id: 'deposito',
-        label: 'Depósito',
+        label: 'Inventariado',
         icon: '🏭',
         items: [
             { to: '/stock', label: '📋 Stock' },
@@ -23,9 +23,9 @@ const navGroups = [
         ]
     },
     {
-        id: 'produccion',
-        label: 'Producción',
-        icon: '⚙️',
+        id: 'mantenimiento',
+        label: 'Mantenimiento',
+        icon: '🛠️',
         items: [
             { to: '/produccion/dashboard', label: '📊 Dashboard' },
             { to: '/produccion/registro', label: '📋 Registrar' },
@@ -34,7 +34,14 @@ const navGroups = [
             { to: '/produccion/buscador', label: '🔍 Buscar' },
         ]
     },
-
+    {
+        id: 'produccion',
+        label: 'Producción',
+        icon: '⚙️',
+        items: [
+            { to: '/produccion-nueva/dashboard', label: '📊 Dashboard Prod' },
+        ]
+    },
     {
         id: 'compras',
         label: 'Compras',
@@ -43,6 +50,30 @@ const navGroups = [
             { to: '/dashboard', label: '📉 Dashboard Compras' },
             { to: '/dashboard/capacity', label: '📈 Capacidad' },
             { to: '/dashboard/volumes', label: '📦 Volúmenes' },
+        ]
+    },
+    {
+        id: 'ventas',
+        label: 'Ventas',
+        icon: '📈',
+        items: [
+            { to: '/ventas/dashboard', label: '📊 Dashboard Ventas' },
+        ]
+    },
+    {
+        id: 'finanzas',
+        label: 'Finanzas',
+        icon: '💰',
+        items: [
+            { to: '/finanzas/dashboard', label: '📊 Dashboard Finanzas' },
+        ]
+    },
+    {
+        id: 'rrhh',
+        label: 'Recursos Humanos',
+        icon: '👥',
+        items: [
+            { to: '/rrhh/dashboard', label: '📊 Dashboard RRHH' },
         ]
     },
     {
@@ -55,34 +86,8 @@ const navGroups = [
             { to: '/users', label: '👥 Usuarios' },
             { to: '/admin/movements', label: '🛡️ Auditoría' },
         ]
-    },
-    {
-        id: 'rrhh',
-        label: 'Recursos Humanos',
-        icon: '👥',
-        items: []
-    },
-    {
-        id: 'financiera',
-        label: 'Financiera',
-        icon: '💰',
-        items: []
-    },
-    {
-        id: 'ventas',
-        label: 'Ventas',
-        icon: '📈',
-        items: []
-    },
-    {
-        id: 'mantenimiento',
-        label: 'Mantenimiento',
-        icon: '🛠️',
-        items: []
     }
 ];
-
-
 
 const navStyle = (isActive: boolean, isMobile: boolean): React.CSSProperties => ({
     display: 'flex', alignItems: 'center', gap: '12px',
@@ -123,7 +128,7 @@ export default function Layout() {
         setMobileMenuOpen(false);
     }, [location.pathname]);
 
-    const [expandedGroups, setExpandedGroups] = useState<string[]>(['deposito', 'produccion', 'compras']);
+    const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
 
     const toggleGroup = (id: string) => {
         setExpandedGroups(prev => 
