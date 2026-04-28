@@ -37,6 +37,11 @@ export default function StockPage() {
         if (depotId) sessionStorage.setItem('selectedDepotId', depotId);
     }, [depotId]);
 
+    // Clear position when depot changes
+    useEffect(() => {
+        setPositionId('');
+    }, [depotId]);
+
     // Handle search parameter from URL
     useEffect(() => {
         const q = searchParams.get('q');
@@ -60,7 +65,10 @@ export default function StockPage() {
 
     const { data: rawDepots = [] } = useGetDepotsQuery();
     const depots = useMemo(() => {
-        return rawDepots.filter((d: any) => !allowedDepots || allowedDepots.includes(d.id));
+        // If allowedDepots is null, it's an admin (see all)
+        // If it's an array, filter by it
+        if (!allowedDepots) return rawDepots;
+        return rawDepots.filter((d: any) => allowedDepots.includes(d.id));
     }, [rawDepots, allowedDepots]);
 
     useEffect(() => {

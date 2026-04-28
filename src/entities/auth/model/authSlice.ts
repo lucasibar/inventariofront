@@ -64,6 +64,10 @@ export default authSlice.reducer;
 export const selectCurrentUser = (state: any) => state.auth.user;
 export const selectIsAuthenticated = (state: any) => state.auth.isAuthenticated;
 export const selectUserRole = (state: any) => state.auth.user?.role;
-export const selectIsAdmin = (state: any) => state.auth.user?.role === 'ADMIN';
-export const selectAllowedDepots = (state: any) => state.auth.user?.allowedDepotIds || [];
+export const selectIsAdmin = (state: any) => state.auth.user?.role?.toUpperCase() === 'ADMIN';
+export const selectAllowedDepots = (state: any) => {
+    const user = state.auth.user;
+    if (user?.role?.toUpperCase() === 'ADMIN') return null; // Admins have no restrictions
+    return user?.allowedDepotIds || [];
+};
 
