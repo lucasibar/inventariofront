@@ -1,6 +1,6 @@
 
 import { Container } from '@mui/material';
-import { CreateRemitoForm } from '../features/remitos/ui/CreateRemitoForm';
+import { CreateRemitoForm } from '../sectors/warehouse/remitos/ui/CreateRemitoForm';
 
 export const CreateRemitoPage = () => {
     return (

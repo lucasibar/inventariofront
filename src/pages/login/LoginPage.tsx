@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useLoginMutation } from '../../entities/auth/api/authApi';
 import { setCredentials, selectIsAuthenticated } from '../../entities/auth/model/authSlice';
-import { Card, Btn, Input, Spinner } from '../common/ui';
+import { Card, Btn, Input, Spinner } from '../../shared/ui';
 
 const LoginPage: React.FC = () => {
     const [username, setUsername] = useState('');

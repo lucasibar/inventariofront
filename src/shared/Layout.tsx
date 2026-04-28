@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { useGetAlertsQuery } from '../features/stock/api/stock.api';
+import { useGetAlertsQuery } from '../sectors/warehouse/stock/api/stock.api';
 import { logout, selectCurrentUser } from '../entities/auth/model/authSlice';
 import { setCurrentAlerts, selectHasUnreadNotifications } from '../entities/notifications/notificationsSlice';
-import { useIsMobile } from '../pages/common/ui';
+import { useIsMobile } from './ui';
 import { AiChatBot } from '../components/ai/AiChatBot';
 
 const navGroups = [
@@ -36,9 +36,9 @@ const navGroups = [
     },
 
     {
-        id: 'informes',
-        label: 'Informes',
-        icon: '📊',
+        id: 'compras',
+        label: 'Compras',
+        icon: '🛒',
         items: [
             { to: '/dashboard', label: '📉 Dashboard Compras' },
             { to: '/dashboard/capacity', label: '📈 Capacidad' },
@@ -46,15 +46,39 @@ const navGroups = [
         ]
     },
     {
-        id: 'maestros',
-        label: 'Maestros',
-        icon: '🗂',
+        id: 'configuracion',
+        label: 'Configuración',
+        icon: '⚙️',
         items: [
             { to: '/items', label: '🏷️ Materiales' },
             { to: '/socios', label: '🤝 Socios' },
             { to: '/users', label: '👥 Usuarios' },
             { to: '/admin/movements', label: '🛡️ Auditoría' },
         ]
+    },
+    {
+        id: 'rrhh',
+        label: 'Recursos Humanos',
+        icon: '👥',
+        items: []
+    },
+    {
+        id: 'financiera',
+        label: 'Financiera',
+        icon: '💰',
+        items: []
+    },
+    {
+        id: 'ventas',
+        label: 'Ventas',
+        icon: '📈',
+        items: []
+    },
+    {
+        id: 'mantenimiento',
+        label: 'Mantenimiento',
+        icon: '🛠️',
+        items: []
     }
 ];
 
@@ -99,7 +123,7 @@ export default function Layout() {
         setMobileMenuOpen(false);
     }, [location.pathname]);
 
-    const [expandedGroups, setExpandedGroups] = useState<string[]>(['deposito', 'produccion', 'informes']);
+    const [expandedGroups, setExpandedGroups] = useState<string[]>(['deposito', 'produccion', 'compras']);
 
     const toggleGroup = (id: string) => {
         setExpandedGroups(prev => 

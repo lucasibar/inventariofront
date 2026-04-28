@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Skeleton } from '@mui/material';
-import type { Machine } from '../../entities/performance/api/performanceApi';
+import type { Machine } from '../../sectors/production/api/production.api';
 
 import { MachineCard } from './MachineCard';
 

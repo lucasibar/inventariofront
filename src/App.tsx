@@ -5,35 +5,38 @@ import Layout from './shared/Layout';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser } from './entities/auth/model/authSlice';
 
-// Lazy-import pages
-import RemitosEntradaPage from './pages/RemitosEntradaPage';
-import DepositoPage from './pages/DepositoPage';
-import PedidosPage from './pages/PedidosPage';
-import PedidosCompraPage from './pages/PedidosCompraPage';
-import RemitosSalidaPage from './pages/RemitosSalidaPage';
-import DashboardComprasPage from './pages/DashboardComprasPage';
-import MaterialesPage from './pages/MaterialesPage';
-import SociosPage from './pages/SociosPage';
-import AuditoriaPickingPage from './pages/AuditoriaPickingPage';
-import BoxTypesPage from './pages/BoxTypesPage';
-import CapacityDashboardPage from './pages/CapacityDashboardPage';
-import WorkspaceTasksPage from './pages/WorkspaceTasksPage';
-import VolumenesDashboardPage from './pages/VolumenesDashboardPage';
+// Sector: Config
+import MaterialesPage from './sectors/config/pages/MaterialesPage';
+import SociosPage from './sectors/config/pages/SociosPage';
+import UsersPage from './sectors/config/pages/UsersPage';
+import BoxTypesPage from './sectors/config/pages/BoxTypesPage';
 
-import MovimientosPage from './pages/MovimientosPage';
-import StockPage from './pages/StockPage';
-import UsersPage from './pages/UsersPage';
-import AdminMovementsPage from './pages/AdminMovementsPage';
-import NotificationsPage from './pages/NotificationsPage';
-import CargarProduccionPage from './pages/CargarProduccionPage';
+// Sector: Warehouse
+import DepositoPage from './sectors/warehouse/pages/DepositoPage';
+import StockPage from './sectors/warehouse/pages/StockPage';
+import MovimientosPage from './sectors/warehouse/pages/MovimientosPage';
+import RemitosEntradaPage from './sectors/warehouse/pages/RemitosEntradaPage';
+import RemitosSalidaPage from './sectors/warehouse/pages/RemitosSalidaPage';
+import AuditoriaPickingPage from './sectors/warehouse/pages/AuditoriaPickingPage';
+import WorkspaceTasksPage from './sectors/warehouse/pages/WorkspaceTasksPage';
 
-// New Production Module
-import DashboardProduccionPage from './pages/DashboardProduccionPage';
-import RegistroMaquinasPage from './pages/RegistroMaquinasPage';
-import HistorialRegistrosPage from './pages/HistorialRegistrosPage';
-import BuscadorMaquinaPage from './pages/BuscadorMaquinaPage';
+// Sector: Purchasing
+import DashboardComprasPage from './sectors/purchasing/pages/DashboardComprasPage';
+import CapacityDashboardPage from './sectors/purchasing/pages/CapacityDashboardPage';
+import VolumenesDashboardPage from './sectors/purchasing/pages/VolumenesDashboardPage';
+import PedidosCompraPage from './sectors/purchasing/pages/PedidosCompraPage';
 
+// Sector: Production
+import DashboardProduccionPage from './sectors/production/pages/DashboardProduccionPage';
+import RegistroMaquinasPage from './sectors/production/pages/RegistroMaquinasPage';
+import HistorialRegistrosPage from './sectors/production/pages/HistorialRegistrosPage';
+import BuscadorMaquinaPage from './sectors/production/pages/BuscadorMaquinaPage';
+import CargarProduccionPage from './sectors/production/pages/CargarProduccionPage';
 
+// Other
+import AdminMovementsPage from './sectors/warehouse/pages/AdminMovementsPage';
+import NotificationsPage from './sectors/config/pages/NotificationsPage';
+import PedidosPage from './sectors/sales/pages/PedidosPage';
 
 import './App.css';
 
@@ -55,7 +58,7 @@ function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<Navigate to={getHome(user?.role)} replace />} />
             
-            {/* Rutas para Compras / Admin */}
+            {/* Rutas para Compras / Configuración */}
             <Route element={<PrivateRoute allowedRoles={['ADMIN', 'COMPRAS']} />}>
                 <Route path="/remitos-entrada" element={<RemitosEntradaPage />} />
                 <Route path="/dashboard" element={<DashboardComprasPage />} />
@@ -74,7 +77,7 @@ function App() {
                 <Route path="/admin/movements" element={<AdminMovementsPage />} />
             </Route>
 
-            {/* Rutas para Operario / Admin */}
+            {/* Rutas para Operario / Producción / Depósito */}
             <Route element={<PrivateRoute allowedRoles={['ADMIN', 'OPERATOR']} />}>
                 <Route path="/deposito/auditoria-picking" element={<AuditoriaPickingPage />} />
                 <Route path="/remitos-salida" element={<RemitosSalidaPage />} />
@@ -86,9 +89,7 @@ function App() {
                 <Route path="/produccion/registro" element={<RegistroMaquinasPage />} />
                 <Route path="/produccion/historial" element={<HistorialRegistrosPage />} />
                 <Route path="/produccion/buscador" element={<BuscadorMaquinaPage />} />
-
             </Route>
-
 
             {/* Rutas compartidas o especiales */}
             <Route path="/deposito" element={<DepositoPage />} />

@@ -3,7 +3,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectIsAuthenticated, logout, selectCurrentUser } from '../../entities/auth/model/authSlice';
 import { useVerifySessionQuery } from '../../entities/auth/api/authApi';
-import { Spinner } from '../../pages/common/ui';
+import { Spinner } from '../../shared/ui';
 
 interface PrivateRouteProps {
     allowedRoles?: string[];
