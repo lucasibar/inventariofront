@@ -17,8 +17,7 @@ import {
     GridView as LayoutGridIcon,
     List as ListIcon,
     Add as PlusIcon,
-    Remove as MinusIcon,
-    Speed as ActivityIcon
+    Remove as MinusIcon
 } from '@mui/icons-material';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -139,7 +138,6 @@ const StatCard = ({ title, value, percentage, icon: Icon, color }: any) => (
 
 export default function MonitoreoVivoPage() {
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
     const [currentTime, setCurrentTime] = useState(new Date());
 
     useEffect(() => {
@@ -236,7 +234,7 @@ export default function MonitoreoVivoPage() {
 
             <Grid container spacing={3}>
                 {/* Main Content: Map */}
-                <Grid item xs={12} lg={9}>
+                <Grid xs={12} lg={9}>
                     <Card sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)', mb: 3 }}>
                         <CardContent sx={{ p: 3 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
@@ -293,26 +291,26 @@ export default function MonitoreoVivoPage() {
 
                     {/* Lower Status Cards */}
                     <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6} md={2.4}>
+                        <Grid xs={12} sm={6} md={2.4}>
                             <StatCard title="Activas" value={statusCounts.ACTIVA} percentage={((statusCounts.ACTIVA / metrics?.total || 1) * 100).toFixed(1)} icon={CheckCircleIcon} color="#10b981" />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={2.4}>
+                        <Grid xs={12} sm={6} md={2.4}>
                             <StatCard title="A Revisar" value={statusCounts.REVISAR} percentage={((statusCounts.REVISAR / metrics?.total || 1) * 100).toFixed(1)} icon={HelpIcon} color="#eab308" />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={2.4}>
+                        <Grid xs={12} sm={6} md={2.4}>
                             <StatCard title="Vel. Reducida" value={statusCounts.VELOCIDAD_REDUCIDA} percentage={((statusCounts.VELOCIDAD_REDUCIDA / metrics?.total || 1) * 100).toFixed(1)} icon={ClockIcon} color="#f97316" />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={2.4}>
+                        <Grid xs={12} sm={6} md={2.4}>
                             <StatCard title="Paradas" value={statusCounts.PARADA} percentage={((statusCounts.PARADA / metrics?.total || 1) * 100).toFixed(1)} icon={PauseCircleIcon} color="#ef4444" />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={2.4}>
+                        <Grid xs={12} sm={6} md={2.4}>
                             <StatCard title="Electrónica" value={statusCounts.ELECTRONIC} percentage={((statusCounts.ELECTRONIC / metrics?.total || 1) * 100).toFixed(1)} icon={ZapIcon} color="#3b82f6" />
                         </Grid>
                     </Grid>
                 </Grid>
 
                 {/* Right Sidebar: Summaries & Activity */}
-                <Grid item xs={12} lg={3}>
+                <Grid xs={12} lg={3}>
                     {/* General Summary (Donut) */}
                     <Card sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)', mb: 3 }}>
                         <CardContent sx={{ p: 3 }}>
