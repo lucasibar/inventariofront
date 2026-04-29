@@ -138,9 +138,9 @@ export default function MonitoreoVivoPage() {
     // Filtered machines in memory (Redux cache -> local filtering)
     const filteredMachines = useMemo(() => {
         return machines.filter((m: any) => {
-            const matchesSearch = m.numero.toString().includes(searchTerm) || 
-                                m.tipo?.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesStatus = !statusFilter || m.estado === statusFilter;
+            const matchesSearch = (m.numero?.toString() || '').includes(searchTerm) || 
+                                (m.tipo?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+            const matchesStatus = !statusFilter || (m.estado || m.status) === statusFilter;
             return matchesSearch && matchesStatus;
         });
     }, [machines, searchTerm, statusFilter]);
@@ -212,8 +212,8 @@ export default function MonitoreoVivoPage() {
         return map;
     }, [machines]);
 
-    const renderRow = (nums: (number | null)[]) => (
-        <Box sx={{ display: 'flex', gap: '4px' }}>
+    const renderRow = (nums: (number | null)[], rowIdx: number) => (
+        <Box key={rowIdx} sx={{ display: 'flex', gap: '4px' }}>
             {nums.map((n, i) => {
                 if (n === null) return <Box key={i} sx={{ width: 40, height: 40 }} />;
                 
@@ -225,7 +225,7 @@ export default function MonitoreoVivoPage() {
                     <MachineNode 
                         key={n} 
                         number={n} 
-                        status={machine?.estado || 'SIN_DATOS'}
+                        status={machine?.estado || machine?.status || 'SIN_DATOS'}
                         isFiltered={isFiltered}
                         isActiveSearch={isActiveSearch}
                     />
@@ -237,10 +237,10 @@ export default function MonitoreoVivoPage() {
     const renderSection = (section: any, idx: number) => (
         <Box key={idx} sx={{ display: 'flex', gap: 6, mb: 4, alignItems: 'center' }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                {section.left.map((row: any) => renderRow(row))}
+                {section.left.map((row: any, i: number) => renderRow(row, i))}
             </Box>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                {section.right.map((row: any) => renderRow(row))}
+                {section.right.map((row: any, i: number) => renderRow(row, i))}
             </Box>
         </Box>
     );
