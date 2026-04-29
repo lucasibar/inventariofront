@@ -218,7 +218,7 @@ export default function MonitoreoVivoPage() {
                 if (n === null) return <Box key={i} sx={{ width: 40, height: 40 }} />;
                 
                 const machine = machineMap[n];
-                const isFiltered = filteredMachines.some(m => m.numero === n);
+                const isFiltered = filteredMachines.some((m: any) => m.numero === n);
                 const isActiveSearch = searchTerm !== '' || statusFilter !== null;
 
                 return (
