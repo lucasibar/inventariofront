@@ -31,10 +31,12 @@ export default function BuscadorMaquinaPage() {
     const location = useLocation();
 
     const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
+    const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchedMachine, setSearchedMachine] = useState<Machine | null>(null);
 
     const { data: plants = [], isLoading: loadingPlants } = useGetPlantsQuery();
+    const { data: machineTypes = [], isLoading: loadingTypes } = useGetMachineTypesQuery();
 
     // Auto-select first plant
     React.useEffect(() => {
@@ -44,21 +46,31 @@ export default function BuscadorMaquinaPage() {
     }, [plants, selectedPlantId]);
 
     const { data: machines = [], isLoading: loadingMachines } = useGetMachinesQuery(
-        { plantId: selectedPlantId || '' },
+        { 
+            plantId: selectedPlantId || '',
+            typeId: selectedTypeId || undefined
+        },
         { skip: !selectedPlantId }
     );
 
-    // If navigated from Dashboard with a machine pre-selected, show it directly
+    // If navigated from Dashboard or History with a machine pre-selected
     useEffect(() => {
         const state = location.state as { machine?: Machine; plantId?: string } | null;
         if (state?.machine) {
             if (state.plantId) setSelectedPlantId(state.plantId);
+            if (state.machine.typeId) setSelectedTypeId(state.machine.typeId);
             setSearchedMachine(state.machine);
             setSearchTerm(String(state.machine.number));
+            // Clear location state to avoid re-triggering on refresh if needed, 
+            // but usually it's fine for simple navigation.
         }
     }, [location.state]);
 
     const plantOptions = useMemo(() => plants.map((p: any) => ({ value: p.id, label: p.name })), [plants]);
+    const typeOptions = useMemo(() => [
+        { value: '', label: 'Todos los tipos' },
+        ...machineTypes.map((t: any) => ({ value: t.id, label: t.name }))
+    ], [machineTypes]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -73,7 +85,7 @@ export default function BuscadorMaquinaPage() {
 
         setSearchedMachine(found || null);
         if (!found) {
-            alert('Máquina no encontrada en esta planta.');
+            alert('Máquina no encontrada con los filtros actuales.');
         }
     };
 
@@ -87,10 +99,10 @@ export default function BuscadorMaquinaPage() {
         });
     };
 
-    if (loadingPlants) return <Spinner />;
+    if (loadingPlants || loadingTypes) return <Spinner />;
 
     return (
-        <Box sx={{ p: 3, maxWidth: '1000px', margin: '0 auto' }}>
+        <Box sx={{ p: 3, maxWidth: '1200px', margin: '0 auto' }}>
             <PageHeader 
                 title="Buscador de Máquinas" 
                 subtitle="Consulta de estado y características técnicas (Agujas, Cilindro, etc.)"
@@ -100,7 +112,7 @@ export default function BuscadorMaquinaPage() {
             <Card sx={{ bgcolor: '#1a1a1a', borderRadius: 2, p: 3, mb: 4, border: '1px solid #333' }}>
                 <form onSubmit={handleSearch}>
                     <Grid container spacing={2} alignItems="center">
-                        <Grid size={{ xs: 12, md: 4 }}>
+                        <Grid size={{ xs: 12, md: 3 }}>
                             <Select 
                                 label="Seleccionar Planta"
                                 value={selectedPlantId || ''}
@@ -108,7 +120,15 @@ export default function BuscadorMaquinaPage() {
                                 options={plantOptions}
                             />
                         </Grid>
-                        <Grid size={{ xs: 12, md: 6 }}>
+                        <Grid size={{ xs: 12, md: 3 }}>
+                            <Select 
+                                label="Tipo de Máquina"
+                                value={selectedTypeId || ''}
+                                onChange={(val) => { setSelectedTypeId(val || null); setSearchedMachine(null); }}
+                                options={typeOptions}
+                            />
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 4 }}>
                             <TextField
                                 label="Número de Máquina o Código Interno"
                                 variant="outlined"

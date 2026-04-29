@@ -1,7 +1,17 @@
 import { useState } from 'react';
-import { Box, Typography, Card, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, TextField, Grid } from '@mui/material';
-import { PageHeader, Spinner } from '../../../shared/ui';
-import { useGetLogsQuery } from '../api/production.api';
+import { useNavigate } from 'react-router-dom';
+import { 
+    Box, Typography, Card, Table, TableBody, TableCell, TableContainer, 
+    TableHead, TableRow, Chip, TextField, Grid, IconButton, Tooltip,
+    Dialog, DialogTitle, DialogContent, DialogActions, Button
+} from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { PageHeader, Spinner, Select } from '../../../shared/ui';
+import { 
+    useGetLogsQuery, 
+    useGetPlantsQuery, 
+    useDeleteLogMutation 
+} from '../api/production.api';
 
 const statusColors: Record<string, string> = {
     ACTIVA: '#10b981',
@@ -11,22 +21,65 @@ const statusColors: Record<string, string> = {
     ELECTRONIC: '#3b82f6',
 };
 
+const statusLabels: Record<string, string> = {
+    ACTIVA: 'Activa',
+    PARADA: 'Parada',
+    REVISAR: 'En Revisión',
+    VELOCIDAD_REDUCIDA: 'Vel. Reducida',
+    ELECTRONIC: 'Electrónica',
+};
+
 export default function HistorialRegistrosPage() {
+    const navigate = useNavigate();
     const [startDate, setStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 7)).toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
-    const [machineFilter, setMachineFilter] = useState('');
+    const [machineNumber, setMachineNumber] = useState('');
+    const [plantId, setPlantId] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
+
+    // Deletion state
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+
+    const { data: plants = [] } = useGetPlantsQuery();
+    const [deleteLog, { isLoading: isDeleting }] = useDeleteLogMutation();
 
     const { data: logs = [], isLoading } = useGetLogsQuery({ 
         startDate, 
-        endDate 
+        endDate,
+        plantId: plantId || undefined,
+        status: statusFilter || undefined,
+        machineNumber: machineNumber || undefined
     });
 
-    const filteredLogs = logs.filter((log: any) => {
-        if (!machineFilter) return true;
-        const numberMatch = log.machine?.number?.toString().includes(machineFilter);
-        const codeMatch = log.machine?.codigoInterno?.toLowerCase().includes(machineFilter.toLowerCase());
-        return numberMatch || codeMatch;
-    });
+    const plantOptions = [
+        { value: '', label: 'Todas las Plantas' },
+        ...plants.map((p: any) => ({ value: p.id, label: p.name }))
+    ];
+
+    const statusOptions = [
+        { value: '', label: 'Todos los Movimientos' },
+        ...Object.keys(statusLabels).map(key => ({ value: key, label: statusLabels[key] }))
+    ];
+
+    const handleDelete = async () => {
+        if (!deleteId) return;
+        try {
+            await deleteLog(deleteId).unwrap();
+            setDeleteId(null);
+        } catch (error) {
+            console.error('Error deleting log:', error);
+            alert('Error al eliminar el registro');
+        }
+    };
+
+    const handleMachineClick = (log: any) => {
+        navigate('/produccion/buscador', {
+            state: {
+                machine: log.machine,
+                plantId: log.machine?.plantId
+            }
+        });
+    };
 
     return (
         <Box sx={{ p: 3, maxWidth: '1400px', margin: '0 auto' }}>
@@ -38,14 +91,14 @@ export default function HistorialRegistrosPage() {
 
             <Card sx={{ bgcolor: '#1a1a1a', borderRadius: 2, mb: 4, p: 2 }}>
                 <Grid container spacing={2} alignItems="center">
-                    <Grid size={{ xs: 12, md: 4 }}>
+                    <Grid size={{ xs: 12, md: 2.4 }}>
                         <TextField
-                            label="Buscar por Máquina (Número o Código)"
+                            label="N° Máquina"
                             variant="outlined"
                             fullWidth
                             size="small"
-                            value={machineFilter}
-                            onChange={(e) => setMachineFilter(e.target.value)}
+                            value={machineNumber}
+                            onChange={(e) => setMachineNumber(e.target.value)}
                             sx={{
                                 '& .MuiOutlinedInput-root': { color: 'white' },
                                 '& .MuiInputLabel-root': { color: '#9ca3af' },
@@ -53,7 +106,23 @@ export default function HistorialRegistrosPage() {
                             }}
                         />
                     </Grid>
-                    <Grid size={{ xs: 12, md: 4 }}>
+                    <Grid size={{ xs: 12, md: 2.4 }}>
+                        <Select 
+                            label="Planta"
+                            value={plantId}
+                            onChange={(val) => setPlantId(val)}
+                            options={plantOptions}
+                        />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 2.4 }}>
+                        <Select 
+                            label="Movimiento / Estado"
+                            value={statusFilter}
+                            onChange={(val) => setStatusFilter(val)}
+                            options={statusOptions}
+                        />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 2.4 }}>
                         <TextField
                             label="Fecha Inicio"
                             type="date"
@@ -70,7 +139,7 @@ export default function HistorialRegistrosPage() {
                             }}
                         />
                     </Grid>
-                    <Grid size={{ xs: 12, md: 4 }}>
+                    <Grid size={{ xs: 12, md: 2.4 }}>
                         <TextField
                             label="Fecha Fin"
                             type="date"
@@ -104,31 +173,43 @@ export default function HistorialRegistrosPage() {
                                 <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Problema / Tipo</TableCell>
                                 <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Responsable</TableCell>
                                 <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Observaciones</TableCell>
+                                <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }} align="center">Acciones</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {filteredLogs.length === 0 ? (
+                            {logs.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} align="center" sx={{ color: '#9ca3af', py: 4 }}>
+                                    <TableCell colSpan={8} align="center" sx={{ color: '#9ca3af', py: 4 }}>
                                         No se encontraron registros para los filtros seleccionados
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredLogs.map((log: any) => (
+                                logs.map((log: any) => (
                                     <TableRow key={log.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                                         <TableCell sx={{ color: '#d1d5db' }}>
                                             {new Date(log.timestamp).toLocaleString()}
                                         </TableCell>
                                         <TableCell sx={{ color: '#d1d5db' }}>{log.machine?.plant?.name || '-'}</TableCell>
                                         <TableCell sx={{ color: '#d1d5db' }}>
-                                            Máquina {log.machine?.number} <br/>
+                                            <Typography 
+                                                variant="body2" 
+                                                onClick={() => handleMachineClick(log)}
+                                                sx={{ 
+                                                    cursor: 'pointer', 
+                                                    fontWeight: 600,
+                                                    color: '#3b82f6',
+                                                    '&:hover': { textDecoration: 'underline' }
+                                                }}
+                                            >
+                                                Máquina {log.machine?.number}
+                                            </Typography>
                                             <Typography variant="caption" color="text.secondary">
                                                 {log.machine?.codigoInterno}
                                             </Typography>
                                         </TableCell>
                                         <TableCell>
                                             <Chip 
-                                                label={log.toStatus} 
+                                                label={statusLabels[log.toStatus] || log.toStatus} 
                                                 size="small"
                                                 sx={{ 
                                                     bgcolor: `${statusColors[log.toStatus] || '#6b7280'}20`, 
@@ -142,6 +223,18 @@ export default function HistorialRegistrosPage() {
                                         <TableCell sx={{ color: '#9ca3af', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={log.observation}>
                                             {log.observation || '-'}
                                         </TableCell>
+                                        <TableCell align="center">
+                                            <Tooltip title="Eliminar Registro">
+                                                <IconButton 
+                                                    size="small" 
+                                                    color="error"
+                                                    onClick={() => setDeleteId(log.id)}
+                                                    sx={{ '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.1)' } }}
+                                                >
+                                                    <DeleteIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </TableCell>
                                     </TableRow>
                                 ))
                             )}
@@ -149,6 +242,22 @@ export default function HistorialRegistrosPage() {
                     </Table>
                 </TableContainer>
             )}
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={!!deleteId} onClose={() => setDeleteId(null)} PaperProps={{ sx: { bgcolor: '#1f1f1f', color: 'white' } }}>
+                <DialogTitle>¿Eliminar registro?</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" sx={{ color: '#9ca3af' }}>
+                        Esta acción eliminará permanentemente el registro de la base de datos. No se puede deshacer.
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDeleteId(null)} sx={{ color: '#9ca3af' }}>Cancelar</Button>
+                    <Button onClick={handleDelete} color="error" variant="contained" disabled={isDeleting}>
+                        {isDeleting ? 'Eliminando...' : 'Eliminar'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }

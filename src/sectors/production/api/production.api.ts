@@ -32,7 +32,7 @@ export interface Machine {
 }
 
 
-export interface PerformanceLog {
+export interface MaintenanceLog {
     id: string;
     machineId: string;
     fromStatus: string;
@@ -70,15 +70,15 @@ export interface MachineKPI {
 }
 
 
-export const performanceApi = api.injectEndpoints({
+export const maintenanceApi = api.injectEndpoints({
     endpoints: (builder) => ({
         getPlants: builder.query<any[], void>({
-            query: () => 'performance/plants',
-            providesTags: ['Performance'],
+            query: () => 'maintenance/plants',
+            providesTags: ['Maintenance'],
         }),
         getMachineTypes: builder.query<any[], void>({
-            query: () => 'performance/types',
-            providesTags: ['Performance'],
+            query: () => 'maintenance/types',
+            providesTags: ['Maintenance'],
         }),
         getProductionLogs: builder.query({
             query: (params: any) => {
@@ -100,69 +100,69 @@ export const performanceApi = api.injectEndpoints({
         }),
         getMachines: builder.query({
             query: ({ plantId, typeId }: any) => {
-                let url = `performance/machines?plantId=${plantId}`;
+                let url = `maintenance/machines?plantId=${plantId}`;
                 if (typeId) url += `&typeId=${typeId}`;
                 return url;
             },
-            providesTags: ['Performance'],
+            providesTags: ['Maintenance'],
         }),
         getMetrics: builder.query({
-            query: ({ plantId }: any) => `performance/metrics?plantId=${plantId}`,
-            providesTags: ['Performance'],
+            query: ({ plantId }: any) => `maintenance/metrics?plantId=${plantId}`,
+            providesTags: ['Maintenance'],
         }),
         updateMachineStatus: builder.mutation({
             query: ({ id, ...body }: any) => ({
-                url: `performance/machines/${id}/status`,
+                url: `maintenance/machines/${id}/status`,
                 method: 'POST',
                 body,
             }),
-            invalidatesTags: ['Performance', 'Machine'],
+            invalidatesTags: ['Maintenance', 'Machine'],
         }),
 
         getMachineKPIs: builder.query({
             query: ({ id, startDate, endDate }: { id: string; startDate?: string; endDate?: string }) => {
-                let url = `performance/machines/${id}/metrics`;
+                let url = `maintenance/machines/${id}/metrics`;
                 const params = new URLSearchParams();
                 if (startDate) params.append('startDate', startDate);
                 if (endDate) params.append('endDate', endDate);
                 const queryStr = params.toString();
                 return queryStr ? `${url}?${queryStr}` : url;
             },
-            providesTags: (_res: any, _err: any) => [{ type: 'Performance', id: 'KPI' }],
+            providesTags: (_res: any, _err: any) => [{ type: 'Maintenance', id: 'KPI' }],
         }),
         
         getPlantKPIs: builder.query({
             query: ({ plantId, startDate, endDate }: any) => {
-                let url = `performance/plants/${plantId}/kpis`;
+                let url = `maintenance/plants/${plantId}/kpis`;
                 const params = new URLSearchParams();
                 if (startDate) params.append('startDate', startDate);
                 if (endDate) params.append('endDate', endDate);
                 const queryStr = params.toString();
                 return queryStr ? `${url}?${queryStr}` : url;
             },
-            providesTags: (_res: any, _err: any) => [{ type: 'Performance', id: 'PlantKPI' }],
+            providesTags: (_res: any, _err: any) => [{ type: 'Maintenance', id: 'PlantKPI' }],
         }),
         getLogs: builder.query({
             query: (params: any) => ({
-                url: 'performance/logs',
+                url: 'maintenance/logs',
                 params
             }),
-            providesTags: ['Performance'],
+            providesTags: ['Maintenance'],
         }),
         updateLog: builder.mutation({
             query: ({ id, ...body }: any) => ({
-                url: `performance/logs/${id}`,
+                url: `maintenance/logs/${id}`,
                 method: 'PATCH',
                 body,
             }),
-            invalidatesTags: ['Performance'],
+            invalidatesTags: ['Maintenance'],
         }),
         deleteLog: builder.mutation({
             query: (id: any) => ({
-                url: `performance/logs/${id}`,
+                url: `maintenance/logs/${id}`,
                 method: 'DELETE',
             }),
-            invalidatesTags: ['Performance'],
+            invalidatesTags: ['Maintenance'],
         }),
     }),
 });
@@ -182,6 +182,6 @@ export const {
     useGetProductionLogsQuery,
     useUpdateProductionRecordMutation,
     useDeleteProductionRecordMutation,
-} = performanceApi;
+} = maintenanceApi;
 
 
