@@ -210,10 +210,10 @@ export default function MonitoreoVivoPage() {
     const renderSection = (section: any, idx: number) => (
         <Box key={idx} sx={{ display: 'flex', gap: 6, mb: 4, alignItems: 'center' }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                {section.left.map((row: any, i: number) => renderRow(row))}
+                {section.left.map((row: any) => renderRow(row))}
             </Box>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                {section.right.map((row: any, i: number) => renderRow(row))}
+                {section.right.map((row: any) => renderRow(row))}
             </Box>
         </Box>
     );
