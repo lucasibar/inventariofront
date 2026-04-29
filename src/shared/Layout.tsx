@@ -39,6 +39,7 @@ const navGroups = [
         icon: '🛠️',
         items: [
             { to: '/mantenimiento/dashboard', label: '📊 Dashboard Mant' },
+            { to: '/mantenimiento/monitoreo', label: '📺 Monitoreo en Vivo' },
             { to: '/mantenimiento/registro', label: '📋 Registrar' },
             { to: '/mantenimiento/historial', label: '📜 Historial' },
             { to: '/mantenimiento/buscador', label: '🔍 Buscar' },
@@ -152,7 +153,7 @@ export default function Layout() {
         ...group,
         items: group.items.filter(item => {
             if (isAdmin) return true;
-            if (isOperario) return ['/movimientos', '/stock', '/deposito/auditoria-picking', '/remitos-salida', '/tasks', '/deposito', '/mantenimiento/dashboard', '/mantenimiento/registro', '/mantenimiento/historial', '/mantenimiento/buscador', '/produccion/cargar', '/produccion/dashboard'].includes(item.to);
+            if (isOperario) return ['/movimientos', '/stock', '/deposito/auditoria-picking', '/remitos-salida', '/tasks', '/deposito', '/mantenimiento/dashboard', '/mantenimiento/monitoreo', '/mantenimiento/registro', '/mantenimiento/historial', '/mantenimiento/buscador', '/produccion/cargar', '/produccion/dashboard'].includes(item.to);
             if (isCompras) return ['/dashboard', '/remitos-entrada', '/items', '/dashboard/capacity', '/dashboard/volumes', '/socios', '/pedidos-compra'].includes(item.to);
             return false;
         })
@@ -166,145 +167,7 @@ export default function Layout() {
         navigate('/login', { replace: true });
     };
 
-    const SidebarContent = () => (
-        <>
-            <div style={{ padding: '16px 12px', borderBottom: '1px solid #2a2d3e', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    {(!collapsed || isMobile) && <span style={{ color: '#a5b4fc', fontWeight: 700, fontSize: '15px', whiteSpace: 'nowrap' }}>📦 WMS INVENTARIO</span>}
-                    {(!collapsed || isMobile) && <span style={{ color: '#6b7280', fontSize: '10px', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '1px' }}>{role}</span>}
-                </div>
-                {!isMobile && (
-                    <button
-                        onClick={() => setCollapsed(!collapsed)}
-                        style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '18px', padding: '2px 6px' }}
-                    >
-                        {collapsed ? '›' : '‹'}
-                    </button>
-                )}
-            </div>
 
-            <nav className="custom-scrollbar" style={{ flex: 1, paddingTop: '8px', overflowY: 'auto' }}>
-                {filteredGroups.map((group) => {
-                    const isExpanded = expandedGroups.includes(group.id);
-                    const hasActiveChild = group.items.some(item => location.pathname === item.to);
-
-                    return (
-                        <div key={group.id} style={{ marginBottom: '8px' }}>
-                            {(!collapsed || isMobile) && (
-                                <button
-                                    onClick={() => toggleGroup(group.id)}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', gap: '8px',
-                                        width: '100%', padding: '8px 14px',
-                                        background: 'transparent', border: 'none',
-                                        color: isExpanded || hasActiveChild ? '#a5b4fc' : '#6b7280',
-                                        fontSize: '11px', fontWeight: 700,
-                                        textTransform: 'uppercase', letterSpacing: '1px',
-                                        cursor: 'pointer', transition: 'all 0.15s'
-                                    }}
-                                >
-                                    <span style={{ fontSize: '14px' }}>{group.icon}</span>
-                                    <span>{group.label}</span>
-                                    <span style={{ marginLeft: 'auto', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>
-                                        ›
-                                    </span>
-                                </button>
-                            )}
-
-                            {collapsed && !isMobile && (
-                                <div style={{ 
-                                    display: 'flex', justifyContent: 'center', 
-                                    padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.05)',
-                                    color: hasActiveChild ? '#a5b4fc' : '#4b5563'
-                                }}>
-                                    <span style={{ fontSize: '20px' }}>{group.icon}</span>
-                                </div>
-                            )}
-
-                            {(isExpanded || (collapsed && !isMobile)) && (
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    {group.items.map(({ to, label }) => (
-                                        <NavLink 
-                                            key={to} 
-                                            to={to} 
-                                            style={({ isActive }) => ({
-                                                ...navStyle(isActive, isMobile),
-                                                paddingLeft: (!collapsed || isMobile) ? '32px' : '14px',
-                                                opacity: (collapsed && !isMobile && !hasActiveChild) ? 0.6 : 1
-                                            })}
-                                        >
-                                            <span style={{ fontSize: isMobile ? '20px' : '16px', minWidth: '24px' }}>{label.split(' ')[0]}</span>
-                                            {(!collapsed || isMobile) && <span>{label.split(' ').slice(1).join(' ')}</span>}
-                                        </NavLink>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-
-                {/* Notificaciones menu item */}
-                <NavLink
-                    to="/notificaciones"
-                    style={({ isActive }) => ({
-                        ...navStyle(isActive, isMobile),
-                        marginTop: '12px',
-                        borderTop: '1px solid #2a2d3e',
-                        paddingTop: isMobile ? '16px' : '12px',
-                    })}
-                >
-                    <span style={{ fontSize: isMobile ? '20px' : '16px', minWidth: '24px', position: 'relative' }}>
-                        🔔
-                        {hasUnread && (
-                            <span style={{
-                                position: 'absolute', top: '-2px', right: '-4px',
-                                width: '9px', height: '9px', borderRadius: '50%',
-                                background: '#ef4444', border: '2px solid #1a1d2e',
-                                animation: 'pulse-dot 2s ease-in-out infinite',
-                            }} />
-                        )}
-                    </span>
-                    {(!collapsed || isMobile) && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            Notificaciones
-                            {hasUnread && alerts.length > 0 && (
-                                <span style={{
-                                    background: '#ef4444',
-                                    color: 'white',
-                                    fontSize: '10px',
-                                    fontWeight: 800,
-                                    padding: '1px 7px',
-                                    borderRadius: '10px',
-                                    minWidth: '18px',
-                                    textAlign: 'center' as const,
-                                }}>
-                                    {alerts.length}
-                                </span>
-                            )}
-                        </span>
-                    )}
-                </NavLink>
-            </nav>
-
-
-            {/* Bottom Actions */}
-            <div style={{ borderTop: '1px solid #2a2d3e', padding: '8px 0' }}>
-                <button
-                    onClick={handleLogout}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: '12px',
-                        padding: isMobile ? '16px 20px' : '10px 14px', width: '100%',
-                        background: 'transparent', border: 'none',
-                        color: '#9ca3af', fontSize: isMobile ? '15px' : '13px',
-                        cursor: 'pointer', transition: 'all 0.15s',
-                    }}
-                >
-                    <span style={{ fontSize: isMobile ? '20px' : '16px', minWidth: '24px' }}>🚪</span>
-                    {(!collapsed || isMobile) && <span>Cerrar Sesión</span>}
-                </button>
-            </div>
-        </>
-    );
 
     return (
         <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', height: '100vh', background: '#0f1117', color: '#f3f4f6' }}>
@@ -433,7 +296,144 @@ export default function Layout() {
                 zIndex: 999,
                 flexShrink: 0,
             }}>
-                <SidebarContent />
+                <div style={{ padding: '16px 12px', borderBottom: '1px solid #2a2d3e', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        {(!collapsed || isMobile) && <span style={{ color: '#a5b4fc', fontWeight: 700, fontSize: '15px', whiteSpace: 'nowrap' }}>📦 WMS INVENTARIO</span>}
+                        {(!collapsed || isMobile) && <span style={{ color: '#6b7280', fontSize: '10px', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '1px' }}>{role}</span>}
+                    </div>
+                    {!isMobile && (
+                        <button
+                            type="button"
+                            onClick={() => setCollapsed(!collapsed)}
+                            style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '18px', padding: '2px 6px' }}
+                        >
+                            {collapsed ? '›' : '‹'}
+                        </button>
+                    )}
+                </div>
+
+                <nav className="custom-scrollbar" style={{ flex: 1, paddingTop: '8px', overflowY: 'auto' }}>
+                    {filteredGroups.map((group) => {
+                        const isExpanded = expandedGroups.includes(group.id);
+                        const hasActiveChild = group.items.some(item => location.pathname === item.to);
+
+                        return (
+                            <div key={group.id} style={{ marginBottom: '8px' }}>
+                                {(!collapsed || isMobile) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleGroup(group.id)}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: '8px',
+                                            width: '100%', padding: '8px 14px',
+                                            background: 'transparent', border: 'none',
+                                            color: isExpanded || hasActiveChild ? '#a5b4fc' : '#6b7280',
+                                            fontSize: '11px', fontWeight: 700,
+                                            textTransform: 'uppercase', letterSpacing: '1px',
+                                            cursor: 'pointer', transition: 'all 0.15s'
+                                        }}
+                                    >
+                                        <span style={{ fontSize: '14px' }}>{group.icon}</span>
+                                        <span>{group.label}</span>
+                                        <span style={{ marginLeft: 'auto', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>
+                                            ›
+                                        </span>
+                                    </button>
+                                )}
+
+                                {collapsed && !isMobile && (
+                                    <div style={{ 
+                                        display: 'flex', justifyContent: 'center', 
+                                        padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                        color: hasActiveChild ? '#a5b4fc' : '#4b5563'
+                                    }}>
+                                        <span style={{ fontSize: '20px' }}>{group.icon}</span>
+                                    </div>
+                                )}
+
+                                {(isExpanded || (collapsed && !isMobile)) && (
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                        {group.items.map(({ to, label }) => (
+                                            <NavLink 
+                                                key={to} 
+                                                to={to} 
+                                                style={({ isActive }) => ({
+                                                    ...navStyle(isActive, isMobile),
+                                                    paddingLeft: (!collapsed || isMobile) ? '32px' : '14px',
+                                                    opacity: (collapsed && !isMobile && !hasActiveChild) ? 0.6 : 1
+                                                })}
+                                            >
+                                                <span style={{ fontSize: isMobile ? '20px' : '16px', minWidth: '24px' }}>{label.split(' ')[0]}</span>
+                                                {(!collapsed || isMobile) && <span>{label.split(' ').slice(1).join(' ')}</span>}
+                                            </NavLink>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+
+                    {/* Notificaciones menu item */}
+                    <NavLink
+                        to="/notificaciones"
+                        style={({ isActive }) => ({
+                            ...navStyle(isActive, isMobile),
+                            marginTop: '12px',
+                            borderTop: '1px solid #2a2d3e',
+                            paddingTop: isMobile ? '16px' : '12px',
+                        })}
+                    >
+                        <span style={{ fontSize: isMobile ? '20px' : '16px', minWidth: '24px', position: 'relative' }}>
+                            🔔
+                            {hasUnread && (
+                                <span style={{
+                                    position: 'absolute', top: '-2px', right: '-4px',
+                                    width: '9px', height: '9px', borderRadius: '50%',
+                                    background: '#ef4444', border: '2px solid #1a1d2e',
+                                    animation: 'pulse-dot 2s ease-in-out infinite',
+                                }} />
+                            )}
+                        </span>
+                        {(!collapsed || isMobile) && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                Notificaciones
+                                {hasUnread && alerts.length > 0 && (
+                                    <span style={{
+                                        background: '#ef4444',
+                                        color: 'white',
+                                        fontSize: '10px',
+                                        fontWeight: 800,
+                                        padding: '1px 7px',
+                                        borderRadius: '10px',
+                                        minWidth: '18px',
+                                        textAlign: 'center' as const,
+                                    }}>
+                                        {alerts.length}
+                                    </span>
+                                )}
+                            </span>
+                        )}
+                    </NavLink>
+                </nav>
+
+
+                {/* Bottom Actions */}
+                <div style={{ borderTop: '1px solid #2a2d3e', padding: '8px 0' }}>
+                    <button
+                        type="button"
+                        onClick={handleLogout}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: '12px',
+                            padding: isMobile ? '16px 20px' : '10px 14px', width: '100%',
+                            background: 'transparent', border: 'none',
+                            color: '#9ca3af', fontSize: isMobile ? '15px' : '13px',
+                            cursor: 'pointer', transition: 'all 0.15s',
+                        }}
+                    >
+                        <span style={{ fontSize: isMobile ? '20px' : '16px', minWidth: '24px' }}>🚪</span>
+                        {(!collapsed || isMobile) && <span>Cerrar Sesión</span>}
+                    </button>
+                </div>
             </aside>
 
             {/* Main Content Area */}
