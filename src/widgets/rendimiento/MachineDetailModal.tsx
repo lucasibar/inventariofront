@@ -4,9 +4,9 @@ import {
     Button, Typography, Box, Divider, CircularProgress, 
     List, ListItem, ListItemText, Chip
 } from '@mui/material';
-import type { Machine } from '../../sectors/production/api/production.api';
-import { useGetLogsQuery } from '../../sectors/production/api/production.api';
-import { calculateKPIs } from '../../sectors/production/rendimiento/utils/kpiUtils';
+import type { Machine } from '../../sectors/maintenance/api/maintenance.api';
+import { useGetLogsQuery } from '../../sectors/maintenance/api/maintenance.api';
+import { calculateKPIs } from '../../sectors/maintenance/rendimiento/utils/kpiUtils';
 
 
 
