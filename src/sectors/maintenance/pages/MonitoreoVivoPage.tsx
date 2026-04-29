@@ -235,11 +235,11 @@ export default function MonitoreoVivoPage() {
     );
 
     const renderSection = (section: any, idx: number) => (
-        <Box key={idx} sx={{ display: 'flex', gap: 6, mb: 4, alignItems: 'center' }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <Box key={idx} sx={{ display: 'flex', gap: 10, mb: 4, alignItems: 'center', justifyContent: 'center' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '4px', width: 680, alignItems: 'flex-end' }}>
                 {section.left.map((row: any, i: number) => renderRow(row, i))}
             </Box>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '4px', width: 440, alignItems: 'flex-start' }}>
                 {section.right.map((row: any, i: number) => renderRow(row, i))}
             </Box>
         </Box>
