@@ -4,7 +4,7 @@ import {
     Button, TextField, Box, Alert
 } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
-import { type Machine, useUpdateMachineStatusMutation } from '../api/production.api';
+import { type Machine, useUpdateMachineStatusMutation } from '../api/maintenance.api';
 
 
 interface SolveConfirmationModalProps {

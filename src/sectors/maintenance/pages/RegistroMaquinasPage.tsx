@@ -10,7 +10,7 @@ import {
     useGetMachineTypesQuery, 
     useGetMachinesQuery,
     useUpdateMachineStatusMutation
-} from '../api/production.api';
+} from '../api/maintenance.api';
 
 const failureTypes = [
     'Cosedora Cilindro', 'Cosedora Brazo', 'Cosedora Cierre', 'Error electronico',

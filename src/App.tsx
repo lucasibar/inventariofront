@@ -27,11 +27,13 @@ import CapacityDashboardPage from './sectors/purchasing/pages/CapacityDashboardP
 import VolumenesDashboardPage from './sectors/purchasing/pages/VolumenesDashboardPage';
 import PedidosCompraPage from './sectors/purchasing/pages/PedidosCompraPage';
 
-// Sector: Production / Maintenance
-import DashboardProduccionPage from './sectors/production/pages/DashboardProduccionPage';
-import RegistroMaquinasPage from './sectors/production/pages/RegistroMaquinasPage';
-import HistorialRegistrosPage from './sectors/production/pages/HistorialRegistrosPage';
-import BuscadorMaquinaPage from './sectors/production/pages/BuscadorMaquinaPage';
+// Sector: Maintenance
+import DashboardMantenimientoPage from './sectors/maintenance/pages/DashboardMantenimientoPage';
+import RegistroMaquinasPage from './sectors/maintenance/pages/RegistroMaquinasPage';
+import HistorialRegistrosPage from './sectors/maintenance/pages/HistorialRegistrosPage';
+import BuscadorMaquinaPage from './sectors/maintenance/pages/BuscadorMaquinaPage';
+
+// Sector: Production
 import CargarProduccionPage from './sectors/production/pages/CargarProduccionPage';
 import ProduccionNewDashboardPage from './sectors/production/pages/ProduccionNewDashboardPage';
 
@@ -96,12 +98,15 @@ function App() {
                 <Route path="/movimientos" element={<MovimientosPage />} />
                 <Route path="/tasks" element={<WorkspaceTasksPage />} />
                 
-                {/* Mantenimiento (Ex-Producción) */}
-                <Route path="/mantenimiento/dashboard" element={<DashboardProduccionPage />} />
-                <Route path="/produccion/registro" element={<RegistroMaquinasPage />} />
+                {/* Mantenimiento */}
+                <Route path="/mantenimiento/dashboard" element={<DashboardMantenimientoPage />} />
+                <Route path="/mantenimiento/registro" element={<RegistroMaquinasPage />} />
+                <Route path="/mantenimiento/historial" element={<HistorialRegistrosPage />} />
+                <Route path="/mantenimiento/buscador" element={<BuscadorMaquinaPage />} />
+
+                {/* Producción */}
                 <Route path="/produccion/cargar" element={<CargarProduccionPage />} />
-                <Route path="/produccion/historial" element={<HistorialRegistrosPage />} />
-                <Route path="/produccion/buscador" element={<BuscadorMaquinaPage />} />
+                <Route path="/produccion/dashboard" element={<ProduccionNewDashboardPage />} />
 
                 {/* Nuevos Sectores */}
                 <Route path="/produccion-nueva/dashboard" element={<ProduccionNewDashboardPage />} />

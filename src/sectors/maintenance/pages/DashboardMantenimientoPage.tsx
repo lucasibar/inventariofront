@@ -8,8 +8,8 @@ import {
     useGetMetricsQuery,
     useGetPlantKPIsQuery,
     useGetMachinesQuery,
-} from '../api/production.api';
-import type { Machine } from '../api/production.api';
+} from '../api/maintenance.api';
+import type { Machine } from '../api/maintenance.api';
 
 
 
@@ -55,7 +55,7 @@ const MetricCard = ({ title, value, color = '#6366f1', horizontal = false, onCli
     );
 };
 
-export default function DashboardProduccionPage() {
+export default function DashboardMantenimientoPage() {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const navigate = useNavigate();
@@ -125,7 +125,7 @@ export default function DashboardProduccionPage() {
 
     const handleMachineClick = (machine: Machine) => {
         setMachineListStatus(null);
-        navigate('/produccion/buscador', { state: { machine, plantId: selectedPlantId } });
+        navigate('/mantenimiento/buscador', { state: { machine, plantId: selectedPlantId } });
     };
 
     if (loadingPlants || loadingTypes) return <Spinner />;
@@ -182,7 +182,7 @@ export default function DashboardProduccionPage() {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 {!isMobile && (
                     <Box>
-                        <Typography variant="h5" sx={{ fontWeight: 700, color: 'white' }}>Dashboard de Producción</Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 700, color: 'white' }}>Dashboard de Mantenimiento</Typography>
                         <Typography variant="body2" sx={{ color: '#9ca3af' }}>Indicadores globales de la planta</Typography>
                     </Box>
                 )}

@@ -11,7 +11,7 @@ import {
     useGetLogsQuery, 
     useGetPlantsQuery, 
     useDeleteLogMutation 
-} from '../api/production.api';
+} from '../api/maintenance.api';
 
 const statusColors: Record<string, string> = {
     ACTIVA: '#10b981',
@@ -73,7 +73,7 @@ export default function HistorialRegistrosPage() {
     };
 
     const handleMachineClick = (log: any) => {
-        navigate('/produccion/buscador', {
+        navigate('/mantenimiento/buscador', {
             state: {
                 machine: log.machine,
                 plantId: log.machine?.plantId

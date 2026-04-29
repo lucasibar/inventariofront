@@ -39,10 +39,9 @@ const navGroups = [
         icon: '🛠️',
         items: [
             { to: '/mantenimiento/dashboard', label: '📊 Dashboard Mant' },
-            { to: '/produccion/registro', label: '📋 Registrar' },
-            { to: '/produccion/cargar', label: '➕ Cargar' },
-            { to: '/produccion/historial', label: '📜 Historial' },
-            { to: '/produccion/buscador', label: '🔍 Buscar' },
+            { to: '/mantenimiento/registro', label: '📋 Registrar' },
+            { to: '/mantenimiento/historial', label: '📜 Historial' },
+            { to: '/mantenimiento/buscador', label: '🔍 Buscar' },
         ]
     },
     {
@@ -50,7 +49,8 @@ const navGroups = [
         label: 'Producción',
         icon: '⚙️',
         items: [
-            { to: '/produccion-nueva/dashboard', label: '📊 Dashboard Prod' },
+            { to: '/produccion/dashboard', label: '📊 Dashboard Prod' },
+            { to: '/produccion/cargar', label: '➕ Cargar' },
         ]
     },
     {
@@ -152,7 +152,7 @@ export default function Layout() {
         ...group,
         items: group.items.filter(item => {
             if (isAdmin) return true;
-            if (isOperario) return ['/movimientos', '/stock', '/deposito/auditoria-picking', '/remitos-salida', '/tasks', '/deposito', '/produccion/dashboard', '/produccion/registro', '/produccion/cargar', '/produccion/historial', '/produccion/buscador'].includes(item.to);
+            if (isOperario) return ['/movimientos', '/stock', '/deposito/auditoria-picking', '/remitos-salida', '/tasks', '/deposito', '/mantenimiento/dashboard', '/mantenimiento/registro', '/mantenimiento/historial', '/mantenimiento/buscador', '/produccion/cargar', '/produccion/dashboard'].includes(item.to);
             if (isCompras) return ['/dashboard', '/remitos-entrada', '/items', '/dashboard/capacity', '/dashboard/volumes', '/socios', '/pedidos-compra'].includes(item.to);
             return false;
         })

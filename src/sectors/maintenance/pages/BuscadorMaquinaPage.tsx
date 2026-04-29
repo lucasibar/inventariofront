@@ -7,8 +7,9 @@ import BuildIcon from '@mui/icons-material/Build';
 import { 
     useGetPlantsQuery, 
     useGetMachinesQuery,
-} from '../api/production.api';
-import type { Machine } from '../api/production.api';
+    useGetMachineTypesQuery
+} from '../api/maintenance.api';
+import type { Machine } from '../api/maintenance.api';
 
 const statusColors: Record<string, string> = {
     ACTIVA: '#10b981',
@@ -91,7 +92,7 @@ export default function BuscadorMaquinaPage() {
 
     const handleRegistrarAveria = () => {
         if (!searchedMachine) return;
-        navigate('/produccion/registro', {
+        navigate('/mantenimiento/registro', {
             state: {
                 preselectedMachine: searchedMachine,
                 plantId: selectedPlantId,
