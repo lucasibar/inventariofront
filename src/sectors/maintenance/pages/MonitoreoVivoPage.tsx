@@ -8,19 +8,18 @@ import {
 } from '../api/maintenance.api';
 import { Spinner } from '../../../shared/ui';
 import { 
-    Activity, 
-    CheckCircle2, 
-    AlertCircle, 
-    PauseCircle, 
-    Zap, 
-    HelpCircle, 
-    Clock,
-    LayoutGrid,
+    CheckCircle as CheckCircleIcon, 
+    Error as ErrorIcon, 
+    PauseCircle as PauseCircleIcon, 
+    ElectricBolt as ZapIcon, 
+    Help as HelpIcon, 
+    AccessTime as ClockIcon,
+    GridView as LayoutGridIcon,
     List as ListIcon,
-    Plus,
-    Minus,
-    Maximize2
-} from 'lucide-react';
+    Add as PlusIcon,
+    Remove as MinusIcon,
+    Speed as ActivityIcon
+} from '@mui/icons-material';
 
 const STATUS_COLORS: Record<string, string> = {
     ACTIVA: '#10b981',
@@ -111,8 +110,8 @@ const StatCard = ({ title, value, percentage, icon: Icon, color }: any) => (
     <Card sx={{ bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
         <CardContent sx={{ p: '20px !important' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: `${color}15`, color: color }}>
-                    <Icon size={20} />
+                <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: `${color}15`, color: color, display: 'flex' }}>
+                    <Icon sx={{ fontSize: 20 }} />
                 </Box>
                 <Typography variant="subtitle2" sx={{ color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.5px' }}>
                     {title}
@@ -246,17 +245,17 @@ export default function MonitoreoVivoPage() {
                                 <Box sx={{ display: 'flex', gap: 1 }}>
                                     <Box sx={{ display: 'flex', bgcolor: 'rgba(255,255,255,0.05)', p: 0.5, borderRadius: 1.5 }}>
                                         <Box sx={{ p: 1, bgcolor: '#3b82f6', borderRadius: 1, display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
-                                            <LayoutGrid size={16} color="white" />
+                                            <LayoutGridIcon sx={{ fontSize: 16, color: 'white' }} />
                                             <Typography sx={{ color: 'white', fontSize: '12px', fontWeight: 600 }}>Vista Planta</Typography>
                                         </Box>
                                         <Box sx={{ p: 1, borderRadius: 1, display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
-                                            <ListIcon size={16} color="#9ca3af" />
+                                            <ListIcon sx={{ fontSize: 16, color: '#9ca3af' }} />
                                             <Typography sx={{ color: '#9ca3af', fontSize: '12px', fontWeight: 600 }}>Vista Lista</Typography>
                                         </Box>
                                     </Box>
                                     <Box sx={{ display: 'flex', bgcolor: 'rgba(255,255,255,0.05)', p: 0.5, borderRadius: 1.5 }}>
-                                        <Box sx={{ p: 1, cursor: 'pointer' }}><Minus size={16} color="#9ca3af" /></Box>
-                                        <Box sx={{ p: 1, cursor: 'pointer' }}><Plus size={16} color="#9ca3af" /></Box>
+                                        <Box sx={{ p: 1, cursor: 'pointer', display: 'flex' }}><MinusIcon sx={{ fontSize: 16, color: '#9ca3af' }} /></Box>
+                                        <Box sx={{ p: 1, cursor: 'pointer', display: 'flex' }}><PlusIcon sx={{ fontSize: 16, color: '#9ca3af' }} /></Box>
                                     </Box>
                                 </Box>
                             </Box>
@@ -295,19 +294,19 @@ export default function MonitoreoVivoPage() {
                     {/* Lower Status Cards */}
                     <Grid container spacing={2}>
                         <Grid item xs={12} sm={6} md={2.4}>
-                            <StatCard title="Activas" value={statusCounts.ACTIVA} percentage={((statusCounts.ACTIVA / metrics?.total || 1) * 100).toFixed(1)} icon={CheckCircle2} color="#10b981" />
+                            <StatCard title="Activas" value={statusCounts.ACTIVA} percentage={((statusCounts.ACTIVA / metrics?.total || 1) * 100).toFixed(1)} icon={CheckCircleIcon} color="#10b981" />
                         </Grid>
                         <Grid item xs={12} sm={6} md={2.4}>
-                            <StatCard title="A Revisar" value={statusCounts.REVISAR} percentage={((statusCounts.REVISAR / metrics?.total || 1) * 100).toFixed(1)} icon={HelpCircle} color="#eab308" />
+                            <StatCard title="A Revisar" value={statusCounts.REVISAR} percentage={((statusCounts.REVISAR / metrics?.total || 1) * 100).toFixed(1)} icon={HelpIcon} color="#eab308" />
                         </Grid>
                         <Grid item xs={12} sm={6} md={2.4}>
-                            <StatCard title="Vel. Reducida" value={statusCounts.VELOCIDAD_REDUCIDA} percentage={((statusCounts.VELOCIDAD_REDUCIDA / metrics?.total || 1) * 100).toFixed(1)} icon={Clock} color="#f97316" />
+                            <StatCard title="Vel. Reducida" value={statusCounts.VELOCIDAD_REDUCIDA} percentage={((statusCounts.VELOCIDAD_REDUCIDA / metrics?.total || 1) * 100).toFixed(1)} icon={ClockIcon} color="#f97316" />
                         </Grid>
                         <Grid item xs={12} sm={6} md={2.4}>
-                            <StatCard title="Paradas" value={statusCounts.PARADA} percentage={((statusCounts.PARADA / metrics?.total || 1) * 100).toFixed(1)} icon={PauseCircle} color="#ef4444" />
+                            <StatCard title="Paradas" value={statusCounts.PARADA} percentage={((statusCounts.PARADA / metrics?.total || 1) * 100).toFixed(1)} icon={PauseCircleIcon} color="#ef4444" />
                         </Grid>
                         <Grid item xs={12} sm={6} md={2.4}>
-                            <StatCard title="Electrónica" value={statusCounts.ELECTRONIC} percentage={((statusCounts.ELECTRONIC / metrics?.total || 1) * 100).toFixed(1)} icon={Zap} color="#3b82f6" />
+                            <StatCard title="Electrónica" value={statusCounts.ELECTRONIC} percentage={((statusCounts.ELECTRONIC / metrics?.total || 1) * 100).toFixed(1)} icon={ZapIcon} color="#3b82f6" />
                         </Grid>
                     </Grid>
                 </Grid>
@@ -363,14 +362,14 @@ export default function MonitoreoVivoPage() {
 
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                 <Box sx={{ display: 'flex', gap: 1.5 }}>
-                                    <Box sx={{ color: '#ef4444', pt: 0.5 }}><AlertCircle size={16} /></Box>
+                                    <Box sx={{ color: '#ef4444', pt: 0.5, display: 'flex' }}><ErrorIcon sx={{ fontSize: 16 }} /></Box>
                                     <Box sx={{ flex: 1 }}>
                                         <Typography variant="caption" sx={{ color: 'white', fontWeight: 600, display: 'block' }}>5 máquinas paradas en Línea 2</Typography>
                                         <Typography variant="caption" sx={{ color: '#6b7280' }}>hace 12 min</Typography>
                                     </Box>
                                 </Box>
                                 <Box sx={{ display: 'flex', gap: 1.5 }}>
-                                    <Box sx={{ color: '#f97316', pt: 0.5 }}><Clock size={16} /></Box>
+                                    <Box sx={{ color: '#f97316', pt: 0.5, display: 'flex' }}><ClockIcon sx={{ fontSize: 16 }} /></Box>
                                     <Box sx={{ flex: 1 }}>
                                         <Typography variant="caption" sx={{ color: 'white', fontWeight: 600, display: 'block' }}>Velocidad reducida en 3 máquinas</Typography>
                                         <Typography variant="caption" sx={{ color: '#6b7280' }}>hace 45 min</Typography>
