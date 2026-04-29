@@ -38,34 +38,40 @@ const STATUS_LABELS: Record<string, string> = {
     SIN_DATOS: 'Sin Datos'
 };
 
-const MachineNode = ({ machine }: { machine: any }) => {
-    const statusColor = STATUS_COLORS[machine?.status || 'SIN_DATOS'];
-    
+const MachineNode = ({ number, status, isFiltered, isActiveSearch }: { number: number | null, status: string, isFiltered: boolean, isActiveSearch: boolean }) => {
+    if (number === null) return <Box sx={{ width: 40, height: 40 }} />;
+
+    const opacity = isActiveSearch ? (isFiltered ? 1 : 0.2) : 1;
+    const scale = isActiveSearch && isFiltered ? 1.15 : 1;
+    const statusColor = STATUS_COLORS[status] || STATUS_COLORS.SIN_DATOS;
+
     return (
-        <Tooltip title={`Máquina ${machine?.number || '?'}: ${STATUS_LABELS[machine?.status || 'SIN_DATOS']}`}>
-            <Box
-                sx={{
-                    width: '38px',
-                    height: '38px',
-                    bgcolor: statusColor,
-                    borderRadius: '6px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'white',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    '&:hover': {
-                        transform: 'scale(1.1)',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                        zIndex: 10
-                    }
-                }}
-            >
-                {machine?.number}
+        <Tooltip title={`Máquina ${number} - ${STATUS_LABELS[status] || status}`} arrow>
+            <Box sx={{ 
+                width: 40, 
+                height: 40, 
+                bgcolor: statusColor,
+                borderRadius: 1.5,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: '11px',
+                fontWeight: 800,
+                cursor: 'pointer',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                opacity,
+                transform: `scale(${scale})`,
+                boxShadow: isActiveSearch && isFiltered ? `0 0 15px ${statusColor}` : '0 2px 4px rgba(0,0,0,0.2)',
+                zIndex: isActiveSearch && isFiltered ? 5 : 1,
+                '&:hover': {
+                    transform: 'scale(1.25)',
+                    zIndex: 20,
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                    filter: 'brightness(1.2)'
+                }
+            }}>
+                {number}
             </Box>
         </Tooltip>
     );
@@ -106,6 +112,8 @@ const StatCard = ({ title, value, percentage, icon: Icon, color }: any) => (
 
 export default function MonitoreoVivoPage() {
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -126,6 +134,16 @@ export default function MonitoreoVivoPage() {
         { plantId: selectedPlantId || '' },
         { skip: !selectedPlantId, pollingInterval: 30000 }
     );
+
+    // Filtered machines in memory (Redux cache -> local filtering)
+    const filteredMachines = useMemo(() => {
+        return machines.filter((m: any) => {
+            const matchesSearch = m.numero.toString().includes(searchTerm) || 
+                                m.tipo?.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesStatus = !statusFilter || m.estado === statusFilter;
+            return matchesSearch && matchesStatus;
+        });
+    }, [machines, searchTerm, statusFilter]);
 
     const { data: metrics } = useGetMetricsQuery(
         { plantId: selectedPlantId || '' },
@@ -196,13 +214,23 @@ export default function MonitoreoVivoPage() {
 
     const renderRow = (nums: (number | null)[]) => (
         <Box sx={{ display: 'flex', gap: '4px' }}>
-            {nums.map((n, i) => (
-                n === null ? (
-                    <Box key={i} sx={{ width: '38px', height: '38px' }} />
-                ) : (
-                    <MachineNode key={n} machine={machineMap[n] || { number: n, status: 'SIN_DATOS' }} />
-                )
-            ))}
+            {nums.map((n, i) => {
+                if (n === null) return <Box key={i} sx={{ width: 40, height: 40 }} />;
+                
+                const machine = machineMap[n];
+                const isFiltered = filteredMachines.some(m => m.numero === n);
+                const isActiveSearch = searchTerm !== '' || statusFilter !== null;
+
+                return (
+                    <MachineNode 
+                        key={n} 
+                        number={n} 
+                        status={machine?.estado || 'SIN_DATOS'}
+                        isFiltered={isFiltered}
+                        isActiveSearch={isActiveSearch}
+                    />
+                );
+            })}
         </Box>
     );
 
@@ -231,8 +259,8 @@ export default function MonitoreoVivoPage() {
 
     return (
         <Box sx={{ p: 3, bgcolor: '#0f1117', minHeight: '100vh', color: '#fff' }}>
-            {/* Header */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4 }}>
+            {/* Header with Search and Filters */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4, flexWrap: 'wrap', gap: 2 }}>
                 <Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
                         <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.5px' }}>
@@ -243,16 +271,56 @@ export default function MonitoreoVivoPage() {
                             <Typography sx={{ color: '#10b981', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>En Vivo</Typography>
                         </Box>
                     </Box>
-                    <Typography variant="body2" sx={{ color: '#9ca3af' }}>Planta Principal • Sector Tejeduría</Typography>
+                    <Typography variant="body2" sx={{ color: '#94a3b8', fontWeight: 500 }}>
+                        {currentTime.toLocaleTimeString()} - {filteredMachines.length} máquinas mostradas
+                    </Typography>
                 </Box>
 
-                <Box sx={{ textAlign: 'right' }}>
-                    <Typography variant="h6" sx={{ fontWeight: 700, mb: -0.5 }}>
-                        {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: '#6b7280' }}>
-                        {currentTime.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                    </Typography>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                    <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        bgcolor: 'rgba(255,255,255,0.05)', 
+                        borderRadius: 2, 
+                        px: 2, 
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        width: { xs: '100%', sm: '250px' }
+                    }}>
+                        <Typography sx={{ color: '#94a3b8', mr: 1, fontSize: '14px' }}>🔍</Typography>
+                        <input 
+                            placeholder="Buscar por número o tipo..." 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{ 
+                                background: 'transparent', 
+                                border: 'none', 
+                                color: 'white', 
+                                padding: '10px 0',
+                                outline: 'none',
+                                width: '100%',
+                                fontSize: '14px'
+                            }}
+                        />
+                    </Box>
+                    <select 
+                        value={statusFilter || ''}
+                        onChange={(e) => setStatusFilter(e.target.value || null)}
+                        style={{ 
+                            background: 'rgba(255,255,255,0.05)', 
+                            border: '1px solid rgba(255,255,255,0.1)', 
+                            color: 'white', 
+                            borderRadius: '8px',
+                            padding: '0 12px',
+                            outline: 'none',
+                            cursor: 'pointer',
+                            fontSize: '14px'
+                        }}
+                    >
+                        <option value="">Todos los estados</option>
+                        {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                            <option key={value} value={value} style={{ background: '#1e293b' }}>{label}</option>
+                        ))}
+                    </select>
                 </Box>
             </Box>
 
