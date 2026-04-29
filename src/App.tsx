@@ -29,6 +29,7 @@ import PedidosCompraPage from './sectors/purchasing/pages/PedidosCompraPage';
 
 // Sector: Maintenance
 import DashboardMantenimientoPage from './sectors/maintenance/pages/DashboardMantenimientoPage';
+import MonitoreoVivoPage from './sectors/maintenance/pages/MonitoreoVivoPage';
 import RegistroMaquinasPage from './sectors/maintenance/pages/RegistroMaquinasPage';
 import HistorialRegistrosPage from './sectors/maintenance/pages/HistorialRegistrosPage';
 import BuscadorMaquinaPage from './sectors/maintenance/pages/BuscadorMaquinaPage';
@@ -100,6 +101,7 @@ function App() {
                 
                 {/* Mantenimiento */}
                 <Route path="/mantenimiento/dashboard" element={<DashboardMantenimientoPage />} />
+                <Route path="/mantenimiento/monitoreo" element={<MonitoreoVivoPage />} />
                 <Route path="/mantenimiento/registro" element={<RegistroMaquinasPage />} />
                 <Route path="/mantenimiento/historial" element={<HistorialRegistrosPage />} />
                 <Route path="/mantenimiento/buscador" element={<BuscadorMaquinaPage />} />

@@ -1,10 +1,10 @@
-import type { PerformanceLog, MachineKPI as MachineKPIs, Machine } from '../../api/production.api';
+import type { MaintenanceLog, MachineKPI as MachineKPIs, Machine } from '../../api/maintenance.api';
 
 
 
 type MachineStatus = Machine['status'];
 
-export const calculateKPIs = (logs: PerformanceLog[], startDate: Date, endDate: Date, machineCreatedAt: string): MachineKPIs => {
+export const calculateKPIs = (logs: MaintenanceLog[], startDate: Date, endDate: Date, machineCreatedAt: string): MachineKPIs => {
 
     let uptimeMs = 0;
     let downtimeMs = 0;
@@ -88,10 +88,10 @@ export const calculateKPIs = (logs: PerformanceLog[], startDate: Date, endDate: 
     };
 };
 
-export const calculatePlantKPIs = (logs: PerformanceLog[], totalMachines: number, startDate: Date, endDate: Date): MachineKPIs => {
+export const calculatePlantKPIs = (logs: MaintenanceLog[], totalMachines: number, startDate: Date, endDate: Date): MachineKPIs => {
     if (totalMachines <= 0) return emptyKPIs();
     
-    const logsByMachine: Record<string, PerformanceLog[]> = {};
+    const logsByMachine: Record<string, MaintenanceLog[]> = {};
     logs.forEach(log => {
         if (!logsByMachine[log.machineId]) logsByMachine[log.machineId] = [];
         logsByMachine[log.machineId].push(log);
