@@ -59,8 +59,10 @@ const navGroups = [
         label: 'Compras',
         icon: '🛒',
         items: [
-            { to: '/compras/dashboard', label: '📊 Dashboard Comp' },
-            { to: '/dashboard', label: '📉 Matriz Compras' },
+            { to: '/dashboard', label: '📊 Dashboard Comp' },
+            { to: '/compras/materiales-criticos', label: '⚠️ Materiales Críticos' },
+            { to: '/compras/conciliacion', label: '🔗 Conciliación' },
+            { to: '/pedidos-compra', label: '📋 Pedidos Compra' },
             { to: '/dashboard/capacity', label: '📈 Capacidad' },
             { to: '/dashboard/volumes', label: '📦 Volúmenes' },
         ]
@@ -154,7 +156,7 @@ export default function Layout() {
         items: group.items.filter(item => {
             if (isAdmin) return true;
             if (isOperario) return ['/movimientos', '/stock', '/deposito/auditoria-picking', '/remitos-salida', '/tasks', '/deposito', '/mantenimiento/dashboard', '/mantenimiento/monitoreo', '/mantenimiento/registro', '/mantenimiento/historial', '/mantenimiento/buscador', '/produccion/cargar', '/produccion/dashboard'].includes(item.to);
-            if (isCompras) return ['/dashboard', '/remitos-entrada', '/items', '/dashboard/capacity', '/dashboard/volumes', '/socios', '/pedidos-compra'].includes(item.to);
+            if (isCompras) return ['/dashboard', '/compras/materiales-criticos', '/compras/conciliacion', '/pedidos-compra', '/remitos-entrada', '/items', '/dashboard/capacity', '/dashboard/volumes', '/socios'].includes(item.to);
             return false;
         })
     })).filter(group => group.items.length > 0);

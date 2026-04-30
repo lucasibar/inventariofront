@@ -23,6 +23,8 @@ import StockDashboardPage from './sectors/warehouse/pages/StockDashboardPage';
 
 // Sector: Purchasing
 import DashboardComprasPage from './sectors/purchasing/pages/DashboardComprasPage';
+import MaterialesCriticosPage from './sectors/purchasing/pages/MaterialesCriticosPage';
+import ConciliacionPage from './sectors/purchasing/pages/ConciliacionPage';
 import CapacityDashboardPage from './sectors/purchasing/pages/CapacityDashboardPage';
 import VolumenesDashboardPage from './sectors/purchasing/pages/VolumenesDashboardPage';
 import PedidosCompraPage from './sectors/purchasing/pages/PedidosCompraPage';
@@ -73,6 +75,8 @@ function App() {
             <Route element={<PrivateRoute allowedRoles={['ADMIN', 'COMPRAS']} />}>
                 <Route path="/remitos-entrada" element={<RemitosEntradaPage />} />
                 <Route path="/dashboard" element={<DashboardComprasPage />} />
+                <Route path="/compras/materiales-criticos" element={<MaterialesCriticosPage />} />
+                <Route path="/compras/conciliacion" element={<ConciliacionPage />} />
                 <Route path="/dashboard/capacity" element={<CapacityDashboardPage />} />
                 <Route path="/dashboard/volumes" element={<VolumenesDashboardPage />} />
                 <Route path="/items" element={<MaterialesPage />} />

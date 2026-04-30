@@ -28,7 +28,23 @@ export const purchaseOrdersApi = api.injectEndpoints({
                 body: { status },
             }),
             invalidatesTags: ['PurchaseOrders', 'Dashboard'],
-        })
+        }),
+        getDashboardStats: builder.query<any, void>({
+            query: () => '/purchase-orders/dashboard-stats',
+            providesTags: ['Dashboard'],
+        }),
+        getUnlinkedMovements: builder.query<any[], void>({
+            query: () => '/purchase-orders/unlinked-movements',
+            providesTags: ['Movements'],
+        }),
+        linkMovement: builder.mutation<any, { movementId: string; purchaseOrderLineId: string }>({
+            query: (body) => ({
+                url: '/purchase-orders/link',
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['PurchaseOrders', 'Movements', 'Dashboard'],
+        }),
     }),
     overrideExisting: false,
 });
@@ -38,4 +54,7 @@ export const {
     useCreatePurchaseOrderMutation,
     useDeletePurchaseOrderMutation,
     useUpdatePurchaseOrderStatusMutation,
+    useGetDashboardStatsQuery,
+    useGetUnlinkedMovementsQuery,
+    useLinkMovementMutation,
 } = purchaseOrdersApi;
