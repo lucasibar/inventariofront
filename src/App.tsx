@@ -25,6 +25,7 @@ import StockDashboardPage from './sectors/warehouse/pages/StockDashboardPage';
 import DashboardComprasPage from './sectors/purchasing/pages/DashboardComprasPage';
 import MaterialesCriticosPage from './sectors/purchasing/pages/MaterialesCriticosPage';
 import ConciliacionPage from './sectors/purchasing/pages/ConciliacionPage';
+import AlertaStockPage from './sectors/purchasing/pages/AlertaStockPage';
 import CapacityDashboardPage from './sectors/purchasing/pages/CapacityDashboardPage';
 import VolumenesDashboardPage from './sectors/purchasing/pages/VolumenesDashboardPage';
 import PedidosCompraPage from './sectors/purchasing/pages/PedidosCompraPage';
@@ -76,6 +77,7 @@ function App() {
                 <Route path="/remitos-entrada" element={<RemitosEntradaPage />} />
                 <Route path="/dashboard" element={<DashboardComprasPage />} />
                 <Route path="/compras/materiales-criticos" element={<MaterialesCriticosPage />} />
+                <Route path="/compras/alertas-stock" element={<AlertaStockPage />} />
                 <Route path="/compras/conciliacion" element={<ConciliacionPage />} />
                 <Route path="/dashboard/capacity" element={<CapacityDashboardPage />} />
                 <Route path="/dashboard/volumes" element={<VolumenesDashboardPage />} />

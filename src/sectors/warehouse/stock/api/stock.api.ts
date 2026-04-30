@@ -105,7 +105,7 @@ export const stockApi = api.injectEndpoints({
             query: (id) => ({ url: `combos-compra/${id}`, method: 'DELETE' }),
             invalidatesTags: ['Dashboard'],
         }),
-        updateCombo: builder.mutation<any, { id: string; itemIds: string[] }>({
+        updateCombo: builder.mutation<any, { id: string; title?: string; itemIds?: string[] }>({
             query: ({ id, ...body }) => ({ url: `combos-compra/${id}`, method: 'PATCH', body }),
             invalidatesTags: ['Dashboard'],
         }),

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
     useGetAlertsQuery, 
     useGetCombosQuery, 
@@ -14,63 +14,39 @@ import { PageHeader, Card, Badge, Btn, Modal, Table, Spinner, Input, Select, Act
 
 export default function MaterialesCriticosPage() {
     const { data: combos = [], isLoading: loadingCombos } = useGetCombosQuery();
-    const { data: alerts = [] } = useGetAlertsQuery();
     const { data: partners = [] } = useGetPartnersQuery({ type: 'SUPPLIER' });
     const { data: items = [] } = useGetItemsQuery({});
     const { data: allStock = [], isFetching: fetchingStock } = useGetStockQuery({});
 
-    const exportToExcel = () => {
-        if (allStock.length === 0) return;
-
-        const headers = ['Material', 'Código Interno', 'Categoría', 'Proveedor', 'Partida/Lote', 'Depósito', 'Posición', 'Stock Principal', 'Unidad', 'Stock Secundario', 'Unidad 2'];
-        const rows = allStock.map((row: any) => [
-            row.batch?.item?.descripcion || '',
-            row.batch?.item?.codigoInterno || '',
-            row.batch?.item?.category?.nombre || row.batch?.item?.categoria || '',
-            row.batch?.supplier?.name || '',
-            row.batch?.lotNumber || '',
-            row.deposito?.nombre || row.depot?.nombre || '',
-            row.posicion?.codigo || '',
-            String(Number(row.qtyPrincipal || 0).toFixed(2)),
-            row.batch?.item?.unidadPrincipal || '',
-            String(Number(row.qtySecundaria || 0).toFixed(2)),
-            row.batch?.item?.unidadSecundaria || '',
-        ]);
-
-        const escape = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
-        const csvContent = [headers, ...rows].map(r => r.map(escape).join(',')).join('\n');
-        const bom = '\uFEFF';
-        const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `stock_completo_${new Date().toISOString().split('T')[0]}.csv`;
-        link.click();
-        URL.revokeObjectURL(url);
-    };
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showBreakdownId, setShowBreakdownId] = useState<string | null>(null);
+    const [editComboId, setEditComboId] = useState<string | null>(null);
+    const [comboSearch, setComboSearch] = useState('');
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     
+    const [newCombo, setNewCombo] = useState({ title: '', supplierId: '', itemIds: [] as string[] });
+    const [materialSearch, setMaterialSearch] = useState('');
+
     const [createCombo] = useCreateComboMutation();
     const [deleteCombo] = useDeleteComboMutation();
     const [updateCombo] = useUpdateComboMutation();
 
-    const [showCreateModal, setShowCreateModal] = useState(false);
-    const [showBreakdownId, setShowBreakdownId] = useState<string | null>(null);
-    const [editComboId, setEditComboId] = useState<string | null>(null);
-    
-    // Create Combo State
-    const [newCombo, setNewCombo] = useState({ title: '', supplierId: '', itemIds: [] as string[] });
-    const [materialSearch, setMaterialSearch] = useState('');
+    const filteredCombos = useMemo(() => {
+        return combos
+            .filter((c: any) => c.title.toLowerCase().includes(comboSearch.toLowerCase()))
+            .sort((a: any, b: any) => {
+                if (a.deficit > 0 && b.deficit <= 0) return -1;
+                if (a.deficit <= 0 && b.deficit > 0) return 1;
+                if (a.daysOfSupply !== null && b.daysOfSupply !== null) return a.daysOfSupply - b.daysOfSupply;
+                return 0;
+            });
+    }, [combos, comboSearch]);
 
     const filteredItems = items.filter(i => {
         const matchesSearch = 
             i.descripcion.toLowerCase().includes(materialSearch.toLowerCase()) ||
-            i.codigoInterno.toLowerCase().includes(materialSearch.toLowerCase()) ||
-            (i.supplier?.name || '').toLowerCase().includes(materialSearch.toLowerCase()) ||
-            (i.category?.nombre || '').toLowerCase().includes(materialSearch.toLowerCase()) ||
-            (i.categoria || '').toLowerCase().includes(materialSearch.toLowerCase());
-        
+            i.codigoInterno.toLowerCase().includes(materialSearch.toLowerCase());
         const matchesSupplier = !newCombo.supplierId || i.supplierId === newCombo.supplierId;
-
         return matchesSearch && matchesSupplier;
     });
 
@@ -83,327 +59,279 @@ export default function MaterialesCriticosPage() {
         });
         setShowCreateModal(false);
         setNewCombo({ title: '', supplierId: '', itemIds: [] });
-        setMaterialSearch('');
+    };
+
+    const exportToExcel = () => {
+        if (allStock.length === 0) return;
+        const headers = ['Material', 'Código', 'Categoría', 'Proveedor', 'Partida', 'Depósito', 'Posición', 'Stock', 'Unidad'];
+        const rows = allStock.map((row: any) => [
+            row.batch?.item?.descripcion || '',
+            row.batch?.item?.codigoInterno || '',
+            row.batch?.item?.category?.nombre || '',
+            row.batch?.supplier?.name || '',
+            row.batch?.lotNumber || '',
+            row.depot?.nombre || '',
+            row.posicion?.codigo || '',
+            Number(row.qtyPrincipal || 0).toFixed(2),
+            row.batch?.item?.unidadPrincipal || '',
+        ]);
+        const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `stock_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
     };
 
     return (
         <div className="dashboard-container" style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
             <style>{`
-                .combos-grid { 
-                    display: grid; 
-                    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
-                    gap: 16px; 
-                    margin-bottom: 32px; 
-                }
+                .combos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
                 .combo-card { 
-                    cursor: pointer; 
-                    transition: border-color 0.2s; 
-                    position: relative; 
-                    padding: 16px; 
-                    display: flex; 
-                    flex-direction: column; 
-                    gap: 12px;
+                    background: #1f2937; border: 1px solid #374151; border-radius: 12px; padding: 20px;
+                    display: flex; flex-direction: column; gap: 16px; transition: transform 0.2s, border-color 0.2s;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
                 }
-                .item-chip { 
-                    display: inline-flex; align-items: center; gap: 4px; background: #0f1117; 
-                    border: 1px solid #374151; border-radius: 4px; padding: 2px 8px; font-size: 10px; color: #9ca3af;
-                }
-                .search-mini {
-                    background: #111827; border: 1px solid #374151; border-radius: 6px; padding: 10px 12px; color: white; font-size: 13px; width: 100%; box-sizing: border-box; outline: none; margin-bottom: 12px;
-                }
-                .search-mini:focus { border-color: #6366f1; }
-                @media (max-width: 768px) {
-                    .combos-grid { grid-template-columns: 1fr; gap: 12px; }
-                }
+                .combo-card:hover { transform: translateY(-2px); border-color: #6366f1; }
+                .metric-row { display: flex; align-items: center; gap: 12px; color: #d1d5db; }
+                .metric-icon { font-size: 18px; width: 24px; text-align: center; }
+                .metric-value { font-size: 18px; font-weight: 700; color: #fff; }
+                .metric-label { font-size: 12px; color: #9ca3af; margin-left: auto; }
+                .editable-title { background: transparent; border: none; color: #fff; font-size: 18px; font-weight: 700; outline: none; width: 100%; border-bottom: 1px dashed transparent; }
+                .editable-title:hover, .editable-title:focus { border-bottom-color: #6366f1; }
+                .search-mini { background: #111827; border: 1px solid #374151; border-radius: 6px; padding: 8px 12px; color: white; width: 100%; box-sizing: border-box; outline: none; margin-bottom: 12px; }
             `}</style>
 
-            <PageHeader title="Materiales Críticos" subtitle="Control de stock por combos y alertas de reposición">
-                <Btn variant="secondary" onClick={exportToExcel} disabled={fetchingStock || allStock.length === 0}>
-                    {fetchingStock ? 'Cargando...' : '⬇️ Exportar Stock'}
-                </Btn>
+            <PageHeader title="Materiales Críticos" subtitle="Control de stock y reposición por combos">
+                <Btn variant="secondary" onClick={exportToExcel}>⬇️ Exportar CSV</Btn>
                 <Btn onClick={() => setShowCreateModal(true)}>+ Nuevo Combo</Btn>
             </PageHeader>
 
-            <h3 style={{ color: '#f3f4f6', fontSize: '18px', fontWeight: 600, marginBottom: '20px' }}>📦 Mis Combos</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h3 style={{ color: '#f3f4f6', fontSize: '18px', fontWeight: 600, margin: 0 }}>📦 Mis Combos</h3>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <Input placeholder="Buscar combo..." value={comboSearch} onChange={setComboSearch} style={{ width: '250px' }} />
+                    <Btn variant="secondary" onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}>
+                        {viewMode === 'grid' ? '📋 Ver Lista' : '🔲 Ver Grilla'}
+                    </Btn>
+                </div>
+            </div>
             
             {loadingCombos ? <Spinner /> : (
-                <div className="combos-grid">
-                    {combos.length === 0 && (
-                        <p style={{ color: '#6b7280', gridColumn: '1/-1', textAlign: 'center', padding: '40px' }}>
-                            No has creado ningún combo de compra todavía.
-                        </p>
-                    )}
-                    {combos.map((combo: any) => (
-                        <Card key={combo.id} className="combo-card" style={{ cursor: 'pointer' }} onClick={() => setShowBreakdownId(combo.id)}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <div style={{ flex: 1 }}>
-                                    <h4 style={{ color: '#f3f4f6', fontSize: '15px', fontWeight: 700, margin: '0 0 2px 0' }}>{combo.title}</h4>
-                                    {combo.supplier && <span style={{ color: '#6366f1', fontSize: '11px', fontWeight: 600 }}>{combo.supplier.name}</span>}
-                                </div>
-                                <ActionMenu options={[
-                                    { label: 'Ver Detalle', icon: '🔍', onClick: () => setShowBreakdownId(combo.id) },
-                                    { label: 'Editar Materiales', icon: '✏️', onClick: () => setEditComboId(combo.id) },
-                                    { label: 'Eliminar Combo', icon: '🗑️', color: '#ef4444', onClick: () => {
-                                        if (window.confirm('¿Eliminar este combo?')) deleteCombo(combo.id);
-                                    }}
-                                ]} />
-                            </div>
-
-                            <div style={{ 
-                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '12px'
-                            }}>
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <span style={{ color: combo.deficit > 0 ? '#fca5a5' : '#a5b4fc', fontSize: '10px', fontWeight: 600 }}>STOCK TOTAL</span>
-                                    <span style={{ color: 'white', fontSize: '16px', fontWeight: 800 }}>{Number(combo.totalStock || 0).toLocaleString('es-AR', { maximumFractionDigits: 1 })} {combo.unitLabel || 'kg'}</span>
-                                </div>
-                                <div style={{ height: '30px', width: '1px', background: 'rgba(255,255,255,0.08)' }}></div>
-                                <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'right' }}>
-                                    <span style={{ color: combo.deficit > 0 ? '#fca5a5' : '#a5b4fc', fontSize: '10px', fontWeight: 600 }}>{combo.deficit > 0 ? 'DÉFICIT' : 'SUSTENTO'}</span>
-                                    <span style={{ color: combo.deficit > 0 ? '#ef4444' : '#10b981', fontSize: '16px', fontWeight: 800 }}>
-                                        {combo.deficit > 0 ? `-${Number(combo.deficit).toLocaleString('es-AR', { maximumFractionDigits: 0 })} kg` : `+${combo.stockDays || 0} d`}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {combo.daysOfSupply !== null ? (
-                                <div style={{ textAlign: 'center', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px' }}>
-                                    <span style={{ fontSize: '11px', color: '#9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px' }}>
-                                        Inventario Restante (Estimado)
-                                        <InfoTooltip text="Calculado en base al consumo promedio de estos materiales (remitos de salida) en los últimos 30 días contra el stock actual." />
-                                    </span>
-                                    <span style={{ 
-                                        fontSize: '16px', fontWeight: 700, 
-                                        color: combo.daysOfSupply < 15 ? '#ef4444' : combo.daysOfSupply > 60 ? '#10b981' : '#f59e0b'
-                                    }}>
-                                        ~ {Math.ceil(combo.daysOfSupply)} días
-                                    </span>
-                                </div>
-                            ) : (
-                                <div style={{ textAlign: 'center', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px' }}>
-                                    <span style={{ fontSize: '11px', color: '#9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px' }}>
-                                        Inventario Restante (Estimado)
-                                        <InfoTooltip text="Calculado en base al consumo promedio de estos materiales en los últimos 30 días. Actualmente no hay datos." />
-                                    </span>
-                                    <span style={{ fontSize: '13px', color: '#6b7280' }}>Sin historial de consumo</span>
-                                </div>
-                            )}
-
-                            {combo.incomingStock > 0 && (
-                                <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '8px', textAlign: 'center' }}>
-                                    <span style={{ fontSize: '11px', color: '#93c5fd', fontWeight: 600 }}>🚚 Sup. en Tránsito: {Number(combo.incomingStock).toFixed(1)} {combo.unitLabel}</span>
-                                    {combo.incomingDate && (
-                                        <span style={{ display: 'block', fontSize: '10px', color: '#60a5fa', marginTop: '4px' }}>
-                                            Llega aprox: {new Date(combo.incomingDate).toLocaleDateString()}
-                                            {combo.daysOfSupply !== null && (
-                                                <span style={{ color: new Date(combo.incomingDate) > new Date(Date.now() + combo.daysOfSupply * 86400000) ? '#f87171' : '#34d399', marginLeft: '6px' }}>
-                                                    {new Date(combo.incomingDate) > new Date(Date.now() + combo.daysOfSupply * 86400000) ? '(⚠️ Llegaría después de quiebre)' : '(✅ Llega a tiempo)'}
-                                                </span>
-                                            )}
-                                        </span>
-                                    )}
-                                </div>
-                            )}
-
-                            <div style={{ color: '#6b7280', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '8px' }}>
-                                <span>{combo.itemIds?.length || 0} materiales</span>
-                                <span style={{ color: '#6366f1' }}>Ver detalles →</span>
-                            </div>
+                <>
+                    {viewMode === 'grid' ? (
+                        <div className="combos-grid">
+                            {filteredCombos.map((combo: any) => (
+                                <ComboCard 
+                                    key={combo.id} 
+                                    combo={combo} 
+                                    onClick={() => setShowBreakdownId(combo.id)}
+                                    onUpdateTitle={(title) => updateCombo({ id: combo.id, title })}
+                                    onEdit={() => setEditComboId(combo.id)}
+                                    onDelete={() => { if (window.confirm('¿Eliminar combo?')) deleteCombo(combo.id); }}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <Card style={{ padding: '0' }}>
+                            <Table 
+                                cols={['Combo', 'Proveedor', 'Stock Total', 'Pendiente PO', 'Sustento', 'Acciones']}
+                                rows={filteredCombos.map((combo: any) => [
+                                    <strong key="t" onClick={() => setShowBreakdownId(combo.id)} style={{ cursor: 'pointer' }}>{combo.title}</strong>,
+                                    combo.supplier?.name || 'Mixto',
+                                    `${Number(combo.totalStock || 0).toFixed(1)} ${combo.unitLabel}`,
+                                    <span key="p" style={{ color: combo.pendingStock > 0 ? '#f59e0b' : '#6b7280' }}>{Number(combo.pendingStock || 0).toFixed(1)} {combo.unitLabel}</span>,
+                                    <span key="s" style={{ color: combo.daysOfSupply < 15 ? '#ef4444' : '#10b981', fontWeight: 600 }}>{combo.daysOfSupply !== null ? `~ ${Math.ceil(combo.daysOfSupply)} días` : 'N/A'}</span>,
+                                    <ActionMenu key="a" options={[
+                                        { label: 'Detalle', icon: '🔍', onClick: () => setShowBreakdownId(combo.id) },
+                                        { label: 'Editar', icon: '✏️', onClick: () => setEditComboId(combo.id) },
+                                        { label: 'Eliminar', icon: '🗑️', color: '#ef4444', onClick: () => { if (window.confirm('¿Eliminar?')) deleteCombo(combo.id); } }
+                                    ]} />
+                                ])}
+                            />
                         </Card>
-                    ))}
-                </div>
-            )}
-
-            <hr style={{ border: 'none', borderTop: '1px solid #1e2133', margin: '40px 0' }} />
-
-            <h3 style={{ color: '#f3f4f6', fontSize: '18px', fontWeight: 600, marginBottom: '20px' }}>⚠️ Alertas de Reposición (Materiales Críticos)</h3>
-            {alerts.length > 0 ? (
-                <Card style={{ padding: '0' }}>
-                    <Table 
-                        cols={['Material', 'Código', 'Stock Actual', 'Mínimo', 'Déficit']}
-                        rows={alerts.map((a: any) => [
-                            <strong style={{ color: '#f3f4f6' }}>{a.descripcion}</strong>,
-                            <code>{a.codigoInterno}</code>,
-                            <span style={{ color: '#f87171', fontWeight: 600 }}>{Number(a.stockActual).toFixed(1)} kg</span>,
-                            <span style={{ color: '#6b7280' }}>{Number(a.stockMinimo).toFixed(1)} kg</span>,
-                            <Badge color="#ef4444">{Number(a.deficit).toFixed(1)} kg faltantes</Badge>
-                        ])}
-                    />
-                </Card>
-            ) : (
-                <div style={{ textAlign: 'center', padding: '40px', background: 'rgba(52, 211, 153, 0.05)', borderRadius: '12px', border: '1px dashed rgba(52, 211, 153, 0.3)' }}>
-                    <span style={{ color: '#34d399', fontWeight: 600 }}>Todo en orden.</span>
-                    <p style={{ color: '#6b7280', fontSize: '13px', margin: '4px 0 0' }}>No hay materiales por debajo del stock mínimo.</p>
-                </div>
+                    )}
+                </>
             )}
 
             {showCreateModal && (
-                <Modal title="Nuevo Combo de Compra" onClose={() => setShowCreateModal(false)}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        <Input label="Título del Combo" value={newCombo.title} onChange={(v) => setNewCombo({ ...newCombo, title: v })} placeholder="Ej: Algodones, Hilos 40/2, Elásticos..." />
-                        
-                        <Select 
-                            label="Proveedor Asociado (Ayuda visual)" 
-                            value={newCombo.supplierId || ''} 
-                            onChange={(v) => setNewCombo({ ...newCombo, supplierId: v })}
-                            options={[{ value: '', label: 'Cualquier proveedor / Mixto' }, ...partners.map(p => ({ value: p.id, label: p.name }))]}
-                        />
-
-                        <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                <label style={{ color: '#9ca3af', fontSize: '12px', fontWeight: 500 }}>Seleccionar Materiales</label>
-                                <span style={{ color: '#6366f1', fontSize: '11px' }}>{newCombo.itemIds.length} seleccionados</span>
-                            </div>
-                            
-                            <input 
-                                type="text" 
-                                className="search-mini" 
-                                placeholder="Filtrar materiales por nombre o código..." 
-                                value={materialSearch}
-                                onChange={e => setMaterialSearch(e.target.value)}
-                            />
-
-                            <div style={{ maxHeight: '200px', overflow: 'auto', background: '#0f1117', borderRadius: '8px', border: '1px solid #374151', padding: '10px' }}>
-                                {filteredItems.map(item => (
-                                    <label key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0', borderBottom: '1px solid #1e2133', cursor: 'pointer', color: '#d1d5db', fontSize: '13px' }}>
-                                        <input 
-                                            type="checkbox" 
-                                            checked={newCombo.itemIds.includes(item.id)}
-                                            onChange={(e) => {
-                                                const ids = e.target.checked 
-                                                    ? [...newCombo.itemIds, item.id]
-                                                    : newCombo.itemIds.filter(id => id !== item.id);
-                                                setNewCombo({ ...newCombo, itemIds: ids });
-                                            }}
-                                        />
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: 500 }}>{item.descripcion}</div>
-                                            <div style={{ fontSize: '11px', color: '#6b7280' }}>{item.codigoInterno} • {item.unidadPrincipal}</div>
-                                        </div>
-                                    </label>
-                                ))}
-                                {filteredItems.length === 0 && <p style={{ color: '#4b5563', textAlign: 'center', padding: '10px', fontSize: '12px' }}>No se encontraron materiales.</p>}
-                            </div>
+                <Modal title="Nuevo Combo" onClose={() => setShowCreateModal(false)}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <Input label="Título" value={newCombo.title} onChange={v => setNewCombo({...newCombo, title: v})} />
+                        <Select label="Proveedor (Opcional)" value={newCombo.supplierId} onChange={v => setNewCombo({...newCombo, supplierId: v})} options={[{value: '', label: 'Cualquier proveedor'}, ...partners.map(p => ({value: p.id, label: p.name}))]} />
+                        <Input label="Buscar Materiales" value={materialSearch} onChange={setMaterialSearch} />
+                        <div style={{ maxHeight: '200px', overflow: 'auto', background: '#111827', borderRadius: '8px', padding: '10px' }}>
+                            {filteredItems.map(item => (
+                                <label key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0', color: '#d1d5db', cursor: 'pointer' }}>
+                                    <input type="checkbox" checked={newCombo.itemIds.includes(item.id)} onChange={e => {
+                                        const ids = e.target.checked ? [...newCombo.itemIds, item.id] : newCombo.itemIds.filter(id => id !== item.id);
+                                        setNewCombo({...newCombo, itemIds: ids});
+                                    }} />
+                                    {item.descripcion} ({item.codigoInterno})
+                                </label>
+                            ))}
                         </div>
-
-                        <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
-                            <Btn onClick={handleCreate} style={{ flex: 1 }} disabled={!newCombo.title || newCombo.itemIds.length === 0}>Generar Combo</Btn>
-                            <Btn variant="secondary" onClick={() => setShowCreateModal(false)}>Cancelar</Btn>
-                        </div>
+                        <Btn onClick={handleCreate} disabled={!newCombo.title || newCombo.itemIds.length === 0}>Crear Combo</Btn>
                     </div>
                 </Modal>
             )}
 
-            {showBreakdownId && (
-                <BreakdownModal id={showBreakdownId} onClose={() => setShowBreakdownId(null)} />
-            )}
+            {showBreakdownId && <BreakdownModal id={showBreakdownId} onClose={() => setShowBreakdownId(null)} />}
+            {editComboId && <EditComboModal combo={combos.find((c: any) => c.id === editComboId)} items={items} onClose={() => setEditComboId(null)} onSave={async (ids) => { await updateCombo({ id: editComboId, itemIds: ids }); setEditComboId(null); }} />}
+        </div>
+    );
+}
 
-            {editComboId && (
-                <EditComboModal 
-                    combo={combos.find((c: any) => c.id === editComboId)} 
-                    items={items} 
-                    onClose={() => setEditComboId(null)} 
-                    onSave={async (itemIds: string[]) => {
-                        await updateCombo({ id: editComboId, itemIds });
-                        setEditComboId(null);
-                    }}
-                />
-            )}
+function ComboCard({ combo, onClick, onUpdateTitle, onEdit, onDelete }: any) {
+    const [title, setTitle] = useState(combo.title);
+    useEffect(() => setTitle(combo.title), [combo.title]);
+
+    return (
+        <div className="combo-card" onClick={onClick}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '20px' }}>🧵</span>
+                        <input 
+                            className="editable-title" 
+                            value={title} 
+                            onChange={e => setTitle(e.target.value)}
+                            onBlur={() => title !== combo.title && onUpdateTitle(title)}
+                            onClick={e => e.stopPropagation()}
+                        />
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {combo.supplier && <Badge color="#6366f1">{combo.supplier.name}</Badge>}
+                        <Badge color="#4b5563">{combo.itemIds?.length || 0} ITEMS</Badge>
+                    </div>
+                </div>
+                <ActionMenu options={[
+                    { label: 'Ver Detalle', icon: '🔍', onClick: (e) => { e.stopPropagation(); onClick(); } },
+                    { label: 'Editar Materiales', icon: '✏️', onClick: (e) => { e.stopPropagation(); onEdit(); } },
+                    { label: 'Eliminar Combo', icon: '🗑️', color: '#ef4444', onClick: (e) => { e.stopPropagation(); onDelete(); } }
+                ]} />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="metric-row">
+                    <span className="metric-icon">⚖️</span>
+                    <span className="metric-value">{Number(combo.totalStock || 0).toLocaleString()}</span>
+                    <span style={{ color: '#9ca3af', fontSize: '14px' }}>{combo.unitLabel}</span>
+                    <span className="metric-label">STOCK TOTAL</span>
+                </div>
+                <div className="metric-row">
+                    <span className="metric-icon">📦</span>
+                    <span className="metric-value">{Number(combo.totalSecondaryStock || 0).toLocaleString()}</span>
+                    <span style={{ color: '#9ca3af', fontSize: '14px' }}>{combo.secondaryUnitLabel}</span>
+                    <span className="metric-label">UNIDADES</span>
+                </div>
+                <div className="metric-row">
+                    <span className="metric-icon" style={{ color: '#f59e0b' }}>🛒</span>
+                    <span className="metric-value" style={{ color: '#f59e0b' }}>{Number(combo.pendingStock || 0).toLocaleString()}</span>
+                    <span style={{ color: '#9ca3af', fontSize: '14px' }}>{combo.unitLabel}</span>
+                    <span className="metric-label">PEDIDO</span>
+                </div>
+                <div className="metric-row">
+                    <span className="metric-icon" style={{ color: '#10b981' }}>🚚</span>
+                    <span className="metric-value" style={{ color: '#10b981' }}>
+                        {combo.incomingDate ? new Date(combo.incomingDate).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }) : '--/--'}
+                    </span>
+                    <span className="metric-label">LLEGADA APROX.</span>
+                </div>
+            </div>
+
+            <div style={{ marginTop: 'auto', borderTop: '1px solid #374151', paddingTop: '12px', textAlign: 'center' }}>
+                <span style={{ 
+                    fontSize: '14px', fontWeight: 600, 
+                    color: combo.daysOfSupply < 15 ? '#ef4444' : combo.daysOfSupply > 60 ? '#10b981' : '#f59e0b'
+                }}>
+                    {combo.daysOfSupply !== null ? `~ ${Math.ceil(combo.daysOfSupply)} días de sustento` : 'Sin historial de consumo'}
+                </span>
+            </div>
         </div>
     );
 }
 
 function BreakdownModal({ id, onClose }: { id: string, onClose: () => void }) {
     const { data: breakdown = [], isLoading } = useGetComboBreakdownQuery(id);
+    const [expandedItem, setExpandedItem] = useState<string | null>(null);
+
     return (
-        <Modal title="Desglose de Stock por Material" onClose={onClose} wide>
+        <Modal title="Desglose de Stock por Partida" onClose={onClose} wide>
             {isLoading ? <Spinner /> : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {breakdown.map((item: any) => (
-                        <div key={item.itemId} style={{ background: 'rgba(255,255,255,0.01)', borderRadius: '12px', padding: '16px', border: '1px solid #2a2d3e' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #2a2d3e', paddingBottom: '10px' }}>
+                        <div key={item.itemId} style={{ background: '#1f2937', borderRadius: '10px', border: '1px solid #374151', overflow: 'hidden' }}>
+                            <div 
+                                style={{ padding: '16px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: expandedItem === item.itemId ? '#374151' : 'transparent' }}
+                                onClick={() => setExpandedItem(expandedItem === item.itemId ? null : item.itemId)}
+                            >
                                 <div>
-                                    <h4 style={{ color: '#f3f4f6', fontSize: '15px', fontWeight: 700, margin: 0 }}>{item.description}</h4>
-                                    <code style={{ fontWeight: 400, fontSize: '12px', color: '#6b7280' }}>{item.code}</code>
+                                    <h4 style={{ color: '#fff', fontSize: '15px', margin: 0 }}>{item.description}</h4>
+                                    <code style={{ fontSize: '12px', color: '#9ca3af' }}>{item.code}</code>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                                     <div style={{ textAlign: 'right' }}>
-                                        <div style={{ color: '#34d399', fontWeight: 700, fontSize: '16px' }}>{Number(item.total).toFixed(1)} <small>{item.unitLabel}</small></div>
-                                        <div style={{ color: '#9ca3af', fontSize: '13px' }}>{Number(item.totalSecondary).toFixed(0)} <small>{item.secondaryUnitLabel}</small></div>
+                                        <div style={{ color: '#10b981', fontWeight: 700 }}>{Number(item.total).toFixed(1)} {item.unitLabel}</div>
+                                        <div style={{ fontSize: '11px', color: '#9ca3af' }}>{Number(item.totalSecondary).toFixed(0)} {item.secondaryUnitLabel}</div>
                                     </div>
+                                    <span style={{ transition: 'transform 0.2s', transform: expandedItem === item.itemId ? 'rotate(180deg)' : 'rotate(0)' }}>▼</span>
                                 </div>
                             </div>
-                            <Table 
-                                cols={['Partida/Lote', 'Depósito', 'Posición', 'Stock Princ.', 'Secundario']}
-                                rows={item.batches.map((b: any) => [
-                                    <code key="lot" style={{ color: '#a5b4fc', fontSize: '13px' }}>{b.lotNumber}</code>,
-                                    b.depot,
-                                    b.position,
-                                    <strong key="qty" style={{ color: '#f3f4f6' }}>{Number(b.qty).toFixed(1)} {item.unitLabel}</strong>,
-                                    <span key="qty2" style={{ color: '#9ca3af' }}>{Number(b.qtySecondary).toFixed(0)} {item.secondaryUnitLabel}</span>
-                                ])}
-                            />
+                            
+                            {expandedItem === item.itemId && (
+                                <div style={{ padding: '0 16px 16px', background: 'rgba(0,0,0,0.2)' }}>
+                                    <Table 
+                                        cols={['Partida/Lote', 'Depósitos/Posiciones', 'Stock Acumulado']}
+                                        rows={item.batches.map((b: any) => [
+                                            <strong key="l" style={{ color: '#f3f4f6' }}>{b.lotNumber}</strong>,
+                                            <div key="p" style={{ fontSize: '12px', color: '#9ca3af' }}>
+                                                {b.positions.map((p: any, i: number) => (
+                                                    <div key={i}>{p.depot} — {p.position} ({p.qty.toFixed(1)} {item.unitLabel})</div>
+                                                ))}
+                                            </div>,
+                                            <span key="q" style={{ color: '#fff', fontWeight: 600 }}>{b.qty.toFixed(1)} {item.unitLabel}</span>
+                                        ])}
+                                    />
+                                    {item.pendingStock > 0 && (
+                                        <div style={{ marginTop: '12px', padding: '10px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: '8px' }}>
+                                            <span style={{ fontSize: '13px', color: '#f59e0b', fontWeight: 600 }}>🛒 Pedido Pendiente: {item.pendingStock.toFixed(1)} {item.unitLabel}</span>
+                                            {item.incomingDate && <span style={{ marginLeft: '12px', fontSize: '12px', color: '#d97706' }}>Llega: {new Date(item.incomingDate).toLocaleDateString()}</span>}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     ))}
-                    <Btn variant="secondary" onClick={onClose} style={{ alignSelf: 'flex-end' }}>Cerrar Vista</Btn>
                 </div>
             )}
         </Modal>
     );
 }
 
-function EditComboModal({ combo, items, onClose, onSave }: { combo: any; items: any[]; onClose: () => void; onSave: (itemIds: string[]) => Promise<void> }) {
+function EditComboModal({ combo, items, onClose, onSave }: any) {
     const [selectedIds, setSelectedIds] = useState<string[]>(combo?.itemIds || []);
     const [search, setSearch] = useState('');
     const [saving, setSaving] = useState(false);
-
     if (!combo) return null;
-
-    const filteredItems = items.filter(i => {
-        const matchesSearch = 
-            i.descripcion.toLowerCase().includes(search.toLowerCase()) ||
-            i.codigoInterno.toLowerCase().includes(search.toLowerCase()) ||
-            (i.supplier?.name || '').toLowerCase().includes(search.toLowerCase()) ||
-            (i.categoria || '').toLowerCase().includes(search.toLowerCase());
-        
-        const matchesSupplier = !combo.supplierId || i.supplierId === combo.supplierId;
-        return matchesSearch && matchesSupplier;
-    });
-
-    const handleSave = async () => {
-        setSaving(true);
-        await onSave(selectedIds);
-        setSaving(false);
-    };
+    const filtered = items.filter((i: any) => (i.descripcion.toLowerCase().includes(search.toLowerCase()) || i.codigoInterno.toLowerCase().includes(search.toLowerCase())) && (!combo.supplierId || i.supplierId === combo.supplierId));
 
     return (
-        <Modal title={`Editar Materiales — ${combo.title}`} onClose={onClose}>
+        <Modal title={`Configurar — ${combo.title}`} onClose={onClose}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <input
-                    type="text"
-                    className="search-mini"
-                    placeholder="Buscar por nombre o código..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                />
-                <div style={{ maxHeight: '300px', overflow: 'auto' }}>
-                    {filteredItems.map(item => (
-                        <label key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px' }}>
-                            <input 
-                                type="checkbox" 
-                                checked={selectedIds.includes(item.id)}
-                                onChange={e => {
-                                    if (e.target.checked) setSelectedIds([...selectedIds, item.id]);
-                                    else setSelectedIds(selectedIds.filter(id => id !== item.id));
-                                }}
-                            />
+                <input type="text" className="search-mini" placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} />
+                <div style={{ maxHeight: '300px', overflow: 'auto', background: '#111827', borderRadius: '8px', padding: '8px' }}>
+                    {filtered.map((item: any) => (
+                        <label key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', borderBottom: '1px solid #1e2133', cursor: 'pointer', color: '#d1d5db' }}>
+                            <input type="checkbox" checked={selectedIds.includes(item.id)} onChange={e => e.target.checked ? setSelectedIds([...selectedIds, item.id]) : setSelectedIds(selectedIds.filter(id => id !== item.id))} />
                             {item.descripcion}
                         </label>
                     ))}
                 </div>
                 <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
                     <Btn variant="secondary" onClick={onClose}>Cancelar</Btn>
-                    <Btn onClick={handleSave} disabled={saving}>Guardar</Btn>
+                    <Btn onClick={async () => { setSaving(true); await onSave(selectedIds); setSaving(false); }} disabled={saving}>Guardar Cambios</Btn>
                 </div>
             </div>
         </Modal>
