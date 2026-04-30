@@ -1,6 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
-    useGetAlertsQuery, 
     useGetCombosQuery, 
     useCreateComboMutation, 
     useDeleteComboMutation,
@@ -10,13 +9,13 @@ import {
 import { useGetStockQuery } from '../../warehouse/stock/api/stock.api';
 import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
 import { useGetItemsQuery } from '../../config/items/api/items.api';
-import { PageHeader, Card, Badge, Btn, Modal, Table, Spinner, Input, Select, ActionMenu, InfoTooltip } from '../../../shared/ui';
+import { PageHeader, Card, Badge, Btn, Modal, Table, Spinner, Input, Select, ActionMenu } from '../../../shared/ui';
 
 export default function MaterialesCriticosPage() {
     const { data: combos = [], isLoading: loadingCombos } = useGetCombosQuery();
     const { data: partners = [] } = useGetPartnersQuery({ type: 'SUPPLIER' });
     const { data: items = [] } = useGetItemsQuery({});
-    const { data: allStock = [], isFetching: fetchingStock } = useGetStockQuery({});
+    const { data: allStock = [] } = useGetStockQuery({});
 
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showBreakdownId, setShowBreakdownId] = useState<string | null>(null);
@@ -127,7 +126,7 @@ export default function MaterialesCriticosPage() {
                                     key={combo.id} 
                                     combo={combo} 
                                     onClick={() => setShowBreakdownId(combo.id)}
-                                    onUpdateTitle={(title) => updateCombo({ id: combo.id, title })}
+                                    onUpdateTitle={(title: string) => updateCombo({ id: combo.id, title })}
                                     onEdit={() => setEditComboId(combo.id)}
                                     onDelete={() => { if (window.confirm('¿Eliminar combo?')) deleteCombo(combo.id); }}
                                 />
@@ -178,7 +177,7 @@ export default function MaterialesCriticosPage() {
             )}
 
             {showBreakdownId && <BreakdownModal id={showBreakdownId} onClose={() => setShowBreakdownId(null)} />}
-            {editComboId && <EditComboModal combo={combos.find((c: any) => c.id === editComboId)} items={items} onClose={() => setEditComboId(null)} onSave={async (ids) => { await updateCombo({ id: editComboId, itemIds: ids }); setEditComboId(null); }} />}
+            {editComboId && <EditComboModal combo={combos.find((c: any) => c.id === editComboId)} items={items} onClose={() => setEditComboId(null)} onSave={async (ids: string[]) => { await updateCombo({ id: editComboId, itemIds: ids }); setEditComboId(null); }} />}
         </div>
     );
 }
@@ -207,9 +206,9 @@ function ComboCard({ combo, onClick, onUpdateTitle, onEdit, onDelete }: any) {
                     </div>
                 </div>
                 <ActionMenu options={[
-                    { label: 'Ver Detalle', icon: '🔍', onClick: (e) => { e.stopPropagation(); onClick(); } },
-                    { label: 'Editar Materiales', icon: '✏️', onClick: (e) => { e.stopPropagation(); onEdit(); } },
-                    { label: 'Eliminar Combo', icon: '🗑️', color: '#ef4444', onClick: (e) => { e.stopPropagation(); onDelete(); } }
+                    { label: 'Ver Detalle', icon: '🔍', onClick: () => onClick() },
+                    { label: 'Editar Materiales', icon: '✏️', onClick: () => onEdit() },
+                    { label: 'Eliminar Combo', icon: '🗑️', color: '#ef4444', onClick: () => onDelete() }
                 ]} />
             </div>
 

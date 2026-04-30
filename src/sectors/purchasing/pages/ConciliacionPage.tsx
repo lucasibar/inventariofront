@@ -4,11 +4,11 @@ import {
     useGetPurchaseOrdersQuery,
     useLinkMovementMutation 
 } from '../purchase-orders/api/purchase-orders.api';
-import { PageHeader, Card, Table, Btn, Badge, Spinner, Modal } from '../../../shared/ui';
+import { PageHeader, Card, Btn, Spinner } from '../../../shared/ui';
 
 export default function ConciliacionPage() {
     const { data: unlinkedMovements = [], isLoading: loadingMovs } = useGetUnlinkedMovementsQuery();
-    const { data: purchaseOrders = [], isLoading: loadingOrders } = useGetPurchaseOrdersQuery();
+    const { data: purchaseOrders = [] } = useGetPurchaseOrdersQuery();
     const [linkMovement, { isLoading: linking }] = useLinkMovementMutation();
 
     const [selectedMov, setSelectedMov] = useState<any>(null);

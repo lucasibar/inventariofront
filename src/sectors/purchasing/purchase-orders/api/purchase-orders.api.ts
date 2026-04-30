@@ -35,7 +35,7 @@ export const purchaseOrdersApi = api.injectEndpoints({
         }),
         getUnlinkedMovements: builder.query<any[], void>({
             query: () => '/purchase-orders/unlinked-movements',
-            providesTags: ['Movements'],
+            providesTags: ['Stock'],
         }),
         linkMovement: builder.mutation<any, { movementId: string; purchaseOrderLineId: string }>({
             query: (body) => ({
@@ -43,7 +43,7 @@ export const purchaseOrdersApi = api.injectEndpoints({
                 method: 'POST',
                 body,
             }),
-            invalidatesTags: ['PurchaseOrders', 'Movements', 'Dashboard'],
+            invalidatesTags: ['PurchaseOrders', 'Stock', 'Dashboard'],
         }),
     }),
     overrideExisting: false,
