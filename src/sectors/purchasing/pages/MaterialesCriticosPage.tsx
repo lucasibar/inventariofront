@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
     useGetCombosQuery, 
     useCreateComboMutation, 
@@ -9,9 +9,10 @@ import {
 import { useGetStockQuery } from '../../warehouse/stock/api/stock.api';
 import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
 import { useGetItemsQuery } from '../../config/items/api/items.api';
-import { PageHeader, Card, Badge, Btn, Modal, Table, Spinner, Input, Select, ActionMenu } from '../../../shared/ui';
+import { PageHeader, Card, Badge, Btn, Modal, Table, Spinner, Input, Select, ActionMenu, useIsMobile } from '../../../shared/ui';
 
 export default function MaterialesCriticosPage() {
+    const isMobile = useIsMobile();
     const { data: combos = [], isLoading: loadingCombos } = useGetCombosQuery();
     const { data: partners = [] } = useGetPartnersQuery({ type: 'SUPPLIER' });
     const { data: items = [] } = useGetItemsQuery({});
@@ -21,7 +22,7 @@ export default function MaterialesCriticosPage() {
     const [showBreakdownId, setShowBreakdownId] = useState<string | null>(null);
     const [editComboId, setEditComboId] = useState<string | null>(null);
     const [comboSearch, setComboSearch] = useState('');
-    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>(isMobile ? 'list' : 'grid');
     
     const [newCombo, setNewCombo] = useState({ title: '', supplierId: '', itemIds: [] as string[] });
     const [materialSearch, setMaterialSearch] = useState('');
@@ -62,15 +63,13 @@ export default function MaterialesCriticosPage() {
 
     const exportToExcel = () => {
         if (allStock.length === 0) return;
-        const headers = ['Material', 'Código', 'Categoría', 'Proveedor', 'Partida', 'Depósito', 'Posición', 'Stock', 'Unidad'];
+        const headers = ['Material', 'Código', 'Categoría', 'Proveedor', 'Partida', 'Stock', 'Unidad'];
         const rows = allStock.map((row: any) => [
             row.batch?.item?.descripcion || '',
             row.batch?.item?.codigoInterno || '',
             row.batch?.item?.category?.nombre || '',
             row.batch?.supplier?.name || '',
             row.batch?.lotNumber || '',
-            row.depot?.nombre || '',
-            row.posicion?.codigo || '',
             Number(row.qtyPrincipal || 0).toFixed(2),
             row.batch?.item?.unidadPrincipal || '',
         ]);
@@ -84,7 +83,7 @@ export default function MaterialesCriticosPage() {
     };
 
     return (
-        <div className="dashboard-container" style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
+        <div className="dashboard-container" style={{ padding: isMobile ? '12px' : '24px', maxWidth: '1400px', margin: '0 auto' }}>
             <style>{`
                 .combos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
                 .combo-card { 
@@ -93,6 +92,14 @@ export default function MaterialesCriticosPage() {
                     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
                 }
                 .combo-card:hover { transform: translateY(-2px); border-color: #6366f1; }
+                
+                .mobile-combo-row {
+                    background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 12px 16px;
+                    display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+                    cursor: pointer;
+                }
+                .mobile-combo-row:active { background: #374151; }
+
                 .metric-row { display: flex; align-items: center; gap: 12px; color: #d1d5db; }
                 .metric-icon { font-size: 18px; width: 24px; text-align: center; }
                 .metric-value { font-size: 18px; font-weight: 700; color: #fff; }
@@ -102,54 +109,68 @@ export default function MaterialesCriticosPage() {
                 .search-mini { background: #111827; border: 1px solid #374151; border-radius: 6px; padding: 8px 12px; color: white; width: 100%; box-sizing: border-box; outline: none; margin-bottom: 12px; }
             `}</style>
 
-            <PageHeader title="Materiales Críticos" subtitle="Control de stock y reposición por combos">
-                <Btn variant="secondary" onClick={exportToExcel}>⬇️ Exportar CSV</Btn>
-                <Btn onClick={() => setShowCreateModal(true)}>+ Nuevo Combo</Btn>
+            <PageHeader title="Materiales Críticos" subtitle="Control de stock y reposición" hideTitleOnMobile>
+                {!isMobile && <Btn variant="secondary" onClick={exportToExcel}>⬇️ Exportar CSV</Btn>}
+                <Btn onClick={() => setShowCreateModal(true)} small={isMobile}>+ Nuevo Combo</Btn>
             </PageHeader>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <h3 style={{ color: '#f3f4f6', fontSize: '18px', fontWeight: 600, margin: 0 }}>📦 Mis Combos</h3>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                    <Input placeholder="Buscar combo..." value={comboSearch} onChange={setComboSearch} style={{ width: '250px' }} />
-                    <Btn variant="secondary" onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}>
-                        {viewMode === 'grid' ? '📋 Ver Lista' : '🔲 Ver Grilla'}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? '16px' : '24px' }}>
+                <h3 style={{ color: '#f3f4f6', fontSize: isMobile ? '16px' : '18px', fontWeight: 600, margin: 0 }}>📦 Mis Combos</h3>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    {!isMobile && <Input placeholder="Buscar combo..." value={comboSearch} onChange={setComboSearch} style={{ width: '250px' }} />}
+                    <Btn variant="secondary" small onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}>
+                        {viewMode === 'grid' ? '📋' : '🔲'}
                     </Btn>
                 </div>
             </div>
+
+            {isMobile && <Input placeholder="Buscar..." value={comboSearch} onChange={setComboSearch} style={{ marginBottom: '16px' }} />}
             
             {loadingCombos ? <Spinner /> : (
                 <>
-                    {viewMode === 'grid' ? (
-                        <div className="combos-grid">
+                    {isMobile ? (
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
                             {filteredCombos.map((combo: any) => (
-                                <ComboCard 
+                                <MobileComboRow 
                                     key={combo.id} 
                                     combo={combo} 
-                                    onClick={() => setShowBreakdownId(combo.id)}
-                                    onUpdateTitle={(title: string) => updateCombo({ id: combo.id, title })}
-                                    onEdit={() => setEditComboId(combo.id)}
-                                    onDelete={() => { if (window.confirm('¿Eliminar combo?')) deleteCombo(combo.id); }}
+                                    onClick={() => setShowBreakdownId(combo.id)} 
                                 />
                             ))}
                         </div>
                     ) : (
-                        <Card style={{ padding: '0' }}>
-                            <Table 
-                                cols={['Combo', 'Proveedor', 'Stock Total', 'Pendiente PO', 'Sustento', 'Acciones']}
-                                rows={filteredCombos.map((combo: any) => [
-                                    <strong key="t" onClick={() => setShowBreakdownId(combo.id)} style={{ cursor: 'pointer' }}>{combo.title}</strong>,
-                                    combo.supplier?.name || 'Mixto',
-                                    `${Number(combo.totalStock || 0).toFixed(1)} ${combo.unitLabel}`,
-                                    <span key="p" style={{ color: combo.pendingStock > 0 ? '#f59e0b' : '#6b7280' }}>{Number(combo.pendingStock || 0).toFixed(1)} {combo.unitLabel}</span>,
-                                    <span key="s" style={{ color: combo.daysOfSupply < 15 ? '#ef4444' : '#10b981', fontWeight: 600 }}>{combo.daysOfSupply !== null ? `~ ${Math.ceil(combo.daysOfSupply)} días` : 'N/A'}</span>,
-                                    <ActionMenu key="a" options={[
-                                        { label: 'Detalle', icon: '🔍', onClick: () => setShowBreakdownId(combo.id) },
-                                        { label: 'Editar', icon: '✏️', onClick: () => setEditComboId(combo.id) },
-                                        { label: 'Eliminar', icon: '🗑️', color: '#ef4444', onClick: () => { if (window.confirm('¿Eliminar?')) deleteCombo(combo.id); } }
-                                    ]} />
-                                ])}
-                            />
-                        </Card>
+                        viewMode === 'grid' ? (
+                            <div className="combos-grid">
+                                {filteredCombos.map((combo: any) => (
+                                    <ComboCard 
+                                        key={combo.id} 
+                                        combo={combo} 
+                                        onClick={() => setShowBreakdownId(combo.id)}
+                                        onUpdateTitle={(title: string) => updateCombo({ id: combo.id, title })}
+                                        onEdit={() => setEditComboId(combo.id)}
+                                        onDelete={() => { if (window.confirm('¿Eliminar combo?')) deleteCombo(combo.id); }}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <Card style={{ padding: '0' }}>
+                                <Table 
+                                    cols={['Combo', 'Proveedor', 'Stock Total', 'Pendiente PO', 'Sustento', 'Acciones']}
+                                    rows={filteredCombos.map((combo: any) => [
+                                        <strong key="t" onClick={() => setShowBreakdownId(combo.id)} style={{ cursor: 'pointer' }}>{combo.title}</strong>,
+                                        combo.supplier?.name || 'Mixto',
+                                        `${Number(combo.totalStock || 0).toFixed(1)} ${combo.unitLabel}`,
+                                        <span key="p" style={{ color: combo.pendingStock > 0 ? '#f59e0b' : '#6b7280' }}>{Number(combo.pendingStock || 0).toFixed(1)} {combo.unitLabel}</span>,
+                                        <span key="s" style={{ color: combo.daysOfSupply < 15 ? '#ef4444' : '#10b981', fontWeight: 600 }}>{combo.daysOfSupply !== null ? `~ ${Math.ceil(combo.daysOfSupply)} días` : 'N/A'}</span>,
+                                        <ActionMenu key="a" options={[
+                                            { label: 'Detalle', icon: '🔍', onClick: () => setShowBreakdownId(combo.id) },
+                                            { label: 'Editar', icon: '✏️', onClick: () => setEditComboId(combo.id) },
+                                            { label: 'Eliminar', icon: '🗑️', color: '#ef4444', onClick: () => { if (window.confirm('¿Eliminar?')) deleteCombo(combo.id); } }
+                                        ]} />
+                                    ])}
+                                />
+                            </Card>
+                        )
                     )}
                 </>
             )}
@@ -178,6 +199,23 @@ export default function MaterialesCriticosPage() {
 
             {showBreakdownId && <BreakdownModal id={showBreakdownId} onClose={() => setShowBreakdownId(null)} />}
             {editComboId && <EditComboModal combo={combos.find((c: any) => c.id === editComboId)} items={items} onClose={() => setEditComboId(null)} onSave={async (ids: string[]) => { await updateCombo({ id: editComboId, itemIds: ids }); setEditComboId(null); }} />}
+        </div>
+    );
+}
+
+function MobileComboRow({ combo, onClick }: any) {
+    return (
+        <div className="mobile-combo-row" onClick={onClick}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ color: '#f3f4f6', fontWeight: 700, fontSize: '15px' }}>{combo.title}</span>
+                <span style={{ color: '#6b7280', fontSize: '11px' }}>{combo.supplier?.name || 'Varios Proveedores'}</span>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+                <div style={{ color: combo.daysOfSupply < 15 ? '#ef4444' : '#10b981', fontWeight: 800, fontSize: '16px' }}>
+                    {Number(combo.totalStock || 0).toLocaleString()} <small style={{ fontSize: '10px' }}>{combo.unitLabel}</small>
+                </div>
+                <div style={{ fontSize: '10px', color: '#9ca3af' }}>{combo.daysOfSupply !== null ? `${Math.ceil(combo.daysOfSupply)} días` : '---'}</div>
+            </div>
         </div>
     );
 }
@@ -253,11 +291,12 @@ function ComboCard({ combo, onClick, onUpdateTitle, onEdit, onDelete }: any) {
 }
 
 function BreakdownModal({ id, onClose }: { id: string, onClose: () => void }) {
+    const isMobile = useIsMobile();
     const { data: breakdown = [], isLoading } = useGetComboBreakdownQuery(id);
     const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
     return (
-        <Modal title="Desglose de Stock por Partida" onClose={onClose} wide>
+        <Modal title={isMobile ? "Detalle" : "Desglose de Stock"} onClose={onClose} wide={!isMobile}>
             {isLoading ? <Spinner /> : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {breakdown.map((item: any) => (
@@ -266,37 +305,32 @@ function BreakdownModal({ id, onClose }: { id: string, onClose: () => void }) {
                                 style={{ padding: '16px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: expandedItem === item.itemId ? '#374151' : 'transparent' }}
                                 onClick={() => setExpandedItem(expandedItem === item.itemId ? null : item.itemId)}
                             >
-                                <div>
-                                    <h4 style={{ color: '#fff', fontSize: '15px', margin: 0 }}>{item.description}</h4>
-                                    <code style={{ fontSize: '12px', color: '#9ca3af' }}>{item.code}</code>
+                                <div style={{ flex: 1 }}>
+                                    <h4 style={{ color: '#fff', fontSize: '14px', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.description}</h4>
+                                    <code style={{ fontSize: '11px', color: '#9ca3af' }}>{item.code}</code>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '20px' }}>
                                     <div style={{ textAlign: 'right' }}>
-                                        <div style={{ color: '#10b981', fontWeight: 700 }}>{Number(item.total).toFixed(1)} {item.unitLabel}</div>
-                                        <div style={{ fontSize: '11px', color: '#9ca3af' }}>{Number(item.totalSecondary).toFixed(0)} {item.secondaryUnitLabel}</div>
+                                        <div style={{ color: '#10b981', fontWeight: 700, fontSize: isMobile ? '14px' : '16px' }}>{Number(item.total).toFixed(1)} {item.unitLabel}</div>
+                                        {!isMobile && <div style={{ fontSize: '11px', color: '#9ca3af' }}>{Number(item.totalSecondary).toFixed(0)} {item.secondaryUnitLabel}</div>}
                                     </div>
-                                    <span style={{ transition: 'transform 0.2s', transform: expandedItem === item.itemId ? 'rotate(180deg)' : 'rotate(0)' }}>▼</span>
+                                    <span style={{ fontSize: '10px', transition: 'transform 0.2s', transform: expandedItem === item.itemId ? 'rotate(180deg)' : 'rotate(0)' }}>▼</span>
                                 </div>
                             </div>
                             
                             {expandedItem === item.itemId && (
-                                <div style={{ padding: '0 16px 16px', background: 'rgba(0,0,0,0.2)' }}>
+                                <div style={{ padding: isMobile ? '0' : '0 16px 16px', background: 'rgba(0,0,0,0.2)' }}>
                                     <Table 
-                                        cols={['Partida/Lote', 'Depósitos/Posiciones', 'Stock Acumulado']}
+                                        cols={['Partida/Lote', 'Stock Acumulado']}
                                         rows={item.batches.map((b: any) => [
                                             <strong key="l" style={{ color: '#f3f4f6' }}>{b.lotNumber}</strong>,
-                                            <div key="p" style={{ fontSize: '12px', color: '#9ca3af' }}>
-                                                {b.positions.map((p: any, i: number) => (
-                                                    <div key={i}>{p.depot} — {p.position} ({p.qty.toFixed(1)} {item.unitLabel})</div>
-                                                ))}
-                                            </div>,
                                             <span key="q" style={{ color: '#fff', fontWeight: 600 }}>{b.qty.toFixed(1)} {item.unitLabel}</span>
                                         ])}
                                     />
                                     {item.pendingStock > 0 && (
-                                        <div style={{ marginTop: '12px', padding: '10px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: '8px' }}>
-                                            <span style={{ fontSize: '13px', color: '#f59e0b', fontWeight: 600 }}>🛒 Pedido Pendiente: {item.pendingStock.toFixed(1)} {item.unitLabel}</span>
-                                            {item.incomingDate && <span style={{ marginLeft: '12px', fontSize: '12px', color: '#d97706' }}>Llega: {new Date(item.incomingDate).toLocaleDateString()}</span>}
+                                        <div style={{ margin: '12px', padding: '10px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: '8px' }}>
+                                            <span style={{ fontSize: '12px', color: '#f59e0b', fontWeight: 600 }}>🛒 Pedido: {item.pendingStock.toFixed(1)}</span>
+                                            {item.incomingDate && <div style={{ fontSize: '10px', color: '#d97706' }}>Entrega: {new Date(item.incomingDate).toLocaleDateString()}</div>}
                                         </div>
                                     )}
                                 </div>
@@ -330,7 +364,7 @@ function EditComboModal({ combo, items, onClose, onSave }: any) {
                 </div>
                 <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
                     <Btn variant="secondary" onClick={onClose}>Cancelar</Btn>
-                    <Btn onClick={async () => { setSaving(true); await onSave(selectedIds); setSaving(false); }} disabled={saving}>Guardar Cambios</Btn>
+                    <Btn onClick={async () => { setSaving(true); await onSave(selectedIds); setSaving(false); }} disabled={saving}>Guardar</Btn>
                 </div>
             </div>
         </Modal>
