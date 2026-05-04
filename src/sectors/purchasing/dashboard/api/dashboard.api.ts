@@ -10,10 +10,15 @@ export const dashboardApi = api.injectEndpoints({
             query: () => 'dashboard/volumes',
             providesTags: ['Stock'],
         }),
+        getCapacityTimeline: builder.query<any[], void>({
+            query: () => 'dashboard/capacity-timeline',
+            providesTags: ['Stock', 'PurchaseOrders', 'Dashboard'],
+        }),
     }),
 });
 
 export const {
     useGetCapacityDashboardQuery,
     useGetVolumesDashboardQuery,
+    useGetCapacityTimelineQuery,
 } = dashboardApi;
