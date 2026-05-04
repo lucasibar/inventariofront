@@ -1,5 +1,6 @@
-import { useGetCapacityDashboardQuery } from '../dashboard/api/dashboard.api';
+import { useGetCapacityDashboardQuery, useGetCapacityTimelineQuery } from '../dashboard/api/dashboard.api';
 import { PageHeader, Card, Spinner } from '../../../shared/ui';
+import { ResponsiveContainer, ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine } from 'recharts';
 
 /* ─── Gauge Component ─── */
 function CapacityGauge({ percentage, label, occupied, total }: { percentage: number; label: string; occupied: number; total: number }) {
@@ -32,6 +33,87 @@ function CapacityGauge({ percentage, label, occupied, total }: { percentage: num
     );
 }
 
+function CapacityTimelineChart() {
+    const { data: timeline = [], isLoading } = useGetCapacityTimelineQuery();
+
+    if (isLoading) return <Card style={{ marginBottom: '24px', padding: '24px', height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Spinner /></Card>;
+
+    const chartData = timeline.map(d => ({
+        date: d.date,
+        historical: d.type === 'historical' || d.type === 'today' ? d.volume : null,
+        projected: d.type === 'projected' || d.type === 'today' ? d.volume : null,
+        type: d.type,
+        originalVolume: d.volume
+    }));
+
+    const CustomTooltip = ({ active, payload, label }: any) => {
+        if (active && payload && payload.length) {
+            const data = payload[0].payload;
+            const vol = data.originalVolume.toFixed(2);
+            const type = data.type;
+            let typeLabel = "Histórico";
+            if(type === 'today') typeLabel = "Hoy (Actual)";
+            else if(type === 'projected') typeLabel = "Proyectado";
+
+            return (
+                <div style={{ background: '#1a1d2e', border: '1px solid #2a2d3e', padding: '12px', borderRadius: '8px' }}>
+                    <p style={{ margin: '0 0 8px 0', color: '#9ca3af', fontWeight: 600 }}>{label}</p>
+                    <p style={{ margin: 0, color: '#f3f4f6' }}>
+                        Volumen: <span style={{ fontWeight: 'bold', color: type === 'projected' ? '#818cf8' : '#34d399' }}>{vol} m³</span>
+                    </p>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#6b7280' }}>{typeLabel}</p>
+                </div>
+            );
+        }
+        return null;
+    };
+
+    return (
+        <Card style={{ marginBottom: '24px', padding: '24px' }}>
+            <h3 style={{ margin: '0 0 24px 0', color: '#f3f4f6' }}>Evolución y Proyección de Capacidad (30 Días)</h3>
+            <div style={{ height: '400px', width: '100%' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#2a2d3e" vertical={false} />
+                        <XAxis 
+                            dataKey="date" 
+                            stroke="#6b7280" 
+                            tick={{ fill: '#6b7280', fontSize: 12 }}
+                            tickFormatter={(val) => {
+                                const d = new Date(val);
+                                return `${d.getDate()}/${d.getMonth()+1}`;
+                            }}
+                        />
+                        <YAxis stroke="#6b7280" tick={{ fill: '#6b7280', fontSize: 12 }} domain={[0, 1600]} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <ReferenceLine y={1558.48} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'top', value: 'Capacidad Máxima (1558.48 m³)', fill: '#ef4444', fontSize: 12 }} />
+                        
+                        <Line 
+                            type="monotone" 
+                            dataKey="historical" 
+                            stroke="#34d399" 
+                            strokeWidth={3}
+                            dot={false}
+                            activeDot={{ r: 6, fill: '#34d399', stroke: '#1a1d2e', strokeWidth: 2 }}
+                            connectNulls={false}
+                        />
+                        <Line 
+                            type="monotone" 
+                            dataKey="projected" 
+                            stroke="#818cf8" 
+                            strokeDasharray="5 5"
+                            strokeWidth={3}
+                            dot={false}
+                            activeDot={{ r: 6, fill: '#818cf8', stroke: '#1a1d2e', strokeWidth: 2 }}
+                            connectNulls={false}
+                        />
+                    </ComposedChart>
+                </ResponsiveContainer>
+            </div>
+        </Card>
+    );
+}
+
 export default function CapacityDashboardPage() {
     const { data: dashboard = [], isLoading } = useGetCapacityDashboardQuery();
 
@@ -41,6 +123,8 @@ export default function CapacityDashboardPage() {
         <div style={{ padding: '24px' }}>
             <PageHeader title="Medidores de Capacidad" subtitle="Estado de ocupación por depósito y categoría de material" />
             
+            <CapacityTimelineChart />
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '24px' }}>
                 {dashboard.map((dep: any) => (
                     <Card key={dep.depotId}>

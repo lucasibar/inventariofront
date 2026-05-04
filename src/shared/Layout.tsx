@@ -66,6 +66,7 @@ const navGroups = [
             { to: '/pedidos-compra', label: '📋 Pedidos Compra' },
             { to: '/dashboard/capacity', label: '📈 Capacidad' },
             { to: '/dashboard/volumes', label: '📦 Volúmenes' },
+            { to: '/items/box-types', label: '📦 Cajas/Embalaje' },
         ]
     },
     {
@@ -157,7 +158,7 @@ export default function Layout() {
         items: group.items.filter(item => {
             if (isAdmin) return true;
             if (isOperario) return ['/movimientos', '/stock', '/deposito/auditoria-picking', '/remitos-salida', '/tasks', '/deposito', '/mantenimiento/dashboard', '/mantenimiento/monitoreo', '/mantenimiento/registro', '/mantenimiento/historial', '/mantenimiento/buscador', '/produccion/cargar', '/produccion/dashboard'].includes(item.to);
-            if (isCompras) return ['/dashboard', '/compras/materiales-criticos', '/compras/alertas-stock', '/compras/conciliacion', '/pedidos-compra', '/remitos-entrada', '/items', '/dashboard/capacity', '/dashboard/volumes', '/socios'].includes(item.to);
+            if (isCompras) return ['/dashboard', '/compras/materiales-criticos', '/compras/alertas-stock', '/compras/conciliacion', '/pedidos-compra', '/remitos-entrada', '/items', '/dashboard/capacity', '/dashboard/volumes', '/items/box-types', '/socios'].includes(item.to);
             return false;
         })
     })).filter(group => group.items.length > 0);
