@@ -14,6 +14,7 @@ import { useGetDepotsQuery } from '../deposito/api/deposito.api';
 import { useGetItemsQuery, useGetItemCategoriesQuery } from '../../config/items/api/items.api';
 import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
 import { PageHeader, Select, SearchSelect, Spinner, Btn, Modal, Input, EditableCell, useIsMobile } from '../../../shared/ui';
+import { rawBase } from '../../../shared/api';
 import { CreateItemDialog } from '../../config/components/CreateItemDialog';
 import { CreatePartnerDialog } from '../../config/components/CreatePartnerDialog';
 import { useSelector } from 'react-redux';
@@ -250,6 +251,33 @@ export default function StockPage() {
         } catch (e: any) { alert(e?.data?.message || 'Error al eliminar línea de stock'); }
     };
 
+    const handleExportExcel = async () => {
+        const token = sessionStorage.getItem('token');
+        const params = new URLSearchParams();
+        if (depotId) params.set('depotId', depotId);
+        if (positionId) params.set('positionId', positionId);
+        if (searchTerm) params.set('q', searchTerm);
+        
+        const url = `${rawBase}stock/export?${params.toString()}`;
+        
+        try {
+            const response = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Error al exportar');
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.setAttribute('download', `stock_${new Date().toISOString().split('T')[0]}.xlsx`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (e) {
+            alert('Error al descargar el archivo');
+        }
+    };
+
     const { data: rawStock = [], isFetching, isLoading } = useGetStockQuery({ 
         depotId: depotId || undefined,
         positionId: positionId || undefined,
@@ -382,6 +410,14 @@ export default function StockPage() {
                             style={{ height: '38px', width: '38px', padding: 0, minWidth: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}
                             title="Adición Rápida"
                         >+</Btn>
+                    )}
+                    {!isMobile && (
+                        <Btn 
+                            onClick={handleExportExcel} 
+                            variant="secondary"
+                            style={{ height: '38px', width: '38px', padding: 0, minWidth: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}
+                            title="Exportar Excel"
+                        >📊</Btn>
                     )}
                 </div>
             </div>
