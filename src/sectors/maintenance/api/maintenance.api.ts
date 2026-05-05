@@ -102,8 +102,17 @@ export const maintenanceApi = api.injectEndpoints({
             }),
             invalidatesTags: ['Maintenance', 'Machine'],
             async onQueryStarted({ id, plantId, typeId, status, generatedBy }, { dispatch, queryFulfilled }) {
-                const patchResult = dispatch(
+                const patchResult1 = dispatch(
                     maintenanceApi.util.updateQueryData('getMachines', { plantId, typeId }, (draft) => {
+                        const machine = draft.find((m: any) => m.id === id);
+                        if (machine) {
+                            machine.status = status;
+                            if (generatedBy) machine.lastChangeBy = generatedBy;
+                        }
+                    })
+                );
+                const patchResult2 = dispatch(
+                    maintenanceApi.util.updateQueryData('getMachines', { plantId }, (draft) => {
                         const machine = draft.find((m: any) => m.id === id);
                         if (machine) {
                             machine.status = status;
@@ -114,7 +123,8 @@ export const maintenanceApi = api.injectEndpoints({
                 try {
                     await queryFulfilled;
                 } catch {
-                    patchResult.undo();
+                    patchResult1.undo();
+                    patchResult2.undo();
                 }
             },
         }),
