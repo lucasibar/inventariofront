@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
     Box, Typography, Card, Table, TableBody, TableCell, TableContainer, 
     TableHead, TableRow, Chip, TextField, Grid, IconButton, Tooltip,
-    Dialog, DialogTitle, DialogContent, DialogActions, Button, MenuItem
+    Dialog, DialogTitle, DialogContent, DialogActions, Button, MenuItem, useMediaQuery, useTheme, Divider
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -34,6 +34,8 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function HistorialRegistrosPage() {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const navigate = useNavigate();
     const [startDate, setStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 7)).toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
@@ -169,6 +171,86 @@ export default function HistorialRegistrosPage() {
 
             {isLoading ? (
                 <Spinner />
+            ) : isMobile ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {logs.length === 0 ? (
+                        <Box sx={{ p: 4, textAlign: 'center', color: '#9ca3af' }}>
+                            No se encontraron registros en este rango de fechas.
+                        </Box>
+                    ) : (
+                        logs.map((log: any) => (
+                            <Card key={log.id} sx={{ bgcolor: '#1a1a1a', borderRadius: 2, border: '1px solid #333', p: 2 }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                    <Box>
+                                        <Typography 
+                                            variant="subtitle1" 
+                                            onClick={() => handleMachineClick(log)}
+                                            sx={{ 
+                                                cursor: 'pointer', 
+                                                fontWeight: 700,
+                                                color: '#3b82f6',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 1
+                                            }}
+                                        >
+                                            Máquina {log.machine?.number}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: '#9ca3af', display: 'block', mt: 0.5 }}>
+                                            {new Date(log.timestamp).toLocaleString()}
+                                        </Typography>
+                                    </Box>
+                                    <Chip 
+                                        label={statusLabels[log.toStatus] || log.toStatus} 
+                                        size="small"
+                                        sx={{ 
+                                            bgcolor: `${statusColors[log.toStatus] || '#6b7280'}20`, 
+                                            color: statusColors[log.toStatus] || '#d1d5db',
+                                            border: `1px solid ${statusColors[log.toStatus] || '#6b7280'}50`,
+                                            fontWeight: 600
+                                        }} 
+                                    />
+                                </Box>
+                                
+                                <Grid container spacing={2} sx={{ mb: 2 }}>
+                                    <Grid item xs={6}>
+                                        <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>Falla</Typography>
+                                        <Typography variant="body2" sx={{ color: '#e5e7eb' }}>{log.failureType || '-'}</Typography>
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                        <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>Responsable</Typography>
+                                        <Typography variant="body2" sx={{ color: '#e5e7eb' }}>{log.generatedBy || '-'}</Typography>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>Observaciones</Typography>
+                                        <Typography variant="body2" sx={{ color: '#9ca3af' }}>{log.observation || '-'}</Typography>
+                                    </Grid>
+                                </Grid>
+
+                                <Divider sx={{ my: 1.5, borderColor: '#333' }} />
+                                
+                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                                    <Button 
+                                        size="small" 
+                                        startIcon={<EditIcon />} 
+                                        onClick={() => setEditLogData(log)}
+                                        sx={{ color: '#3b82f6' }}
+                                    >
+                                        Editar
+                                    </Button>
+                                    <Button 
+                                        size="small" 
+                                        startIcon={<DeleteIcon />} 
+                                        onClick={() => setDeleteId(log.id)}
+                                        sx={{ color: '#ef4444' }}
+                                    >
+                                        Eliminar
+                                    </Button>
+                                </Box>
+                            </Card>
+                        ))
+                    )}
+                </Box>
             ) : (
                 <TableContainer component={Card} sx={{ bgcolor: '#1a1a1a', borderRadius: 2, maxHeight: 'calc(100vh - 300px)' }}>
                     <Table stickyHeader>
@@ -178,23 +260,23 @@ export default function HistorialRegistrosPage() {
                                 <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Planta</TableCell>
                                 <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Máquina</TableCell>
                                 <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Estado</TableCell>
-                                <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Problema / Tipo</TableCell>
+                                <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Tipo de Falla</TableCell>
                                 <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Responsable</TableCell>
                                 <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Observaciones</TableCell>
-                                <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }} align="center">Acciones</TableCell>
+                                <TableCell align="center" sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Acciones</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {logs.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={8} align="center" sx={{ color: '#9ca3af', py: 4 }}>
-                                        No se encontraron registros para los filtros seleccionados
+                                        No se encontraron registros en este rango de fechas.
                                     </TableCell>
                                 </TableRow>
                             ) : (
                                 logs.map((log: any) => (
-                                    <TableRow key={log.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                                        <TableCell sx={{ color: '#d1d5db' }}>
+                                    <TableRow key={log.id} sx={{ '&:last-child td, &:last-child th': { border: 0 }, '&:hover': { bgcolor: '#27272a' } }}>
+                                        <TableCell sx={{ color: '#e5e7eb' }}>
                                             {new Date(log.timestamp).toLocaleString()}
                                         </TableCell>
                                         <TableCell sx={{ color: '#d1d5db' }}>{log.machine?.plant?.name || '-'}</TableCell>

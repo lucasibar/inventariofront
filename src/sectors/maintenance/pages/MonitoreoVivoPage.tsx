@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Grid, Card, CardContent, Tooltip } from '@mui/material';
+import { Box, Typography, Grid, Card, CardContent, Tooltip, useMediaQuery, useTheme, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import { 
     useGetPlantsQuery, 
     useGetMachinesQuery, 
@@ -125,6 +125,10 @@ export default function MonitoreoVivoPage() {
 
     const { data: plants = [] } = useGetPlantsQuery();
     const { data: machineTypes = [] } = useGetMachineTypesQuery();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
+    
     const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
 
     useEffect(() => {
@@ -348,43 +352,96 @@ export default function MonitoreoVivoPage() {
                 <Grid size={{ xs: 12, lg: 9 }}>
                     <Card sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)', mb: 3 }}>
                         <CardContent sx={{ p: 3 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
                                 <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Mapa de Máquinas - Tejeduría</Typography>
                                 
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                    <Box sx={{ display: 'flex', bgcolor: 'rgba(255,255,255,0.05)', p: 0.5, borderRadius: 1.5 }}>
-                                        <Box sx={{ p: 1, bgcolor: '#3b82f6', borderRadius: 1, display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
-                                            <LayoutGridIcon sx={{ fontSize: 16, color: 'white' }} />
-                                            <Typography sx={{ color: 'white', fontSize: '12px', fontWeight: 600 }}>Vista Planta</Typography>
+                                {isMobile ? (
+                                    <ToggleButtonGroup
+                                        value={viewMode}
+                                        exclusive
+                                        onChange={(_, newVal) => newVal && setViewMode(newVal)}
+                                        size="small"
+                                        sx={{ 
+                                            bgcolor: 'rgba(255,255,255,0.05)',
+                                            '& .MuiToggleButton-root': { color: '#9ca3af', border: 'none', px: 2 },
+                                            '& .Mui-selected': { bgcolor: '#3b82f6 !important', color: 'white !important' }
+                                        }}
+                                    >
+                                        <ToggleButton value="map">
+                                            <LayoutGridIcon sx={{ fontSize: 18, mr: 1 }} /> Mapa
+                                        </ToggleButton>
+                                        <ToggleButton value="list">
+                                            <ListIcon sx={{ fontSize: 18, mr: 1 }} /> Lista
+                                        </ToggleButton>
+                                    </ToggleButtonGroup>
+                                ) : (
+                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                        <Box sx={{ display: 'flex', bgcolor: 'rgba(255,255,255,0.05)', p: 0.5, borderRadius: 1.5 }}>
+                                            <Box sx={{ p: 1, bgcolor: '#3b82f6', borderRadius: 1, display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
+                                                <LayoutGridIcon sx={{ fontSize: 16, color: 'white' }} />
+                                                <Typography sx={{ color: 'white', fontSize: '12px', fontWeight: 600 }}>Vista Planta</Typography>
+                                            </Box>
+                                            <Box sx={{ p: 1, borderRadius: 1, display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
+                                                <ListIcon sx={{ fontSize: 16, color: '#9ca3af' }} />
+                                                <Typography sx={{ color: '#9ca3af', fontSize: '12px', fontWeight: 600 }}>Vista Lista</Typography>
+                                            </Box>
                                         </Box>
-                                        <Box sx={{ p: 1, borderRadius: 1, display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
-                                            <ListIcon sx={{ fontSize: 16, color: '#9ca3af' }} />
-                                            <Typography sx={{ color: '#9ca3af', fontSize: '12px', fontWeight: 600 }}>Vista Lista</Typography>
+                                        <Box sx={{ display: 'flex', bgcolor: 'rgba(255,255,255,0.05)', p: 0.5, borderRadius: 1.5 }}>
+                                            <Box sx={{ p: 1, cursor: 'pointer', display: 'flex' }}><MinusIcon sx={{ fontSize: 16, color: '#9ca3af' }} /></Box>
+                                            <Box sx={{ p: 1, cursor: 'pointer', display: 'flex' }}><PlusIcon sx={{ fontSize: 16, color: '#9ca3af' }} /></Box>
                                         </Box>
                                     </Box>
-                                    <Box sx={{ display: 'flex', bgcolor: 'rgba(255,255,255,0.05)', p: 0.5, borderRadius: 1.5 }}>
-                                        <Box sx={{ p: 1, cursor: 'pointer', display: 'flex' }}><MinusIcon sx={{ fontSize: 16, color: '#9ca3af' }} /></Box>
-                                        <Box sx={{ p: 1, cursor: 'pointer', display: 'flex' }}><PlusIcon sx={{ fontSize: 16, color: '#9ca3af' }} /></Box>
-                                    </Box>
-                                </Box>
+                                )}
                             </Box>
 
                             {/* Legend */}
-                            <Box sx={{ display: 'flex', gap: 3, mb: 4, flexWrap: 'wrap' }}>
-                                {Object.entries(STATUS_LABELS).map(([status, label]) => (
-                                    <Box key={status} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Box sx={{ width: 10, height: 10, bgcolor: STATUS_COLORS[status], borderRadius: '50%' }} />
-                                        <Typography variant="caption" sx={{ color: '#9ca3af', fontWeight: 600 }}>{label}</Typography>
-                                    </Box>
-                                ))}
-                            </Box>
+                            {(!isMobile || viewMode === 'map') && (
+                                <Box sx={{ display: 'flex', gap: 3, mb: 4, flexWrap: 'wrap' }}>
+                                    {Object.entries(STATUS_LABELS).map(([status, label]) => (
+                                        <Box key={status} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Box sx={{ width: 10, height: 10, bgcolor: STATUS_COLORS[status], borderRadius: '50%' }} />
+                                            <Typography variant="caption" sx={{ color: '#9ca3af', fontWeight: 600 }}>{label}</Typography>
+                                        </Box>
+                                    ))}
+                                </Box>
+                            )}
 
                             {/* Map Content */}
-                            <Box sx={{ overflowX: 'auto', pb: 2, className: 'custom-scrollbar' }}>
-                                <Box sx={{ minWidth: '900px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                    {layout.map((section, idx) => renderSection(section, idx))}
+                            {isMobile && viewMode === 'list' ? (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    {filteredMachines.map((machine: any) => (
+                                        <Box 
+                                            key={machine.id} 
+                                            onClick={() => navigate('/mantenimiento/registro', { state: { preselectedMachine: machine, plantId: selectedPlantId }})} 
+                                            sx={{ 
+                                                p: 2, bgcolor: '#1a1a1a', borderRadius: 2, display: 'flex', justifyContent: 'space-between', 
+                                                alignItems: 'center', border: '1px solid #333' 
+                                            }}
+                                        >
+                                            <Box>
+                                                <Typography variant="subtitle1" sx={{ color: '#3b82f6', fontWeight: 700 }}>Máquina {machine.number}</Typography>
+                                                <Typography variant="caption" sx={{ color: '#9ca3af' }}>{STATUS_LABELS[machine.status || machine.estado] || 'Sin Datos'}</Typography>
+                                            </Box>
+                                            <Box sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: STATUS_COLORS[machine.status || machine.estado] || STATUS_COLORS.SIN_DATOS, boxShadow: `0 0 10px ${STATUS_COLORS[machine.status || machine.estado] || STATUS_COLORS.SIN_DATOS}80` }} />
+                                        </Box>
+                                    ))}
+                                    {filteredMachines.length === 0 && (
+                                        <Typography sx={{ color: '#9ca3af', textAlign: 'center', py: 4 }}>No se encontraron máquinas</Typography>
+                                    )}
                                 </Box>
-                            </Box>
+                            ) : (
+                                <Box sx={{ 
+                                    overflowX: 'auto', 
+                                    pb: 2, 
+                                    '&::-webkit-scrollbar': { display: 'none' },
+                                    msOverflowStyle: 'none',
+                                    scrollbarWidth: 'none'
+                                }}>
+                                    <Box sx={{ minWidth: '900px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        {layout.map((section, idx) => renderSection(section, idx))}
+                                    </Box>
+                                </Box>
+                            )}
                         </CardContent>
                     </Card>
 

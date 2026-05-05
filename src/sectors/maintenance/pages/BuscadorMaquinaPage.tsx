@@ -161,17 +161,17 @@ export default function BuscadorMaquinaPage() {
             </Card>
 
             {searchedMachine && (
-                <Card sx={{ bgcolor: '#1a1a1a', borderRadius: 2, p: 4, border: '1px solid #333' }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+                <Card sx={{ bgcolor: '#1a1a1a', borderRadius: 2, p: { xs: 2, md: 4 }, border: '1px solid #333' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: { xs: 2, md: 3 }, flexWrap: 'wrap', gap: 2 }}>
                         <Box>
-                            <Typography variant="h4" sx={{ color: 'white', fontWeight: 700 }}>
+                            <Typography variant="h4" sx={{ color: 'white', fontWeight: 700, fontSize: { xs: '1.75rem', md: '2.125rem' } }}>
                                 Máquina {searchedMachine.number}
                             </Typography>
                             <Typography variant="subtitle1" sx={{ color: '#9ca3af' }}>
                                 Código: {searchedMachine.codigoInterno} | Nombre: {searchedMachine.nombre}
                             </Typography>
                         </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'space-between', sm: 'flex-end' } }}>
                             <Chip 
                                 label={statusLabels[searchedMachine.status] || searchedMachine.status} 
                                 sx={{ 
@@ -195,15 +195,15 @@ export default function BuscadorMaquinaPage() {
                         </Box>
                     </Box>
 
-                    <Divider sx={{ my: 3, borderColor: '#333' }} />
+                    <Divider sx={{ my: { xs: 2, md: 3 }, borderColor: '#333' }} />
 
                     <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
                         Características Técnicas
                     </Typography>
                     
-                    <Grid container spacing={3}>
+                    <Grid container spacing={{ xs: 2, md: 3 }}>
                         <Grid size={{ xs: 12, sm: 4 }}>
-                            <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 1, border: '1px solid #27272a' }}>
+                            <Box sx={{ p: { xs: 2.5, md: 2 }, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 1, border: '1px solid #27272a' }}>
                                 <Typography variant="caption" sx={{ color: '#9ca3af', textTransform: 'uppercase' }}>Cantidad de Agujas</Typography>
                                 <Typography variant="h6" sx={{ color: 'white' }}>
                                     {searchedMachine.metadata?.cantidadAgujas || 'No registrado'}
@@ -211,7 +211,7 @@ export default function BuscadorMaquinaPage() {
                             </Box>
                         </Grid>
                         <Grid size={{ xs: 12, sm: 4 }}>
-                            <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 1, border: '1px solid #27272a' }}>
+                            <Box sx={{ p: { xs: 2.5, md: 2 }, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 1, border: '1px solid #27272a' }}>
                                 <Typography variant="caption" sx={{ color: '#9ca3af', textTransform: 'uppercase' }}>Tipo de Cilindro</Typography>
                                 <Typography variant="h6" sx={{ color: 'white' }}>
                                     {searchedMachine.metadata?.tipoCilindro || 'No registrado'}
@@ -219,7 +219,7 @@ export default function BuscadorMaquinaPage() {
                             </Box>
                         </Grid>
                         <Grid size={{ xs: 12, sm: 4 }}>
-                            <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 1, border: '1px solid #27272a' }}>
+                            <Box sx={{ p: { xs: 2.5, md: 2 }, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 1, border: '1px solid #27272a' }}>
                                 <Typography variant="caption" sx={{ color: '#9ca3af', textTransform: 'uppercase' }}>Tipo de Trimer</Typography>
                                 <Typography variant="h6" sx={{ color: 'white' }}>
                                     {searchedMachine.metadata?.tipoTrimer || 'No registrado'}
@@ -228,20 +228,24 @@ export default function BuscadorMaquinaPage() {
                         </Grid>
                     </Grid>
 
-                    <Divider sx={{ my: 3, borderColor: '#333' }} />
+                    <Divider sx={{ my: { xs: 2, md: 3 }, borderColor: '#333' }} />
 
                     <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
                         Última Actividad
                     </Typography>
                     
-                    <Grid container spacing={3}>
+                    <Grid container spacing={{ xs: 2, md: 3 }}>
                         <Grid size={{ xs: 12, sm: 6 }}>
-                            <Typography variant="body2" sx={{ color: '#9ca3af' }}>Última observación:</Typography>
-                            <Typography variant="body1" sx={{ color: 'white' }}>{searchedMachine.lastObservation || 'Ninguna'}</Typography>
+                            <Box sx={{ p: { xs: 2, md: 0 } }}>
+                                <Typography variant="body2" sx={{ color: '#9ca3af' }}>Última observación:</Typography>
+                                <Typography variant="body1" sx={{ color: 'white' }}>{searchedMachine.lastObservation || 'Ninguna'}</Typography>
+                            </Box>
                         </Grid>
                         <Grid size={{ xs: 12, sm: 6 }}>
-                            <Typography variant="body2" sx={{ color: '#9ca3af' }}>Actualizado por:</Typography>
-                            <Typography variant="body1" sx={{ color: 'white' }}>{searchedMachine.lastChangeBy || 'Desconocido'}</Typography>
+                            <Box sx={{ p: { xs: 2, md: 0 } }}>
+                                <Typography variant="body2" sx={{ color: '#9ca3af' }}>Actualizado por:</Typography>
+                                <Typography variant="body1" sx={{ color: 'white' }}>{searchedMachine.lastChangeBy || 'Desconocido'}</Typography>
+                            </Box>
                         </Grid>
                     </Grid>
 

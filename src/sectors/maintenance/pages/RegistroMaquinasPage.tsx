@@ -146,7 +146,7 @@ export default function RegistroMaquinasPage() {
             />
 
             <MuiCard sx={{ bgcolor: '#1a1a1a', borderRadius: 2, border: '1px solid #333' }}>
-                <CardContent sx={{ p: 4 }}>
+                <CardContent sx={{ p: { xs: 2, md: 4 } }}>
                     <form onSubmit={handleSubmit(onSubmit)}>
                         <Typography variant="h6" sx={{ mb: 3, color: '#e5e7eb' }}>
                             1. Selección de Máquina

@@ -46,7 +46,7 @@ const MetricCard = ({ title, value, color = '#6366f1', horizontal = false, onCli
         >
             <CardContent>
                 <Typography variant="subtitle2" sx={{ color: '#9ca3af', mb: 1 }}>{title}</Typography>
-                <Typography variant="h4" sx={{ color: '#fff', fontWeight: 700 }}>{value}</Typography>
+                <Typography variant="h4" sx={{ color: '#fff', fontWeight: 700, fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>{value}</Typography>
                 {clickable && (
                     <Typography variant="caption" sx={{ color: color, mt: 1, display: 'block' }}>Ver listado →</Typography>
                 )}
