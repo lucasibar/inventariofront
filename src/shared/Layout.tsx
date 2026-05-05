@@ -28,6 +28,7 @@ const navGroups = [
             { to: '/movimientos', label: '🔄 Movimientos' },
             { to: '/remitos-entrada', label: '📥 Remitos Entrada' },
             { to: '/remitos-salida', label: '📤 Remitos Salida' },
+            { to: '/reporte-salidas', label: '📊 Reporte Salidas' },
             { to: '/deposito', label: '🏢 Estructura' },
             { to: '/deposito/auditoria-picking', label: '✅ Picking' },
             { to: '/tasks', label: '📝 Tareas' },
@@ -157,8 +158,8 @@ export default function Layout() {
         ...group,
         items: group.items.filter(item => {
             if (isAdmin) return true;
-            if (isOperario) return ['/movimientos', '/stock', '/deposito/auditoria-picking', '/remitos-salida', '/tasks', '/deposito', '/mantenimiento/dashboard', '/mantenimiento/monitoreo', '/mantenimiento/registro', '/mantenimiento/historial', '/mantenimiento/buscador', '/produccion/cargar', '/produccion/dashboard'].includes(item.to);
-            if (isCompras) return ['/dashboard', '/compras/materiales-criticos', '/compras/alertas-stock', '/compras/conciliacion', '/pedidos-compra', '/remitos-entrada', '/items', '/dashboard/capacity', '/dashboard/volumes', '/items/box-types', '/socios'].includes(item.to);
+            if (isOperario) return ['/movimientos', '/stock', '/deposito/auditoria-picking', '/remitos-salida', '/reporte-salidas', '/tasks', '/deposito', '/mantenimiento/dashboard', '/mantenimiento/monitoreo', '/mantenimiento/registro', '/mantenimiento/historial', '/mantenimiento/buscador', '/produccion/cargar', '/produccion/dashboard'].includes(item.to);
+            if (isCompras) return ['/dashboard', '/compras/materiales-criticos', '/compras/alertas-stock', '/compras/conciliacion', '/pedidos-compra', '/remitos-entrada', '/reporte-salidas', '/items', '/dashboard/capacity', '/dashboard/volumes', '/items/box-types', '/socios'].includes(item.to);
             return false;
         })
     })).filter(group => group.items.length > 0);

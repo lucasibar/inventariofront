@@ -163,6 +163,7 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                 fullWidth
                                 variant="filled"
                                 size="small"
+                                inputProps={{ step: 'any' }}
                                 {...register(`lines.${index}.qtyPrincipal` as const, { required: true, min: 0.01 })}
                             />
                         </Box>
@@ -173,6 +174,7 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                 fullWidth
                                 variant="filled"
                                 size="small"
+                                inputProps={{ step: 'any' }}
                                 {...register(`lines.${index}.qtySecundaria` as const, { min: 0 })}
                             />
                         </Box>

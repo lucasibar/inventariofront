@@ -60,12 +60,13 @@ export default function RemitosEntradaPage() {
                 <Card>
                     <Table
                         loading={isLoading}
+                        onRowClick={(i) => handleRowClick(remitos[i])}
                         cols={['Número', 'Fecha', 'Proveedor', 'Líneas', '']}
                         rows={remitos.map((r: any) => [
-                            <span key="num" style={{ color: '#a5b4fc', fontWeight: 600, cursor: 'pointer' }} onClick={() => handleRowClick(r)}>{r.numero || r.documentId}</span>,
+                            <span key="num" style={{ color: '#a5b4fc', fontWeight: 600 }}>{r.numero || r.documentId}</span>,
                             new Date(r.fecha || r.date).toLocaleDateString('es-AR'),
                             r.partner?.name || r.supplier?.name || '—',
-                            <Badge key="badge">{r.lines?.length || r.items?.length || 0} ítems</Badge>,
+                            <Badge key="badge">{r.lines?.length || 0} ítems</Badge>,
                             <div key="actions" style={{ textAlign: 'right' }}>
                                 <Btn small variant="danger" onClick={(e: any) => {
                                     e.stopPropagation();

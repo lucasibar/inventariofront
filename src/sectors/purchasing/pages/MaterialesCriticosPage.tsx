@@ -155,12 +155,13 @@ export default function MaterialesCriticosPage() {
                         ) : (
                             <Card style={{ padding: '0' }}>
                                 <Table 
-                                    cols={['Combo', 'Proveedor', 'Stock Total', 'Pendiente PO', 'Sustento', 'Acciones']}
+                                    cols={['Combo', 'Proveedor', 'Stock Total', 'Pendiente PO', 'Salida (30d)', 'Sustento', 'Acciones']}
                                     rows={filteredCombos.map((combo: any) => [
                                         <strong key="t" onClick={() => setShowBreakdownId(combo.id)} style={{ cursor: 'pointer' }}>{combo.title}</strong>,
                                         combo.supplier?.name || 'Mixto',
                                         `${Number(combo.totalStock || 0).toFixed(1)} ${combo.unitLabel}`,
                                         <span key="p" style={{ color: combo.pendingStock > 0 ? '#f59e0b' : '#6b7280' }}>{Number(combo.pendingStock || 0).toFixed(1)} {combo.unitLabel}</span>,
+                                        <span key="c" style={{ color: '#94a3b8' }}>{Number(combo.totalConsumed30Days || 0).toFixed(1)} {combo.unitLabel}</span>,
                                         <span key="s" style={{ color: combo.daysOfSupply < 15 ? '#ef4444' : '#10b981', fontWeight: 600 }}>{combo.daysOfSupply !== null ? `~ ${Math.ceil(combo.daysOfSupply)} días` : 'N/A'}</span>,
                                         <ActionMenu key="a" options={[
                                             { label: 'Detalle', icon: '🔍', onClick: () => setShowBreakdownId(combo.id) },
@@ -268,6 +269,12 @@ function ComboCard({ combo, onClick, onUpdateTitle, onEdit, onDelete }: any) {
                     <span className="metric-value" style={{ color: '#f59e0b' }}>{Number(combo.pendingStock || 0).toLocaleString()}</span>
                     <span style={{ color: '#9ca3af', fontSize: '14px' }}>{combo.unitLabel}</span>
                     <span className="metric-label">PEDIDO</span>
+                </div>
+                <div className="metric-row">
+                    <span className="metric-icon" style={{ color: '#94a3b8' }}>📤</span>
+                    <span className="metric-value" style={{ color: '#94a3b8' }}>{Number(combo.totalConsumed30Days || 0).toLocaleString()}</span>
+                    <span style={{ color: '#9ca3af', fontSize: '14px' }}>{combo.unitLabel}</span>
+                    <span className="metric-label">SALIDA (30D)</span>
                 </div>
                 <div className="metric-row">
                     <span className="metric-icon" style={{ color: '#10b981' }}>🚚</span>

@@ -95,9 +95,10 @@ export default function RemitosSalidaPage() {
             <Card>
                 <Table
                     loading={isLoading}
+                    onRowClick={(i) => handleRowClick(remitos[i])}
                     cols={['Número', 'Fecha', 'Cliente', 'Pedido asociado', 'Líneas', '']}
                     rows={remitos.map((r: any) => [
-                        <span key="num" style={{ color: '#a5b4fc', fontWeight: 600, cursor: 'pointer' }} onClick={() => handleRowClick(r)}>{r.numero}</span>,
+                        <span key="num" style={{ color: '#a5b4fc', fontWeight: 600 }}>{r.numero}</span>,
                         new Date(r.fecha).toLocaleDateString('es-AR'),
                         (r.partner?.name || r.client?.name) ?? '—',
                         r.order?.numero ?? '—',

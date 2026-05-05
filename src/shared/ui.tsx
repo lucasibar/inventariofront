@@ -298,7 +298,13 @@ export function Spinner() {
     );
 }
 
-export function Table({ cols, rows, loading, minWidth = '100%' }: { cols: (string | React.ReactNode)[]; rows: (string | React.ReactNode)[][]; loading?: boolean; minWidth?: string }) {
+export function Table({ cols, rows, loading, minWidth = '100%', onRowClick }: { 
+    cols: (string | React.ReactNode)[]; 
+    rows: (string | React.ReactNode)[][]; 
+    loading?: boolean; 
+    minWidth?: string;
+    onRowClick?: (index: number) => void;
+}) {
     return (
         <div style={{ width: '100%', overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth }}>
@@ -317,7 +323,18 @@ export function Table({ cols, rows, loading, minWidth = '100%' }: { cols: (strin
                         <tr><td colSpan={cols.length}><Spinner /></td></tr>
                     )}
                     {rows.map((row, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid #1e2133', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
+                        <tr 
+                            key={i} 
+                            onClick={() => onRowClick && onRowClick(i)}
+                            style={{ 
+                                borderBottom: '1px solid #1e2133', 
+                                background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
+                                cursor: onRowClick ? 'pointer' : 'default',
+                                transition: 'background 0.2s'
+                            }}
+                            onMouseEnter={e => { if (onRowClick) e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+                            onMouseLeave={e => { if (onRowClick) e.currentTarget.style.background = i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)'; }}
+                        >
                             {row.map((cell, j) => (
                                 <td key={j} style={{ padding: '8px 10px', color: '#d1d5db', fontSize: '13px' }}>{cell}</td>
                             ))}

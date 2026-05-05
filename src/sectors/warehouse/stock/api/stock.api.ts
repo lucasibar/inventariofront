@@ -133,6 +133,12 @@ export const stockApi = api.injectEndpoints({
             query: ({ id, observaciones }: { id: string; observaciones: string | null }) => ({ url: `stock/batch/${id}/observations`, method: 'PATCH', body: { observaciones } }),
             invalidatesTags: ['Stock'],
         }),
+        getConsumptionAnalytics: builder.query<{ timeline: any[], total: number, dailyAvg: number, periodDays: number }, { itemId: string; desde: string; hasta: string }>({
+            query: (params) => {
+                const p = new URLSearchParams(params);
+                return `analytics/consumption?${p.toString()}`;
+            },
+        }),
     }),
 });
 
@@ -157,6 +163,7 @@ export const {
     useDeleteAllItemStockMutation,
     useGetRecentMovementsQuery,
     useReverseMovementMutation,
+    useGetConsumptionAnalyticsQuery,
 } = stockApi;
 
 

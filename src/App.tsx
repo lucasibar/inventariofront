@@ -20,6 +20,7 @@ import RemitosSalidaPage from './sectors/warehouse/pages/RemitosSalidaPage';
 import AuditoriaPickingPage from './sectors/warehouse/pages/AuditoriaPickingPage';
 import WorkspaceTasksPage from './sectors/warehouse/pages/WorkspaceTasksPage';
 import StockDashboardPage from './sectors/warehouse/pages/StockDashboardPage';
+import ReporteSalidasPage from './sectors/warehouse/pages/ReporteSalidasPage';
 
 // Sector: Purchasing
 import DashboardComprasPage from './sectors/purchasing/pages/DashboardComprasPage';
@@ -101,6 +102,7 @@ function App() {
                 <Route path="/stock/dashboard" element={<StockDashboardPage />} />
                 <Route path="/deposito/auditoria-picking" element={<AuditoriaPickingPage />} />
                 <Route path="/remitos-salida" element={<RemitosSalidaPage />} />
+                <Route path="/reporte-salidas" element={<ReporteSalidasPage />} />
                 <Route path="/stock" element={<StockPage />} />
                 <Route path="/movimientos" element={<MovimientosPage />} />
                 <Route path="/tasks" element={<WorkspaceTasksPage />} />
