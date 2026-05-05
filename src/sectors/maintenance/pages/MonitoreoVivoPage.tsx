@@ -140,8 +140,8 @@ export default function MonitoreoVivoPage() {
     }, [machineTypes]);
 
     const { data: machines = [], isLoading: loadingMachines } = useGetMachinesQuery(
-        { plantId: selectedPlantId || '', typeId: tejeduriaTypeId || '' },
-        { skip: !selectedPlantId || !tejeduriaTypeId, pollingInterval: 30000 }
+        { plantId: selectedPlantId || '' },
+        { skip: !selectedPlantId, pollingInterval: 30000 }
     );
 
     // Filtered machines in memory (Redux cache -> local filtering)
