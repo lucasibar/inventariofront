@@ -437,7 +437,7 @@ export default function MonitoreoVivoPage() {
                                     msOverflowStyle: 'none',
                                     scrollbarWidth: 'none'
                                 }}>
-                                    <Box sx={{ minWidth: '900px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    <Box sx={{ minWidth: '900px', display: 'flex', flexDirection: 'column', alignItems: { xs: 'flex-start', md: 'center' } }}>
                                         {layout.map((section, idx) => renderSection(section, idx))}
                                     </Box>
                                 </Box>
