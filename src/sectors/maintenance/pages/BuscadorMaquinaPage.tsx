@@ -105,7 +105,7 @@ export default function BuscadorMaquinaPage() {
     return (
         <Box sx={{ p: 3, maxWidth: '1200px', margin: '0 auto' }}>
             <PageHeader 
-                title="Buscador de Máquinas" 
+                title="Detalle de Máquina" 
                 subtitle="Consulta de estado y características técnicas (Agujas, Cilindro, etc.)"
                 hideTitleOnMobile={true}
             />

@@ -3,15 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { 
     Box, Typography, Card, Table, TableBody, TableCell, TableContainer, 
     TableHead, TableRow, Chip, TextField, Grid, IconButton, Tooltip,
-    Dialog, DialogTitle, DialogContent, DialogActions, Button
+    Dialog, DialogTitle, DialogContent, DialogActions, Button, MenuItem
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 import { PageHeader, Spinner, Select } from '../../../shared/ui';
 import { 
     useGetLogsQuery, 
     useGetPlantsQuery, 
-    useDeleteLogMutation 
+    useDeleteLogMutation,
+    useUpdateLogMutation
 } from '../api/maintenance.api';
+
+const responsables = ['Gaston', 'Ruben', 'Daniel', 'Alexis', 'Violeta', 'Leandro', 'Gaspar'];
 
 const statusColors: Record<string, string> = {
     ACTIVA: '#10b981',
@@ -39,9 +43,13 @@ export default function HistorialRegistrosPage() {
 
     // Deletion state
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [deleteLog, { isLoading: isDeleting }] = useDeleteLogMutation();
+
+    // Edit state
+    const [editLogData, setEditLogData] = useState<any | null>(null);
+    const [updateLog, { isLoading: isUpdating }] = useUpdateLogMutation();
 
     const { data: plants = [] } = useGetPlantsQuery();
-    const [deleteLog, { isLoading: isDeleting }] = useDeleteLogMutation();
 
     const { data: logs = [], isLoading } = useGetLogsQuery({ 
         startDate, 
@@ -224,6 +232,16 @@ export default function HistorialRegistrosPage() {
                                             {log.observation || '-'}
                                         </TableCell>
                                         <TableCell align="center">
+                                            <Tooltip title="Editar Registro">
+                                                <IconButton 
+                                                    size="small" 
+                                                    color="primary"
+                                                    onClick={() => setEditLogData(log)}
+                                                    sx={{ '&:hover': { bgcolor: 'rgba(59, 130, 246, 0.1)' } }}
+                                                >
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
                                             <Tooltip title="Eliminar Registro">
                                                 <IconButton 
                                                     size="small" 
@@ -255,6 +273,86 @@ export default function HistorialRegistrosPage() {
                     <Button onClick={() => setDeleteId(null)} sx={{ color: '#9ca3af' }}>Cancelar</Button>
                     <Button onClick={handleDelete} color="error" variant="contained" disabled={isDeleting}>
                         {isDeleting ? 'Eliminando...' : 'Eliminar'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Edit Dialog */}
+            <Dialog open={!!editLogData} onClose={() => setEditLogData(null)} fullWidth maxWidth="sm" PaperProps={{ sx: { bgcolor: '#1f1f1f', color: 'white' } }}>
+                <DialogTitle>Editar Registro</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
+                        <TextField
+                            label="Fecha / Hora"
+                            type="datetime-local"
+                            fullWidth
+                            variant="outlined"
+                            InputLabelProps={{ shrink: true }}
+                            value={editLogData?.timestamp ? new Date(new Date(editLogData.timestamp).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : ''}
+                            onChange={(e) => setEditLogData({ ...editLogData, timestamp: new Date(e.target.value).toISOString() })}
+                            sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                        />
+                        <TextField
+                            select
+                            fullWidth
+                            label="Nuevo Estado"
+                            variant="outlined"
+                            value={editLogData?.toStatus || ''}
+                            onChange={(e) => setEditLogData({ ...editLogData, toStatus: e.target.value })}
+                            sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                        >
+                            {Object.keys(statusLabels).map((key) => (
+                                <MenuItem key={key} value={key}>{statusLabels[key]}</MenuItem>
+                            ))}
+                        </TextField>
+                        <TextField
+                            select
+                            fullWidth
+                            label="Responsable"
+                            variant="outlined"
+                            value={editLogData?.generatedBy || ''}
+                            onChange={(e) => setEditLogData({ ...editLogData, generatedBy: e.target.value })}
+                            sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                        >
+                            {responsables.map((r) => (
+                                <MenuItem key={r} value={r}>{r}</MenuItem>
+                            ))}
+                        </TextField>
+                        <TextField
+                            fullWidth
+                            multiline
+                            rows={3}
+                            label="Observaciones"
+                            variant="outlined"
+                            value={editLogData?.observation || ''}
+                            onChange={(e) => setEditLogData({ ...editLogData, observation: e.target.value })}
+                            sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setEditLogData(null)} sx={{ color: '#9ca3af' }}>Cancelar</Button>
+                    <Button 
+                        onClick={async () => {
+                            if (!editLogData) return;
+                            try {
+                                await updateLog({
+                                    id: editLogData.id,
+                                    toStatus: editLogData.toStatus,
+                                    generatedBy: editLogData.generatedBy,
+                                    observation: editLogData.observation,
+                                    timestamp: editLogData.timestamp
+                                }).unwrap();
+                                setEditLogData(null);
+                            } catch (e) {
+                                alert('Error al actualizar el registro');
+                            }
+                        }} 
+                        color="primary" 
+                        variant="contained" 
+                        disabled={isUpdating}
+                    >
+                        {isUpdating ? 'Guardando...' : 'Guardar'}
                     </Button>
                 </DialogActions>
             </Dialog>

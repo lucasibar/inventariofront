@@ -42,7 +42,7 @@ const navGroups = [
             { to: '/mantenimiento/monitoreo', label: '📺 Monitoreo en Vivo' },
             { to: '/mantenimiento/registro', label: '📋 Registrar' },
             { to: '/mantenimiento/historial', label: '📜 Historial' },
-            { to: '/mantenimiento/buscador', label: '🔍 Buscar' },
+            { to: '/mantenimiento/buscador', label: '🔍 Detalle' },
         ]
     },
     {

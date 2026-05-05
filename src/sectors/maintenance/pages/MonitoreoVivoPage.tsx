@@ -1,10 +1,12 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Grid, Card, CardContent, Tooltip } from '@mui/material';
 import { 
     useGetPlantsQuery, 
     useGetMachinesQuery, 
     useGetMetricsQuery,
-    useGetLogsQuery
+    useGetLogsQuery,
+    useGetMachineTypesQuery
 } from '../api/maintenance.api';
 import { Spinner } from '../../../shared/ui';
 import { 
@@ -38,7 +40,7 @@ const STATUS_LABELS: Record<string, string> = {
     SIN_DATOS: 'Sin Datos'
 };
 
-const MachineNode = ({ number, status, isFiltered, isActiveSearch }: { number: number | null, status: string, isFiltered: boolean, isActiveSearch: boolean }) => {
+const MachineNode = ({ number, status, isFiltered, isActiveSearch, onClick }: { number: number | null, status: string, isFiltered: boolean, isActiveSearch: boolean, onClick?: () => void }) => {
     if (number === null) return <Box sx={{ width: 40, height: 40 }} />;
 
     const opacity = isActiveSearch ? (isFiltered ? 1 : 0.2) : 1;
@@ -47,7 +49,7 @@ const MachineNode = ({ number, status, isFiltered, isActiveSearch }: { number: n
 
     return (
         <Tooltip title={`Máquina ${number} - ${STATUS_LABELS[status] || status}`} arrow>
-            <Box sx={{ 
+            <Box onClick={onClick} sx={{ 
                 width: 40, 
                 height: 40, 
                 bgcolor: statusColor,
@@ -111,6 +113,7 @@ const StatCard = ({ title, value, percentage, icon: Icon, color }: any) => (
 );
 
 export default function MonitoreoVivoPage() {
+    const navigate = useNavigate();
     const [currentTime, setCurrentTime] = useState(new Date());
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<string | null>(null);
@@ -121,6 +124,7 @@ export default function MonitoreoVivoPage() {
     }, []);
 
     const { data: plants = [] } = useGetPlantsQuery();
+    const { data: machineTypes = [] } = useGetMachineTypesQuery();
     const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
 
     useEffect(() => {
@@ -130,9 +134,14 @@ export default function MonitoreoVivoPage() {
         }
     }, [plants]);
 
+    const tejeduriaTypeId = useMemo(() => {
+        const tej = machineTypes.find((t: any) => t.name.toLowerCase().includes('tejedur'));
+        return tej?.id || null;
+    }, [machineTypes]);
+
     const { data: machines = [], isLoading: loadingMachines } = useGetMachinesQuery(
-        { plantId: selectedPlantId || '' },
-        { skip: !selectedPlantId, pollingInterval: 30000 }
+        { plantId: selectedPlantId || '', typeId: tejeduriaTypeId || '' },
+        { skip: !selectedPlantId || !tejeduriaTypeId, pollingInterval: 30000 }
     );
 
     // Filtered machines in memory (Redux cache -> local filtering)
@@ -146,8 +155,8 @@ export default function MonitoreoVivoPage() {
     }, [machines, searchTerm, statusFilter]);
 
     const { data: metrics } = useGetMetricsQuery(
-        { plantId: selectedPlantId || '' },
-        { skip: !selectedPlantId, pollingInterval: 30000 }
+        { plantId: selectedPlantId || '', typeId: tejeduriaTypeId || '' },
+        { skip: !selectedPlantId || !tejeduriaTypeId, pollingInterval: 30000 }
     );
 
     const { data: recentLogs = [] } = useGetLogsQuery(
@@ -228,6 +237,16 @@ export default function MonitoreoVivoPage() {
                         status={machine?.estado || machine?.status || 'SIN_DATOS'}
                         isFiltered={isFiltered}
                         isActiveSearch={isActiveSearch}
+                        onClick={() => {
+                            if (machine) {
+                                navigate('/mantenimiento/registro', {
+                                    state: {
+                                        preselectedMachine: machine,
+                                        plantId: selectedPlantId
+                                    }
+                                });
+                            }
+                        }}
                     />
                 );
             })}
@@ -255,7 +274,7 @@ export default function MonitoreoVivoPage() {
         return counts;
     }, [metrics]);
 
-    if (loadingMachines) return <Spinner />;
+    if (!selectedPlantId || !tejeduriaTypeId || loadingMachines) return <Spinner />;
 
     return (
         <Box sx={{ p: 3, bgcolor: '#0f1117', minHeight: '100vh', color: '#fff' }}>

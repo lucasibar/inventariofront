@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Typography, Button, TextField, MenuItem, Card as MuiCard, CardContent, Divider, Autocomplete } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { useSelector } from 'react-redux';
@@ -11,6 +11,8 @@ import {
     useGetMachinesQuery,
     useUpdateMachineStatusMutation
 } from '../api/maintenance.api';
+
+const responsables = ['Gaston', 'Ruben', 'Daniel', 'Alexis', 'Violeta', 'Leandro', 'Gaspar'];
 
 const failureTypes = [
     'Cosedora Cilindro', 'Cosedora Brazo', 'Cosedora Cierre', 'Error electronico',
@@ -31,6 +33,7 @@ const targetStatuses = [
 export default function RegistroMaquinasPage() {
     const user = useSelector(selectCurrentUser);
     const location = useLocation();
+    const navigate = useNavigate();
     
     // Selectors state
     const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
@@ -83,8 +86,12 @@ export default function RegistroMaquinasPage() {
         if (state?.preselectedMachine && machines.length > 0) {
             const m = state.preselectedMachine;
             setSelectedMachineId(m.id);
+            setValue('targetStatus', m.status || m.estado || 'PARADA');
+            if (m.lastChangeBy) {
+                setValue('generatedBy', m.lastChangeBy);
+            }
         }
-    }, [location.state, machines]);
+    }, [location.state, machines, setValue]);
 
     const plantOptions = useMemo(() => plants.map((p: any) => ({ value: p.id, label: p.name })), [plants]);
     const typeOptions = useMemo(() => machineTypes.map((t: any) => ({ value: t.id, label: t.name })), [machineTypes]);
@@ -99,6 +106,8 @@ export default function RegistroMaquinasPage() {
         try {
             await updateStatus({
                 id: selectedMachineId,
+                plantId: selectedPlantId,
+                typeId: selectedTypeId,
                 status: data.targetStatus,
                 failureType: data.failureType,
                 observation: data.observation,
@@ -115,6 +124,10 @@ export default function RegistroMaquinasPage() {
                 generatedBy: (user as any)?.name || (user as any)?.username || '',
             });
             setSelectedMachineId(null);
+            
+            if (location.state?.preselectedMachine) {
+                navigate('/mantenimiento/monitoreo');
+            }
             
         } catch (error) {
             console.error('Error updating status:', error);
@@ -249,17 +262,23 @@ export default function RegistroMaquinasPage() {
                                 render={({ field }) => (
                                     <TextField
                                         {...field}
+                                        select
                                         fullWidth
                                         label="Responsable (Mecánico/Calidad)"
                                         variant="outlined"
                                         required
-                                        placeholder="Nombre del responsable"
                                         sx={{
                                             '& .MuiOutlinedInput-root': { color: 'white' },
                                             '& .MuiInputLabel-root': { color: '#9ca3af' },
                                             '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' },
                                         }}
-                                    />
+                                    >
+                                        {responsables.map((option) => (
+                                            <MenuItem key={option} value={option}>
+                                                {option}
+                                            </MenuItem>
+                                        ))}
+                                    </TextField>
                                 )}
                             />
 

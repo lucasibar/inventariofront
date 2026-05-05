@@ -95,12 +95,28 @@ export const maintenanceApi = api.injectEndpoints({
             providesTags: ['Maintenance'],
         }),
         updateMachineStatus: builder.mutation({
-            query: ({ id, ...body }: any) => ({
+            query: ({ id, plantId, typeId, ...body }: any) => ({
                 url: `maintenance/machines/${id}/status`,
                 method: 'POST',
                 body,
             }),
             invalidatesTags: ['Maintenance', 'Machine'],
+            async onQueryStarted({ id, plantId, typeId, status, generatedBy }, { dispatch, queryFulfilled }) {
+                const patchResult = dispatch(
+                    maintenanceApi.util.updateQueryData('getMachines', { plantId, typeId }, (draft) => {
+                        const machine = draft.find((m: any) => m.id === id);
+                        if (machine) {
+                            machine.status = status;
+                            if (generatedBy) machine.lastChangeBy = generatedBy;
+                        }
+                    })
+                );
+                try {
+                    await queryFulfilled;
+                } catch {
+                    patchResult.undo();
+                }
+            },
         }),
 
         getMachineKPIs: builder.query({

@@ -203,6 +203,9 @@ export default function DashboardMantenimientoPage() {
                             <MetricCard horizontal title="OEE Global" value={kpis?.oee || '0%'} color="#8b5cf6" />
                             <MetricCard horizontal title="Máquinas Activas" value={statusCounts.ACTIVA} color="#10b981" onClick={() => openMachineList('ACTIVA')} />
                             <MetricCard horizontal title="Parada" value={statusCounts.PARADA} color="#ef4444" onClick={() => openMachineList('PARADA')} />
+                            <MetricCard horizontal title="Revisar" value={statusCounts.REVISAR} color="#eab308" onClick={() => openMachineList('REVISAR')} />
+                            <MetricCard horizontal title="Electrónica" value={statusCounts.ELECTRONIC} color="#3b82f6" onClick={() => openMachineList('ELECTRONIC')} />
+                            <MetricCard horizontal title="Vel. Reducida" value={statusCounts.VELOCIDAD_REDUCIDA} color="#f472b6" onClick={() => openMachineList('VELOCIDAD_REDUCIDA')} />
                         </Box>
                     ) : (
                         <>
