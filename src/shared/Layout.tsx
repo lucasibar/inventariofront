@@ -125,7 +125,7 @@ export default function Layout() {
 
     const [collapsed, setCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    
+
     const { data: alerts = [] } = useGetAlertsQuery(undefined, { pollingInterval: 120000 });
     const hasUnread = useSelector(selectHasUnreadNotifications);
     const dispatch = useDispatch();
@@ -149,7 +149,7 @@ export default function Layout() {
     const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
 
     const toggleGroup = (id: string) => {
-        setExpandedGroups(prev => 
+        setExpandedGroups(prev =>
             prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]
         );
     };
@@ -192,16 +192,16 @@ export default function Layout() {
 
             {/* Mobile Header */}
             {isMobile && (
-                <header style={{ 
-                    height: '56px', background: '#1a1d2e', borderBottom: '1px solid #2a2d3e', 
+                <header style={{
+                    height: '56px', background: '#1a1d2e', borderBottom: '1px solid #2a2d3e',
                     display: 'flex', alignItems: 'center', padding: '0 12px', zIndex: 997,
                     justifyContent: 'space-between', flexShrink: 0
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, overflow: 'hidden' }}>
-                        <button 
+                        <button
                             onClick={() => setMobileMenuOpen(true)}
-                            style={{ 
-                                background: 'transparent', border: 'none', color: '#f3f4f6', 
+                            style={{
+                                background: 'transparent', border: 'none', color: '#f3f4f6',
                                 fontSize: '24px', cursor: 'pointer', padding: '4px',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 position: 'relative',
@@ -217,10 +217,10 @@ export default function Layout() {
                                 }} />
                             )}
                         </button>
-                        <span style={{ 
-                            fontWeight: 800, 
-                            color: '#a5b4fc', 
-                            fontSize: '15px', 
+                        <span style={{
+                            fontWeight: 800,
+                            color: '#a5b4fc',
+                            fontSize: '15px',
                             letterSpacing: '0.2px',
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
@@ -347,8 +347,8 @@ export default function Layout() {
                                 )}
 
                                 {collapsed && !isMobile && (
-                                    <div style={{ 
-                                        display: 'flex', justifyContent: 'center', 
+                                    <div style={{
+                                        display: 'flex', justifyContent: 'center',
                                         padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.05)',
                                         color: hasActiveChild ? '#a5b4fc' : '#4b5563'
                                     }}>
@@ -359,9 +359,9 @@ export default function Layout() {
                                 {(isExpanded || (collapsed && !isMobile)) && (
                                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                                         {group.items.map(({ to, label }) => (
-                                            <NavLink 
-                                                key={to} 
-                                                to={to} 
+                                            <NavLink
+                                                key={to}
+                                                to={to}
                                                 style={({ isActive }) => ({
                                                     ...navStyle(isActive, isMobile),
                                                     paddingLeft: (!collapsed || isMobile) ? '32px' : '14px',
@@ -442,9 +442,9 @@ export default function Layout() {
             </aside>
 
             {/* Main Content Area */}
-            <main style={{ 
-                flex: 1, 
-                overflowY: 'auto', 
+            <main style={{
+                flex: 1,
+                overflowY: 'auto',
                 overflowX: 'hidden',
                 position: 'relative',
                 width: '100%'

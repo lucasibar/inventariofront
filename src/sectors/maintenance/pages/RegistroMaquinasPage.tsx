@@ -12,14 +12,14 @@ import {
     useUpdateMachineStatusMutation
 } from '../api/maintenance.api';
 
-const responsables = ['Gaston', 'Ruben', 'Daniel', 'Alexis', 'Violeta', 'Leandro', 'Gaspar'];
+const responsables = ['Gaston', 'Ruben', 'Daniel', 'Alexis', 'Violeta', 'Leandro', 'Gaspar', 'Ramón', 'Tejedor'];
 
 const failureTypes = [
     'Cosedora Cilindro', 'Cosedora Brazo', 'Cosedora Cierre', 'Error electronico',
     'Error Puesta 0', 'Error Motores', 'Mal vanizado', 'Logo contaminado',
     'Tejido(Muerde/revienta/pica/tirones)', 'Goma', 'Puntada', 'Transferencia',
     'Aguja', 'Platina', 'Menguados', 'Corta', 'Electronico', 'Lubricacion',
-    'Mancha', 'Corte', 'REPUESTO', 'Corte de luz.'
+    'Mancha', 'Corte', 'REPUESTO', 'Corte de luz.', 'Programacion'
 ];
 
 const targetStatuses = [
@@ -28,6 +28,8 @@ const targetStatuses = [
     { value: 'VELOCIDAD_REDUCIDA', label: 'Velocidad Reducida (Rosa)' },
     { value: 'PARADA', label: 'Parada (Rojo)' },
     { value: 'ELECTRONIC', label: 'Electronic (Azul)' },
+    { value: 'FALTA_COSTURA', label: 'Falta Costura (Violeta)' },
+    { value: 'FALTA_PROGRAMA', label: 'Falta Programa (Cian)' },
 ];
 
 export default function RegistroMaquinasPage() {

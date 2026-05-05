@@ -20,14 +20,18 @@ const failureTypes = [
     'Error Puesta 0', 'Error Motores', 'Mal vanizado', 'Logo contaminado',
     'Tejido(Muerde/revienta/pica/tirones)', 'Goma', 'Puntada', 'Transferencia',
     'Aguja', 'Platina', 'Menguados', 'Corta', 'Electronico', 'Lubricacion',
-    'Mancha', 'Corte', 'REPUESTO', 'Corte de luz.'
+    'Mancha', 'Corte', 'REPUESTO', 'Corte de luz.', 'Programacion'
 ];
+
+const responsables = ['Gaston', 'Ruben', 'Daniel', 'Alexis', 'Violeta', 'Leandro', 'Gaspar', 'Ramón', 'Tejedor'];
 
 const targetStatuses = [
     { value: 'REVISAR', label: 'Revisar (Amarillo)' },
     { value: 'VELOCIDAD_REDUCIDA', label: 'Velocidad Reducida (Rosa)' },
     { value: 'PARADA', label: 'Parada (Rojo)' },
     { value: 'ELECTRONIC', label: 'Electronic (Azul)' },
+    { value: 'FALTA_COSTURA', label: 'Falta Costura (Violeta)' },
+    { value: 'FALTA_PROGRAMA', label: 'Falta Programa (Cian)' },
 ];
 
 export const FailureFormModal: React.FC<FailureFormModalProps> = ({ open, onClose, machine }) => {
@@ -127,12 +131,18 @@ export const FailureFormModal: React.FC<FailureFormModalProps> = ({ open, onClos
                             render={({ field }) => (
                                 <TextField
                                     {...field}
+                                    select
                                     fullWidth
                                     label="Responsable (Mecánico/Calidad)"
                                     variant="outlined"
                                     required
-                                    placeholder="Nombre del responsable"
-                                />
+                                >
+                                    {responsables.map((option) => (
+                                        <MenuItem key={option} value={option}>
+                                            {option}
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
                             )}
                         />
 

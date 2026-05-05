@@ -15,22 +15,26 @@ import {
     useUpdateLogMutation
 } from '../api/maintenance.api';
 
-const responsables = ['Gaston', 'Ruben', 'Daniel', 'Alexis', 'Violeta', 'Leandro', 'Gaspar'];
+const responsables = ['Gaston', 'Ruben', 'Daniel', 'Alexis', 'Violeta', 'Leandro', 'Gaspar', 'Ramón', 'Tejedor'];
 
 const statusColors: Record<string, string> = {
     ACTIVA: '#10b981',
-    PARADA: '#ef4444',
     REVISAR: '#eab308',
-    VELOCIDAD_REDUCIDA: '#f472b6',
+    VELOCIDAD_REDUCIDA: '#f97316',
+    PARADA: '#ef4444',
     ELECTRONIC: '#3b82f6',
+    FALTA_COSTURA: '#8b5cf6',
+    FALTA_PROGRAMA: '#06b6d4',
 };
 
 const statusLabels: Record<string, string> = {
     ACTIVA: 'Activa',
-    PARADA: 'Parada',
-    REVISAR: 'En Revisión',
+    REVISAR: 'Revisar',
     VELOCIDAD_REDUCIDA: 'Vel. Reducida',
-    ELECTRONIC: 'Electrónica',
+    PARADA: 'Parada',
+    ELECTRONIC: 'Electronic',
+    FALTA_COSTURA: 'Falta Costura',
+    FALTA_PROGRAMA: 'Falta Programa',
 };
 
 export default function HistorialRegistrosPage() {

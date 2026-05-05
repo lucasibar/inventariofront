@@ -107,7 +107,7 @@ export default function DashboardMantenimientoPage() {
     }, [machineTypes]);
 
     const statusCounts = useMemo(() => {
-        const counts = { ACTIVA: 0, PARADA: 0, REVISAR: 0, VELOCIDAD_REDUCIDA: 0, ELECTRONIC: 0 };
+        const counts = { ACTIVA: 0, PARADA: 0, REVISAR: 0, VELOCIDAD_REDUCIDA: 0, ELECTRONIC: 0, FALTA_COSTURA: 0, FALTA_PROGRAMA: 0 };
         if (metrics?.byStatus) {
             metrics.byStatus.forEach((s: any) => {
                 counts[s.status as keyof typeof counts] = parseInt(s.count, 10);
@@ -205,7 +205,9 @@ export default function DashboardMantenimientoPage() {
                             <MetricCard horizontal title="Parada" value={statusCounts.PARADA} color="#ef4444" onClick={() => openMachineList('PARADA')} />
                             <MetricCard horizontal title="Revisar" value={statusCounts.REVISAR} color="#eab308" onClick={() => openMachineList('REVISAR')} />
                             <MetricCard horizontal title="Electrónica" value={statusCounts.ELECTRONIC} color="#3b82f6" onClick={() => openMachineList('ELECTRONIC')} />
-                            <MetricCard horizontal title="Vel. Reducida" value={statusCounts.VELOCIDAD_REDUCIDA} color="#f472b6" onClick={() => openMachineList('VELOCIDAD_REDUCIDA')} />
+                            <MetricCard horizontal title="Vel. Reducida" value={statusCounts.VELOCIDAD_REDUCIDA} color="#f97316" onClick={() => openMachineList('VELOCIDAD_REDUCIDA')} />
+                            <MetricCard horizontal title="Falta Costura" value={statusCounts.FALTA_COSTURA} color="#8b5cf6" onClick={() => openMachineList('FALTA_COSTURA')} />
+                            <MetricCard horizontal title="Falta Programa" value={statusCounts.FALTA_PROGRAMA} color="#06b6d4" onClick={() => openMachineList('FALTA_PROGRAMA')} />
                         </Box>
                     ) : (
                         <>
@@ -225,20 +227,26 @@ export default function DashboardMantenimientoPage() {
                             </Grid>
 
                             <Grid container spacing={3}>
-                                <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                     <MetricCard title="Activas" value={statusCounts.ACTIVA} color="#10b981" onClick={() => openMachineList('ACTIVA')} />
                                 </Grid>
-                                <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                     <MetricCard title="Paradas" value={statusCounts.PARADA} color="#ef4444" onClick={() => openMachineList('PARADA')} />
                                 </Grid>
-                                <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                     <MetricCard title="Revisar" value={statusCounts.REVISAR} color="#eab308" onClick={() => openMachineList('REVISAR')} />
                                 </Grid>
-                                <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                     <MetricCard title="Electrónica" value={statusCounts.ELECTRONIC} color="#3b82f6" onClick={() => openMachineList('ELECTRONIC')} />
                                 </Grid>
-                                <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-                                    <MetricCard title="Vel. Reducida" value={statusCounts.VELOCIDAD_REDUCIDA} color="#f472b6" onClick={() => openMachineList('VELOCIDAD_REDUCIDA')} />
+                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                                    <MetricCard title="Vel. Reducida" value={statusCounts.VELOCIDAD_REDUCIDA} color="#f97316" onClick={() => openMachineList('VELOCIDAD_REDUCIDA')} />
+                                </Grid>
+                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                                    <MetricCard title="Falta Costura" value={statusCounts.FALTA_COSTURA} color="#8b5cf6" onClick={() => openMachineList('FALTA_COSTURA')} />
+                                </Grid>
+                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                                    <MetricCard title="Falta Programa" value={statusCounts.FALTA_PROGRAMA} color="#06b6d4" onClick={() => openMachineList('FALTA_PROGRAMA')} />
                                 </Grid>
                             </Grid>
                         </>

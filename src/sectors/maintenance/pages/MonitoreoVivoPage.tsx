@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Grid, Card, CardContent, Tooltip, useMediaQuery, useTheme, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import { 
@@ -28,6 +28,8 @@ const STATUS_COLORS: Record<string, string> = {
     VELOCIDAD_REDUCIDA: '#f97316',
     PARADA: '#ef4444',
     ELECTRONIC: '#3b82f6',
+    FALTA_COSTURA: '#8b5cf6',
+    FALTA_PROGRAMA: '#06b6d4',
     SIN_DATOS: '#9ca3af'
 };
 
@@ -37,11 +39,13 @@ const STATUS_LABELS: Record<string, string> = {
     VELOCIDAD_REDUCIDA: 'Velocidad Reducida',
     PARADA: 'Parada',
     ELECTRONIC: 'Electrónica',
+    FALTA_COSTURA: 'Falta Costura',
+    FALTA_PROGRAMA: 'Falta Programa',
     SIN_DATOS: 'Sin Datos'
 };
 
 const MachineNode = ({ number, status, isFiltered, isActiveSearch, onClick }: { number: number | null, status: string, isFiltered: boolean, isActiveSearch: boolean, onClick?: () => void }) => {
-    if (number === null) return <Box sx={{ width: 40, height: 40 }} />;
+    if (number === null) return <Box sx={{ width: { xs: 11, sm: 15, md: 18, lg: 26, xl: 36 }, height: { xs: 11, sm: 15, md: 18, lg: 26, xl: 36 } }} />;
 
     const opacity = isActiveSearch ? (isFiltered ? 1 : 0.2) : 1;
     const scale = isActiveSearch && isFiltered ? 1.15 : 1;
@@ -50,15 +54,15 @@ const MachineNode = ({ number, status, isFiltered, isActiveSearch, onClick }: { 
     return (
         <Tooltip title={`Máquina ${number} - ${STATUS_LABELS[status] || status}`} arrow>
             <Box onClick={onClick} sx={{ 
-                width: 40, 
-                height: 40, 
+                width: { xs: 11, sm: 15, md: 18, lg: 26, xl: 36 },
+                height: { xs: 11, sm: 15, md: 18, lg: 26, xl: 36 },
                 bgcolor: statusColor,
-                borderRadius: 1.5,
+                borderRadius: { xs: 0.5, md: 1 },
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'white',
-                fontSize: '11px',
+                fontSize: { xs: '5px', sm: '6px', md: '7px', lg: '8px', xl: '10px' },
                 fontWeight: 800,
                 cursor: 'pointer',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -226,9 +230,9 @@ export default function MonitoreoVivoPage() {
     }, [machines]);
 
     const renderRow = (nums: (number | null)[], rowIdx: number) => (
-        <Box key={rowIdx} sx={{ display: 'flex', gap: '4px' }}>
+        <Box key={rowIdx} sx={{ display: 'flex', gap: { xs: '1px', md: '2px', xl: '3px' } }}>
             {nums.map((n, i) => {
-                if (n === null) return <Box key={i} sx={{ width: 40, height: 40 }} />;
+                if (n === null) return <MachineNode key={`empty-${i}`} number={null} status="SIN_DATOS" isFiltered={false} isActiveSearch={false} />;
                 
                 const machine = machineMap[n];
                 const isFiltered = filteredMachines.some((m: any) => m.numero === n);
@@ -258,14 +262,14 @@ export default function MonitoreoVivoPage() {
     );
 
     const renderSection = (section: any, idx: number) => (
-        <Box key={idx} sx={{ display: 'flex', gap: 10, mb: 4, alignItems: 'center', justifyContent: 'center' }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '4px', width: 680, alignItems: 'flex-end' }}>
+        <Fragment key={idx}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: '1px', md: '2px', xl: '3px' }, flex: '0 0 auto', alignItems: 'flex-end', mb: { xs: 1, md: 2, lg: 3 } }}>
                 {section.left.map((row: any, i: number) => renderRow(row, i))}
             </Box>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '4px', width: 440, alignItems: 'flex-start' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: '1px', md: '2px', xl: '3px' }, flex: '0 0 auto', alignItems: 'flex-start', mb: { xs: 1, md: 2, lg: 3 } }}>
                 {section.right.map((row: any, i: number) => renderRow(row, i))}
             </Box>
-        </Box>
+        </Fragment>
     );
 
     const statusCounts = useMemo(() => {
@@ -437,7 +441,14 @@ export default function MonitoreoVivoPage() {
                                     msOverflowStyle: 'none',
                                     scrollbarWidth: 'none'
                                 }}>
-                                    <Box sx={{ minWidth: '900px', display: 'flex', flexDirection: 'column', alignItems: { xs: 'flex-start', md: 'center' } }}>
+                                    <Box sx={{ 
+                                        width: '100%', 
+                                        margin: '0 auto', 
+                                        display: 'grid', 
+                                        gridTemplateColumns: 'max-content max-content',
+                                        columnGap: { xs: 1, sm: 2, md: 3, xl: 4 },
+                                        justifyContent: 'center'
+                                    }}>
                                         {layout.map((section, idx) => renderSection(section, idx))}
                                     </Box>
                                 </Box>
