@@ -213,15 +213,15 @@ export default function HistorialRegistrosPage() {
                                 </Box>
                                 
                                 <Grid container spacing={2} sx={{ mb: 2 }}>
-                                    <Grid item xs={6}>
+                                    <Grid size={{ xs: 6 }}>
                                         <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>Falla</Typography>
                                         <Typography variant="body2" sx={{ color: '#e5e7eb' }}>{log.failureType || '-'}</Typography>
                                     </Grid>
-                                    <Grid item xs={6}>
+                                    <Grid size={{ xs: 6 }}>
                                         <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>Responsable</Typography>
                                         <Typography variant="body2" sx={{ color: '#e5e7eb' }}>{log.generatedBy || '-'}</Typography>
                                     </Grid>
-                                    <Grid item xs={12}>
+                                    <Grid size={{ xs: 12 }}>
                                         <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>Observaciones</Typography>
                                         <Typography variant="body2" sx={{ color: '#9ca3af' }}>{log.observation || '-'}</Typography>
                                     </Grid>
