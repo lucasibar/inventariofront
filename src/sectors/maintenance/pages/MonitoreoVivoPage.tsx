@@ -1,24 +1,14 @@
 import { useState, useMemo, useEffect, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Grid, Card, CardContent, Tooltip } from '@mui/material';
+import { Box, Typography, Tooltip } from '@mui/material';
 import { 
     useGetPlantsQuery, 
     useGetMachinesQuery, 
     useGetMetricsQuery,
     useGetMachineTypesQuery
 } from '../api/maintenance.api';
-import { Spinner, ActionMenu } from '../../../shared/ui';
-import { 
-    CheckCircle as CheckCircleIcon, 
-    PauseCircle as PauseCircleIcon, 
-    ElectricBolt as ZapIcon, 
-    Help as HelpIcon, 
-    AccessTime as ClockIcon,
-    GridView as LayoutGridIcon,
-    List as ListIcon,
-    MoreVert as MoreVertIcon,
-    PieChart as PieChartIcon
-} from '@mui/icons-material';
+import { Spinner } from '../../../shared/ui';
+
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -299,7 +289,7 @@ export default function MonitoreoVivoPage() {
 
     const aggregatedActivas = statusCounts.ACTIVA + statusCounts.REVISAR + statusCounts.VELOCIDAD_REDUCIDA;
     const aggregatedParadas = statusCounts.PARADA + statusCounts.ELECTRONIC + statusCounts.FALTA_COSTURA + statusCounts.FALTA_PROGRAMA + statusCounts.REPUESTOS + statusCounts.SIN_DATOS;
-    const total = metrics?.total || 1;
+
 
     if (!selectedPlantId || !tejeduriaTypeId || loadingMachines) return <Spinner />;
 
