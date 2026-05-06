@@ -19,6 +19,7 @@ export interface Machine {
     status: 'ACTIVA' | 'REVISAR' | 'VELOCIDAD_REDUCIDA' | 'PARADA' | 'ELECTRONIC';
     lastObservation?: string;
     lastChangeBy?: string;
+    lastFailureType?: string;
     plantId: string;
     typeId: string;
     metadata?: {

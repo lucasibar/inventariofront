@@ -48,15 +48,15 @@ export const FailureFormModal: React.FC<FailureFormModalProps> = ({ open, onClos
     });
 
     useEffect(() => {
-        if (open) {
+        if (open && machine) {
             reset({
-                targetStatus: 'PARADA',
-                failureType: 'Cosedora Cilindro',
-                observation: '',
-                generatedBy: (user as any)?.name || (user as any)?.username || '',
+                targetStatus: machine.status === 'ACTIVA' ? 'PARADA' : machine.status,
+                failureType: (machine as any).lastFailureType || 'Cosedora Cilindro',
+                observation: machine.lastObservation || '',
+                generatedBy: machine.lastChangeBy || (user as any)?.name || (user as any)?.username || '',
             });
         }
-    }, [open, user, reset]);
+    }, [open, machine, user, reset]);
 
     const onSubmit = async (data: any) => {
         if (!machine) return;

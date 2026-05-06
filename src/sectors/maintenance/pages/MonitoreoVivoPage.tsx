@@ -8,7 +8,7 @@ import {
     useGetLogsQuery,
     useGetMachineTypesQuery
 } from '../api/maintenance.api';
-import { Spinner } from '../../../shared/ui';
+import { Spinner, ActionMenu } from '../../../shared/ui';
 import { 
     CheckCircle as CheckCircleIcon, 
     Error as ErrorIcon, 
@@ -19,7 +19,8 @@ import {
     GridView as LayoutGridIcon,
     List as ListIcon,
     Add as PlusIcon,
-    Remove as MinusIcon
+    Remove as MinusIcon,
+    MoreVert as MoreVertIcon
 } from '@mui/icons-material';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -44,36 +45,37 @@ const STATUS_LABELS: Record<string, string> = {
     SIN_DATOS: 'Sin Datos'
 };
 
-const MachineNode = ({ number, status, isFiltered, isActiveSearch, onClick }: { number: number | null, status: string, isFiltered: boolean, isActiveSearch: boolean, onClick?: () => void }) => {
-    if (number === null) return <Box sx={{ width: { xs: 11, sm: 15, md: 18, lg: 26, xl: 36 }, height: { xs: 11, sm: 15, md: 18, lg: 26, xl: 36 } }} />;
+const MachineNode = ({ number, status, onClick }: { number: number | null, status: string, onClick?: () => void }) => {
+    if (number === null) return <Box sx={{ width: { xs: 15, sm: 22, md: 28, lg: 38, xl: 54 }, height: { xs: 15, sm: 22, md: 28, lg: 38, xl: 54 } }} />;
 
-    const opacity = isActiveSearch ? (isFiltered ? 1 : 0.2) : 1;
-    const scale = isActiveSearch && isFiltered ? 1.15 : 1;
     const statusColor = STATUS_COLORS[status] || STATUS_COLORS.SIN_DATOS;
 
     return (
         <Tooltip title={`Máquina ${number} - ${STATUS_LABELS[status] || status}`} arrow>
             <Box onClick={onClick} sx={{ 
-                width: { xs: 11, sm: 15, md: 18, lg: 26, xl: 36 },
-                height: { xs: 11, sm: 15, md: 18, lg: 26, xl: 36 },
-                bgcolor: statusColor,
+                width: { xs: 15, sm: 22, md: 28, lg: 38, xl: 54 },
+                height: { xs: 15, sm: 22, md: 28, lg: 38, xl: 54 },
+                bgcolor: 'transparent',
+                border: `2px solid ${statusColor}`,
                 borderRadius: { xs: 0.5, md: 1 },
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: 'white',
-                fontSize: { xs: '5px', sm: '6px', md: '7px', lg: '8px', xl: '10px' },
-                fontWeight: 800,
+                color: statusColor,
+                fontSize: { xs: '7px', sm: '10px', md: '12px', lg: '14px', xl: '18px' },
+                fontWeight: 900,
                 cursor: 'pointer',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                opacity,
-                transform: `scale(${scale})`,
-                boxShadow: isActiveSearch && isFiltered ? `0 0 15px ${statusColor}` : '0 2px 4px rgba(0,0,0,0.2)',
-                zIndex: isActiveSearch && isFiltered ? 5 : 1,
+                opacity: 1,
+                transform: 'scale(1)',
+                boxShadow: `0 0 10px ${statusColor}40`,
+                zIndex: 1,
+                textShadow: `0 0 4px ${statusColor}30`,
                 '&:hover': {
                     transform: 'scale(1.25)',
+                    bgcolor: `${statusColor}20`,
                     zIndex: 20,
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                    boxShadow: `0 0 20px ${statusColor}80`,
                     filter: 'brightness(1.2)'
                 }
             }}>
@@ -119,8 +121,6 @@ const StatCard = ({ title, value, percentage, icon: Icon, color }: any) => (
 export default function MonitoreoVivoPage() {
     const navigate = useNavigate();
     const [currentTime, setCurrentTime] = useState(new Date());
-    const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -131,7 +131,6 @@ export default function MonitoreoVivoPage() {
     const { data: machineTypes = [] } = useGetMachineTypesQuery();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
     
     const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
 
@@ -152,15 +151,6 @@ export default function MonitoreoVivoPage() {
         { skip: !selectedPlantId, pollingInterval: 30000 }
     );
 
-    // Filtered machines in memory (Redux cache -> local filtering)
-    const filteredMachines = useMemo(() => {
-        return machines.filter((m: any) => {
-            const matchesSearch = (m.numero?.toString() || '').includes(searchTerm) || 
-                                (m.tipo?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-            const matchesStatus = !statusFilter || (m.estado || m.status) === statusFilter;
-            return matchesSearch && matchesStatus;
-        });
-    }, [machines, searchTerm, statusFilter]);
 
     const { data: metrics } = useGetMetricsQuery(
         { plantId: selectedPlantId || '', typeId: tejeduriaTypeId || '' },
@@ -230,21 +220,15 @@ export default function MonitoreoVivoPage() {
     }, [machines]);
 
     const renderRow = (nums: (number | null)[], rowIdx: number) => (
-        <Box key={rowIdx} sx={{ display: 'flex', gap: { xs: '1px', md: '2px', xl: '3px' } }}>
+        <Box key={rowIdx} sx={{ display: 'flex', gap: { xs: '2px', md: '3px', xl: '4px' } }}>
             {nums.map((n, i) => {
-                if (n === null) return <MachineNode key={`empty-${i}`} number={null} status="SIN_DATOS" isFiltered={false} isActiveSearch={false} />;
-                
-                const machine = machineMap[n];
-                const isFiltered = filteredMachines.some((m: any) => m.numero === n);
-                const isActiveSearch = searchTerm !== '' || statusFilter !== null;
+                const machine = n !== null ? machineMap[n] : null;
 
                 return (
                     <MachineNode 
-                        key={n} 
+                        key={n ?? `empty-${i}`} 
                         number={n} 
                         status={machine?.estado || machine?.status || 'SIN_DATOS'}
-                        isFiltered={isFiltered}
-                        isActiveSearch={isActiveSearch}
                         onClick={() => {
                             if (machine) {
                                 navigate('/mantenimiento/registro', {
@@ -263,17 +247,17 @@ export default function MonitoreoVivoPage() {
 
     const renderSection = (section: any, idx: number) => (
         <Fragment key={idx}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: '1px', md: '2px', xl: '3px' }, flex: '0 0 auto', alignItems: 'flex-end', mb: { xs: 1, md: 2, lg: 3 } }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: '2px', md: '3px', xl: '4px' }, flex: '0 0 auto', alignItems: 'flex-end', mb: { xs: 2, md: 3, lg: 4 } }}>
                 {section.left.map((row: any, i: number) => renderRow(row, i))}
             </Box>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: '1px', md: '2px', xl: '3px' }, flex: '0 0 auto', alignItems: 'flex-start', mb: { xs: 1, md: 2, lg: 3 } }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: '2px', md: '3px', xl: '4px' }, flex: '0 0 auto', alignItems: 'flex-start', mb: { xs: 2, md: 3, lg: 4 } }}>
                 {section.right.map((row: any, i: number) => renderRow(row, i))}
             </Box>
         </Fragment>
     );
 
     const statusCounts = useMemo(() => {
-        const counts: any = { ACTIVA: 0, REVISAR: 0, VELOCIDAD_REDUCIDA: 0, PARADA: 0, ELECTRONIC: 0, SIN_DATOS: 0 };
+        const counts: any = { ACTIVA: 0, REVISAR: 0, VELOCIDAD_REDUCIDA: 0, PARADA: 0, ELECTRONIC: 0, FALTA_COSTURA: 0, FALTA_PROGRAMA: 0, SIN_DATOS: 0 };
         if (metrics?.byStatus) {
             metrics.byStatus.forEach((s: any) => {
                 counts[s.status] = parseInt(s.count);
@@ -286,327 +270,88 @@ export default function MonitoreoVivoPage() {
 
     return (
         <Box sx={{ p: 3, bgcolor: '#0f1117', minHeight: '100vh', color: '#fff' }}>
-            {/* Header with Search and Filters */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4, flexWrap: 'wrap', gap: 2 }}>
-                <Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
-                        <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.5px' }}>
-                            Monitoreo en Tiempo Real
-                        </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1, py: 0.5, bgcolor: 'rgba(16, 185, 129, 0.1)', borderRadius: 1 }}>
-                            <Box sx={{ width: 6, height: 6, bgcolor: '#10b981', borderRadius: '50%', animation: 'pulse 2s infinite' }} />
-                            <Typography sx={{ color: '#10b981', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>En Vivo</Typography>
-                        </Box>
-                    </Box>
-                    <Typography variant="body2" sx={{ color: '#94a3b8', fontWeight: 500 }}>
-                        {currentTime.toLocaleTimeString()} - {filteredMachines.length} máquinas mostradas
-                    </Typography>
-                </Box>
-
-                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                    <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        bgcolor: 'rgba(255,255,255,0.05)', 
-                        borderRadius: 2, 
-                        px: 2, 
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        width: { xs: '100%', sm: '250px' }
-                    }}>
-                        <Typography sx={{ color: '#94a3b8', mr: 1, fontSize: '14px' }}>🔍</Typography>
-                        <input 
-                            placeholder="Buscar por número o tipo..." 
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            style={{ 
-                                background: 'transparent', 
-                                border: 'none', 
-                                color: 'white', 
-                                padding: '10px 0',
-                                outline: 'none',
-                                width: '100%',
-                                fontSize: '14px'
-                            }}
-                        />
-                    </Box>
-                    <select 
-                        value={statusFilter || ''}
-                        onChange={(e) => setStatusFilter(e.target.value || null)}
-                        style={{ 
-                            background: 'rgba(255,255,255,0.05)', 
-                            border: '1px solid rgba(255,255,255,0.1)', 
-                            color: 'white', 
-                            borderRadius: '8px',
-                            padding: '0 12px',
-                            outline: 'none',
-                            cursor: 'pointer',
-                            fontSize: '14px'
-                        }}
-                    >
-                        <option value="">Todos los estados</option>
-                        {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                            <option key={value} value={value} style={{ background: '#1e293b' }}>{label}</option>
-                        ))}
-                    </select>
-                </Box>
-            </Box>
-
             <Grid container spacing={3}>
                 {/* Main Content: Map */}
-                <Grid size={{ xs: 12, lg: 9 }}>
+                <Grid size={{ xs: 12 }}>
                     <Card sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)', mb: 3 }}>
                         <CardContent sx={{ p: 3 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Mapa de Máquinas - Tejeduría</Typography>
-                                
-                                {isMobile ? (
-                                    <ToggleButtonGroup
-                                        value={viewMode}
-                                        exclusive
-                                        onChange={(_, newVal) => newVal && setViewMode(newVal)}
-                                        size="small"
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <Box 
+                                        onClick={() => document.dispatchEvent(new Event('open-sidebar-menu'))}
                                         sx={{ 
-                                            bgcolor: 'rgba(255,255,255,0.05)',
-                                            '& .MuiToggleButton-root': { color: '#9ca3af', border: 'none', px: 2 },
-                                            '& .Mui-selected': { bgcolor: '#3b82f6 !important', color: 'white !important' }
+                                            p: 1, borderRadius: 1, cursor: 'pointer', display: 'flex', 
+                                            bgcolor: 'rgba(255,255,255,0.05)', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } 
                                         }}
                                     >
-                                        <ToggleButton value="map">
-                                            <LayoutGridIcon sx={{ fontSize: 18, mr: 1 }} /> Mapa
-                                        </ToggleButton>
-                                        <ToggleButton value="list">
-                                            <ListIcon sx={{ fontSize: 18, mr: 1 }} /> Lista
-                                        </ToggleButton>
-                                    </ToggleButtonGroup>
-                                ) : (
-                                    <Box sx={{ display: 'flex', gap: 1 }}>
-                                        <Box sx={{ display: 'flex', bgcolor: 'rgba(255,255,255,0.05)', p: 0.5, borderRadius: 1.5 }}>
-                                            <Box sx={{ p: 1, bgcolor: '#3b82f6', borderRadius: 1, display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
-                                                <LayoutGridIcon sx={{ fontSize: 16, color: 'white' }} />
-                                                <Typography sx={{ color: 'white', fontSize: '12px', fontWeight: 600 }}>Vista Planta</Typography>
-                                            </Box>
-                                            <Box sx={{ p: 1, borderRadius: 1, display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
-                                                <ListIcon sx={{ fontSize: 16, color: '#9ca3af' }} />
-                                                <Typography sx={{ color: '#9ca3af', fontSize: '12px', fontWeight: 600 }}>Vista Lista</Typography>
-                                            </Box>
-                                        </Box>
-                                        <Box sx={{ display: 'flex', bgcolor: 'rgba(255,255,255,0.05)', p: 0.5, borderRadius: 1.5 }}>
-                                            <Box sx={{ p: 1, cursor: 'pointer', display: 'flex' }}><MinusIcon sx={{ fontSize: 16, color: '#9ca3af' }} /></Box>
-                                            <Box sx={{ p: 1, cursor: 'pointer', display: 'flex' }}><PlusIcon sx={{ fontSize: 16, color: '#9ca3af' }} /></Box>
-                                        </Box>
+                                        <MoreVertIcon sx={{ color: '#94a3b8' }} />
                                     </Box>
-                                )}
+                                    <Box>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+                                            <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.5px' }}>
+                                                Monitoreo en Tiempo Real
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1, py: 0.5, bgcolor: 'rgba(16, 185, 129, 0.1)', borderRadius: 1 }}>
+                                                <Box sx={{ width: 6, height: 6, bgcolor: '#10b981', borderRadius: '50%', animation: 'pulse 2s infinite' }} />
+                                                <Typography sx={{ color: '#10b981', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>En Vivo</Typography>
+                                            </Box>
+                                        </Box>
+                                        <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 500 }}>
+                                            {currentTime.toLocaleTimeString()} — {machines.length} máquinas mostradas — Tejeduría
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                                
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <ActionMenu 
+                                        options={[
+                                            { label: 'Refrescar Datos', onClick: () => window.location.reload(), icon: '🔄' },
+                                            { label: 'Configurar Layout', onClick: () => {}, icon: '⚙️' },
+                                            { label: 'Exportar Reporte', onClick: () => {}, icon: '📊' }
+                                        ]} 
+                                    />
+                                </Box>
                             </Box>
 
-                            {/* Legend */}
-                            {(!isMobile || viewMode === 'map') && (
-                                <Box sx={{ display: 'flex', gap: 3, mb: 4, flexWrap: 'wrap' }}>
-                                    {Object.entries(STATUS_LABELS).map(([status, label]) => (
-                                        <Box key={status} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <Box sx={{ width: 10, height: 10, bgcolor: STATUS_COLORS[status], borderRadius: '50%' }} />
-                                            <Typography variant="caption" sx={{ color: '#9ca3af', fontWeight: 600 }}>{label}</Typography>
-                                        </Box>
-                                    ))}
-                                </Box>
-                            )}
-
-                            {/* Map Content */}
-                            {isMobile && viewMode === 'list' ? (
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                    {filteredMachines.map((machine: any) => (
-                                        <Box 
-                                            key={machine.id} 
-                                            onClick={() => navigate('/mantenimiento/registro', { state: { preselectedMachine: machine, plantId: selectedPlantId }})} 
-                                            sx={{ 
-                                                p: 2, bgcolor: '#1a1a1a', borderRadius: 2, display: 'flex', justifyContent: 'space-between', 
-                                                alignItems: 'center', border: '1px solid #333' 
-                                            }}
-                                        >
-                                            <Box>
-                                                <Typography variant="subtitle1" sx={{ color: '#3b82f6', fontWeight: 700 }}>Máquina {machine.number}</Typography>
-                                                <Typography variant="caption" sx={{ color: '#9ca3af' }}>{STATUS_LABELS[machine.status || machine.estado] || 'Sin Datos'}</Typography>
-                                            </Box>
-                                            <Box sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: STATUS_COLORS[machine.status || machine.estado] || STATUS_COLORS.SIN_DATOS, boxShadow: `0 0 10px ${STATUS_COLORS[machine.status || machine.estado] || STATUS_COLORS.SIN_DATOS}80` }} />
-                                        </Box>
-                                    ))}
-                                    {filteredMachines.length === 0 && (
-                                        <Typography sx={{ color: '#9ca3af', textAlign: 'center', py: 4 }}>No se encontraron máquinas</Typography>
-                                    )}
-                                </Box>
-                            ) : (
-                                <Box sx={{ 
-                                    overflowX: 'auto', 
-                                    pb: 2, 
-                                    '&::-webkit-scrollbar': { display: 'none' },
-                                    msOverflowStyle: 'none',
-                                    scrollbarWidth: 'none'
-                                }}>
                                     <Box sx={{ 
                                         width: '100%', 
                                         margin: '0 auto', 
                                         display: 'grid', 
                                         gridTemplateColumns: 'max-content max-content',
-                                        columnGap: { xs: 1, sm: 2, md: 3, xl: 4 },
+                                        columnGap: { xs: 2, sm: 3, md: 5, xl: 8 },
                                         justifyContent: 'center'
                                     }}>
                                         {layout.map((section, idx) => renderSection(section, idx))}
                                     </Box>
-                                </Box>
-                            )}
                         </CardContent>
                     </Card>
 
-                    {/* Lower Status Cards */}
+                    {/* Status Cards spanning full width */}
                     <Grid container spacing={2}>
-                        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                        <Grid size={{ xs: 12, sm: 6, md: 1.71 }}>
                             <StatCard title="Activas" value={statusCounts.ACTIVA} percentage={((statusCounts.ACTIVA / metrics?.total || 1) * 100).toFixed(1)} icon={CheckCircleIcon} color="#10b981" />
                         </Grid>
-                        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                        <Grid size={{ xs: 12, sm: 6, md: 1.71 }}>
                             <StatCard title="A Revisar" value={statusCounts.REVISAR} percentage={((statusCounts.REVISAR / metrics?.total || 1) * 100).toFixed(1)} icon={HelpIcon} color="#eab308" />
                         </Grid>
-                        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                        <Grid size={{ xs: 12, sm: 6, md: 1.71 }}>
                             <StatCard title="Vel. Reducida" value={statusCounts.VELOCIDAD_REDUCIDA} percentage={((statusCounts.VELOCIDAD_REDUCIDA / metrics?.total || 1) * 100).toFixed(1)} icon={ClockIcon} color="#f97316" />
                         </Grid>
-                        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                        <Grid size={{ xs: 12, sm: 6, md: 1.71 }}>
                             <StatCard title="Paradas" value={statusCounts.PARADA} percentage={((statusCounts.PARADA / metrics?.total || 1) * 100).toFixed(1)} icon={PauseCircleIcon} color="#ef4444" />
                         </Grid>
-                        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                        <Grid size={{ xs: 12, sm: 6, md: 1.71 }}>
                             <StatCard title="Electrónica" value={statusCounts.ELECTRONIC} percentage={((statusCounts.ELECTRONIC / metrics?.total || 1) * 100).toFixed(1)} icon={ZapIcon} color="#3b82f6" />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6, md: 1.71 }}>
+                            <StatCard title="Costura" value={statusCounts.FALTA_COSTURA} percentage={((statusCounts.FALTA_COSTURA / metrics?.total || 1) * 100).toFixed(1)} icon={LayoutGridIcon} color="#8b5cf6" />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6, md: 1.71 }}>
+                            <StatCard title="Programa" value={statusCounts.FALTA_PROGRAMA} percentage={((statusCounts.FALTA_PROGRAMA / metrics?.total || 1) * 100).toFixed(1)} icon={ListIcon} color="#06b6d4" />
                         </Grid>
                     </Grid>
                 </Grid>
-
-                {/* Right Sidebar: Summaries & Activity */}
-                <Grid size={{ xs: 12, lg: 3 }}>
-                    {/* General Summary (Donut) */}
-                    <Card sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)', mb: 3 }}>
-                        <CardContent sx={{ p: 3 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 3 }}>Resumen General</Typography>
-                            
-                            <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', mb: 4 }}>
-                                <svg width="160" height="160" viewBox="0 0 100 100">
-                                    <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="10" />
-                                    {/* Simple Donut Simulation - One arc for Activas */}
-                                    <circle 
-                                        cx="50" cy="50" r="40" 
-                                        fill="none" 
-                                        stroke="#10b981" 
-                                        strokeWidth="10" 
-                                        strokeDasharray={`${(statusCounts.ACTIVA / (metrics?.total || 1)) * 251.2} 251.2`}
-                                        transform="rotate(-90 50 50)"
-                                        strokeLinecap="round"
-                                    />
-                                    <text x="50" y="45" textAnchor="middle" fill="white" fontSize="14" fontWeight="800">{metrics?.total || 0}</text>
-                                    <text x="50" y="60" textAnchor="middle" fill="#9ca3af" fontSize="8">Máquinas</text>
-                                </svg>
-                            </Box>
-
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                                {Object.entries(STATUS_LABELS).map(([status, label]) => (
-                                    <Box key={status} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                            <Box sx={{ width: 8, height: 8, bgcolor: STATUS_COLORS[status], borderRadius: 1 }} />
-                                            <Typography variant="caption" sx={{ color: '#9ca3af', fontWeight: 600 }}>{label}</Typography>
-                                        </Box>
-                                        <Typography variant="caption" sx={{ color: 'white', fontWeight: 700 }}>
-                                            {statusCounts[status]} <span style={{ color: '#6b7280', marginLeft: '4px' }}>({((statusCounts[status] / (metrics?.total || 1)) * 100).toFixed(1)}%)</span>
-                                        </Typography>
-                                    </Box>
-                                ))}
-                            </Box>
-                        </CardContent>
-                    </Card>
-
-                    {/* Active Alerts */}
-                    <Card sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)', mb: 3 }}>
-                        <CardContent sx={{ p: 3 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Alertas Activas</Typography>
-                                <Box sx={{ bgcolor: '#ef4444', color: 'white', px: 0.8, py: 0.2, borderRadius: 1, fontSize: '10px', fontWeight: 800 }}>3</Box>
-                            </Box>
-
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                <Box sx={{ display: 'flex', gap: 1.5 }}>
-                                    <Box sx={{ color: '#ef4444', pt: 0.5, display: 'flex' }}><ErrorIcon sx={{ fontSize: 16 }} /></Box>
-                                    <Box sx={{ flex: 1 }}>
-                                        <Typography variant="caption" sx={{ color: 'white', fontWeight: 600, display: 'block' }}>5 máquinas paradas en Línea 2</Typography>
-                                        <Typography variant="caption" sx={{ color: '#6b7280' }}>hace 12 min</Typography>
-                                    </Box>
-                                </Box>
-                                <Box sx={{ display: 'flex', gap: 1.5 }}>
-                                    <Box sx={{ color: '#f97316', pt: 0.5, display: 'flex' }}><ClockIcon sx={{ fontSize: 16 }} /></Box>
-                                    <Box sx={{ flex: 1 }}>
-                                        <Typography variant="caption" sx={{ color: 'white', fontWeight: 600, display: 'block' }}>Velocidad reducida en 3 máquinas</Typography>
-                                        <Typography variant="caption" sx={{ color: '#6b7280' }}>hace 45 min</Typography>
-                                    </Box>
-                                </Box>
-                            </Box>
-                        </CardContent>
-                    </Card>
-
-                    {/* Recent Activity */}
-                    <Card sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <CardContent sx={{ p: 3 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 3 }}>Actividad Reciente</Typography>
-                            
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                {recentLogs.slice(0, 5).map((log: any, idx: number) => (
-                                    <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                        <Box sx={{ display: 'flex', gap: 1.5 }}>
-                                            <Box sx={{ width: 8, height: 8, bgcolor: STATUS_COLORS[log.toStatus], borderRadius: '50%', mt: 0.8 }} />
-                                            <Box>
-                                                <Typography variant="caption" sx={{ color: 'white', fontWeight: 600, display: 'block' }}>
-                                                    Máquina {log.machine?.number || log.machineId.slice(0,4)}
-                                                </Typography>
-                                                <Typography variant="caption" sx={{ color: '#9ca3af' }}>{STATUS_LABELS[log.toStatus]}</Typography>
-                                            </Box>
-                                        </Box>
-                                        <Typography variant="caption" sx={{ color: '#6b7280' }}>
-                                            {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </Typography>
-                                    </Box>
-                                ))}
-                            </Box>
-                        </CardContent>
-                    </Card>
-                </Grid>
             </Grid>
-
-            {/* Bottom KPI Bar */}
-            <Box sx={{ 
-                mt: 4, pt: 3, borderTop: '1px solid rgba(255,255,255,0.05)',
-                display: 'flex', justifyContent: 'space-between', gap: 4, flexWrap: 'wrap'
-            }}>
-                <Box>
-                    <Typography variant="caption" sx={{ color: '#6b7280', fontWeight: 600, display: 'block', mb: 0.5 }}>Disponibilidad</Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 800 }}>92.1%</Typography>
-                    <Box sx={{ width: '120px', height: '4px', bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 1, mt: 1 }}>
-                        <Box sx={{ width: '92%', height: '100%', bgcolor: '#10b981', borderRadius: 1 }} />
-                    </Box>
-                </Box>
-                <Box>
-                    <Typography variant="caption" sx={{ color: '#6b7280', fontWeight: 600, display: 'block', mb: 0.5 }}>Eficiencia</Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 800 }}>87.3%</Typography>
-                    <Box sx={{ width: '120px', height: '4px', bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 1, mt: 1 }}>
-                        <Box sx={{ width: '87%', height: '100%', bgcolor: '#3b82f6', borderRadius: 1 }} />
-                    </Box>
-                </Box>
-                <Box>
-                    <Typography variant="caption" sx={{ color: '#6b7280', fontWeight: 600, display: 'block', mb: 0.5 }}>Producción Actual</Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 800 }}>14,200 <span style={{ fontSize: '12px', color: '#6b7280' }}>pares/hora</span></Typography>
-                </Box>
-                <Box>
-                    <Typography variant="caption" sx={{ color: '#6b7280', fontWeight: 600, display: 'block', mb: 0.5 }}>Producción Plan</Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 800 }}>15,800 <span style={{ fontSize: '12px', color: '#6b7280' }}>pares/hora</span></Typography>
-                </Box>
-                <Box>
-                    <Typography variant="caption" sx={{ color: '#6b7280', fontWeight: 600, display: 'block', mb: 0.5 }}>Cumplimiento</Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 800 }}>89.9%</Typography>
-                    <Box sx={{ width: '120px', height: '4px', bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 1, mt: 1 }}>
-                        <Box sx={{ width: '90%', height: '100%', bgcolor: '#8b5cf6', borderRadius: 1 }} />
-                    </Box>
-                </Box>
-            </Box>
 
             <style>{`
                 @keyframes pulse {

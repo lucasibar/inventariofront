@@ -146,6 +146,12 @@ export default function Layout() {
         setMobileMenuOpen(false);
     }, [location.pathname]);
 
+    useEffect(() => {
+        const handleOpenMenu = () => setMobileMenuOpen(true);
+        document.addEventListener('open-sidebar-menu', handleOpenMenu);
+        return () => document.removeEventListener('open-sidebar-menu', handleOpenMenu);
+    }, []);
+
     const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
 
     const toggleGroup = (id: string) => {
@@ -286,14 +292,14 @@ export default function Layout() {
             )}
 
             {/* User Overlay for Mobile Menu */}
-            {isMobile && <div className="nav-overlay" onClick={() => setMobileMenuOpen(false)} />}
+            {(isMobile || location.pathname === '/mantenimiento/monitoreo') && <div className="nav-overlay" onClick={() => setMobileMenuOpen(false)} />}
 
             {/* Sidebar / Drawer */}
             <aside style={{
-                position: isMobile ? 'fixed' : 'relative',
-                left: isMobile && !mobileMenuOpen ? '-280px' : '0',
+                position: isMobile || location.pathname === '/mantenimiento/monitoreo' ? 'fixed' : 'relative',
+                left: (isMobile || location.pathname === '/mantenimiento/monitoreo') && !mobileMenuOpen ? '-280px' : '0',
                 top: 0, bottom: 0,
-                width: isMobile ? '280px' : (collapsed ? '60px' : '220px'),
+                width: isMobile || location.pathname === '/mantenimiento/monitoreo' ? '280px' : (collapsed ? '60px' : '220px'),
                 background: 'linear-gradient(180deg, #1a1d2e 0%, #141622 100%)',
                 borderRight: '1px solid #2a2d3e',
                 display: 'flex', flexDirection: 'column',

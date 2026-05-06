@@ -92,16 +92,35 @@ export function Input({ label, value, onChange, type = 'text', placeholder, styl
     label?: string; value: string; onChange: (v: string) => void;
     type?: string; placeholder?: string; style?: React.CSSProperties;
 }) {
+    const [showPassword, setShowPassword] = useState(false);
+    const isPassword = type === 'password';
+    const currentType = isPassword ? (showPassword ? 'text' : 'password') : type;
+
     return (
         <div style={style}>
             {label && <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>{label}</label>}
-            <input
-                type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-                style={{
-                    width: '100%', background: '#0f1117', border: '1px solid #374151', borderRadius: '8px',
-                    padding: '8px 10px', color: '#f3f4f6', fontSize: '13px', outline: 'none', boxSizing: 'border-box',
-                }}
-            />
+            <div style={{ position: 'relative' }}>
+                <input
+                    type={currentType} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+                    style={{
+                        width: '100%', background: '#0f1117', border: '1px solid #374151', borderRadius: '8px',
+                        padding: '8px 10px', paddingRight: isPassword ? '35px' : '10px', color: '#f3f4f6', fontSize: '13px', outline: 'none', boxSizing: 'border-box',
+                    }}
+                />
+                {isPassword && (
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{
+                            position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
+                            background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer',
+                            padding: '4px', display: 'flex', alignItems: 'center', fontSize: '14px'
+                        }}
+                    >
+                        {showPassword ? '👁️' : '🙈'}
+                    </button>
+                )}
+            </div>
         </div>
     );
 }
