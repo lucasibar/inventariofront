@@ -1,25 +1,21 @@
 import { useState, useMemo, useEffect, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Grid, Card, CardContent, Tooltip, useMediaQuery, useTheme, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import { Box, Typography, Grid, Card, CardContent, Tooltip, useTheme } from '@mui/material';
 import { 
     useGetPlantsQuery, 
     useGetMachinesQuery, 
     useGetMetricsQuery,
-    useGetLogsQuery,
     useGetMachineTypesQuery
 } from '../api/maintenance.api';
 import { Spinner, ActionMenu } from '../../../shared/ui';
 import { 
     CheckCircle as CheckCircleIcon, 
-    Error as ErrorIcon, 
     PauseCircle as PauseCircleIcon, 
     ElectricBolt as ZapIcon, 
     Help as HelpIcon, 
     AccessTime as ClockIcon,
     GridView as LayoutGridIcon,
     List as ListIcon,
-    Add as PlusIcon,
-    Remove as MinusIcon,
     MoreVert as MoreVertIcon
 } from '@mui/icons-material';
 
@@ -130,7 +126,6 @@ export default function MonitoreoVivoPage() {
     const { data: plants = [] } = useGetPlantsQuery();
     const { data: machineTypes = [] } = useGetMachineTypesQuery();
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     
     const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
 
@@ -155,11 +150,6 @@ export default function MonitoreoVivoPage() {
     const { data: metrics } = useGetMetricsQuery(
         { plantId: selectedPlantId || '', typeId: tejeduriaTypeId || '' },
         { skip: !selectedPlantId || !tejeduriaTypeId, pollingInterval: 30000 }
-    );
-
-    const { data: recentLogs = [] } = useGetLogsQuery(
-        { plantId: selectedPlantId || '', limit: 5 },
-        { skip: !selectedPlantId, pollingInterval: 30000 }
     );
 
     // Exact layout from the image
