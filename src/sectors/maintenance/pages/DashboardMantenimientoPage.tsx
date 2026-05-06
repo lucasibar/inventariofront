@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Grid, Card as MuiCard, CardContent, useMediaQuery, useTheme, Button, List, ListItem, Collapse } from '@mui/material';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { Spinner, Select } from '../../../shared/ui';
