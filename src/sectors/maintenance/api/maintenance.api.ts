@@ -16,7 +16,7 @@ export interface Machine {
     number: number;
     codigoInterno: string;
     nombre: string;
-    status: 'ACTIVA' | 'REVISAR' | 'VELOCIDAD_REDUCIDA' | 'PARADA' | 'ELECTRONIC';
+    status: 'ACTIVA' | 'REVISAR' | 'VELOCIDAD_REDUCIDA' | 'PARADA' | 'ELECTRONIC' | 'REPUESTOS';
     lastObservation?: string;
     lastChangeBy?: string;
     lastFailureType?: string;

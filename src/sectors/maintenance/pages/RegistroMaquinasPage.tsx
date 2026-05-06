@@ -30,6 +30,7 @@ const targetStatuses = [
     { value: 'ELECTRONIC', label: 'Electronic (Azul)' },
     { value: 'FALTA_COSTURA', label: 'Falta Costura (Violeta)' },
     { value: 'FALTA_PROGRAMA', label: 'Falta Programa (Cian)' },
+    { value: 'REPUESTOS', label: 'Repuestos (Marrón)' },
 ];
 
 export default function RegistroMaquinasPage() {

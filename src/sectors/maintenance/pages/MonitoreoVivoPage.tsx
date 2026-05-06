@@ -16,18 +16,21 @@ import {
     AccessTime as ClockIcon,
     GridView as LayoutGridIcon,
     List as ListIcon,
-    MoreVert as MoreVertIcon
+    MoreVert as MoreVertIcon,
+    PieChart as PieChartIcon
 } from '@mui/icons-material';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 const STATUS_COLORS: Record<string, string> = {
-    ACTIVA: '#10b981',
-    REVISAR: '#eab308',
-    VELOCIDAD_REDUCIDA: '#f97316',
-    PARADA: '#ef4444',
-    ELECTRONIC: '#3b82f6',
-    FALTA_COSTURA: '#8b5cf6',
-    FALTA_PROGRAMA: '#06b6d4',
-    SIN_DATOS: '#9ca3af'
+    ACTIVA: '#10b981', // Emerald
+    REVISAR: '#f59e0b', // Amber
+    VELOCIDAD_REDUCIDA: '#f97316', // Orange
+    PARADA: '#ef4444', // Red
+    ELECTRONIC: '#06b6d4', // Cyan
+    FALTA_COSTURA: '#8b5cf6', // Violet
+    FALTA_PROGRAMA: '#0d9488', // Teal
+    REPUESTOS: '#ec4899', // Pink
+    SIN_DATOS: '#475569' // Slate
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -38,37 +41,38 @@ const STATUS_LABELS: Record<string, string> = {
     ELECTRONIC: 'Electrónica',
     FALTA_COSTURA: 'Falta Costura',
     FALTA_PROGRAMA: 'Falta Programa',
+    REPUESTOS: 'Repuestos',
     SIN_DATOS: 'Sin Datos'
 };
 
 const MachineNode = ({ number, status, onClick }: { number: number | null, status: string, onClick?: () => void }) => {
-    if (number === null) return <Box sx={{ width: { xs: 15, sm: 22, md: 28, lg: 38, xl: 54 }, height: { xs: 15, sm: 22, md: 28, lg: 38, xl: 54 } }} />;
+    if (number === null) return <Box sx={{ width: { xs: 20, sm: 28, md: 36, lg: 48, xl: 64 }, height: { xs: 20, sm: 28, md: 36, lg: 48, xl: 64 } }} />;
 
     const statusColor = STATUS_COLORS[status] || STATUS_COLORS.SIN_DATOS;
 
     return (
         <Tooltip title={`Máquina ${number} - ${STATUS_LABELS[status] || status}`} arrow>
             <Box onClick={onClick} sx={{ 
-                width: { xs: 15, sm: 22, md: 28, lg: 38, xl: 54 },
-                height: { xs: 15, sm: 22, md: 28, lg: 38, xl: 54 },
+                width: { xs: 20, sm: 28, md: 36, lg: 48, xl: 64 },
+                height: { xs: 20, sm: 28, md: 36, lg: 48, xl: 64 },
                 bgcolor: 'transparent',
                 border: `2px solid ${statusColor}`,
-                borderRadius: { xs: 0.5, md: 1 },
+                borderRadius: { xs: 0.8, md: 2 },
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: statusColor,
-                fontSize: { xs: '7px', sm: '10px', md: '12px', lg: '14px', xl: '18px' },
+                fontSize: { xs: '9px', sm: '12px', md: '14px', lg: '18px', xl: '22px' },
                 fontWeight: 900,
                 cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                 opacity: 1,
                 transform: 'scale(1)',
                 boxShadow: `0 0 10px ${statusColor}40`,
                 zIndex: 1,
                 textShadow: `0 0 4px ${statusColor}30`,
                 '&:hover': {
-                    transform: 'scale(1.25)',
+                    transform: 'scale(1.2) translateY(-4px)',
                     bgcolor: `${statusColor}20`,
                     zIndex: 20,
                     boxShadow: `0 0 20px ${statusColor}80`,
@@ -83,35 +87,58 @@ const MachineNode = ({ number, status, onClick }: { number: number | null, statu
 
 
 
-const StatCard = ({ title, value, percentage, icon: Icon, color }: any) => (
-    <Card sx={{ bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
-        <CardContent sx={{ p: '20px !important' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: `${color}15`, color: color, display: 'flex' }}>
-                    <Icon sx={{ fontSize: 20 }} />
-                </Box>
-                <Typography variant="subtitle2" sx={{ color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.5px' }}>
-                    {title}
+const HalfDonut = ({ title, data, total }: any) => (
+    <Box sx={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%' }}>
+        <Box sx={{ width: '100%', height: 280, position: 'relative' }}>
+            <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                    <Pie
+                        data={data}
+                        cx="50%"
+                        cy="100%"
+                        startAngle={180}
+                        endAngle={0}
+                        innerRadius="88%"
+                        outerRadius="100%"
+                        paddingAngle={2}
+                        dataKey="value"
+                        stroke="none"
+                    >
+                        {data.map((entry: any, index: number) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                    </Pie>
+                </PieChart>
+            </ResponsiveContainer>
+            {/* Horizontal Floor Line */}
+            <Box sx={{ 
+                position: 'absolute', bottom: 0, left: '-10%', right: '-10%', 
+                height: '4px', bgcolor: 'rgba(255,255,255,0.15)', borderRadius: '10px' 
+            }} />
+            <Box sx={{ 
+                position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', 
+                textAlign: 'center', width: '100%'
+            }}>
+                <Typography variant="h1" sx={{ color: '#fff', fontWeight: 1000, fontSize: '160px', lineHeight: 0.8, letterSpacing: '-10px' }}>
+                    {total}
                 </Typography>
             </Box>
-            <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1.5 }}>
-                <Typography variant="h4" sx={{ color: '#fff', fontWeight: 700 }}>{value}</Typography>
-                <Typography variant="body2" sx={{ color: '#9ca3af', mb: 0.5 }}>{percentage}%</Typography>
-            </Box>
-            {/* Sparkline simulation */}
-            <Box sx={{ mt: 2, height: '30px', width: '100%', position: 'relative', overflow: 'hidden' }}>
-                <svg width="100%" height="30" viewBox="0 0 100 30" preserveAspectRatio="none">
-                    <path 
-                        d="M0 25 Q 10 15, 20 20 T 40 10 T 60 22 T 80 15 T 100 18" 
-                        fill="none" 
-                        stroke={color} 
-                        strokeWidth="2" 
-                        strokeLinecap="round" 
-                    />
-                </svg>
-            </Box>
-        </CardContent>
-    </Card>
+        </Box>
+        <Typography variant="subtitle2" sx={{ color: '#94a3b8', fontWeight: 900, textTransform: 'uppercase', fontSize: '24px', letterSpacing: '6px', mt: 1.5 }}>
+            {title}
+        </Typography>
+    </Box>
+);
+
+const MiniStat = ({ label, value, color }: any) => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+        <Typography sx={{ color: color, fontWeight: 1000, fontSize: '72px', lineHeight: 1, letterSpacing: '-4px' }}>
+            {value}
+        </Typography>
+        <Typography sx={{ color: '#64748b', fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', textAlign: 'center', letterSpacing: '2px' }}>
+            {label}
+        </Typography>
+    </Box>
 );
 
 export default function MonitoreoVivoPage() {
@@ -246,7 +273,7 @@ export default function MonitoreoVivoPage() {
     );
 
     const statusCounts = useMemo(() => {
-        const counts: any = { ACTIVA: 0, REVISAR: 0, VELOCIDAD_REDUCIDA: 0, PARADA: 0, ELECTRONIC: 0, FALTA_COSTURA: 0, FALTA_PROGRAMA: 0, SIN_DATOS: 0 };
+        const counts: any = { ACTIVA: 0, REVISAR: 0, VELOCIDAD_REDUCIDA: 0, PARADA: 0, ELECTRONIC: 0, FALTA_COSTURA: 0, FALTA_PROGRAMA: 0, REPUESTOS: 0, SIN_DATOS: 0 };
         if (metrics?.byStatus) {
             metrics.byStatus.forEach((s: any) => {
                 counts[s.status] = parseInt(s.count);
@@ -255,108 +282,114 @@ export default function MonitoreoVivoPage() {
         return counts;
     }, [metrics]);
 
+    const activeChartData = useMemo(() => [
+        { name: 'Activa', value: statusCounts.ACTIVA, color: STATUS_COLORS.ACTIVA },
+        { name: 'A Revisar', value: statusCounts.REVISAR, color: STATUS_COLORS.REVISAR },
+        { name: 'Vel. Reducida', value: statusCounts.VELOCIDAD_REDUCIDA, color: STATUS_COLORS.VELOCIDAD_REDUCIDA }
+    ], [statusCounts]);
+
+    const stoppedChartData = useMemo(() => [
+        { name: 'Parada', value: statusCounts.PARADA, color: STATUS_COLORS.PARADA },
+        { name: 'Electrónica', value: statusCounts.ELECTRONIC, color: STATUS_COLORS.ELECTRONIC },
+        { name: 'Costura', value: statusCounts.FALTA_COSTURA, color: STATUS_COLORS.FALTA_COSTURA },
+        { name: 'Programa', value: statusCounts.FALTA_PROGRAMA, color: STATUS_COLORS.FALTA_PROGRAMA },
+        { name: 'Repuestos', value: statusCounts.REPUESTOS, color: STATUS_COLORS.REPUESTOS },
+        { name: 'Sin Datos', value: statusCounts.SIN_DATOS, color: STATUS_COLORS.SIN_DATOS }
+    ], [statusCounts]);
+
+    const aggregatedActivas = statusCounts.ACTIVA + statusCounts.REVISAR + statusCounts.VELOCIDAD_REDUCIDA;
+    const aggregatedParadas = statusCounts.PARADA + statusCounts.ELECTRONIC + statusCounts.FALTA_COSTURA + statusCounts.FALTA_PROGRAMA + statusCounts.REPUESTOS + statusCounts.SIN_DATOS;
+    const total = metrics?.total || 1;
+
     if (!selectedPlantId || !tejeduriaTypeId || loadingMachines) return <Spinner />;
 
     return (
-        <Box sx={{ p: 3, bgcolor: '#0f1117', minHeight: '100vh', color: '#fff' }}>
-            <Grid container spacing={3}>
-                {/* Main Content: Map */}
-                <Grid size={{ xs: 12 }}>
-                    <Card sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)', mb: 3 }}>
-                        <CardContent sx={{ p: 3 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                    <Box 
-                                        onClick={() => document.dispatchEvent(new Event('open-sidebar-menu'))}
-                                        sx={{ 
-                                            p: 1, borderRadius: 1, cursor: 'pointer', display: 'flex', 
-                                            bgcolor: 'rgba(255,255,255,0.05)', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } 
-                                        }}
-                                    >
-                                        <MoreVertIcon sx={{ color: '#94a3b8' }} />
-                                    </Box>
-                                    <Box>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
-                                            <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.5px' }}>
-                                                Monitoreo en Tiempo Real
-                                            </Typography>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1, py: 0.5, bgcolor: 'rgba(16, 185, 129, 0.1)', borderRadius: 1 }}>
-                                                <Box sx={{ width: 6, height: 6, bgcolor: '#10b981', borderRadius: '50%', animation: 'pulse 2s infinite' }} />
-                                                <Typography sx={{ color: '#10b981', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>En Vivo</Typography>
-                                            </Box>
-                                        </Box>
-                                        <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 500 }}>
-                                            {currentTime.toLocaleTimeString()} — {machines.length} máquinas mostradas — Tejeduría
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                                
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                    <ActionMenu 
-                                        options={[
-                                            { label: 'Refrescar Datos', onClick: () => window.location.reload(), icon: '🔄' },
-                                            { label: 'Configurar Layout', onClick: () => {}, icon: '⚙️' },
-                                            { label: 'Exportar Reporte', onClick: () => {}, icon: '📊' }
-                                        ]} 
-                                    />
-                                </Box>
-                            </Box>
+        <Box sx={{ 
+            p: 2, bgcolor: '#0f1117', height: '100vh', width: '100vw', 
+            color: '#fff', display: 'flex', flexDirection: 'column', gap: 0, 
+            overflow: 'hidden' 
+        }}>
+            {/* 1. Header: Branding and Info (Fixed Height) */}
+            <Box sx={{ 
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+                px: 2, py: 1.5, borderBottom: '1px solid rgba(255,255,255,0.05)' 
+            }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <Box sx={{ 
+                        width: 50, height: 50, borderRadius: '50%', bgcolor: '#000080', 
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        border: '2px solid #fff', boxShadow: '0 0 20px rgba(0,0,0,0.5)'
+                    }}>
+                        <Typography sx={{ color: '#ff0000', fontSize: '30px', fontWeight: 950, fontStyle: 'italic', fontFamily: 'serif' }}>W</Typography>
+                    </Box>
+                    <Typography variant="h1" sx={{ fontWeight: 1000, color: '#fff', letterSpacing: '-3px', textTransform: 'uppercase', fontStyle: 'italic', lineHeight: 1, fontSize: '48px' }}>
+                        DERWILL
+                    </Typography>
+                </Box>
+                
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Box sx={{ width: 12, height: 12, bgcolor: '#10b981', borderRadius: '50%', animation: 'pulse 2s infinite' }} />
+                    <Typography sx={{ color: '#94a3b8', fontWeight: 900, letterSpacing: '4px', fontSize: '18px', textTransform: 'uppercase' }}>
+                        VIVO — {currentTime.toLocaleTimeString()}
+                    </Typography>
+                </Box>
+            </Box>
 
-                                    <Box sx={{ 
-                                        width: '100%', 
-                                        margin: '0 auto', 
-                                        display: 'grid', 
-                                        gridTemplateColumns: 'max-content max-content',
-                                        columnGap: { xs: 2, sm: 3, md: 5, xl: 8 },
-                                        justifyContent: 'center'
-                                    }}>
-                                        {layout.map((section, idx) => renderSection(section, idx))}
-                                    </Box>
-                        </CardContent>
-                    </Card>
+            {/* 2. Middle Section: Map (Flexible) */}
+            <Box sx={{ 
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                overflow: 'hidden', p: 1
+            }}>
+                <Box sx={{ 
+                    transform: 'scale(0.85)', // Slight scale to ensure zero scrolls on most screens
+                    transformOrigin: 'center center',
+                    display: 'grid', 
+                    gridTemplateColumns: 'max-content max-content',
+                    columnGap: { xs: 4, sm: 6, md: 8, xl: 12 },
+                }}>
+                    {layout.map((section, idx) => renderSection(section, idx))}
+                </Box>
+            </Box>
 
-                    {/* Status Cards spanning full width */}
-                    <Grid container spacing={2}>
-                        <Grid size={{ xs: 12, sm: 6, md: 1.71 }}>
-                            <StatCard title="Activas" value={statusCounts.ACTIVA} percentage={((statusCounts.ACTIVA / metrics?.total || 1) * 100).toFixed(1)} icon={CheckCircleIcon} color="#10b981" />
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6, md: 1.71 }}>
-                            <StatCard title="A Revisar" value={statusCounts.REVISAR} percentage={((statusCounts.REVISAR / metrics?.total || 1) * 100).toFixed(1)} icon={HelpIcon} color="#eab308" />
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6, md: 1.71 }}>
-                            <StatCard title="Vel. Reducida" value={statusCounts.VELOCIDAD_REDUCIDA} percentage={((statusCounts.VELOCIDAD_REDUCIDA / metrics?.total || 1) * 100).toFixed(1)} icon={ClockIcon} color="#f97316" />
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6, md: 1.71 }}>
-                            <StatCard title="Paradas" value={statusCounts.PARADA} percentage={((statusCounts.PARADA / metrics?.total || 1) * 100).toFixed(1)} icon={PauseCircleIcon} color="#ef4444" />
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6, md: 1.71 }}>
-                            <StatCard title="Electrónica" value={statusCounts.ELECTRONIC} percentage={((statusCounts.ELECTRONIC / metrics?.total || 1) * 100).toFixed(1)} icon={ZapIcon} color="#3b82f6" />
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6, md: 1.71 }}>
-                            <StatCard title="Costura" value={statusCounts.FALTA_COSTURA} percentage={((statusCounts.FALTA_COSTURA / metrics?.total || 1) * 100).toFixed(1)} icon={LayoutGridIcon} color="#8b5cf6" />
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6, md: 1.71 }}>
-                            <StatCard title="Programa" value={statusCounts.FALTA_PROGRAMA} percentage={((statusCounts.FALTA_PROGRAMA / metrics?.total || 1) * 100).toFixed(1)} icon={ListIcon} color="#06b6d4" />
-                        </Grid>
-                    </Grid>
-                </Grid>
-            </Grid>
+            {/* 3. Footer: Metrics (Fixed Height) */}
+            <Box sx={{ 
+                height: 380, display: 'flex', gap: 4, alignItems: 'center', 
+                px: 4, pt: 1, pb: 2, borderTop: '1px solid rgba(255,255,255,0.05)',
+                bgcolor: 'rgba(255,255,255,0.01)'
+            }}>
+                {/* 1/3 - Active Charts */}
+                <Box sx={{ flex: 1 }}>
+                    <HalfDonut title="Máquinas Activas" data={activeChartData} total={aggregatedActivas} />
+                </Box>
+
+                {/* 1/3 - Stopped Charts */}
+                <Box sx={{ flex: 1 }}>
+                    <HalfDonut title="Máquinas Paradas" data={stoppedChartData} total={aggregatedParadas} />
+                </Box>
+
+                {/* 1/3 - Detailed Metrics Grid */}
+                <Box sx={{ 
+                    flex: 1,
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(3, 1fr)', 
+                    gap: 3, 
+                    px: 6, 
+                    borderLeft: '2px solid rgba(255,255,255,0.1)'
+                }}>
+                    <MiniStat label="Parada" value={statusCounts.PARADA} color={STATUS_COLORS.PARADA} />
+                    <MiniStat label="Electrón." value={statusCounts.ELECTRONIC} color={STATUS_COLORS.ELECTRONIC} />
+                    <MiniStat label="Costura" value={statusCounts.FALTA_COSTURA} color={STATUS_COLORS.FALTA_COSTURA} />
+                    <MiniStat label="Programa" value={statusCounts.FALTA_PROGRAMA} color={STATUS_COLORS.FALTA_PROGRAMA} />
+                    <MiniStat label="Repuesto" value={statusCounts.REPUESTOS} color={STATUS_COLORS.REPUESTOS} />
+                    <MiniStat label="Total Paradas" value={aggregatedParadas} color="#fff" />
+                </Box>
+            </Box>
 
             <style>{`
                 @keyframes pulse {
                     0% { opacity: 1; transform: scale(1); }
                     50% { opacity: 0.4; transform: scale(1.2); }
                     100% { opacity: 1; transform: scale(1); }
-                }
-                .custom-scrollbar::-webkit-scrollbar {
-                    height: 6px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                    background: rgba(255,255,255,0.02);
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(255,255,255,0.1);
-                    border-radius: 10px;
                 }
             `}</style>
         </Box>

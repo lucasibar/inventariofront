@@ -457,7 +457,7 @@ export default function Layout() {
             }}>
                 <Outlet />
             </main>
-            <AiChatBot />
+            {location.pathname !== '/mantenimiento/monitoreo' && <AiChatBot />}
         </div>
     );
 }
