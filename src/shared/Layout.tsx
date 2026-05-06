@@ -257,9 +257,9 @@ export default function Layout() {
                                 +
                             </button>
                         )}
-                        {location.pathname === '/produccion/dashboard' && (
+                        {(location.pathname === '/produccion/dashboard' || location.pathname === '/mantenimiento/dashboard') && (
                             <button
-                                onClick={() => document.dispatchEvent(new Event('open-production-filters'))}
+                                onClick={() => document.dispatchEvent(new Event(location.pathname === '/produccion/dashboard' ? 'open-production-filters' : 'open-maintenance-filters'))}
                                 style={{
                                     background: 'transparent',
                                     border: 'none',

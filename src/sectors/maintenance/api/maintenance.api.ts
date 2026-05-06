@@ -29,6 +29,7 @@ export interface Machine {
     };
     createdAt: string;
     updatedAt: string;
+    lastStatusChange?: string;
 }
 
 
@@ -91,7 +92,11 @@ export const maintenanceApi = api.injectEndpoints({
             providesTags: ['Maintenance'],
         }),
         getMetrics: builder.query({
-            query: ({ plantId }: any) => `maintenance/metrics?plantId=${plantId}`,
+            query: ({ plantId, typeId }: any) => {
+                let url = `maintenance/metrics?plantId=${plantId}`;
+                if (typeId && typeId !== 'ALL') url += `&typeId=${typeId}`;
+                return url;
+            },
             providesTags: ['Maintenance'],
         }),
         updateMachineStatus: builder.mutation({
@@ -142,11 +147,12 @@ export const maintenanceApi = api.injectEndpoints({
         }),
         
         getPlantKPIs: builder.query({
-            query: ({ plantId, startDate, endDate }: any) => {
+            query: ({ plantId, startDate, endDate, typeId }: any) => {
                 let url = `maintenance/plants/${plantId}/kpis`;
                 const params = new URLSearchParams();
                 if (startDate) params.append('startDate', startDate);
                 if (endDate) params.append('endDate', endDate);
+                if (typeId && typeId !== 'ALL') params.append('typeId', typeId);
                 const queryStr = params.toString();
                 return queryStr ? `${url}?${queryStr}` : url;
             },
