@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Grid, Card, CardContent, Tooltip, useTheme } from '@mui/material';
+import { Box, Typography, Grid, Card, CardContent, Tooltip } from '@mui/material';
 import { 
     useGetPlantsQuery, 
     useGetMachinesQuery, 
@@ -125,7 +125,6 @@ export default function MonitoreoVivoPage() {
 
     const { data: plants = [] } = useGetPlantsQuery();
     const { data: machineTypes = [] } = useGetMachineTypesQuery();
-    const theme = useTheme();
     
     const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
 
