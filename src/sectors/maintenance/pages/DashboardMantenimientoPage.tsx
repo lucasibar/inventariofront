@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Grid, Card as MuiCard, CardContent, useMediaQuery, useTheme, Dialog, DialogTitle, DialogContent, DialogActions, Button, List, ListItem, Collapse, IconButton } from '@mui/material';
+import { Box, Typography, Grid, Card as MuiCard, CardContent, useMediaQuery, useTheme, Button, List, ListItem, Collapse } from '@mui/material';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { Spinner, Select } from '../../../shared/ui';
 import { 
@@ -190,7 +190,6 @@ const MetricCard = ({ title, value, color = '#6366f1', horizontal = false, onCli
 export default function DashboardMantenimientoPage() {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const navigate = useNavigate();
     
     const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
     const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);

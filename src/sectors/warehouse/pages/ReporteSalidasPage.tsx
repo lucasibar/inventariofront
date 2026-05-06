@@ -3,7 +3,7 @@ import { useGetItemsQuery } from '../../config/items/api/items.api';
 import { useGetConsumptionAnalyticsQuery } from '../stock/api/stock.api';
 import { PageHeader, Card, SearchSelect, Input, Spinner, Badge } from '../../../shared/ui';
 import { 
-    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area 
+    XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area 
 } from 'recharts';
 
 export default function ReporteSalidasPage() {
