@@ -74,6 +74,7 @@ export default function RegistroMaquinasPage() {
             failureType: 'Cosedora Cilindro',
             observation: '',
             generatedBy: (user as any)?.name || (user as any)?.username || '',
+            timestamp: new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16),
         }
     });
 
@@ -114,7 +115,8 @@ export default function RegistroMaquinasPage() {
                 status: data.targetStatus,
                 failureType: data.failureType,
                 observation: data.observation,
-                generatedBy: data.generatedBy
+                generatedBy: data.generatedBy,
+                timestamp: data.timestamp
             }).unwrap();
             
             alert('Estado actualizado correctamente');
@@ -125,12 +127,16 @@ export default function RegistroMaquinasPage() {
                 failureType: 'Cosedora Cilindro',
                 observation: '',
                 generatedBy: (user as any)?.name || (user as any)?.username || '',
+                timestamp: new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16),
             });
             setSelectedMachineId(null);
+
+            // Re-set default plant and type as requested
+            const derWill = plants.find((p: any) => p.name.toLowerCase().includes('der will') || p.name.toLowerCase().includes('derwill'));
+            if (derWill) setSelectedPlantId(derWill.id);
             
-            if (location.state?.preselectedMachine) {
-                navigate('/mantenimiento/monitoreo');
-            }
+            const tej = machineTypes.find((t: any) => t.name.toLowerCase().includes('tejedur'));
+            if (tej) setSelectedTypeId(tej.id);
             
         } catch (error) {
             console.error('Error updating status:', error);
@@ -296,6 +302,27 @@ export default function RegistroMaquinasPage() {
                                         rows={3}
                                         label="Observaciones (Opcional)"
                                         variant="outlined"
+                                        sx={{
+                                            '& .MuiOutlinedInput-root': { color: 'white' },
+                                            '& .MuiInputLabel-root': { color: '#9ca3af' },
+                                            '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' },
+                                        }}
+                                    />
+                                )}
+                            />
+
+                            <Controller
+                                name="timestamp"
+                                control={control}
+                                render={({ field }) => (
+                                    <TextField
+                                        {...field}
+                                        fullWidth
+                                        type="datetime-local"
+                                        label="Fecha y Hora del Cambio"
+                                        variant="outlined"
+                                        required
+                                        InputLabelProps={{ shrink: true }}
                                         sx={{
                                             '& .MuiOutlinedInput-root': { color: 'white' },
                                             '& .MuiInputLabel-root': { color: '#9ca3af' },

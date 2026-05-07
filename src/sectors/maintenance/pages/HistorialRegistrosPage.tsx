@@ -43,6 +43,9 @@ export default function HistorialRegistrosPage() {
     const navigate = useNavigate();
     const [startDate, setStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 7)).toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+    const [startTime, setStartTime] = useState('06:00');
+    const [endTime, setEndTime] = useState('18:00');
+    const [useTimeFilter, setUseTimeFilter] = useState(false);
     const [machineNumber, setMachineNumber] = useState('');
     const [plantId, setPlantId] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
@@ -153,7 +156,7 @@ export default function HistorialRegistrosPage() {
                             }}
                         />
                     </Grid>
-                    <Grid size={{ xs: 12, md: 2.4 }}>
+                    <Grid size={{ xs: 12, md: 2 }}>
                         <TextField
                             label="Fecha Fin"
                             type="date"
@@ -170,6 +173,55 @@ export default function HistorialRegistrosPage() {
                             }}
                         />
                     </Grid>
+                    <Grid size={{ xs: 12, md: 1 }}>
+                         <Button 
+                            variant={useTimeFilter ? "contained" : "outlined"}
+                            fullWidth
+                            size="small"
+                            onClick={() => setUseTimeFilter(!useTimeFilter)}
+                            sx={{ height: '40px', fontSize: '0.7rem' }}
+                        >
+                            {useTimeFilter ? 'Con Hora' : 'Sin Hora'}
+                        </Button>
+                    </Grid>
+                    {useTimeFilter && (
+                        <>
+                            <Grid size={{ xs: 6, md: 1.5 }}>
+                                <TextField
+                                    label="Hora Inicio"
+                                    type="time"
+                                    variant="outlined"
+                                    fullWidth
+                                    size="small"
+                                    value={startTime}
+                                    onChange={(e) => setStartTime(e.target.value)}
+                                    InputLabelProps={{ shrink: true }}
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': { color: 'white' },
+                                        '& .MuiInputLabel-root': { color: '#9ca3af' },
+                                        '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' },
+                                    }}
+                                />
+                            </Grid>
+                            <Grid size={{ xs: 6, md: 1.5 }}>
+                                <TextField
+                                    label="Hora Fin"
+                                    type="time"
+                                    variant="outlined"
+                                    fullWidth
+                                    size="small"
+                                    value={endTime}
+                                    onChange={(e) => setEndTime(e.target.value)}
+                                    InputLabelProps={{ shrink: true }}
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': { color: 'white' },
+                                        '& .MuiInputLabel-root': { color: '#9ca3af' },
+                                        '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' },
+                                    }}
+                                />
+                            </Grid>
+                        </>
+                    )}
                 </Grid>
             </Card>
 
@@ -205,18 +257,29 @@ export default function HistorialRegistrosPage() {
                                         </Typography>
                                     </Box>
                                     <Chip 
-                                        label={statusLabels[log.toStatus] || log.toStatus} 
+                                        label={
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                <span>{statusLabels[log.fromStatus] || log.fromStatus}</span>
+                                                <span style={{ opacity: 0.5 }}>→</span>
+                                                <span style={{ fontWeight: 700 }}>{statusLabels[log.toStatus] || log.toStatus}</span>
+                                            </Box>
+                                        }
                                         size="small"
                                         sx={{ 
                                             bgcolor: `${statusColors[log.toStatus] || '#6b7280'}20`, 
                                             color: statusColors[log.toStatus] || '#d1d5db',
                                             border: `1px solid ${statusColors[log.toStatus] || '#6b7280'}50`,
-                                            fontWeight: 600
+                                            height: 'auto',
+                                            '& .MuiChip-label': { py: 0.5 }
                                         }} 
                                     />
                                 </Box>
                                 
                                 <Grid container spacing={2} sx={{ mb: 2 }}>
+                                    <Grid size={{ xs: 6 }}>
+                                        <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>Duración</Typography>
+                                        <Typography variant="body2" sx={{ color: '#10b981', fontWeight: 600 }}>{log.durationFormatted || '-'}</Typography>
+                                    </Grid>
                                     <Grid size={{ xs: 6 }}>
                                         <Typography variant="caption" sx={{ color: '#6b7280', textTransform: 'uppercase' }}>Falla</Typography>
                                         <Typography variant="body2" sx={{ color: '#e5e7eb' }}>{log.failureType || '-'}</Typography>
@@ -261,9 +324,9 @@ export default function HistorialRegistrosPage() {
                         <TableHead>
                             <TableRow>
                                 <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Fecha / Hora</TableCell>
-                                <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Planta</TableCell>
                                 <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Máquina</TableCell>
-                                <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Estado</TableCell>
+                                <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Transición</TableCell>
+                                <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Duración</TableCell>
                                 <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Tipo de Falla</TableCell>
                                 <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Responsable</TableCell>
                                 <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Observaciones</TableCell>
@@ -283,7 +346,6 @@ export default function HistorialRegistrosPage() {
                                         <TableCell sx={{ color: '#e5e7eb' }}>
                                             {new Date(log.timestamp).toLocaleString()}
                                         </TableCell>
-                                        <TableCell sx={{ color: '#d1d5db' }}>{log.machine?.plant?.name || '-'}</TableCell>
                                         <TableCell sx={{ color: '#d1d5db' }}>
                                             <Typography 
                                                 variant="body2" 
@@ -298,23 +360,40 @@ export default function HistorialRegistrosPage() {
                                                 Máquina {log.machine?.number}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
-                                                {log.machine?.codigoInterno}
+                                                {log.machine?.plant?.name} - {log.machine?.codigoInterno}
                                             </Typography>
                                         </TableCell>
                                         <TableCell>
-                                            <Chip 
-                                                label={statusLabels[log.toStatus] || log.toStatus} 
-                                                size="small"
-                                                sx={{ 
-                                                    bgcolor: `${statusColors[log.toStatus] || '#6b7280'}20`, 
-                                                    color: statusColors[log.toStatus] || '#d1d5db',
-                                                    border: `1px solid ${statusColors[log.toStatus] || '#6b7280'}50`
-                                                }} 
-                                            />
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Chip 
+                                                    label={statusLabels[log.fromStatus] || log.fromStatus} 
+                                                    size="small"
+                                                    sx={{ 
+                                                        bgcolor: `${statusColors[log.fromStatus] || '#6b7280'}10`, 
+                                                        color: '#9ca3af',
+                                                        border: `1px solid ${statusColors[log.fromStatus] || '#6b7280'}30`,
+                                                        fontSize: '0.65rem'
+                                                    }} 
+                                                />
+                                                <Typography sx={{ color: '#4b5563', fontSize: '0.8rem' }}>→</Typography>
+                                                <Chip 
+                                                    label={statusLabels[log.toStatus] || log.toStatus} 
+                                                    size="small"
+                                                    sx={{ 
+                                                        bgcolor: `${statusColors[log.toStatus] || '#6b7280'}20`, 
+                                                        color: statusColors[log.toStatus] || '#d1d5db',
+                                                        border: `1px solid ${statusColors[log.toStatus] || '#6b7280'}50`,
+                                                        fontWeight: 600
+                                                    }} 
+                                                />
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell sx={{ color: '#9ca3af', fontWeight: 500 }}>
+                                            {log.durationFormatted || '-'}
                                         </TableCell>
                                         <TableCell sx={{ color: '#d1d5db' }}>{log.failureType || '-'}</TableCell>
                                         <TableCell sx={{ color: '#d1d5db' }}>{log.generatedBy || '-'}</TableCell>
-                                        <TableCell sx={{ color: '#9ca3af', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={log.observation}>
+                                        <TableCell sx={{ color: '#9ca3af', maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={log.observation}>
                                             {log.observation || '-'}
                                         </TableCell>
                                         <TableCell align="center">

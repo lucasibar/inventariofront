@@ -181,6 +181,13 @@ export const maintenanceApi = api.injectEndpoints({
             }),
             invalidatesTags: ['Maintenance'],
         }),
+        getMaintenanceStats: builder.query({
+            query: (params: any) => ({
+                url: 'maintenance/stats',
+                params
+            }),
+            providesTags: ['Maintenance'],
+        }),
     }),
 });
 
@@ -196,4 +203,5 @@ export const {
     useUpdateLogMutation,
     useDeleteLogMutation,
     useUpdateMachineStatusMutation,
+    useGetMaintenanceStatsQuery,
 } = maintenanceApi;

@@ -196,7 +196,7 @@ export default function MonitoreoVivoPage() {
     }, [metrics]);
 
     const totalMachines = metrics?.total || 190;
-    const totalActivas = statusCounts.ACTIVA + statusCounts.REVISAR + statusCounts.VELOCIDAD_REDUCIDA;
+    const totalActivas = statusCounts.ACTIVA + statusCounts.REVISAR + statusCounts.VELOCIDAD_REDUCIDA + statusCounts.FALTA_COSTURA;
 
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapContentRef = useRef<HTMLDivElement>(null);
@@ -255,12 +255,12 @@ export default function MonitoreoVivoPage() {
         { label: 'Activa', value: statusCounts.ACTIVA, color: STATUS_COLORS.ACTIVA },
         { label: 'En Revisión', value: statusCounts.REVISAR, color: STATUS_COLORS.REVISAR },
         { label: 'Vel. Reducida', value: statusCounts.VELOCIDAD_REDUCIDA, color: STATUS_COLORS.VELOCIDAD_REDUCIDA },
+        { label: 'Costura', value: statusCounts.FALTA_COSTURA, color: STATUS_COLORS.FALTA_COSTURA },
     ];
 
     const paradasBreakdown = [
         { label: 'Electrónica', value: statusCounts.ELECTRONIC, color: STATUS_COLORS.ELECTRONIC },
         { label: 'Repuesto', value: statusCounts.REPUESTOS, color: STATUS_COLORS.REPUESTOS },
-        { label: 'Costura', value: statusCounts.FALTA_COSTURA, color: STATUS_COLORS.FALTA_COSTURA },
         { label: 'Programa', value: statusCounts.FALTA_PROGRAMA, color: STATUS_COLORS.FALTA_PROGRAMA },
         { label: 'Otro', value: statusCounts.OTRO, color: STATUS_COLORS.OTRO },
     ];
