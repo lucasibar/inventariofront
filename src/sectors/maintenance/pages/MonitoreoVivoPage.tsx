@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect, Fragment, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Tooltip } from '@mui/material';
-import { 
-    useGetPlantsQuery, 
-    useGetMachinesQuery, 
+import {
+    useGetPlantsQuery,
+    useGetMachinesQuery,
     useGetMetricsQuery,
     useGetMachineTypesQuery
 } from '../api/maintenance.api';
@@ -36,9 +36,9 @@ const STATUS_LABELS: Record<string, string> = {
     SIN_DATOS: 'Sin Datos'
 };
 
-const MachineNode = ({ number, status, onDoubleClick }: { 
-    number: number | null, 
-    status: string, 
+const MachineNode = ({ number, status, onDoubleClick }: {
+    number: number | null,
+    status: string,
     onDoubleClick?: () => void
 }) => {
     if (number === null) return <Box sx={{ width: 42, height: 42 }} />;
@@ -48,9 +48,9 @@ const MachineNode = ({ number, status, onDoubleClick }: {
 
     return (
         <Tooltip title={`Máquina ${number} - ${STATUS_LABELS[status] || status}`} arrow>
-            <Box 
+            <Box
                 onDoubleClick={onDoubleClick}
-                sx={{ 
+                sx={{
                     width: 42,
                     height: 42,
                     border: `2px solid ${statusColor}${isSpecialStatus ? '' : '40'}`,
@@ -161,23 +161,23 @@ export default function MonitoreoVivoPage() {
 
 
     const layout = useMemo(() => [
-  {
-    left: [[190, 189, 188, 187, 186, 185, 184, 183, 182, 181, 180, 179], [170, 169, 168, 167, 160, 159, 158, 151, 150, 149, 148]],
-    right: [[null, 178, 177, 176, 175, 174, 173, 172, 171], [142, 141, 140, 139, 138, 132, 131, 130, 129, 128]]
-  },
-  {
-    left: [[166, 165, 164, 163, 162, 161, 160, 159, 158, 157, 156, 155, 154, 153, 152, 151], [73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]],
-    right: [[137, 136, 135, 134, 133, 132, 131, 130, 129, 128], [103, 104, 105, 106, 107, 108, 109, 110, 111, 112]]
-  },
-  {
-    left: [[78, 79, 80, 81, 82, 88, 89, 90, 91, 92, 98, 99, 100, 101, 102], [23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34]],
-    right: [[null, 108, 109, 110, 111, 112, 118, 119, 120, 122, 121], [53, 54, 55, 56, 57, 58, 59, 60, 61, 62]]
-  },
-  {
-    left: [[28, 29, 30, 31, 32, 38, 39, 40, 41, 42, 48, 49, 50, 51, 52], [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12]],
-    right: [[58, 59, 60, 61, 62, 68, 69, 70, 71, 72], [13, 14, 15, 16, 17, 18, 19, 20, 21, 22]]
-  }
-], []);
+        {
+            left: [[190, 189, 188, 187, 186, 185, 184, 183, 182, 181, 180, 179], [170, 169, 168, 167, 160, 159, 158, 157, 151, 150, 149, 148]],
+            right: [[null, 178, 177, 176, 175, 174, 173, 172, 171], [142, 141, 140, 139, 138, 132, 131, 130, 129, 128]]
+        },
+        {
+            left: [[166, 165, 164, 163, 162, 161, 156, 155, 154, 153, 152, 147, 146, 145, 144, 143], [73, 74, 75, 76, 77, 83, 84, 85, 86, 87, 93, 94, 95, 96, 97]],
+            right: [[137, 136, 135, 134, 133, 127, 126, 125, 124, 123], [103, 104, 105, 106, 107, 113, 114, 115, 116, 117]]
+        },
+        {
+            left: [[78, 79, 80, 81, 82, 88, 89, 90, 91, 92, 98, 99, 100, 101, 102], [23, 24, 25, 26, 27, 33, 34, 35, 36, 37, 43, 44, 45, 46, 47]],
+            right: [[108, 109, 110, 111, 112, 118, 119, 120, 122, 121], [53, 54, 55, 56, 57, 63, 64, 65, 66, 67]]
+        },
+        {
+            left: [[28, 29, 30, 31, 32, 38, 39, 40, 41, 42, 48, 49, 50, 51, 52], [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]],
+            right: [[58, 59, 60, 61, 62, 68, 69, 70, 71, 72], [13, 14, 15, 16, 17, 18, 19, 20, 21, 22]]
+        }
+    ], []);
 
     const machineMap = useMemo(() => {
         const map: Record<number, any> = {};
@@ -203,20 +203,20 @@ export default function MonitoreoVivoPage() {
     useEffect(() => {
         const updateScale = () => {
             if (!mapContainerRef.current || !mapContentRef.current) return;
-            
+
             const containerWidth = mapContainerRef.current.clientWidth - 48;
             const containerHeight = mapContainerRef.current.clientHeight - 48;
-            
+
             const contentWidth = mapContentRef.current.scrollWidth;
             const contentHeight = mapContentRef.current.scrollHeight;
 
             if (contentWidth > 0 && contentHeight > 0) {
                 const scaleW = containerWidth / contentWidth;
                 const scaleH = containerHeight / contentHeight;
-                
+
                 // Detection: landscape (TV/PC) vs portrait (Tablet/Mobile)
                 const isPortrait = containerHeight > containerWidth;
-                
+
                 if (isPortrait) {
                     // Portrait: Fit height, allow horizontal scroll
                     setMapScale(scaleH * 0.98);
@@ -230,7 +230,7 @@ export default function MonitoreoVivoPage() {
         const resizeObserver = new ResizeObserver(updateScale);
         if (mapContainerRef.current) resizeObserver.observe(mapContainerRef.current);
         if (mapContentRef.current) resizeObserver.observe(mapContentRef.current);
-        
+
         updateScale();
         const timer = setTimeout(updateScale, 300);
 
@@ -241,11 +241,11 @@ export default function MonitoreoVivoPage() {
     }, [machines]);
 
     const handleMachineDoubleClick = (machine: any) => {
-        navigate('/mantenimiento/registro', { 
-            state: { 
+        navigate('/mantenimiento/registro', {
+            state: {
                 preselectedMachine: machine,
-                plantId: selectedPlantId 
-            } 
+                plantId: selectedPlantId
+            }
         });
     };
 
@@ -266,25 +266,25 @@ export default function MonitoreoVivoPage() {
     if (loadingMachines) return <Spinner />;
 
     return (
-        <Box sx={{ 
+        <Box sx={{
             bgcolor: '#0b0e14', height: '100vh', width: '100vw', maxHeight: '100vh',
             color: '#fff', display: 'flex', flexDirection: 'column', p: 3, gap: 2.5, overflow: 'hidden'
         }}>
             {/* Fused KPI Row - Proportional Height */}
             <Box sx={{ display: 'flex', gap: 2.5, flexShrink: 0, height: '15vh', minHeight: 140 }}>
-                <FusedModule 
-                    title="Máquinas Activas" 
-                    count={totalActivas} 
-                    total={totalMachines} 
-                    color={STATUS_COLORS.ACTIVA} 
+                <FusedModule
+                    title="Máquinas Activas"
+                    count={totalActivas}
+                    total={totalMachines}
+                    color={STATUS_COLORS.ACTIVA}
                     breakdown={activasBreakdown}
                     subtitle="Composición Activas"
                 />
-                <FusedModule 
-                    title="Máquinas Paradas" 
-                    count={totalMachines - totalActivas} 
-                    total={totalMachines} 
-                    color={STATUS_COLORS.PARADA} 
+                <FusedModule
+                    title="Máquinas Paradas"
+                    count={totalMachines - totalActivas}
+                    total={totalMachines}
+                    color={STATUS_COLORS.PARADA}
                     breakdown={paradasBreakdown}
                     subtitle="Composición Paradas"
                 />
@@ -293,19 +293,19 @@ export default function MonitoreoVivoPage() {
             {/* Bottom Operations Area */}
             <Box sx={{ flex: 1, display: 'flex', gap: 2.5, minHeight: 0 }}>
                 {/* Map Area */}
-                <Box 
-                    ref={mapContainerRef} 
-                    sx={{ 
-                        flex: 1, 
-                        bgcolor: '#151921', 
-                        borderRadius: '12px', 
-                        border: '1px solid rgba(255,255,255,0.05)', 
-                        display: 'flex', 
-                        justifyContent: mapContainerRef.current && mapContainerRef.current.clientHeight > mapContainerRef.current.clientWidth ? 'flex-start' : 'center', 
-                        alignItems: 'center', 
-                        minWidth: 0, 
-                        overflowX: 'auto', 
-                        overflowY: 'hidden', 
+                <Box
+                    ref={mapContainerRef}
+                    sx={{
+                        flex: 1,
+                        bgcolor: '#151921',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        display: 'flex',
+                        justifyContent: mapContainerRef.current && mapContainerRef.current.clientHeight > mapContainerRef.current.clientWidth ? 'flex-start' : 'center',
+                        alignItems: 'center',
+                        minWidth: 0,
+                        overflowX: 'auto',
+                        overflowY: 'hidden',
                         position: 'relative',
                         '&::-webkit-scrollbar': { height: '6px' },
                         '&::-webkit-scrollbar-track': { background: 'transparent' },
@@ -313,7 +313,7 @@ export default function MonitoreoVivoPage() {
                         '&::-webkit-scrollbar-thumb:hover': { background: 'rgba(255,255,255,0.2)' }
                     }}
                 >
-                    <Box 
+                    <Box
                         ref={mapContentRef}
                         sx={{
                             transform: `scale(${mapScale})`,
@@ -335,10 +335,10 @@ export default function MonitoreoVivoPage() {
                                                 {row.map((n, j) => {
                                                     const machine = n !== null ? machineMap[n] : null;
                                                     return (
-                                                        <MachineNode 
-                                                            key={n ?? `e-${j}`} 
-                                                            number={n} 
-                                                            status={machine?.status || 'SIN_DATOS'} 
+                                                        <MachineNode
+                                                            key={n ?? `e-${j}`}
+                                                            number={n}
+                                                            status={machine?.status || 'SIN_DATOS'}
                                                             onDoubleClick={() => machine && handleMachineDoubleClick(machine)}
                                                         />
                                                     );
@@ -352,10 +352,10 @@ export default function MonitoreoVivoPage() {
                                                 {row.map((n, j) => {
                                                     const machine = n !== null ? machineMap[n] : null;
                                                     return (
-                                                        <MachineNode 
-                                                            key={n ?? `e-${j}`} 
-                                                            number={n} 
-                                                            status={machine?.status || 'SIN_DATOS'} 
+                                                        <MachineNode
+                                                            key={n ?? `e-${j}`}
+                                                            number={n}
+                                                            status={machine?.status || 'SIN_DATOS'}
                                                             onDoubleClick={() => machine && handleMachineDoubleClick(machine)}
                                                         />
                                                     );
