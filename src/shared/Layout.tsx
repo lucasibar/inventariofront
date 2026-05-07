@@ -44,6 +44,7 @@ const navGroups = [
             { to: '/mantenimiento/registro', label: '📋 Registrar' },
             { to: '/mantenimiento/historial', label: '📜 Historial' },
             { to: '/mantenimiento/buscador', label: '🔍 Detalle' },
+            { to: '/mantenimiento/pendientes', label: '📑 Pendientes' },
         ]
     },
     {

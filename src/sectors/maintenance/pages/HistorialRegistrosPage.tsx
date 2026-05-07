@@ -20,21 +20,25 @@ const responsables = ['Sin Asignar', 'Gaston', 'Ruben', 'Daniel', 'Alexis', 'Vio
 const statusColors: Record<string, string> = {
     ACTIVA: '#10b981',
     REVISAR: '#eab308',
-    VELOCIDAD_REDUCIDA: '#f97316',
+    VELOCIDAD_REDUCIDA: '#f472b6',
     PARADA: '#ef4444',
     ELECTRONIC: '#3b82f6',
-    FALTA_COSTURA: '#8b5cf6',
-    FALTA_PROGRAMA: '#06b6d4',
+    FALTA_COSTURA: '#a855f7',
+    FALTA_PROGRAMA: '#fb923c',
+    REPUESTOS: '#94a3b8',
+    OTRO: '#6b7280',
 };
 
 const statusLabels: Record<string, string> = {
     ACTIVA: 'Activa',
-    REVISAR: 'Revisar',
+    REVISAR: 'En Revisión',
     VELOCIDAD_REDUCIDA: 'Vel. Reducida',
+    FALTA_COSTURA: 'Costura',
     PARADA: 'Parada',
-    ELECTRONIC: 'Electronic',
-    FALTA_COSTURA: 'Falta Costura',
-    FALTA_PROGRAMA: 'Falta Programa',
+    ELECTRONIC: 'Electrónica',
+    FALTA_PROGRAMA: 'Programa',
+    REPUESTOS: 'Repuestos',
+    OTRO: 'Otro',
 };
 
 export default function HistorialRegistrosPage() {
@@ -106,7 +110,7 @@ export default function HistorialRegistrosPage() {
                 hideTitleOnMobile={true}
             />
 
-            <Card sx={{ bgcolor: '#1a1a1a', borderRadius: 2, mb: 4, p: 2 }}>
+            <Card sx={{ bgcolor: '#111827', borderRadius: 2, mb: 4, p: 2.5, border: '1px solid #1f2937' }}>
                 <Grid container spacing={2} alignItems="center">
                     <Grid size={{ xs: 12, md: 2.4 }}>
                         <TextField
@@ -119,7 +123,7 @@ export default function HistorialRegistrosPage() {
                             sx={{
                                 '& .MuiOutlinedInput-root': { color: 'white' },
                                 '& .MuiInputLabel-root': { color: '#9ca3af' },
-                                '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' },
+                                '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' },
                             }}
                         />
                     </Grid>
@@ -319,30 +323,30 @@ export default function HistorialRegistrosPage() {
                     )}
                 </Box>
             ) : (
-                <TableContainer component={Card} sx={{ bgcolor: '#1a1a1a', borderRadius: 2, maxHeight: 'calc(100vh - 300px)' }}>
+                <TableContainer component={Card} sx={{ bgcolor: '#111827', borderRadius: 2, border: '1px solid #1f2937', maxHeight: 'calc(100vh - 300px)' }}>
                     <Table stickyHeader>
                         <TableHead>
                             <TableRow>
-                                <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Fecha / Hora</TableCell>
-                                <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Máquina</TableCell>
-                                <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Transición</TableCell>
-                                <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Duración</TableCell>
-                                <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Tipo de Falla</TableCell>
-                                <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Responsable</TableCell>
-                                <TableCell sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Observaciones</TableCell>
-                                <TableCell align="center" sx={{ bgcolor: '#27272a', color: '#e5e7eb', fontWeight: 600 }}>Acciones</TableCell>
+                                <TableCell sx={{ bgcolor: '#1f2937', color: '#e5e7eb', fontWeight: 600, borderBottom: '1px solid #374151' }}>Fecha / Hora</TableCell>
+                                <TableCell sx={{ bgcolor: '#1f2937', color: '#e5e7eb', fontWeight: 600, borderBottom: '1px solid #374151' }}>Máquina</TableCell>
+                                <TableCell sx={{ bgcolor: '#1f2937', color: '#e5e7eb', fontWeight: 600, borderBottom: '1px solid #374151' }}>Transición</TableCell>
+                                <TableCell sx={{ bgcolor: '#1f2937', color: '#e5e7eb', fontWeight: 600, borderBottom: '1px solid #374151' }}>Duración</TableCell>
+                                <TableCell sx={{ bgcolor: '#1f2937', color: '#e5e7eb', fontWeight: 600, borderBottom: '1px solid #374151' }}>Tipo de Falla</TableCell>
+                                <TableCell sx={{ bgcolor: '#1f2937', color: '#e5e7eb', fontWeight: 600, borderBottom: '1px solid #374151' }}>Responsable</TableCell>
+                                <TableCell sx={{ bgcolor: '#1f2937', color: '#e5e7eb', fontWeight: 600, borderBottom: '1px solid #374151' }}>Observaciones</TableCell>
+                                <TableCell align="center" sx={{ bgcolor: '#1f2937', color: '#e5e7eb', fontWeight: 600, borderBottom: '1px solid #374151' }}>Acciones</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {logs.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={8} align="center" sx={{ color: '#9ca3af', py: 4 }}>
+                                    <TableCell colSpan={8} align="center" sx={{ color: '#9ca3af', py: 4, bgcolor: 'transparent' }}>
                                         No se encontraron registros en este rango de fechas.
                                     </TableCell>
                                 </TableRow>
                             ) : (
                                 logs.map((log: any) => (
-                                    <TableRow key={log.id} sx={{ '&:last-child td, &:last-child th': { border: 0 }, '&:hover': { bgcolor: '#27272a' } }}>
+                                    <TableRow key={log.id} sx={{ '&:last-child td, &:last-child th': { border: 0 }, '&:hover': { bgcolor: '#1f293750' } }}>
                                         <TableCell sx={{ color: '#e5e7eb' }}>
                                             {new Date(log.timestamp).toLocaleString()}
                                         </TableCell>

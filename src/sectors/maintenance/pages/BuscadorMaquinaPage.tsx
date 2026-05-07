@@ -1,30 +1,45 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Box, Typography, Card, Grid, TextField, Button, Divider, Chip } from '@mui/material';
+import { Box, Typography, Card, Grid, TextField, Button, Divider, Chip, Avatar, Tooltip } from '@mui/material';
 import { PageHeader, Spinner, Select } from '../../../shared/ui';
 import SearchIcon from '@mui/icons-material/Search';
 import BuildIcon from '@mui/icons-material/Build';
+import HistoryIcon from '@mui/icons-material/History';
+import SpeedIcon from '@mui/icons-material/Speed';
+import EngineeringIcon from '@mui/icons-material/Engineering';
+import TimerIcon from '@mui/icons-material/Timer';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { 
     useGetPlantsQuery, 
     useGetMachinesQuery,
-    useGetMachineTypesQuery
+    useGetMachineTypesQuery,
+    useGetMachineKPIsQuery,
+    useGetLogsQuery
 } from '../api/maintenance.api';
 import type { Machine } from '../api/maintenance.api';
 
 const statusColors: Record<string, string> = {
     ACTIVA: '#10b981',
-    PARADA: '#ef4444',
     REVISAR: '#eab308',
     VELOCIDAD_REDUCIDA: '#f472b6',
+    FALTA_COSTURA: '#a855f7',
+    PARADA: '#ef4444',
     ELECTRONIC: '#3b82f6',
+    FALTA_PROGRAMA: '#fb923c',
+    REPUESTOS: '#94a3b8',
+    OTRO: '#6b7280',
 };
 
 const statusLabels: Record<string, string> = {
     ACTIVA: 'Activa',
-    PARADA: 'Parada',
     REVISAR: 'En Revisión',
     VELOCIDAD_REDUCIDA: 'Vel. Reducida',
+    FALTA_COSTURA: 'Costura',
+    PARADA: 'Parada',
     ELECTRONIC: 'Electrónica',
+    FALTA_PROGRAMA: 'Programa',
+    REPUESTOS: 'Repuestos',
+    OTRO: 'Otro',
 };
 
 export default function BuscadorMaquinaPage() {
@@ -54,6 +69,19 @@ export default function BuscadorMaquinaPage() {
         { skip: !selectedPlantId }
     );
 
+    // Fetch Machine Specific Data
+    const { data: kpis, isLoading: loadingKPIs } = useGetMachineKPIsQuery(
+        { id: searchedMachine?.id || '' },
+        { skip: !searchedMachine }
+    );
+
+    const { data: logsData, isLoading: loadingLogs } = useGetLogsQuery(
+        { machineId: searchedMachine?.id, limit: 10 },
+        { skip: !searchedMachine }
+    );
+
+    const history = logsData?.items || [];
+
     // If navigated from Dashboard or History with a machine pre-selected
     useEffect(() => {
         const state = location.state as { machine?: Machine; plantId?: string } | null;
@@ -62,8 +90,6 @@ export default function BuscadorMaquinaPage() {
             if (state.machine.typeId) setSelectedTypeId(state.machine.typeId);
             setSearchedMachine(state.machine);
             setSearchTerm(String(state.machine.number));
-            // Clear location state to avoid re-triggering on refresh if needed, 
-            // but usually it's fine for simple navigation.
         }
     }, [location.state]);
 
@@ -77,7 +103,7 @@ export default function BuscadorMaquinaPage() {
         e.preventDefault();
         if (!searchTerm) return;
 
-        const term = searchTerm.toLowerCase();
+        const term = searchTerm.trim().toLowerCase();
         const found = machines.find((m: any) => 
             m.number?.toString() === term || 
             m.codigoInterno?.toLowerCase() === term ||
@@ -90,12 +116,13 @@ export default function BuscadorMaquinaPage() {
         }
     };
 
-    const handleRegistrarAveria = () => {
+    const handleAction = (action: 'status' | 'mechanic') => {
         if (!searchedMachine) return;
         navigate('/mantenimiento/registro', {
             state: {
                 preselectedMachine: searchedMachine,
                 plantId: selectedPlantId,
+                focusField: action === 'mechanic' ? 'generatedBy' : 'targetStatus'
             }
         });
     };
@@ -103,19 +130,18 @@ export default function BuscadorMaquinaPage() {
     if (loadingPlants || loadingTypes) return <Spinner />;
 
     return (
-        <Box sx={{ p: 3, maxWidth: '1200px', margin: '0 auto' }}>
+        <Box sx={{ p: 3, maxWidth: '1400px', margin: '0 auto' }}>
             <PageHeader 
-                title="Detalle de Máquina" 
-                subtitle="Consulta de estado y características técnicas (Agujas, Cilindro, etc.)"
-                hideTitleOnMobile={true}
+                title="Gestión Detallada de Máquina" 
+                subtitle="Información técnica, rendimiento (MTBF/MTTR) e historial de intervenciones"
             />
 
-            <Card sx={{ bgcolor: '#1a1a1a', borderRadius: 2, p: 3, mb: 4, border: '1px solid #333' }}>
+            <Card sx={{ bgcolor: '#111827', borderRadius: 2, p: 3, mb: 4, border: '1px solid #1f2937' }}>
                 <form onSubmit={handleSearch}>
                     <Grid container spacing={2} alignItems="center">
                         <Grid size={{ xs: 12, md: 3 }}>
                             <Select 
-                                label="Seleccionar Planta"
+                                label="Planta"
                                 value={selectedPlantId || ''}
                                 onChange={(val) => { setSelectedPlantId(val); setSearchedMachine(null); }}
                                 options={plantOptions}
@@ -123,7 +149,7 @@ export default function BuscadorMaquinaPage() {
                         </Grid>
                         <Grid size={{ xs: 12, md: 3 }}>
                             <Select 
-                                label="Tipo de Máquina"
+                                label="Tipo"
                                 value={selectedTypeId || ''}
                                 onChange={(val) => { setSelectedTypeId(val || null); setSearchedMachine(null); }}
                                 options={typeOptions}
@@ -131,7 +157,7 @@ export default function BuscadorMaquinaPage() {
                         </Grid>
                         <Grid size={{ xs: 12, md: 4 }}>
                             <TextField
-                                label="Número de Máquina o Código Interno"
+                                label="Número de Máquina o Código"
                                 variant="outlined"
                                 fullWidth
                                 value={searchTerm}
@@ -139,7 +165,7 @@ export default function BuscadorMaquinaPage() {
                                 sx={{
                                     '& .MuiOutlinedInput-root': { color: 'white' },
                                     '& .MuiInputLabel-root': { color: '#9ca3af' },
-                                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' },
+                                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' },
                                 }}
                             />
                         </Grid>
@@ -149,11 +175,11 @@ export default function BuscadorMaquinaPage() {
                                 variant="contained" 
                                 color="primary" 
                                 fullWidth 
-                                sx={{ height: '56px' }}
+                                sx={{ height: '56px', borderRadius: 2, fontWeight: 700 }}
                                 disabled={loadingMachines}
                                 startIcon={<SearchIcon />}
                             >
-                                Buscar
+                                Consultar
                             </Button>
                         </Grid>
                     </Grid>
@@ -161,95 +187,227 @@ export default function BuscadorMaquinaPage() {
             </Card>
 
             {searchedMachine && (
-                <Card sx={{ bgcolor: '#1a1a1a', borderRadius: 2, p: { xs: 2, md: 4 }, border: '1px solid #333' }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: { xs: 2, md: 3 }, flexWrap: 'wrap', gap: 2 }}>
-                        <Box>
-                            <Typography variant="h4" sx={{ color: 'white', fontWeight: 700, fontSize: { xs: '1.75rem', md: '2.125rem' } }}>
-                                Máquina {searchedMachine.number}
-                            </Typography>
-                            <Typography variant="subtitle1" sx={{ color: '#9ca3af' }}>
-                                Código: {searchedMachine.codigoInterno} | Nombre: {searchedMachine.nombre}
-                            </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'space-between', sm: 'flex-end' } }}>
-                            <Chip 
-                                label={statusLabels[searchedMachine.status] || searchedMachine.status} 
-                                sx={{ 
-                                    bgcolor: `${statusColors[searchedMachine.status] || '#6b7280'}20`, 
-                                    color: statusColors[searchedMachine.status] || '#d1d5db',
-                                    border: `1px solid ${statusColors[searchedMachine.status] || '#6b7280'}50`,
-                                    fontWeight: 700,
-                                    fontSize: '1rem',
-                                    py: 2
-                                }} 
-                            />
-                            <Button
-                                variant="contained"
-                                color="warning"
-                                startIcon={<BuildIcon />}
-                                onClick={handleRegistrarAveria}
-                                sx={{ whiteSpace: 'nowrap', fontWeight: 700 }}
-                            >
-                                Cambiar Estado
-                            </Button>
-                        </Box>
-                    </Box>
+                <Grid container spacing={3}>
+                    {/* Main Info & Actions */}
+                    <Grid size={{ xs: 12, lg: 8 }}>
+                        <Card sx={{ bgcolor: '#111827', borderRadius: 3, p: { xs: 2, md: 4 }, border: '1px solid #1f2937', height: '100%' }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4, flexWrap: 'wrap', gap: 2 }}>
+                                <Box>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                                        <Typography variant="h3" sx={{ color: 'white', fontWeight: 800 }}>
+                                            {searchedMachine.number}
+                                        </Typography>
+                                        <Chip 
+                                            label={statusLabels[searchedMachine.status] || searchedMachine.status} 
+                                            sx={{ 
+                                                bgcolor: `${statusColors[searchedMachine.status] || '#6b7280'}20`, 
+                                                color: statusColors[searchedMachine.status] || '#d1d5db',
+                                                border: `1px solid ${statusColors[searchedMachine.status] || '#6b7280'}`,
+                                                fontWeight: 800,
+                                                fontSize: '0.875rem',
+                                                px: 1
+                                            }} 
+                                        />
+                                    </Box>
+                                    <Typography variant="h6" sx={{ color: '#9ca3af', fontWeight: 400 }}>
+                                        {searchedMachine.codigoInterno} • {searchedMachine.nombre}
+                                    </Typography>
+                                </Box>
 
-                    <Divider sx={{ my: { xs: 2, md: 3 }, borderColor: '#333' }} />
+                                <Box sx={{ display: 'flex', gap: 1.5 }}>
+                                    <Button
+                                        variant="outlined"
+                                        color="primary"
+                                        startIcon={<EngineeringIcon />}
+                                        onClick={() => handleAction('mechanic')}
+                                        sx={{ borderRadius: 2, fontWeight: 600, border: '1px solid #3b82f640' }}
+                                    >
+                                        Asignar Responsable
+                                    </Button>
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        startIcon={<BuildIcon />}
+                                        onClick={() => handleAction('status')}
+                                        sx={{ borderRadius: 2, fontWeight: 700, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    >
+                                        Cambiar Estado
+                                    </Button>
+                                </Box>
+                            </Box>
 
-                    <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
-                        Características Técnicas
-                    </Typography>
-                    
-                    <Grid container spacing={{ xs: 2, md: 3 }}>
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                            <Box sx={{ p: { xs: 2.5, md: 2 }, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 1, border: '1px solid #27272a' }}>
-                                <Typography variant="caption" sx={{ color: '#9ca3af', textTransform: 'uppercase' }}>Cantidad de Agujas</Typography>
-                                <Typography variant="h6" sx={{ color: 'white' }}>
-                                    {searchedMachine.metadata?.cantidadAgujas || 'No registrado'}
-                                </Typography>
+                            <Grid container spacing={2} sx={{ mb: 4 }}>
+                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                                    <Box sx={{ p: 2, bgcolor: '#1f293750', borderRadius: 2, border: '1px solid #37415140' }}>
+                                        <Typography variant="caption" sx={{ color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                            <TimerIcon sx={{ fontSize: 14 }} /> ÚLTIMO CAMBIO
+                                        </Typography>
+                                        <Typography variant="h6" sx={{ color: 'white', mt: 0.5 }}>
+                                            {searchedMachine.lastStatusChange ? new Date(searchedMachine.lastStatusChange).toLocaleString() : 'Sin registros'}
+                                        </Typography>
+                                    </Box>
+                                </Grid>
+                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                                    <Box sx={{ p: 2, bgcolor: '#1f293750', borderRadius: 2, border: '1px solid #37415140' }}>
+                                        <Typography variant="caption" sx={{ color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                            <EngineeringIcon sx={{ fontSize: 14 }} /> RESPONSABLE ACTUAL
+                                        </Typography>
+                                        <Typography variant="h6" sx={{ color: 'white', mt: 0.5 }}>
+                                            {searchedMachine.lastChangeBy || 'No asignado'}
+                                        </Typography>
+                                    </Box>
+                                </Grid>
+                                <Grid size={{ xs: 12, md: 4 }}>
+                                    <Box sx={{ p: 2, bgcolor: '#1f293750', borderRadius: 2, border: '1px solid #37415140' }}>
+                                        <Typography variant="caption" sx={{ color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                            <ErrorOutlineIcon sx={{ fontSize: 14 }} /> MOTIVO / FALLA
+                                        </Typography>
+                                        <Typography variant="h6" sx={{ color: 'white', mt: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {searchedMachine.lastFailureType || 'N/A'}
+                                        </Typography>
+                                    </Box>
+                                </Grid>
+                            </Grid>
+
+                            <Divider sx={{ my: 4, borderColor: '#374151' }} />
+
+                            <Typography variant="h6" sx={{ color: 'white', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <HistoryIcon color="primary" /> Historial de Intervenciones
+                            </Typography>
+
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                {loadingLogs ? <Spinner /> : history.length === 0 ? (
+                                    <Typography sx={{ color: '#6b7280', fontStyle: 'italic' }}>No hay registros recientes para esta máquina.</Typography>
+                                ) : history.map((log: any, idx: number) => (
+                                    <Box key={log.id} sx={{ 
+                                        p: 2.5, 
+                                        bgcolor: idx === 0 ? '#1e293b40' : 'transparent', 
+                                        borderRadius: 2, 
+                                        border: '1px solid #374151',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 3
+                                    }}>
+                                        <Box sx={{ minWidth: 100 }}>
+                                            <Typography variant="body2" sx={{ color: '#9ca3af', fontWeight: 600 }}>
+                                                {new Date(log.timestamp).toLocaleDateString()}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                                                {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </Typography>
+                                        </Box>
+                                        
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1 }}>
+                                            <Chip 
+                                                size="small" 
+                                                label={statusLabels[log.fromStatus] || log.fromStatus} 
+                                                variant="outlined" 
+                                                sx={{ color: '#6b7280', borderColor: '#374151', fontSize: '0.7rem' }} 
+                                            />
+                                            <Typography sx={{ color: '#4b5563' }}>→</Typography>
+                                            <Chip 
+                                                size="small" 
+                                                label={statusLabels[log.toStatus] || log.toStatus} 
+                                                sx={{ bgcolor: `${statusColors[log.toStatus]}20`, color: statusColors[log.toStatus], fontWeight: 700 }} 
+                                            />
+                                        </Box>
+
+                                        <Box sx={{ flex: 2 }}>
+                                            <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
+                                                {log.generatedBy}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                                                {log.failureType ? `${log.failureType}: ` : ''}{log.observation || 'Sin observación'}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                ))}
+                                
+                                <Button 
+                                    sx={{ mt: 2, color: '#3b82f6', alignSelf: 'flex-start' }}
+                                    onClick={() => navigate('/mantenimiento/historial', { state: { machineNumber: searchedMachine.number } })}
+                                >
+                                    Ver historial completo
+                                </Button>
                             </Box>
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                            <Box sx={{ p: { xs: 2.5, md: 2 }, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 1, border: '1px solid #27272a' }}>
-                                <Typography variant="caption" sx={{ color: '#9ca3af', textTransform: 'uppercase' }}>Tipo de Cilindro</Typography>
-                                <Typography variant="h6" sx={{ color: 'white' }}>
-                                    {searchedMachine.metadata?.tipoCilindro || 'No registrado'}
-                                </Typography>
-                            </Box>
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                            <Box sx={{ p: { xs: 2.5, md: 2 }, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 1, border: '1px solid #27272a' }}>
-                                <Typography variant="caption" sx={{ color: '#9ca3af', textTransform: 'uppercase' }}>Tipo de Trimer</Typography>
-                                <Typography variant="h6" sx={{ color: 'white' }}>
-                                    {searchedMachine.metadata?.tipoTrimer || 'No registrado'}
-                                </Typography>
-                            </Box>
-                        </Grid>
+                        </Card>
                     </Grid>
 
-                    <Divider sx={{ my: { xs: 2, md: 3 }, borderColor: '#333' }} />
+                    {/* Stats & Tech Info */}
+                    <Grid size={{ xs: 12, lg: 4 }}>
+                        <Grid container spacing={3}>
+                            {/* Performance Card */}
+                            <Grid size={{ xs: 12 }}>
+                                <Card sx={{ bgcolor: '#111827', borderRadius: 3, p: 3, border: '1px solid #1f2937' }}>
+                                    <Typography variant="h6" sx={{ color: 'white', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <SpeedIcon color="secondary" /> Indicadores de Rendimiento
+                                    </Typography>
+                                    
+                                    {loadingKPIs ? <Spinner /> : (
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <Box>
+                                                    <Typography variant="caption" sx={{ color: '#9ca3af', display: 'block' }}>DISPONIBILIDAD (OEE)</Typography>
+                                                    <Typography variant="h4" sx={{ color: 'white', fontWeight: 800 }}>{kpis?.availability || '0%'}</Typography>
+                                                </Box>
+                                                <Avatar sx={{ bgcolor: '#10b98120', color: '#10b981', width: 56, height: 56 }}>
+                                                    {kpis?.availability}
+                                                </Avatar>
+                                            </Box>
+                                            
+                                            <Divider sx={{ borderColor: '#1f2937' }} />
+                                            
+                                            <Grid container spacing={2}>
+                                                <Grid size={{ xs: 6 }}>
+                                                    <Tooltip title="Mean Time Between Failures: Promedio de tiempo entre fallas">
+                                                        <Box>
+                                                            <Typography variant="caption" sx={{ color: '#9ca3af' }}>MTBF</Typography>
+                                                            <Typography variant="h5" sx={{ color: 'white', fontWeight: 700 }}>{kpis?.mtbf || '0h'}</Typography>
+                                                        </Box>
+                                                    </Tooltip>
+                                                </Grid>
+                                                <Grid size={{ xs: 6 }}>
+                                                    <Tooltip title="Mean Time To Repair: Promedio de tiempo de reparación">
+                                                        <Box>
+                                                            <Typography variant="caption" sx={{ color: '#9ca3af' }}>MTTR</Typography>
+                                                            <Typography variant="h5" sx={{ color: '#f87171', fontWeight: 700 }}>{kpis?.mttr || '0h'}</Typography>
+                                                        </Box>
+                                                    </Tooltip>
+                                                </Grid>
+                                            </Grid>
+                                            
+                                            <Box sx={{ p: 2, bgcolor: '#1f293750', borderRadius: 2 }}>
+                                                <Typography variant="caption" sx={{ color: '#9ca3af' }}>FALLAS REGISTRADAS</Typography>
+                                                <Typography variant="h5" sx={{ color: 'white', fontWeight: 700 }}>{kpis?.failures || 0}</Typography>
+                                            </Box>
+                                        </Box>
+                                    )}
+                                </Card>
+                            </Grid>
 
-                    <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
-                        Última Actividad
-                    </Typography>
-                    
-                    <Grid container spacing={{ xs: 2, md: 3 }}>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                            <Box sx={{ p: { xs: 2, md: 0 } }}>
-                                <Typography variant="body2" sx={{ color: '#9ca3af' }}>Última observación:</Typography>
-                                <Typography variant="body1" sx={{ color: 'white' }}>{searchedMachine.lastObservation || 'Ninguna'}</Typography>
-                            </Box>
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                            <Box sx={{ p: { xs: 2, md: 0 } }}>
-                                <Typography variant="body2" sx={{ color: '#9ca3af' }}>Actualizado por:</Typography>
-                                <Typography variant="body1" sx={{ color: 'white' }}>{searchedMachine.lastChangeBy || 'Desconocido'}</Typography>
-                            </Box>
+                            {/* Technical Specs */}
+                            <Grid size={{ xs: 12 }}>
+                                <Card sx={{ bgcolor: '#111827', borderRadius: 3, p: 3, border: '1px solid #1f2937' }}>
+                                    <Typography variant="h6" sx={{ color: 'white', mb: 2.5 }}>Ficha Técnica</Typography>
+                                    
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                        {[
+                                            { label: 'Agujas', value: searchedMachine.metadata?.cantidadAgujas },
+                                            { label: 'Cilindro', value: searchedMachine.metadata?.tipoCilindro },
+                                            { label: 'Trimer', value: searchedMachine.metadata?.tipoTrimer },
+                                            { label: 'Marca/Modelo', value: searchedMachine.nombre },
+                                        ].map((spec, i) => (
+                                            <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #1f2937', pb: 1 }}>
+                                                <Typography variant="body2" sx={{ color: '#9ca3af' }}>{spec.label}</Typography>
+                                                <Typography variant="body2" sx={{ color: 'white', fontWeight: 600 }}>{spec.value || 'N/A'}</Typography>
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                </Card>
+                            </Grid>
                         </Grid>
                     </Grid>
-
-                </Card>
+                </Grid>
             )}
         </Box>
     );
