@@ -36,7 +36,6 @@ const targetStatuses = [
 export default function RegistroMaquinasPage() {
     const user = useSelector(selectCurrentUser);
     const location = useLocation();
-    const navigate = useNavigate();
     
     // Selectors state
     const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
