@@ -259,6 +259,7 @@ export default function MonitoreoVivoPage() {
     ];
 
     const paradasBreakdown = [
+        { label: 'Parada', value: statusCounts.PARADA, color: STATUS_COLORS.PARADA },
         { label: 'Electrónica', value: statusCounts.ELECTRONIC, color: STATUS_COLORS.ELECTRONIC },
         { label: 'Repuesto', value: statusCounts.REPUESTOS, color: STATUS_COLORS.REPUESTOS },
         { label: 'Programa', value: statusCounts.FALTA_PROGRAMA, color: STATUS_COLORS.FALTA_PROGRAMA },
