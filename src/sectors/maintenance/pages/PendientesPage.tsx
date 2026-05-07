@@ -1,10 +1,9 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Card, CardContent, Grid, Chip, Button, Avatar, Tooltip, IconButton, Divider } from '@mui/material';
+import { Box, Typography, Card, CardContent, Grid, Chip, Button, Avatar, Tooltip, Divider } from '@mui/material';
 import { PageHeader, Spinner, Select } from '../../../shared/ui';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import BuildIcon from '@mui/icons-material/Build';
-import SearchIcon from '@mui/icons-material/Search';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -58,11 +57,11 @@ export default function PendientesPage() {
     ], [machineTypes]);
 
     const pendingMachines = useMemo(() => {
-        return machines.filter(m => stoppedStatuses.includes(m.status));
+        return machines.filter((m: any) => stoppedStatuses.includes(m.status));
     }, [machines]);
 
     const unassignedCount = useMemo(() => {
-        return pendingMachines.filter(m => !m.lastChangeBy || m.lastChangeBy === 'Sin Asignar' || m.lastChangeBy === 'Tejedor').length;
+        return pendingMachines.filter((m: any) => !m.lastChangeBy || m.lastChangeBy === 'Sin Asignar' || m.lastChangeBy === 'Tejedor').length;
     }, [pendingMachines]);
 
     const handleAssign = (machine: any) => {

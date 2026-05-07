@@ -85,7 +85,7 @@ export default function RegistroMaquinasPage() {
         }
     }, [machineTypes, selectedTypeId]);
 
-    const { control, handleSubmit, reset, setValue, watch, getValues } = useForm({
+    const { control, reset, setValue, getValues } = useForm({
         defaultValues: {
             targetStatus: 'PARADA',
             failureType: 'Ninguna',
@@ -320,7 +320,7 @@ export default function RegistroMaquinasPage() {
                             </Box>
                         ) : (
                             <List sx={{ flex: 1 }}>
-                                {pendingEvents.map((event, idx) => (
+                                {pendingEvents.map((event) => (
                                     <ListItem key={event.id} sx={{ mb: 2, bgcolor: '#1f293750', borderRadius: 2, border: '1px solid #37415140' }}>
                                         <ListItemText 
                                             primary={
