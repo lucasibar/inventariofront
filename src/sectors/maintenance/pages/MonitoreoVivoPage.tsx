@@ -88,32 +88,30 @@ const StatusBar = ({ label, value, color, max }: { label: string, value: number,
     const width = `${Math.max(2, (value / (max || 1)) * 100)}%`;
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.2 }}>
-            <Typography sx={{ color: '#94a3b8', fontSize: '11px', fontWeight: 800, width: 90, textTransform: 'uppercase' }}>{label}</Typography>
-            <Typography sx={{ color: color, fontSize: '13px', fontWeight: 900, width: 30, textAlign: 'right' }}>{value}</Typography>
-            <Box sx={{ flex: 1, height: 7, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 3, overflow: 'hidden' }}>
-                <Box sx={{ width: width, height: '100%', bgcolor: color, borderRadius: 3 }} />
+            <Typography sx={{ color: '#94a3b8', fontSize: '14px', fontWeight: 900, width: 170, textTransform: 'uppercase', lineHeight: 1 }}>{label}</Typography>
+            <Typography sx={{ color: color, fontSize: '15px', fontWeight: 1000, width: 35, textAlign: 'right' }}>{value}</Typography>
+            <Box sx={{ flex: 1, height: 8, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 4, overflow: 'hidden' }}>
+                <Box sx={{ width: width, height: '100%', bgcolor: color, borderRadius: 4 }} />
             </Box>
         </Box>
     );
 };
 
 const FusedModule = ({ title, count, total, color, breakdown, subtitle }: any) => {
-    const percentage = Math.round((count / (total || 1)) * 100);
     const chartData = [
         { value: total - count, color: 'rgba(255,255,255,0.05)' },
         { value: count, color: color }
     ];
 
     return (
-        <Box sx={{ flex: 1, display: 'flex', minHeight: 240, borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <Box sx={{ flex: '0 0 45%', bgcolor: '#151921', p: 3.5, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
-                <Typography sx={{ color: color, fontWeight: 900, textTransform: 'uppercase', fontSize: '14px', letterSpacing: 1.5 }}>{title}</Typography>
+        <Box sx={{ flex: 1, display: 'flex', minHeight: 260, borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <Box sx={{ flex: '0 0 42%', bgcolor: '#151921', p: 3, display: 'flex', flexDirection: 'column', justifyContent: 'center', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
                     <Box>
-                        <Typography sx={{ color: color, fontWeight: 1000, fontSize: { xs: '64px', xl: '110px' }, lineHeight: 0.9 }}>{count}</Typography>
-                        <Typography sx={{ color: '#64748b', fontWeight: 700, fontSize: '15px', mt: 1.5 }}>{percentage}% DEL TOTAL</Typography>
+                        <Typography sx={{ color: color, fontWeight: 1000, fontSize: { xs: '65px', xl: '95px' }, lineHeight: 0.85 }}>{count}</Typography>
+                        <Typography sx={{ color: color, fontWeight: 1000, fontSize: '14px', mt: 1, textTransform: 'uppercase', letterSpacing: 1 }}>{title}</Typography>
                     </Box>
-                    <Box sx={{ width: { xs: 80, xl: 130 }, height: { xs: 80, xl: 130 } }}>
+                    <Box sx={{ width: 120, height: 120, flexShrink: 0 }}>
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie data={chartData} innerRadius="78%" outerRadius="100%" startAngle={90} endAngle={450} dataKey="value" stroke="none">
@@ -124,8 +122,8 @@ const FusedModule = ({ title, count, total, color, breakdown, subtitle }: any) =
                     </Box>
                 </Box>
             </Box>
-            <Box sx={{ flex: 1, bgcolor: 'rgba(255,255,255,0.01)', p: 3.5, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <Typography sx={{ color: '#475569', fontWeight: 800, textTransform: 'uppercase', fontSize: '12px', mb: 2.5 }}>{subtitle}</Typography>
+            <Box sx={{ flex: 1, bgcolor: 'rgba(255,255,255,0.01)', p: 3, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <Typography sx={{ color: '#475569', fontWeight: 1000, textTransform: 'uppercase', fontSize: '14px', mb: 2, letterSpacing: 2 }}>{subtitle}</Typography>
                 {breakdown.map((item: any, i: number) => (
                     <StatusBar key={i} label={item.label} value={item.value} color={item.color || color} max={count} />
                 ))}
@@ -137,7 +135,7 @@ const FusedModule = ({ title, count, total, color, breakdown, subtitle }: any) =
 const SelectedMachineDetail = ({ machine }: any) => {
     if (!machine) return (
         <Box sx={{ width: 420, bgcolor: '#151921', borderRadius: '12px', p: 3, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Typography sx={{ color: '#475569', fontSize: '18px', fontStyle: 'italic', textAlign: 'center' }}>Toca una máquina para ver detalle</Typography>
+            <Typography sx={{ color: '#475569', fontSize: '14px', fontStyle: 'italic', textAlign: 'center', fontWeight: 900 }}>Toca una máquina para ver detalle</Typography>
         </Box>
     );
 
@@ -145,20 +143,20 @@ const SelectedMachineDetail = ({ machine }: any) => {
         <Box sx={{ width: 420, bgcolor: '#151921', borderRadius: '12px', p: 3, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: 3, alignItems: 'center' }}>
             <Box>
                 <Typography sx={{ color: STATUS_COLORS[machine.status], fontWeight: 1000, fontSize: '80px', lineHeight: 1 }}>{machine.number}</Typography>
-                <Typography sx={{ color: '#fff', fontWeight: 900, fontSize: '16px', mt: 0.5, textTransform: 'uppercase' }}>{STATUS_LABELS[machine.status]}</Typography>
+                <Typography sx={{ color: '#fff', fontWeight: 1000, fontSize: '15px', mt: 0.5, textTransform: 'uppercase' }}>{STATUS_LABELS[machine.status]}</Typography>
             </Box>
-            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.2 }}>
                  <Box sx={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.03)', pb: 0.8 }}>
-                    <Typography sx={{ color: '#475569', fontSize: '12px', fontWeight: 800 }}>LÍNEA</Typography>
-                    <Typography sx={{ color: '#fff', fontSize: '14px', fontWeight: 900 }}>LÍNEA 6</Typography>
+                    <Typography sx={{ color: '#475569', fontSize: '14px', fontWeight: 1000 }}>LÍNEA</Typography>
+                    <Typography sx={{ color: '#fff', fontSize: '15px', fontWeight: 1000 }}>LÍNEA 6</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.03)', pb: 0.8 }}>
-                    <Typography sx={{ color: '#475569', fontSize: '12px', fontWeight: 800 }}>SECTOR</Typography>
-                    <Typography sx={{ color: '#fff', fontSize: '14px', fontWeight: 900 }}>CORTE</Typography>
+                    <Typography sx={{ color: '#475569', fontSize: '14px', fontWeight: 1000 }}>SECTOR</Typography>
+                    <Typography sx={{ color: '#fff', fontSize: '15px', fontWeight: 1000 }}>CORTE</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography sx={{ color: '#475569', fontSize: '12px', fontWeight: 800 }}>MECÁNICO</Typography>
-                    <Typography sx={{ color: '#fff', fontSize: '14px', fontWeight: 900 }}>{machine.lastChangeBy || 'No Asignado'}</Typography>
+                    <Typography sx={{ color: '#475569', fontSize: '14px', fontWeight: 1000 }}>MECÁNICO</Typography>
+                    <Typography sx={{ color: '#fff', fontSize: '15px', fontWeight: 1000 }}>{machine.lastChangeBy || 'Sin Asignar'}</Typography>
                 </Box>
             </Box>
         </Box>
@@ -170,22 +168,22 @@ const CompactStoppedList = ({ machines }: { machines: any[] }) => {
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minHeight: 0 }}>
-            <Typography sx={{ color: '#475569', fontWeight: 900, textTransform: 'uppercase', fontSize: '14px', letterSpacing: 2, mb: 1, px: 2, pt: 2 }}>Mantenimiento en Curso</Typography>
+            <Typography sx={{ color: '#475569', fontWeight: 1000, textTransform: 'uppercase', fontSize: '14px', letterSpacing: 2, mb: 1, px: 2, pt: 2 }}>Mantenimiento en Curso</Typography>
             <Box sx={{ 
-                overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 1.2, px: 2, pb: 2,
+                overflowY: 'auto', display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 3, rowGap: 1.2, px: 2, pb: 2,
                 '&::-webkit-scrollbar': { width: '4px' },
                 '&::-webkit-scrollbar-track': { background: 'transparent' },
                 '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.1)', borderRadius: '4px' },
                 '&::-webkit-scrollbar-thumb:hover': { background: 'rgba(255,255,255,0.2)' }
             }}>
                 {stopped.map(m => (
-                    <Box key={m.id} sx={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid rgba(255,255,255,0.03)', pb: 1 }}>
-                        <Typography sx={{ color: STATUS_COLORS[m.status], fontWeight: 1000, fontSize: '22px', width: 60 }}>#{m.number}</Typography>
-                        <Typography sx={{ color: '#fff', fontSize: '18px', fontWeight: 700 }}>{m.lastChangeBy || 'Sin Asignar'}</Typography>
+                    <Box key={m.id} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, borderBottom: '1px solid rgba(255,255,255,0.03)', pb: 0.6 }}>
+                        <Typography sx={{ color: STATUS_COLORS[m.status], fontWeight: 1000, fontSize: '24px', width: 45, lineHeight: 1 }}>{m.number}</Typography>
+                        <Typography sx={{ color: '#fff', fontSize: '15px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.lastChangeBy || 'Sin Asignar'}</Typography>
                     </Box>
                 ))}
                 {stopped.length === 0 && (
-                    <Typography sx={{ color: '#475569', fontSize: '16px', fontStyle: 'italic', py: 2 }}>No hay máquinas paradas</Typography>
+                    <Typography sx={{ color: '#475569', fontSize: '14px', fontStyle: 'italic', py: 2, gridColumn: 'span 2', fontWeight: 800 }}>No hay máquinas paradas</Typography>
                 )}
             </Box>
         </Box>
@@ -232,23 +230,23 @@ export default function MonitoreoVivoPage() {
     }, [machines, selectedMachineId]);
 
     const layout = useMemo(() => [
-        {
-            left: [[190, 189, 188, 187, 186, 185, 184, 182, 181, 180, 179], [170, 169, 168, 167, 160, 159, 158, 151, 150, 149, 148]],
-            right: [[null, 178, 177, 176, 175, 174, 173, 172, 171], [142, 141, 140, 139, 138, 132, 131, 130, 129, 128]]
-        },
-        {
-            left: [[166, 165, 164, 163, 162, 154, 153, 157, 146, 143, 144, 143], [73, 74, 75, 76, 77, 84, 86, 85, 93, 95, 96, 97]],
-            right: [[137, 136, 135, 134, 133, 127, 126, 125, 124, 123], [103, 104, 105, 106, 107, 113, 114, 115, 116, 117]]
-        },
-        {
-            left: [[78, 79, 81, 82, 88, 90, 91, 92, 99, 100, 101, 102], [23, 24, 25, 26, 27, 35, 36, 37, 44, 45, 46, 47]],
-            right: [[108, 109, 110, 111, 112, 118, 119, 120, 122, 121], [53, 54, 55, 56, 57, 63, 64, 65, 66, 67]]
-        },
-        {
-            left: [[28, 29, 31, 32, 38, 40, 40, 42, 49, 50, 51, 52], [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12]],
-            right: [[58, 59, 60, 61, 62, 68, 69, 70, 71, 72], [13, 14, 15, 16, 17, 18, 19, 21, 22]]
-        }
-    ], []);
+  {
+    left: [[190, 189, 188, 187, 186, 185, 184, 183, 182, 181, 180, 179], [170, 169, 168, 167, 160, 159, 158, 151, 150, 149, 148]],
+    right: [[null, 178, 177, 176, 175, 174, 173, 172, 171], [142, 141, 140, 139, 138, 132, 131, 130, 129, 128]]
+  },
+  {
+    left: [[166, 165, 164, 163, 162, 161, 160, 159, 158, 157, 156, 155, 154, 153, 152, 151], [73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]],
+    right: [[137, 136, 135, 134, 133, 132, 131, 130, 129, 128], [103, 104, 105, 106, 107, 108, 109, 110, 111, 112]]
+  },
+  {
+    left: [[78, 79, 80, 81, 82, 88, 89, 90, 91, 92, 98, 99, 100, 101, 102], [23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34]],
+    right: [[null, 108, 109, 110, 111, 112, 118, 119, 120, 122, 121], [53, 54, 55, 56, 57, 58, 59, 60, 61, 62]]
+  },
+  {
+    left: [[28, 29, 30, 31, 32, 38, 39, 40, 41, 42, 48, 49, 50, 51, 52], [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12]],
+    right: [[58, 59, 60, 61, 62, 68, 69, 70, 71, 72], [13, 14, 15, 16, 17, 18, 19, 20, 21, 22]]
+  }
+], []);
 
     const machineMap = useMemo(() => {
         const map: Record<number, any> = {};
@@ -285,11 +283,11 @@ export default function MonitoreoVivoPage() {
     ];
 
     const paradasBreakdown = [
-        { label: 'Electrónica', value: statusCounts.ELECTRONIC },
-        { label: 'Repuesto', value: statusCounts.REPUESTOS },
-        { label: 'Costura', value: statusCounts.FALTA_COSTURA },
-        { label: 'Programa', value: statusCounts.FALTA_PROGRAMA },
-        { label: 'Otro', value: statusCounts.OTRO },
+        { label: 'Electrónica', value: statusCounts.ELECTRONIC, color: STATUS_COLORS.ELECTRONIC },
+        { label: 'Repuesto', value: statusCounts.REPUESTOS, color: STATUS_COLORS.REPUESTOS },
+        { label: 'Costura', value: statusCounts.FALTA_COSTURA, color: STATUS_COLORS.FALTA_COSTURA },
+        { label: 'Programa', value: statusCounts.FALTA_PROGRAMA, color: STATUS_COLORS.FALTA_PROGRAMA },
+        { label: 'Otro', value: statusCounts.OTRO, color: STATUS_COLORS.OTRO },
     ];
 
     if (loadingMachines) return <Spinner />;
@@ -324,15 +322,17 @@ export default function MonitoreoVivoPage() {
             <Box sx={{ flex: 1, display: 'flex', gap: 2.5, minHeight: 0 }}>
                 {/* Map Area */}
                 <Box sx={{ flex: 1, bgcolor: '#151921', borderRadius: '12px', p: 2, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-                    <Typography sx={{ color: '#475569', fontWeight: 900, textTransform: 'uppercase', fontSize: '11px', mb: 1, px: 1, letterSpacing: 1.5 }}>Mapa de la Planta</Typography>
-                    <Box sx={{ 
-                        flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'flex-start',
-                        transform: { xs: 'scale(0.5)', sm: 'scale(0.65)', md: 'scale(0.85)', lg: 'scale(1.0)', xl: 'scale(1.2)' },
+                    <Box sx={{
+                        flex: 1,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'flex-start',
+                        transform: { xs: 'scale(0.5)', sm: 'scale(0.65)', md: 'scale(0.85)', lg: 'scale(1)', xl: 'scale(1.2)' },
                         transformOrigin: 'top center',
-                        pt: 4,
+                        width: '100%',
                         minHeight: 0
                     }}>
-                        <Box sx={{ display: 'grid', gridTemplateColumns: 'max-content max-content', columnGap: { xs: 4, md: 8, xl: 12 } }}>
+                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: { xs: 4, md: 8, xl: 12 } }}>
                             {layout.map((section, idx) => (
                                 <Fragment key={idx}>
                                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 4, alignItems: 'flex-end' }}>

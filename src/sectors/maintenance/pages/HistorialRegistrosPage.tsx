@@ -15,7 +15,7 @@ import {
     useUpdateLogMutation
 } from '../api/maintenance.api';
 
-const responsables = ['Gaston', 'Ruben', 'Daniel', 'Alexis', 'Violeta', 'Leandro', 'Gaspar', 'Ramón', 'Tejedor'];
+const responsables = ['Sin Asignar', 'Gaston', 'Ruben', 'Daniel', 'Alexis', 'Violeta', 'Leandro', 'Gaspar', 'Ramón', 'Tejedor'];
 
 const statusColors: Record<string, string> = {
     ACTIVA: '#10b981',

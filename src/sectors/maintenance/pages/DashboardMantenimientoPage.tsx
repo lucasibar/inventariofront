@@ -24,7 +24,7 @@ const statusColors: Record<string, string> = {
     FALTA_PROGRAMA: '#06b6d4',
 };
 
-const responsables = ['Gaston', 'Ruben', 'Daniel', 'Alexis', 'Violeta', 'Leandro', 'Gaspar', 'Ramón', 'Tejedor'];
+const responsables = ['Sin Asignar', 'Gaston', 'Ruben', 'Daniel', 'Alexis', 'Violeta', 'Leandro', 'Gaspar', 'Ramón', 'Tejedor'];
 
 const InteractiveMachineItem = ({ machine }: { machine: Machine }) => {
     const [updateStatus] = useUpdateMachineStatusMutation();
