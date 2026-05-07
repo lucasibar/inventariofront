@@ -274,11 +274,11 @@ export default function MonitoreoVivoPage() {
             position: 'relative'
         }}>
             {/* Discreet Menu Toggle */}
-            <IconButton 
+            <IconButton
                 onClick={() => document.dispatchEvent(new Event('open-sidebar-menu'))}
-                sx={{ 
-                    position: 'absolute', top: 8, left: 8, color: 'rgba(255,255,255,0.2)', 
-                    zIndex: 1000, '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.05)' } 
+                sx={{
+                    position: 'absolute', top: 8, left: 8, color: 'rgba(255,255,255,0.2)',
+                    zIndex: 1000, '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.05)' }
                 }}
             >
                 <MoreVertIcon fontSize="small" />
