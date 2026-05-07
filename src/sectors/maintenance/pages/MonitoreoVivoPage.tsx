@@ -9,6 +9,8 @@ import {
 } from '../api/maintenance.api';
 import { Spinner } from '../../../shared/ui';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { IconButton } from '@mui/material';
 
 const STATUS_COLORS: Record<string, string> = {
     ACTIVA: '#4ade80',         // Verde
@@ -36,10 +38,10 @@ const STATUS_LABELS: Record<string, string> = {
     SIN_DATOS: 'Sin Datos'
 };
 
-const MachineNode = ({ number, status, onDoubleClick }: {
+const MachineNode = ({ number, status, onClick }: {
     number: number | null,
     status: string,
-    onDoubleClick?: () => void
+    onClick?: () => void
 }) => {
     if (number === null) return <Box sx={{ width: 42, height: 42 }} />;
 
@@ -49,7 +51,7 @@ const MachineNode = ({ number, status, onDoubleClick }: {
     return (
         <Tooltip title={`Máquina ${number} - ${STATUS_LABELS[status] || status}`} arrow>
             <Box
-                onDoubleClick={onDoubleClick}
+                onClick={onClick}
                 sx={{
                     width: 42,
                     height: 42,
@@ -58,19 +60,19 @@ const MachineNode = ({ number, status, onDoubleClick }: {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: isSpecialStatus ? '#fff' : statusColor,
-                    bgcolor: isSpecialStatus ? `${statusColor}30` : 'transparent',
+                    color: statusColor,
+                    bgcolor: 'transparent',
                     fontSize: '18px',
                     fontWeight: 900,
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
-                    boxShadow: isSpecialStatus ? `0 0 10px ${statusColor}60` : 'none',
+                    boxShadow: isSpecialStatus ? `0 0 10px ${statusColor}40` : 'none',
                     zIndex: 1,
                     '&:hover': {
                         transform: 'scale(1.2)',
-                        bgcolor: `${statusColor}40`,
+                        bgcolor: `${statusColor}15`,
                         zIndex: 20,
-                        boxShadow: `0 0 20px ${statusColor}`,
+                        boxShadow: `0 0 20px ${statusColor}80`,
                         borderColor: '#fff'
                     }
                 }}
@@ -162,8 +164,8 @@ export default function MonitoreoVivoPage() {
 
     const layout = useMemo(() => [
         {
-            left: [[190, 189, 188, 187, 186, 185, 184, 183, 182, 181, 180, 179], [170, 169, 168, 167, 160, 159, 158, 157, 151, 150, 149, 148]],
-            right: [[null, 178, 177, 176, 175, 174, 173, 172, 171], [142, 141, 140, 139, 138, 132, 131, 130, 129, 128]]
+            left: [[190, 189, 188, 187, 186, 185, 184, 183, 182, 181, 180, 179], [170, 169, 168, 167, 160, 159, 158, 151, 150, 149, 148]],
+            right: [[null, 178, 177, 176, 175, 174, 173, 172, 171], [142, 141, 140, 139, 138]]
         },
         {
             left: [[166, 165, 164, 163, 162, 161, 156, 155, 154, 153, 152, 147, 146, 145, 144, 143], [73, 74, 75, 76, 77, 83, 84, 85, 86, 87, 93, 94, 95, 96, 97]],
@@ -240,7 +242,7 @@ export default function MonitoreoVivoPage() {
         };
     }, [machines]);
 
-    const handleMachineDoubleClick = (machine: any) => {
+    const handleMachineClick = (machine: any) => {
         navigate('/mantenimiento/registro', {
             state: {
                 preselectedMachine: machine,
@@ -268,8 +270,20 @@ export default function MonitoreoVivoPage() {
     return (
         <Box sx={{
             bgcolor: '#0b0e14', height: '100vh', width: '100vw', maxHeight: '100vh',
-            color: '#fff', display: 'flex', flexDirection: 'column', p: 3, gap: 2.5, overflow: 'hidden'
+            color: '#fff', display: 'flex', flexDirection: 'column', p: 3, gap: 2.5, overflow: 'hidden',
+            position: 'relative'
         }}>
+            {/* Discreet Menu Toggle */}
+            <IconButton 
+                onClick={() => document.dispatchEvent(new Event('open-sidebar-menu'))}
+                sx={{ 
+                    position: 'absolute', top: 8, left: 8, color: 'rgba(255,255,255,0.2)', 
+                    zIndex: 1000, '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.05)' } 
+                }}
+            >
+                <MoreVertIcon fontSize="small" />
+            </IconButton>
+
             {/* Fused KPI Row - Proportional Height */}
             <Box sx={{ display: 'flex', gap: 2.5, flexShrink: 0, height: '15vh', minHeight: 140 }}>
                 <FusedModule
@@ -336,10 +350,10 @@ export default function MonitoreoVivoPage() {
                                                     const machine = n !== null ? machineMap[n] : null;
                                                     return (
                                                         <MachineNode
-                                                            key={n ?? `e-${j}`}
+                                                            key={`${idx}-left-${i}-${n ?? `e-${j}`}`}
                                                             number={n}
                                                             status={machine?.status || 'SIN_DATOS'}
-                                                            onDoubleClick={() => machine && handleMachineDoubleClick(machine)}
+                                                            onClick={() => machine && handleMachineClick(machine)}
                                                         />
                                                     );
                                                 })}
@@ -353,10 +367,10 @@ export default function MonitoreoVivoPage() {
                                                     const machine = n !== null ? machineMap[n] : null;
                                                     return (
                                                         <MachineNode
-                                                            key={n ?? `e-${j}`}
+                                                            key={`${idx}-right-${i}-${n ?? `e-${j}`}`}
                                                             number={n}
                                                             status={machine?.status || 'SIN_DATOS'}
-                                                            onDoubleClick={() => machine && handleMachineDoubleClick(machine)}
+                                                            onClick={() => machine && handleMachineClick(machine)}
                                                         />
                                                     );
                                                 })}
