@@ -270,7 +270,12 @@ export default function MonitoreoVivoPage() {
     const selectedMachine = useMemo(() => machines.find((m: any) => m.id === selectedMachineId), [machines, selectedMachineId]);
 
     const handleMachineDoubleClick = (machine: any) => {
-        navigate(`/mantenimiento/registro?machineId=${machine.id}&number=${machine.number}&status=${machine.status}`);
+        navigate('/mantenimiento/registro', { 
+            state: { 
+                preselectedMachine: machine,
+                plantId: selectedPlantId 
+            } 
+        });
     };
 
     const activasBreakdown = [
