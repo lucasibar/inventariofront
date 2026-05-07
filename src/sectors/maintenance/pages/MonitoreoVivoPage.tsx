@@ -204,7 +204,6 @@ export default function MonitoreoVivoPage() {
         const updateScale = () => {
             if (!mapContainerRef.current || !mapContentRef.current) return;
             
-            const containerWidth = mapContainerRef.current.clientWidth - 48;
             const containerHeight = mapContainerRef.current.clientHeight - 48;
             
             const contentWidth = mapContentRef.current.scrollWidth;
