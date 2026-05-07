@@ -11,16 +11,16 @@ import { Spinner } from '../../../shared/ui';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 const STATUS_COLORS: Record<string, string> = {
-    ACTIVA: '#10b981', // Emerald
-    REVISAR: '#3b82f6', // Blue
-    VELOCIDAD_REDUCIDA: '#f59e0b', // Amber/Orange
-    PARADA: '#ef4444', // Red
-    ELECTRONIC: '#ef4444', // Red
-    FALTA_COSTURA: '#8b5cf6', // Violet
-    FALTA_PROGRAMA: '#ec4899', // Pink
-    REPUESTOS: '#f97316', // Orange
-    OTRO: '#64748b', // Slate
-    SIN_DATOS: '#1e293b' // Darker Slate
+    ACTIVA: '#4ade80',         // Verde
+    REVISAR: '#fbbf24',        // Amarillo
+    VELOCIDAD_REDUCIDA: '#92400e', // Marrón
+    PARADA: '#f87171',         // Rojo
+    ELECTRONIC: '#22d3ee',     // Azul Cyan
+    FALTA_COSTURA: '#a855f7',  // Violeta
+    FALTA_PROGRAMA: '#ffffff', // Blanco
+    REPUESTOS: '#f472b6',      // Rosa
+    OTRO: '#94a3b8',           // Gris
+    SIN_DATOS: '#94a3b8'       // Gris
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -84,10 +84,10 @@ const MachineNode = ({ number, status, onDoubleClick }: {
 const StatusBar = ({ label, value, color, max }: { label: string, value: number, color: string, max: number }) => {
     const width = `${Math.max(2, (value / (max || 1)) * 100)}%`;
     return (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.2 }}>
-            <Typography sx={{ color: '#94a3b8', fontSize: '14px', fontWeight: 900, width: 200, textTransform: 'uppercase', lineHeight: 1 }}>{label}</Typography>
-            <Typography sx={{ color: color, fontSize: '16px', fontWeight: 1000, width: 45, textAlign: 'right' }}>{value}</Typography>
-            <Box sx={{ flex: 1, height: 6, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 4, overflow: 'hidden' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
+            <Typography sx={{ color: '#94a3b8', fontSize: '11px', fontWeight: 900, width: 160, textTransform: 'uppercase', lineHeight: 1 }}>{label}</Typography>
+            <Typography sx={{ color: color, fontSize: '12px', fontWeight: 1000, width: 35, textAlign: 'right' }}>{value}</Typography>
+            <Box sx={{ flex: 1, height: 4, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 4, overflow: 'hidden' }}>
                 <Box sx={{ width: width, height: '100%', bgcolor: color, borderRadius: 4 }} />
             </Box>
         </Box>
@@ -101,14 +101,14 @@ const FusedModule = ({ title, count, total, color, breakdown, subtitle }: any) =
     ];
 
     return (
-        <Box sx={{ flex: 1, display: 'flex', minHeight: 150, borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <Box sx={{ flex: '0 0 42%', bgcolor: '#151921', p: 1.5, display: 'flex', flexDirection: 'column', justifyContent: 'center', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
+        <Box sx={{ flex: 1, display: 'flex', height: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <Box sx={{ flex: '0 0 42%', bgcolor: '#151921', p: { xs: 1, md: 1.5 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
                     <Box>
-                        <Typography sx={{ color: color, fontWeight: 1000, fontSize: { xs: '45px', xl: '65px' }, lineHeight: 0.85 }}>{count}</Typography>
-                        <Typography sx={{ color: color, fontWeight: 1000, fontSize: '12px', mt: 1, textTransform: 'uppercase', letterSpacing: 1 }}>{title}</Typography>
+                        <Typography sx={{ color: color, fontWeight: 1000, fontSize: { xs: '30px', sm: '40px', md: '65px' }, lineHeight: 0.85 }}>{count}</Typography>
+                        <Typography sx={{ color: color, fontWeight: 1000, fontSize: { xs: '9px', md: '12px' }, mt: 0.5, textTransform: 'uppercase', letterSpacing: 1 }}>{title}</Typography>
                     </Box>
-                    <Box sx={{ width: 85, height: 85, flexShrink: 0 }}>
+                    <Box sx={{ width: { xs: 45, sm: 60, md: 85 }, height: { xs: 45, sm: 60, md: 85 }, flexShrink: 0 }}>
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie data={chartData} innerRadius="78%" outerRadius="100%" startAngle={90} endAngle={450} dataKey="value" stroke="none">
@@ -119,8 +119,8 @@ const FusedModule = ({ title, count, total, color, breakdown, subtitle }: any) =
                     </Box>
                 </Box>
             </Box>
-            <Box sx={{ flex: 1, bgcolor: 'rgba(255,255,255,0.01)', p: 1.5, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <Typography sx={{ color: '#475569', fontWeight: 1000, textTransform: 'uppercase', fontSize: '13px', mb: 1, letterSpacing: 2 }}>{subtitle}</Typography>
+            <Box sx={{ flex: 1, bgcolor: 'rgba(255,255,255,0.01)', p: { xs: 1, md: 1.5 }, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <Typography sx={{ color: '#475569', fontWeight: 1000, textTransform: 'uppercase', fontSize: '11px', mb: 0.5, letterSpacing: 2 }}>{subtitle}</Typography>
                 {breakdown.map((item: any, i: number) => (
                     <StatusBar key={i} label={item.label} value={item.value} color={item.color || color} max={count} />
                 ))}
@@ -204,15 +204,26 @@ export default function MonitoreoVivoPage() {
         const updateScale = () => {
             if (!mapContainerRef.current || !mapContentRef.current) return;
             
+            const containerWidth = mapContainerRef.current.clientWidth - 48;
             const containerHeight = mapContainerRef.current.clientHeight - 48;
             
             const contentWidth = mapContentRef.current.scrollWidth;
             const contentHeight = mapContentRef.current.scrollHeight;
 
             if (contentWidth > 0 && contentHeight > 0) {
-                // Always fit to container height as requested
+                const scaleW = containerWidth / contentWidth;
                 const scaleH = containerHeight / contentHeight;
-                setMapScale(scaleH * 0.98);
+                
+                // Detection: landscape (TV/PC) vs portrait (Tablet/Mobile)
+                const isPortrait = containerHeight > containerWidth;
+                
+                if (isPortrait) {
+                    // Portrait: Fit height, allow horizontal scroll
+                    setMapScale(scaleH * 0.98);
+                } else {
+                    // Landscape: Fit both (no scroll)
+                    setMapScale(Math.min(scaleW, scaleH) * 0.98);
+                }
             }
         };
 
@@ -290,7 +301,7 @@ export default function MonitoreoVivoPage() {
                         borderRadius: '12px', 
                         border: '1px solid rgba(255,255,255,0.05)', 
                         display: 'flex', 
-                        justifyContent: 'flex-start', 
+                        justifyContent: mapContainerRef.current && mapContainerRef.current.clientHeight > mapContainerRef.current.clientWidth ? 'flex-start' : 'center', 
                         alignItems: 'center', 
                         minWidth: 0, 
                         overflowX: 'auto', 
@@ -306,13 +317,13 @@ export default function MonitoreoVivoPage() {
                         ref={mapContentRef}
                         sx={{
                             transform: `scale(${mapScale})`,
-                            transformOrigin: 'left center',
+                            transformOrigin: mapContainerRef.current && mapContainerRef.current.clientHeight > mapContainerRef.current.clientWidth ? 'left center' : 'center center',
                             transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                             display: 'inline-flex',
                             flexDirection: 'column',
                             width: 'fit-content',
                             height: 'fit-content',
-                            pr: 20 // Margin for scrolling end
+                            pr: mapContainerRef.current && mapContainerRef.current.clientHeight > mapContainerRef.current.clientWidth ? 20 : 0
                         }}
                     >
                         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 12 }}>
