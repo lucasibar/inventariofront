@@ -31,6 +31,8 @@ export interface Machine {
     createdAt: string;
     updatedAt: string;
     lastStatusChange?: string;
+    mtbf?: number;
+    mttr?: number;
 }
 
 

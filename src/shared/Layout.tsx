@@ -198,7 +198,7 @@ export default function Layout() {
             `}</style>
 
             {/* Mobile Header */}
-            {isMobile && (
+            {isMobile && location.pathname !== '/mantenimiento/dashboard' && (
                 <header style={{
                     height: '56px', background: '#1a1d2e', borderBottom: '1px solid #2a2d3e',
                     display: 'flex', alignItems: 'center', padding: '0 12px', zIndex: 997,

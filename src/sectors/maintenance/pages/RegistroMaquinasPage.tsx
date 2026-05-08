@@ -23,7 +23,7 @@ import {
 const responsables = ['Sin Asignar', 'Gaston', 'Ruben', 'Daniel', 'Alexis', 'Violeta', 'Leandro', 'Gaspar', 'Ramón', 'Tejedor'];
 
 const failureTypes = [
-    'Ninguna', 'Cosedora Cilindro', 'Cosedora Brazo', 'Cosedora Cierre', 'Error electronico',
+    'Sin Asignar', 'Ninguna', 'Cosedora Cilindro', 'Cosedora Brazo', 'Cosedora Cierre', 'Error electronico',
     'Error Puesta 0', 'Error Motores', 'Mal vanizado', 'Logo contaminado',
     'Tejido(Muerde/revienta/pica/tirones)', 'Goma', 'Puntada', 'Transferencia',
     'Aguja', 'Platina', 'Menguados', 'Corta', 'Electronico', 'Lubricacion',

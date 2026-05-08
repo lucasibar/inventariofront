@@ -1,6 +1,18 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Box, Typography, Grid, Card as MuiCard, CardContent, useMediaQuery, useTheme, Button, List, ListItem, Collapse } from '@mui/material';
+import { Box, Typography, Grid, IconButton, useMediaQuery, useTheme, List, ListItem, Collapse, Fade, Chip, TextField, InputAdornment, MenuItem } from '@mui/material';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import SearchIcon from '@mui/icons-material/Search';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import MemoryIcon from '@mui/icons-material/Memory';
+import ContentCutIcon from '@mui/icons-material/ContentCut';
+import CodeIcon from '@mui/icons-material/Code';
+import EngineeringIcon from '@mui/icons-material/Engineering';
+import TimerIcon from '@mui/icons-material/Timer';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Spinner, Select } from '../../../shared/ui';
 import { 
     useGetPlantsQuery, 
@@ -17,23 +29,46 @@ import type { Machine } from '../api/maintenance.api';
 const statusColors: Record<string, string> = {
     ACTIVA: '#10b981',
     PARADA: '#ef4444',
-    REVISAR: '#eab308',
+    REVISAR: '#f59e0b',
     VELOCIDAD_REDUCIDA: '#f97316',
     ELECTRONIC: '#3b82f6',
     FALTA_COSTURA: '#8b5cf6',
     FALTA_PROGRAMA: '#06b6d4',
 };
 
-const responsables = ['Sin Asignar', 'Gaston', 'Ruben', 'Daniel', 'Alexis', 'Violeta', 'Leandro', 'Gaspar', 'Ramón', 'Tejedor'];
+const statusIcons: Record<string, React.ReactNode> = {
+    ACTIVA: <CheckCircleIcon sx={{ fontSize: '0.8rem' }} />,
+    PARADA: <CancelIcon sx={{ fontSize: '0.8rem' }} />,
+    REVISAR: <VisibilityIcon sx={{ fontSize: '0.8rem' }} />,
+    VELOCIDAD_REDUCIDA: <TrendingDownIcon sx={{ fontSize: '0.8rem' }} />,
+    ELECTRONIC: <MemoryIcon sx={{ fontSize: '0.8rem' }} />,
+    FALTA_COSTURA: <ContentCutIcon sx={{ fontSize: '0.8rem' }} />,
+    FALTA_PROGRAMA: <CodeIcon sx={{ fontSize: '0.8rem' }} />,
+};
 
-const InteractiveMachineItem = ({ machine }: { machine: Machine }) => {
+const responsables = ['Sin Asignar', 'Gaston', 'Ruben', 'Daniel', 'Alexis', 'Violeta', 'Leandro', 'Gaspar', 'Ramón', 'Tejedor'];
+const failureTypes = [
+    'Sin Asignar', 'Ninguna', 'Cosedora Cilindro', 'Cosedora Brazo', 'Cosedora Cierre', 'Error electronico',
+    'Error Puesta 0', 'Error Motores', 'Mal vanizado', 'Logo contaminado',
+    'Tejido(Muerde/revienta/pica/tirones)', 'Goma', 'Puntada', 'Transferencia',
+    'Aguja', 'Platina', 'Menguados', 'Corta', 'Electronico', 'Lubricacion',
+    'Mancha', 'Corte', 'REPUESTO', 'Corte de luz.', 'Programacion'
+];
+
+const formatStatus = (status: string) => {
+    if (status === 'VELOCIDAD_REDUCIDA') return 'Vel. Reducida';
+    return status.replace('_', ' ');
+};
+
+const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortMode: 'mtbf' | 'mttr' | null }) => {
     const [updateStatus] = useUpdateMachineStatusMutation();
-    const [updateLog] = useUpdateLogMutation();
     const { data: logs } = useGetLogsQuery({ machineId: machine.id }, { skip: !machine.id });
 
     const [isEditingStatus, setIsEditingStatus] = useState(false);
+    const [isEditingFailure, setIsEditingFailure] = useState(false);
     const [isEditingMechanic, setIsEditingMechanic] = useState(false);
-    const [mechanicName, setMechanicName] = useState(machine.lastChangeBy || '');
+    
+    const [mechanicName, setMechanicName] = useState(machine.lastChangeBy || 'Sin Asignar');
 
     const timeAgo = useMemo(() => {
         const date = machine.lastStatusChange ? new Date(machine.lastStatusChange) : new Date(machine.createdAt);
@@ -46,41 +81,46 @@ const InteractiveMachineItem = ({ machine }: { machine: Machine }) => {
         return `${mins}m`;
     }, [machine.lastStatusChange, machine.createdAt, machine.status]);
 
-    const handleStatusChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const newStatus = e.target.value;
-        if (newStatus !== machine.status) {
-            await updateStatus({
-                id: machine.id,
-                plantId: machine.plantId,
-                typeId: machine.typeId,
-                status: newStatus,
-                generatedBy: machine.lastChangeBy || 'Sistema',
-            });
-        }
+    const handleQuickUpdate = async (updates: Partial<{ status: string, failureType: string, generatedBy: string }>) => {
+        await updateStatus({
+            id: machine.id,
+            status: updates.status || machine.status,
+            failureType: updates.failureType || machine.lastFailureType || 'Ninguna',
+            generatedBy: updates.generatedBy || machine.lastChangeBy || 'Sin Asignar',
+            observation: machine.lastObservation || '',
+            timestamp: new Date().toISOString()
+        });
         setIsEditingStatus(false);
-    };
-
-    const handleMechanicSave = async () => {
-        if (mechanicName !== machine.lastChangeBy && logs && logs.length > 0) {
-            const lastLog = logs[0];
-            await updateLog({ id: lastLog.id, generatedBy: mechanicName });
-        }
+        setIsEditingFailure(false);
         setIsEditingMechanic(false);
     };
 
     return (
-        <ListItem sx={{ bgcolor: 'rgba(255,255,255,0.05)', mb: 1, borderRadius: 1, p: 1.5, border: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <ListItem sx={{ 
+            bgcolor: 'rgba(255,255,255,0.02)', 
+            mb: 0.5, 
+            borderRadius: 0, 
+            p: 1.8, 
+            borderBottom: '1px solid rgba(255,255,255,0.05)', 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            width: '100%'
+        }}>
+            {/* LEFT SIDE: Machine Number and Responsible */}
             <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'white', lineHeight: 1.2 }}>Máquina {machine.number}</Typography>
+                <Typography variant="h5" sx={{ fontWeight: 900, color: '#fff', lineHeight: 1 }}>
+                    {machine.number}
+                </Typography>
+                
                 {isEditingMechanic ? (
                     <select
                         autoFocus
                         value={mechanicName}
-                        onChange={(e) => setMechanicName(e.target.value)}
-                        onBlur={handleMechanicSave}
-                        style={{ width: '120px', padding: '2px 4px', background: '#333', color: 'white', border: '1px solid #555', borderRadius: '4px', outline: 'none', fontSize: '0.75rem', marginTop: '4px' }}
+                        onChange={(e) => handleQuickUpdate({ generatedBy: e.target.value })}
+                        onBlur={() => setIsEditingMechanic(false)}
+                        style={{ width: '100px', background: '#1a1d24', color: 'white', border: '1px solid #374151', borderRadius: '4px', outline: 'none', fontSize: '0.7rem', marginTop: '4px' }}
                     >
-                        <option value="">Sin asignar</option>
                         {responsables.map(r => (
                             <option key={r} value={r}>{r}</option>
                         ))}
@@ -89,100 +129,137 @@ const InteractiveMachineItem = ({ machine }: { machine: Machine }) => {
                     <Typography 
                         variant="caption" 
                         onClick={() => setIsEditingMechanic(true)}
-                        sx={{ 
-                            color: machine.lastChangeBy ? '#9ca3af' : '#ef4444', 
-                            cursor: 'pointer', 
-                            mt: 0.5,
-                            lineHeight: 1,
-                            textDecoration: 'underline',
-                            textDecorationStyle: 'dashed',
-                            textUnderlineOffset: '2px'
-                        }}
+                        sx={{ color: machine.lastChangeBy ? '#6b7280' : '#ef4444', cursor: 'pointer', mt: 0.5, fontSize: '0.75rem', fontWeight: 700 }}
                     >
                         {machine.lastChangeBy || 'Sin asignar'}
                     </Typography>
                 )}
             </Box>
             
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                {isEditingStatus ? (
-                    <select 
-                        autoFocus
-                        defaultValue={machine.status}
-                        onBlur={() => setIsEditingStatus(false)}
-                        onChange={handleStatusChange}
-                        style={{ padding: '2px 4px', background: '#333', color: 'white', border: '1px solid #555', borderRadius: '4px', outline: 'none', fontSize: '0.75rem', marginBottom: '4px' }}
-                    >
-                        {Object.keys(statusColors).map(s => (
-                            <option key={s} value={s}>{s}</option>
-                        ))}
-                    </select>
+            {/* RIGHT SIDE: Status, Failure Type, Time */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+                {sortMode ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: sortMode === 'mtbf' ? '#10b981' : '#f87171' }}>
+                        {sortMode === 'mtbf' ? <EngineeringIcon sx={{ fontSize: 14 }} /> : <TimerIcon sx={{ fontSize: 14 }} />}
+                        <Typography sx={{ fontWeight: 900, fontSize: '1.2rem' }}>
+                            {sortMode === 'mtbf' ? `${machine.mtbf || 0}d` : `${machine.mttr || 0}h`}
+                        </Typography>
+                    </Box>
                 ) : (
-                    <Typography 
-                        variant="caption" 
-                        onClick={() => setIsEditingStatus(true)}
-                        sx={{ 
-                            color: statusColors[machine.status] || '#fff', 
-                            fontWeight: 'bold', 
-                            cursor: 'pointer', 
-                            px: 1, 
-                            py: 0.25, 
-                            bgcolor: 'rgba(0,0,0,0.2)', 
-                            borderRadius: 1,
-                            mb: 0.5,
-                            border: `1px solid ${statusColors[machine.status] || '#fff'}40`
-                        }}
-                    >
-                        {machine.status}
-                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                        {isEditingStatus ? (
+                            <select
+                                autoFocus
+                                value={machine.status}
+                                onChange={(e) => handleQuickUpdate({ status: e.target.value })}
+                                onBlur={() => setIsEditingStatus(false)}
+                                style={{ background: '#1a1d24', color: 'white', border: '1px solid #374151', borderRadius: '4px', outline: 'none', fontSize: '0.7rem', padding: '2px' }}
+                            >
+                                {Object.keys(statusColors).map(s => (
+                                    <option key={s} value={s}>{formatStatus(s)}</option>
+                                ))}
+                            </select>
+                        ) : (
+                            <Box 
+                                onClick={() => setIsEditingStatus(true)}
+                                sx={{ 
+                                    display: 'flex', alignItems: 'center', gap: 0.5,
+                                    color: statusColors[machine.status], 
+                                    fontWeight: 900, 
+                                    cursor: 'pointer', 
+                                    px: 1, 
+                                    py: 0.3, 
+                                    bgcolor: `${statusColors[machine.status]}15`, 
+                                    borderRadius: '4px',
+                                    border: `1px solid ${statusColors[machine.status]}30`,
+                                    fontSize: '0.65rem',
+                                    textTransform: 'uppercase'
+                                }}
+                            >
+                                {statusIcons[machine.status]}
+                                {formatStatus(machine.status)}
+                            </Box>
+                        )}
+
+                        {isEditingFailure ? (
+                            <select
+                                autoFocus
+                                value={machine.lastFailureType || 'Ninguna'}
+                                onChange={(e) => handleQuickUpdate({ failureType: e.target.value })}
+                                onBlur={() => setIsEditingFailure(false)}
+                                style={{ width: '120px', background: '#1a1d24', color: 'white', border: '1px solid #374151', borderRadius: '4px', outline: 'none', fontSize: '0.65rem', marginTop: '4px' }}
+                            >
+                                {failureTypes.map(f => (
+                                    <option key={f} value={f}>{f}</option>
+                                ))}
+                            </select>
+                        ) : (
+                            <Typography 
+                                variant="caption" 
+                                onClick={() => setIsEditingFailure(true)}
+                                sx={{ color: '#9ca3af', fontSize: '0.65rem', fontWeight: 600, cursor: 'pointer', mt: 0.3, display: 'flex', alignItems: 'center', gap: 0.3 }}
+                            >
+                                <ErrorOutlineIcon sx={{ fontSize: 10 }} />
+                                {machine.lastFailureType || 'Sin fallo'}
+                            </Typography>
+                        )}
+                    </Box>
                 )}
-                <Typography variant="caption" sx={{ color: '#6b7280', lineHeight: 1, mt: 0.5, textAlign: 'right' }}>
-                    {logs && logs[0]?.failureType ? `${logs[0].failureType} · ` : ''}{timeAgo}
+                
+                <Typography variant="caption" sx={{ color: '#4b5563', fontWeight: 800, fontSize: '0.6rem' }}>
+                    Hace {timeAgo}
                 </Typography>
             </Box>
         </ListItem>
     );
 };
 
-const MetricCard = ({ title, value, color = '#6366f1', horizontal = false, onClick }: { title: string, value: string | number, color?: string, horizontal?: boolean, onClick?: () => void }) => {
-    const clickable = !!onClick;
-    if (horizontal) {
-        return (
-            <MuiCard 
-                onClick={onClick}
-                sx={{ 
-                    bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 2, mb: 1, borderLeft: `4px solid ${color}`,
-                    cursor: clickable ? 'pointer' : 'default',
-                    transition: 'opacity 0.15s',
-                    '&:hover': clickable ? { opacity: 0.8 } : {},
-                }}
-            >
-                <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: '16px !important' }}>
-                    <Typography variant="subtitle2" sx={{ color: '#9ca3af', fontWeight: 600 }}>{title}</Typography>
-                    <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700 }}>{value}</Typography>
-                </CardContent>
-            </MuiCard>
-        );
-    }
-    
+const StatusButton = ({ status, count, active, onClick }: { status: string, count: number, active: boolean, onClick: () => void }) => {
+    const color = statusColors[status];
     return (
-        <MuiCard 
+        <Box 
             onClick={onClick}
             sx={{ 
-                bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 2, height: '100%', borderTop: `4px solid ${color}`,
-                cursor: clickable ? 'pointer' : 'default',
-                transition: 'transform 0.15s, opacity 0.15s',
-                '&:hover': clickable ? { transform: 'translateY(-2px)', opacity: 0.85 } : {},
+                flex: '1 1 0',
+                minWidth: 70,
+                height: 70,
+                p: 1, 
+                borderRadius: 3, 
+                bgcolor: active ? `${color}25` : 'rgba(255,255,255,0.03)',
+                border: '1px solid',
+                borderColor: active ? color : 'rgba(255,255,255,0.06)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                position: 'relative'
             }}
         >
-            <CardContent>
-                <Typography variant="subtitle2" sx={{ color: '#9ca3af', mb: 1 }}>{title}</Typography>
-                <Typography variant="h4" sx={{ color: '#fff', fontWeight: 700, fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>{value}</Typography>
-                {clickable && (
-                    <Typography variant="caption" sx={{ color: color, mt: 1, display: 'block' }}>Ver listado →</Typography>
-                )}
-            </CardContent>
-        </MuiCard>
+            <Box sx={{ color: color, mb: 0.3, opacity: active ? 1 : 0.6, display: 'flex' }}>
+                {statusIcons[status]}
+            </Box>
+            <Typography sx={{ color: active ? '#fff' : color, fontWeight: 900, mb: 0.1, lineHeight: 1, fontSize: '1.2rem' }}>
+                {count}
+            </Typography>
+            <Typography variant="caption" sx={{ 
+                color: active ? '#fff' : '#6b7280', 
+                fontSize: '0.45rem', 
+                fontWeight: 800, 
+                textAlign: 'center',
+                lineHeight: 1,
+                textTransform: 'uppercase',
+                letterSpacing: '0.02em',
+                maxWidth: '100%',
+                overflow: 'hidden'
+            }}>
+                {formatStatus(status)}
+            </Typography>
+            {active && (
+                <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, bgcolor: color }} />
+            )}
+        </Box>
     );
 };
 
@@ -193,13 +270,9 @@ export default function DashboardMantenimientoPage() {
     const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
     const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
     const [showFilters, setShowFilters] = useState(false);
-
-    const [startDate, setStartDate] = useState(() => {
-        const d = new Date();
-        d.setMonth(d.getMonth() - 1);
-        return d.toISOString().split('T')[0];
-    });
-    const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
+    const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [sortMode, setSortMode] = useState<'mtbf' | 'mttr' | null>(null);
 
     const { data: plants = [], isLoading: loadingPlants } = useGetPlantsQuery();
     const { data: machineTypes = [], isLoading: loadingTypes } = useGetMachineTypesQuery();
@@ -218,19 +291,13 @@ export default function DashboardMantenimientoPage() {
         }
     }, [machineTypes, selectedTypeId]);
 
-    useEffect(() => {
-        const handleOpenFilters = () => setShowFilters(prev => !prev);
-        document.addEventListener('open-maintenance-filters', handleOpenFilters);
-        return () => document.removeEventListener('open-maintenance-filters', handleOpenFilters);
-    }, []);
-
     const { data: metrics, isLoading: loadingMetrics } = useGetMetricsQuery(
         { plantId: selectedPlantId || '', typeId: selectedTypeId || '' },
         { skip: !selectedPlantId }
     );
 
     const { data: kpis, isLoading: loadingKpis } = useGetPlantKPIsQuery(
-        { plantId: selectedPlantId || '', startDate, endDate, typeId: selectedTypeId || '' },
+        { plantId: selectedPlantId || '', typeId: selectedTypeId || '' },
         { skip: !selectedPlantId }
     );
 
@@ -246,167 +313,166 @@ export default function DashboardMantenimientoPage() {
     }, [machineTypes]);
 
     const statusCounts = useMemo(() => {
-        const counts = { ACTIVA: 0, PARADA: 0, REVISAR: 0, VELOCIDAD_REDUCIDA: 0, ELECTRONIC: 0, FALTA_COSTURA: 0, FALTA_PROGRAMA: 0 };
+        const counts: Record<string, number> = {};
+        Object.keys(statusColors).forEach(s => counts[s] = 0);
         if (metrics?.byStatus) {
-            metrics.byStatus.forEach((s: any) => {
-                counts[s.status as keyof typeof counts] = parseInt(s.count, 10);
-            });
+            metrics.byStatus.forEach((s: any) => counts[s.status] = parseInt(s.count, 10));
         }
         return counts;
     }, [metrics]);
 
+    const filteredMachines = useMemo(() => {
+        let result = [...allMachines];
+        
+        if (sortMode === 'mtbf') {
+            result.sort((a, b) => (b.mtbf || 0) - (a.mtbf || 0));
+        } else if (sortMode === 'mttr') {
+            result.sort((a, b) => (b.mttr || 0) - (a.mttr || 0));
+        } else {
+            if (selectedStatus) {
+                result = result.filter((m: Machine) => m.status === selectedStatus);
+            } else {
+                result = result.filter(m => m.status !== 'ACTIVA');
+            }
+        }
+
+        if (searchQuery) {
+            result = result.filter(m => m.number.toString() === searchQuery);
+        }
+        return result;
+    }, [allMachines, selectedStatus, searchQuery, sortMode]);
+
+    const handleSortToggle = (mode: 'mtbf' | 'mttr') => {
+        if (sortMode === mode) {
+            setSortMode(null);
+        } else {
+            setSortMode(mode);
+            setSelectedStatus(null);
+        }
+    };
+
+    const toggleSidebar = () => {
+        const event = new CustomEvent('open-sidebar-menu');
+        document.dispatchEvent(event);
+    };
+
     if (loadingPlants || loadingTypes) return <Spinner />;
 
-    const FilterContent = () => (
-        <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 2, mb: 3, p: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.1)' }}>
-            <Box sx={{ flex: 1 }}>
-                <Select 
-                    label="Planta"
-                    value={selectedPlantId || ''}
-                    onChange={setSelectedPlantId}
-                    options={plantOptions}
-                />
-            </Box>
-            <Box sx={{ flex: 1 }}>
-                <Select 
-                    label="Tipo de Máquina"
-                    value={selectedTypeId || 'ALL'}
-                    onChange={setSelectedTypeId}
-                    options={typeOptions}
-                />
-            </Box>
-            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>Desde</label>
-                <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    style={{
-                        width: '100%', background: '#0f1117', border: '1px solid #374151', borderRadius: '8px',
-                        padding: '8px 10px', color: '#f3f4f6', fontSize: '13px', outline: 'none', boxSizing: 'border-box',
-                        colorScheme: 'dark'
-                    }}
-                />
-            </Box>
-            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>Hasta</label>
-                <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    style={{
-                        width: '100%', background: '#0f1117', border: '1px solid #374151', borderRadius: '8px',
-                        padding: '8px 10px', color: '#f3f4f6', fontSize: '13px', outline: 'none', boxSizing: 'border-box',
-                        colorScheme: 'dark'
-                    }}
-                />
-            </Box>
-        </Box>
-    );
-
     return (
-        <Box sx={{ p: isMobile ? 2 : 4, maxWidth: '1400px', margin: '0 auto' }}>
-            {!isMobile && (
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
-                    <Button 
-                        variant="outlined" 
-                        onClick={() => setShowFilters(!showFilters)}
-                        startIcon={<FilterListIcon />}
-                        sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.3)' }}
+        <Box sx={{ p: 0, maxWidth: '1400px', margin: '0 auto', color: 'white', pb: 10 }}>
+            
+            <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                p: 1, 
+                bgcolor: 'rgba(255,255,255,0.03)',
+                borderBottom: '1px solid rgba(255,255,255,0.08)',
+            }}>
+                <IconButton size="medium" onClick={toggleSidebar} sx={{ color: '#6b7280', mr: 1 }}>
+                    <MoreVertIcon />
+                </IconButton>
+
+                <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <Box 
+                        onClick={() => handleSortToggle('mtbf')}
+                        sx={{ 
+                            flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'baseline', gap: 1, 
+                            cursor: 'pointer', opacity: sortMode === 'mttr' ? 0.3 : 1, transition: 'all 0.2s',
+                            bgcolor: sortMode === 'mtbf' ? 'rgba(16,185,129,0.1)' : 'transparent', borderRadius: 2, py: 0.5
+                        }}
                     >
-                        Filtros
-                    </Button>
+                        <Typography sx={{ color: sortMode === 'mtbf' ? '#10b981' : '#4b5563', fontWeight: 900, fontSize: '1.4rem', textTransform: 'uppercase' }}>MTBF</Typography>
+                        <Typography sx={{ color: sortMode === 'mtbf' ? '#10b981' : '#fff', fontWeight: 950, fontSize: '1.6rem', letterSpacing: '-0.03em' }}>{kpis?.mtbf?.split(' ')[0] || '0d'}</Typography>
+                    </Box>
+                    <Box sx={{ width: '1px', height: '24px', bgcolor: 'rgba(255,255,255,0.1)', mx: 0.5 }} />
+                    <Box 
+                        onClick={() => handleSortToggle('mttr')}
+                        sx={{ 
+                            flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'baseline', gap: 1, 
+                            cursor: 'pointer', opacity: sortMode === 'mtbf' ? 0.3 : 1, transition: 'all 0.2s',
+                            bgcolor: sortMode === 'mttr' ? 'rgba(248,113,113,0.1)' : 'transparent', borderRadius: 2, py: 0.5
+                        }}
+                    >
+                        <Typography sx={{ color: sortMode === 'mttr' ? '#f87171' : '#4b5563', fontWeight: 900, fontSize: '1.4rem', textTransform: 'uppercase' }}>MTTR</Typography>
+                        <Typography sx={{ color: sortMode === 'mttr' ? '#f87171' : '#fff', fontWeight: 950, fontSize: '1.6rem', letterSpacing: '-0.03em' }}>{kpis?.mttr?.split(' ')[0] || '0h'}</Typography>
+                    </Box>
                 </Box>
-            )}
+                
+                <IconButton size="medium" onClick={() => setShowFilters(!showFilters)} sx={{ color: showFilters ? '#10b981' : '#6b7280', ml: 1 }}>
+                    <FilterListIcon />
+                </IconButton>
+            </Box>
 
             <Collapse in={showFilters}>
-                <FilterContent />
+                <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.01)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <TextField
+                        placeholder="N° de máquina..."
+                        size="small"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        fullWidth
+                        InputProps={{
+                            startAdornment: <SearchIcon sx={{ color: '#4b5563', fontSize: '1.1rem', mr: 1 }} />,
+                            sx: { bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 2, color: 'white', fontSize: '0.85rem' }
+                        }}
+                        sx={{ mb: 1.5 }}
+                    />
+                    <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>
+                        <Select label="Planta" value={selectedPlantId || ''} onChange={setSelectedPlantId} options={plantOptions} />
+                        <Select label="Tipo" value={selectedTypeId || 'ALL'} onChange={setSelectedTypeId} options={typeOptions} />
+                    </Box>
+                </Box>
             </Collapse>
 
             {(loadingMetrics || loadingKpis) ? (
                 <Spinner />
             ) : (
-                <Box>
-                    {isMobile ? (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            <MetricCard horizontal title="Disponibilidad Planta" value={kpis?.availability || '0%'} color="#3b82f6" />
-                            <MetricCard horizontal title="MTBF" value={kpis?.mtbf || '0s'} color="#10b981" />
-                            <MetricCard horizontal title="MTTR" value={kpis?.mttr || '0s'} color="#ef4444" />
-                            
-                            {[
-                                { key: 'ACTIVA', title: "Máquinas Activas", color: "#10b981", value: statusCounts.ACTIVA },
-                                { key: 'PARADA', title: "Parada", color: "#ef4444", value: statusCounts.PARADA },
-                                { key: 'REVISAR', title: "Revisar", color: "#eab308", value: statusCounts.REVISAR },
-                                { key: 'ELECTRONIC', title: "Electrónica", color: "#3b82f6", value: statusCounts.ELECTRONIC },
-                                { key: 'VELOCIDAD_REDUCIDA', title: "Vel. Reducida", color: "#f97316", value: statusCounts.VELOCIDAD_REDUCIDA },
-                                { key: 'FALTA_COSTURA', title: "Falta Costura", color: "#8b5cf6", value: statusCounts.FALTA_COSTURA },
-                                { key: 'FALTA_PROGRAMA', title: "Falta Programa", color: "#06b6d4", value: statusCounts.FALTA_PROGRAMA }
-                            ].map(s => (
-                                <MetricCard 
-                                    key={s.key}
-                                    horizontal 
-                                    title={s.title} 
-                                    value={s.value} 
-                                    color={s.color} 
-                                />
-                            ))}
-                        </Box>
-                    ) : (
-                        <>
-                            <Grid container spacing={3} sx={{ mb: 4 }}>
-                                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                                    <MetricCard title="Disponibilidad" value={kpis?.availability || '0%'} color="#3b82f6" />
-                                </Grid>
-                                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                                    <MetricCard title="OEE" value={kpis?.oee || '0%'} color="#8b5cf6" />
-                                </Grid>
-                                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                                    <MetricCard title="MTBF" value={kpis?.mtbf || '0s'} color="#10b981" />
-                                </Grid>
-                                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                                    <MetricCard title="MTTR" value={kpis?.mttr || '0s'} color="#ef4444" />
-                                </Grid>
-                            </Grid>
-
-                            <Grid container spacing={3}>
-                                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                                    <MetricCard title="Activas" value={statusCounts.ACTIVA} color="#10b981" />
-                                </Grid>
-                                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                                    <MetricCard title="Paradas" value={statusCounts.PARADA} color="#ef4444" />
-                                </Grid>
-                                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                                    <MetricCard title="Revisar" value={statusCounts.REVISAR} color="#eab308" />
-                                </Grid>
-                                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                                    <MetricCard title="Electrónica" value={statusCounts.ELECTRONIC} color="#3b82f6" />
-                                </Grid>
-                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                    <MetricCard title="Vel. Reducida" value={statusCounts.VELOCIDAD_REDUCIDA} color="#f97316" />
-                                </Grid>
-                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                    <MetricCard title="Falta Costura" value={statusCounts.FALTA_COSTURA} color="#8b5cf6" />
-                                </Grid>
-                                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                    <MetricCard title="Falta Programa" value={statusCounts.FALTA_PROGRAMA} color="#06b6d4" />
-                                </Grid>
-                            </Grid>
-                        </>
-                    )}
-
-                    <Box sx={{ mt: 4, pt: 3, borderTop: '1px solid #333' }}>
-                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
-                            Máquinas con Novedades (No Activas)
-                        </Typography>
-                        <List disablePadding>
-                            {allMachines.filter((m: Machine) => m.status !== 'ACTIVA').length > 0 ? 
-                                allMachines.filter((m: Machine) => m.status !== 'ACTIVA').map((machine: Machine) => (
-                                <InteractiveMachineItem key={machine.id} machine={machine} />
-                            )) : (
-                                <Typography variant="body2" sx={{ color: '#9ca3af', p: 1 }}>Todas las máquinas están operando normalmente.</Typography>
-                            )}
-                        </List>
+                <Box sx={{ p: 0 }}>
+                    <Box sx={{ 
+                        display: 'flex', 
+                        overflowX: 'auto', 
+                        gap: 0.8, 
+                        p: 1.5,
+                        '&::-webkit-scrollbar': { display: 'none' },
+                        msOverflowStyle: 'none',
+                        scrollbarWidth: 'none'
+                    }}>
+                        {Object.keys(statusColors).map(status => (
+                            <StatusButton 
+                                key={status}
+                                status={status} 
+                                count={statusCounts[status] || 0} 
+                                active={selectedStatus === status}
+                                onClick={() => {
+                                    setSelectedStatus(selectedStatus === status ? null : status);
+                                    setSortMode(null);
+                                }}
+                            />
+                        ))}
                     </Box>
+
+                    <Fade in timeout={300}>
+                        <Box>
+                            <Box sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center' }}>
+                                <Typography sx={{ fontWeight: 900, display: 'flex', alignItems: 'center', gap: 1, fontSize: '0.8rem', color: '#4b5563', textTransform: 'uppercase' }}>
+                                    {sortMode ? `ORDENADO POR ${sortMode}` : (selectedStatus ? formatStatus(selectedStatus) : 'INCIDENCIAS')}
+                                    <Chip label={filteredMachines.length} size="small" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 800, bgcolor: 'rgba(255,255,255,0.05)' }} />
+                                </Typography>
+                            </Box>
+
+                            <List disablePadding sx={{ width: '100%' }}>
+                                {filteredMachines.length > 0 ? (
+                                    filteredMachines.map((machine: Machine) => (
+                                        <InteractiveMachineItem key={machine.id} machine={machine} sortMode={sortMode} />
+                                    ))
+                                ) : (
+                                    <Box sx={{ p: 6, textAlign: 'center' }}>
+                                        <Typography variant="caption" sx={{ color: '#374151', fontWeight: 800 }}>SIN NOVEDADES</Typography>
+                                    </Box>
+                                )}
+                            </List>
+                        </Box>
+                    </Fade>
                 </Box>
             )}
         </Box>
