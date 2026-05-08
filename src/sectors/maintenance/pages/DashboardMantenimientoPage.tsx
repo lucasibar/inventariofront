@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Box, Typography, Grid, IconButton, useMediaQuery, useTheme, List, ListItem, Collapse, Fade, Chip, TextField, InputAdornment, MenuItem } from '@mui/material';
+import { Box, Typography, IconButton, useMediaQuery, useTheme, List, ListItem, Collapse, Fade, Chip, TextField } from '@mui/material';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SearchIcon from '@mui/icons-material/Search';
@@ -20,9 +20,7 @@ import {
     useGetMetricsQuery,
     useGetPlantKPIsQuery,
     useGetMachinesQuery,
-    useUpdateMachineStatusMutation,
-    useUpdateLogMutation,
-    useGetLogsQuery
+    useUpdateMachineStatusMutation
 } from '../api/maintenance.api';
 import type { Machine } from '../api/maintenance.api';
 
@@ -62,13 +60,12 @@ const formatStatus = (status: string) => {
 
 const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortMode: 'mtbf' | 'mttr' | null }) => {
     const [updateStatus] = useUpdateMachineStatusMutation();
-    const { data: logs } = useGetLogsQuery({ machineId: machine.id }, { skip: !machine.id });
 
     const [isEditingStatus, setIsEditingStatus] = useState(false);
     const [isEditingFailure, setIsEditingFailure] = useState(false);
     const [isEditingMechanic, setIsEditingMechanic] = useState(false);
     
-    const [mechanicName, setMechanicName] = useState(machine.lastChangeBy || 'Sin Asignar');
+    const mechanicName = useMemo(() => machine.lastChangeBy || 'Sin Asignar', [machine.lastChangeBy]);
 
     const timeAgo = useMemo(() => {
         const date = machine.lastStatusChange ? new Date(machine.lastStatusChange) : new Date(machine.createdAt);
@@ -79,12 +76,12 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
         if (hours > 0) return `${hours}h`;
         const mins = Math.floor(diff / (1000 * 60));
         return `${mins}m`;
-    }, [machine.lastStatusChange, machine.createdAt, machine.status]);
+    }, [machine.lastStatusChange, machine.createdAt]);
 
     const handleQuickUpdate = async (updates: Partial<{ status: string, failureType: string, generatedBy: string }>) => {
         await updateStatus({
             id: machine.id,
-            status: updates.status || machine.status,
+            status: (updates.status || machine.status) as any,
             failureType: updates.failureType || machine.lastFailureType || 'Ninguna',
             generatedBy: updates.generatedBy || machine.lastChangeBy || 'Sin Asignar',
             observation: machine.lastObservation || '',
@@ -265,7 +262,6 @@ const StatusButton = ({ status, count, active, onClick }: { status: string, coun
 
 export default function DashboardMantenimientoPage() {
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     
     const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
     const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
@@ -412,7 +408,11 @@ export default function DashboardMantenimientoPage() {
                         onChange={(e) => setSearchQuery(e.target.value)}
                         fullWidth
                         InputProps={{
-                            startAdornment: <SearchIcon sx={{ color: '#4b5563', fontSize: '1.1rem', mr: 1 }} />,
+                            startAdornment: (
+                                <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
+                                    <SearchIcon sx={{ color: '#4b5563', fontSize: '1.1rem' }} />
+                                </Box>
+                            ),
                             sx: { bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 2, color: 'white', fontSize: '0.85rem' }
                         }}
                         sx={{ mb: 1.5 }}
