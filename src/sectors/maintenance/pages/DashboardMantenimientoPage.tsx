@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Box, Typography, IconButton, useMediaQuery, useTheme, List, ListItem, Collapse, Fade, Chip, TextField } from '@mui/material';
+import { Box, Typography, IconButton, List, ListItem, Collapse, Fade, Chip, TextField } from '@mui/material';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SearchIcon from '@mui/icons-material/Search';
@@ -261,8 +261,6 @@ const StatusButton = ({ status, count, active, onClick }: { status: string, coun
 };
 
 export default function DashboardMantenimientoPage() {
-    const theme = useTheme();
-    
     const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
     const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
     const [showFilters, setShowFilters] = useState(false);
