@@ -10,6 +10,33 @@ export function useIsMobile() {
     return isMobile;
 }
 
+export function useSwipeNavigation(onSwipeLeft?: () => void, onSwipeRight?: () => void) {
+    const touchStart = useRef<number | null>(null);
+    const touchEnd = useRef<number | null>(null);
+
+    const minSwipeDistance = 70;
+
+    const onTouchStart = (e: React.TouchEvent | TouchEvent) => {
+        touchEnd.current = null;
+        touchStart.current = ('touches' in e) ? e.touches[0].clientX : (e as any).clientX;
+    };
+
+    const onTouchMove = (e: React.TouchEvent | TouchEvent) => {
+        touchEnd.current = ('touches' in e) ? e.touches[0].clientX : (e as any).clientX;
+    };
+
+    const onTouchEnd = () => {
+        if (!touchStart.current || !touchEnd.current) return;
+        const distance = touchStart.current - touchEnd.current;
+        const isLeftSwipe = distance > minSwipeDistance;
+        const isRightSwipe = distance < -minSwipeDistance;
+        if (isLeftSwipe && onSwipeLeft) onSwipeLeft();
+        if (isRightSwipe && onSwipeRight) onSwipeRight();
+    };
+
+    return { onTouchStart, onTouchMove, onTouchEnd };
+}
+
 export function PageHeader({ title, subtitle, children, hideTitleOnMobile }: { title: string; subtitle?: string; children?: React.ReactNode; hideTitleOnMobile?: boolean }) {
     const isMobile = useIsMobile();
     const shouldHideTitle = isMobile && hideTitleOnMobile;

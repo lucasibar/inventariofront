@@ -19,8 +19,8 @@ import RemitosEntradaPage from './sectors/warehouse/pages/RemitosEntradaPage';
 import RemitosSalidaPage from './sectors/warehouse/pages/RemitosSalidaPage';
 import AuditoriaPickingPage from './sectors/warehouse/pages/AuditoriaPickingPage';
 import WorkspaceTasksPage from './sectors/warehouse/pages/WorkspaceTasksPage';
-import StockDashboardPage from './sectors/warehouse/pages/StockDashboardPage';
 import ReporteSalidasPage from './sectors/warehouse/pages/ReporteSalidasPage';
+import DashboardDepositoPage from './sectors/warehouse/pages/DashboardDepositoPage';
 
 // Sector: Purchasing
 import DashboardComprasPage from './sectors/purchasing/pages/DashboardComprasPage';
@@ -100,7 +100,7 @@ function App() {
             {/* Rutas para Operario / Producción / Depósito / Nuevos Sectores */}
             <Route element={<PrivateRoute allowedRoles={['ADMIN', 'OPERATOR', 'COMPRAS']} />}>
                 {/* Inventariado */}
-                <Route path="/stock/dashboard" element={<StockDashboardPage />} />
+                <Route path="/deposito/dashboard" element={<DashboardDepositoPage />} />
                 <Route path="/deposito/auditoria-picking" element={<AuditoriaPickingPage />} />
                 <Route path="/remitos-salida" element={<RemitosSalidaPage />} />
                 <Route path="/reporte-salidas" element={<ReporteSalidasPage />} />

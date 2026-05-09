@@ -4,8 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useGetAlertsQuery } from '../sectors/warehouse/stock/api/stock.api';
 import { logout, selectCurrentUser } from '../entities/auth/model/authSlice';
 import { setCurrentAlerts, selectHasUnreadNotifications } from '../entities/notifications/notificationsSlice';
-import { useIsMobile } from './ui';
-import { AiChatBot } from '../components/ai/AiChatBot';
+import { useIsMobile, useSwipeNavigation } from './ui';
 
 const navGroups = [
     {
@@ -23,7 +22,7 @@ const navGroups = [
         label: 'Inventariado',
         icon: '🏭',
         items: [
-            { to: '/stock/dashboard', label: '📊 Dashboard Inv' },
+            { to: '/deposito/dashboard', label: '📊 Dashboard Dep' },
             { to: '/stock', label: '📋 Stock' },
             { to: '/movimientos', label: '🔄 Movimientos' },
             { to: '/remitos-entrada', label: '📥 Remitos Entrada' },
@@ -147,6 +146,31 @@ export default function Layout() {
         setMobileMenuOpen(false);
     }, [location.pathname]);
 
+    // Swipe Navigation for Dashboards
+    const dashboards = [
+        { path: '/produccion/dashboard', label: 'Producción' },
+        { path: '/deposito/dashboard', label: 'Depósito' },
+        { path: '/dashboard', label: 'Compras' },
+        { path: '/mantenimiento/dashboard', label: 'Mantenimiento' }
+    ];
+
+    const currentDashboardIndex = dashboards.findIndex(d => location.pathname === d.path);
+    const isDashboardPage = currentDashboardIndex !== -1;
+
+    const handleSwipeLeft = () => {
+        if (!isDashboardPage || !isMobile) return;
+        const nextIndex = (currentDashboardIndex + 1) % dashboards.length;
+        navigate(dashboards[nextIndex].path);
+    };
+
+    const handleSwipeRight = () => {
+        if (!isDashboardPage || !isMobile) return;
+        const prevIndex = (currentDashboardIndex - 1 + dashboards.length) % dashboards.length;
+        navigate(dashboards[prevIndex].path);
+    };
+
+    const { onTouchStart, onTouchMove, onTouchEnd } = useSwipeNavigation(handleSwipeLeft, handleSwipeRight);
+
     useEffect(() => {
         const handleOpenMenu = () => setMobileMenuOpen(true);
         document.addEventListener('open-sidebar-menu', handleOpenMenu);
@@ -165,8 +189,8 @@ export default function Layout() {
         ...group,
         items: group.items.filter(item => {
             if (isAdmin) return true;
-            if (isOperario) return ['/movimientos', '/stock', '/deposito/auditoria-picking', '/remitos-salida', '/reporte-salidas', '/tasks', '/deposito', '/mantenimiento/dashboard', '/mantenimiento/monitoreo', '/mantenimiento/registro', '/mantenimiento/historial', '/mantenimiento/buscador', '/produccion/cargar', '/produccion/dashboard'].includes(item.to);
-            if (isCompras) return ['/dashboard', '/compras/materiales-criticos', '/compras/alertas-stock', '/compras/conciliacion', '/pedidos-compra', '/remitos-entrada', '/reporte-salidas', '/items', '/dashboard/capacity', '/dashboard/volumes', '/items/box-types', '/socios'].includes(item.to);
+            if (isOperario) return ['/deposito/dashboard', '/movimientos', '/stock', '/deposito/auditoria-picking', '/remitos-salida', '/reporte-salidas', '/tasks', '/deposito', '/mantenimiento/dashboard', '/mantenimiento/monitoreo', '/mantenimiento/registro', '/mantenimiento/historial', '/mantenimiento/buscador', '/produccion/cargar', '/produccion/dashboard'].includes(item.to);
+            if (isCompras) return ['/deposito/dashboard', '/dashboard', '/compras/materiales-criticos', '/compras/alertas-stock', '/compras/conciliacion', '/pedidos-compra', '/remitos-entrada', '/reporte-salidas', '/items', '/dashboard/capacity', '/dashboard/volumes', '/items/box-types', '/socios'].includes(item.to);
             return false;
         })
     })).filter(group => group.items.length > 0);
@@ -198,7 +222,7 @@ export default function Layout() {
             `}</style>
 
             {/* Mobile Header */}
-            {isMobile && location.pathname !== '/mantenimiento/dashboard' && (
+            {isMobile && !['/mantenimiento/dashboard', '/deposito/dashboard'].includes(location.pathname) && (
                 <header style={{
                     height: '56px', background: '#1a1d2e', borderBottom: '1px solid #2a2d3e',
                     display: 'flex', alignItems: 'center', padding: '0 12px', zIndex: 997,
@@ -449,16 +473,75 @@ export default function Layout() {
             </aside>
 
             {/* Main Content Area */}
-            <main style={{
-                flex: 1,
-                overflowY: 'auto',
-                overflowX: 'hidden',
-                position: 'relative',
-                width: '100%'
-            }}>
+            <main 
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
+                style={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                    position: 'relative',
+                    width: '100%'
+                }}
+            >
                 <Outlet />
+
+                {/* Mobile Dashboard Navigator */}
+                {isMobile && isDashboardPage && (
+                    <div style={{
+                        position: 'fixed',
+                        bottom: '16px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        display: 'flex',
+                        gap: '8px',
+                        background: 'rgba(26, 29, 46, 0.95)',
+                        backdropFilter: 'blur(10px)',
+                        padding: '6px 12px',
+                        borderRadius: '24px',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                        zIndex: 2000,
+                        alignItems: 'center'
+                    }}>
+                        {dashboards.map((d, i) => (
+                            <button
+                                key={d.path}
+                                onClick={() => navigate(d.path)}
+                                style={{
+                                    width: '8px',
+                                    height: '8px',
+                                    borderRadius: '50%',
+                                    background: currentDashboardIndex === i ? '#6366f1' : '#374151',
+                                    border: 'none',
+                                    padding: 0,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            />
+                        ))}
+                        <div style={{ width: '1px', height: '14px', background: 'rgba(255,255,255,0.1)', margin: '0 4px' }} />
+                        <button 
+                            onClick={() => {
+                                const nextIndex = (currentDashboardIndex + 1) % dashboards.length;
+                                navigate(dashboards[nextIndex].path);
+                            }}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#a5b4fc',
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                textTransform: 'uppercase',
+                                padding: '4px 8px'
+                            }}
+                        >
+                            {dashboards[(currentDashboardIndex + 1) % dashboards.length].label} ›
+                        </button>
+                    </div>
+                )}
             </main>
-            {location.pathname !== '/mantenimiento/monitoreo' && <AiChatBot />}
         </div>
     );
 }
