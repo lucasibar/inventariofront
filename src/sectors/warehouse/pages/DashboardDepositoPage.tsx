@@ -223,7 +223,7 @@ const QuickAddDrawer = ({ open, onClose }: { open: boolean, onClose: () => void 
     const suppliers = useMemo(() => partners.filter((p: any) => p.type === 'SUPPLIER' || p.type === 'BOTH'), [partners]);
     const selectedDepot = useMemo(() => depots.find((d: any) => d.id === form.depositoId), [depots, form.depositoId]);
     const selectedItem = useMemo(() => items.find((i: any) => i.id === form.itemId), [items, form.itemId]);
-    const handleSubmit = async () => { if (!form.depositoId || !form.posicionId || !form.itemId || !form.supplierId || !form.lotNumber || !form.qtyPrincipal) { alert('Completá los campos obligatorios.'); return; } setIsSaving(true); try { await quickAddStock({ depositoId: form.depositoId, posicionId: form.posicionId, itemId: form.itemId, supplierId: form.supplierId, lotNumber: form.lotNumber, qtyPrincipal: Number(form.qtyPrincipal), qtySecundaria: form.qtySecundaria ? Number(form.qtySecundaria) : undefined, fecha: new Date().toISOString() }).unwrap(); onClose(); setForm(prev => ({ ...prev, itemId: '', lotNumber: '', qtyPrincipal: '', qtySecundaria: '' })); } catch (e: any) { alert(e?.data?.message || 'Error'); } finally { setIsSaving(false); } };
+    const handleSubmit = async () => { if (!form.depositoId || !form.posicionId || !form.itemId || !form.supplierId || !form.lotNumber || !form.qtyPrincipal) { alert('Completá los campos obligatorios.'); return; } setIsSaving(true); try { await quickAddStock({ depositoId: form.depositoId, posicionId: form.posicionId, itemId: form.itemId, supplierId: form.supplierId, lotNumber: form.lotNumber, qtyPrincipal: Number(form.qtyPrincipal), qtySecundaria: form.qtySecundaria ? Number(form.qtySecundaria) : undefined, fecha: new Date().toISOString() }).unwrap(); onClose(); setForm((prev: any) => ({ ...prev, itemId: '', lotNumber: '', qtyPrincipal: '', qtySecundaria: '' })); } catch (e: any) { alert(e?.data?.message || 'Error'); } finally { setIsSaving(false); } };
     return (
         <Drawer anchor="bottom" open={open} onClose={onClose} PaperProps={{ sx: { bgcolor: colors.bg, color: colors.text, borderTop: `1px solid ${colors.primary}`, borderTopLeftRadius: 24, borderTopRightRadius: 24, p: 3, pb: 6 } }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}><Typography variant="h5" sx={{ fontWeight: 900, color: colors.primary }}>CARGA RÁPIDA</Typography><IconButton onClick={onClose} sx={{ color: colors.textDim }}><CloseIcon /></IconButton></Box>
@@ -274,7 +274,7 @@ export default function DashboardDepositoPage() {
     const [selectedEntryToMove, setSelectedEntryToMove] = useState<any>(null);
     const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
     const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
-    const togglePin = (id: string) => { setPinnedIds(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; }); };
+    const togglePin = (id: string) => { setPinnedIds((prev: any) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; }); };
     const { transcript, listening, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition();
     useEffect(() => { if (transcript) setSearchQuery(transcript); }, [transcript]);
     const toggleListening = () => { if (listening) SpeechRecognition.stopListening(); else { resetTranscript(); SpeechRecognition.startListening({ language: 'es-AR', continuous: true }); } };
