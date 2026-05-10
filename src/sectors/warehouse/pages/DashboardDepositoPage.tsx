@@ -274,7 +274,7 @@ export default function DashboardDepositoPage() {
     const [selectedEntryToMove, setSelectedEntryToMove] = useState<any>(null);
     const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
     const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
-    const togglePin = (id: string) => { setPinnedIds((prev: any) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; }); };
+    const togglePin = (id: string) => { setPinnedIds((prev: Set<string>) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; }); };
     const { transcript, listening, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition();
     useEffect(() => { if (transcript) setSearchQuery(transcript); }, [transcript]);
     const toggleListening = () => { if (listening) SpeechRecognition.stopListening(); else { resetTranscript(); SpeechRecognition.startListening({ language: 'es-AR', continuous: true }); } };
