@@ -60,11 +60,7 @@ const navGroups = [
         label: 'Compras',
         icon: '🛒',
         items: [
-            { to: '/dashboard', label: '📊 Dashboard Comp' },
-            { to: '/compras/materiales-criticos', label: '⚠️ Materiales Críticos' },
-            { to: '/compras/alertas-stock', label: '🔔 Alertas Stock' },
-            { to: '/compras/conciliacion', label: '🔗 Conciliación' },
-            { to: '/pedidos-compra', label: '📋 Pedidos Compra' },
+            { to: '/dashboard', label: '📊 Comando Compras' },
             { to: '/dashboard/capacity', label: '📈 Capacidad' },
             { to: '/dashboard/volumes', label: '📦 Volúmenes' },
             { to: '/items/box-types', label: '📦 Cajas/Embalaje' },

@@ -45,6 +45,14 @@ export const purchaseOrdersApi = api.injectEndpoints({
             }),
             invalidatesTags: ['PurchaseOrders', 'Stock', 'Dashboard'],
         }),
+        getCombos: builder.query<any[], void>({
+            query: () => '/combos-compra',
+            providesTags: ['PurchaseOrders'],
+        }),
+        getComboBreakdown: builder.query<any, string>({
+            query: (id) => `/combos-compra/${id}/breakdown`,
+            providesTags: ['PurchaseOrders'],
+        }),
     }),
     overrideExisting: false,
 });
@@ -57,4 +65,6 @@ export const {
     useGetDashboardStatsQuery,
     useGetUnlinkedMovementsQuery,
     useLinkMovementMutation,
+    useGetCombosQuery,
+    useGetComboBreakdownQuery,
 } = purchaseOrdersApi;
