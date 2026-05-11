@@ -49,7 +49,6 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function HistorialRegistrosPage() {
-    const theme = useTheme();
     const navigate = useNavigate();
     const [startDate, setStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 7)).toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);

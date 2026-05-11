@@ -60,8 +60,6 @@ import { useGetAlertsQuery } from '../../warehouse/stock/api/stock.api';
 import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
 import { useGetItemsQuery } from '../../config/items/api/items.api';
 import { useGetDepotsQuery } from '../../warehouse/deposito/api/deposito.api';
-import { useIsMobile } from '../../../shared/ui';
-
 // Design System Colors - Purchasing Theme (Indigo/Purple)
 const colors = {
     primary: '#818cf8', // Indigo
@@ -136,7 +134,6 @@ export default function DashboardComprasPage() {
     const { data: combos = [], isLoading: loadingCombos } = useGetCombosQuery();
     const { data: partners = [] } = useGetPartnersQuery({});
     const { data: items = [] } = useGetItemsQuery({});
-    const { data: depots = [] } = useGetDepotsQuery();
     
     const [updateStatus] = useUpdatePurchaseOrderStatusMutation();
     const [deleteOrder] = useDeletePurchaseOrderMutation();

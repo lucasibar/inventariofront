@@ -168,7 +168,7 @@ export default function BuscadorMaquinaPage() {
         }
     };
 
-    const handleAction = (action: 'status') => {
+    const handleAction = () => {
         if (!searchedMachine) return;
         navigate('/mantenimiento/dashboard', {
             state: {

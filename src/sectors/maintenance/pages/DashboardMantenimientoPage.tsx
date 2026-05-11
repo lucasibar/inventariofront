@@ -14,7 +14,6 @@ import CodeIcon from '@mui/icons-material/Code';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import TimerIcon from '@mui/icons-material/Timer';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import MapIcon from '@mui/icons-material/Map';
 import { Spinner, Select } from '../../../shared/ui';
 import { 
     useGetPlantsQuery, 
@@ -69,8 +68,6 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
     const [anchorElMechanic, setAnchorElMechanic] = useState<null | HTMLElement>(null);
     const [isEditingObservation, setIsEditingObservation] = useState(false);
     const [obsText, setObsText] = useState(machine.lastObservation || '');
-    
-    const mechanicName = useMemo(() => machine.lastChangeBy || 'Sin Asignar', [machine.lastChangeBy]);
 
     const timeAgo = useMemo(() => {
         const date = machine.lastStatusChange ? new Date(machine.lastStatusChange) : new Date(machine.createdAt);
@@ -97,7 +94,7 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
         setAnchorElMechanic(null);
         setIsEditingObservation(false);
     };
-    return (
+    return (
         <ListItem sx={{ 
             bgcolor: 'rgba(255,255,255,0.02)', 
             mb: 0.5, 
