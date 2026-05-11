@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Box, Typography, Card, Grid, TextField, Button, Divider, Chip, Avatar, Tooltip } from '@mui/material';
+import { Box, Typography, Card, Grid, TextField, Button, Divider, Chip, Avatar, Tooltip, Drawer, IconButton, useMediaQuery, useTheme } from '@mui/material';
 import { PageHeader, Spinner, Select } from '../../../shared/ui';
 import SearchIcon from '@mui/icons-material/Search';
 import BuildIcon from '@mui/icons-material/Build';
@@ -9,6 +9,9 @@ import SpeedIcon from '@mui/icons-material/Speed';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import TimerIcon from '@mui/icons-material/Timer';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import CloseIcon from '@mui/icons-material/Close';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import { 
     useGetPlantsQuery, 
     useGetMachinesQuery,
@@ -42,6 +45,51 @@ const statusLabels: Record<string, string> = {
     OTRO: 'Otro',
 };
 
+const LogItem = ({ log, idx }: { log: any; idx: number }) => (
+    <Box sx={{ 
+        p: 2.5, 
+        bgcolor: idx === 0 ? '#1e293b40' : 'transparent', 
+        borderRadius: 2, 
+        border: '1px solid #374151',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 3
+    }}>
+        <Box sx={{ minWidth: 100 }}>
+            <Typography variant="body2" sx={{ color: '#9ca3af', fontWeight: 600 }}>
+                {new Date(log.timestamp).toLocaleDateString()}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+            </Typography>
+        </Box>
+        
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1 }}>
+            <Chip 
+                size="small" 
+                label={statusLabels[log.fromStatus] || log.fromStatus} 
+                variant="outlined" 
+                sx={{ color: '#6b7280', borderColor: '#374151', fontSize: '0.7rem' }} 
+            />
+            <Typography sx={{ color: '#4b5563' }}>→</Typography>
+            <Chip 
+                size="small" 
+                label={statusLabels[log.toStatus] || log.toStatus} 
+                sx={{ bgcolor: `${statusColors[log.toStatus]}20`, color: statusColors[log.toStatus], fontWeight: 700 }} 
+            />
+        </Box>
+
+        <Box sx={{ flex: 2 }}>
+            <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
+                {log.generatedBy}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                {log.failureType ? `${log.failureType}: ` : ''}{log.observation || 'Sin observación'}
+            </Typography>
+        </Box>
+    </Box>
+);
+
 export default function BuscadorMaquinaPage() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -50,6 +98,10 @@ export default function BuscadorMaquinaPage() {
     const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchedMachine, setSearchedMachine] = useState<Machine | null>(null);
+    const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
+
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
     const { data: plants = [], isLoading: loadingPlants } = useGetPlantsQuery();
     const { data: machineTypes = [], isLoading: loadingTypes } = useGetMachineTypesQuery();
@@ -80,7 +132,7 @@ export default function BuscadorMaquinaPage() {
         { skip: !searchedMachine }
     );
 
-    const history = logsData?.items || [];
+    const history = logsData || [];
 
     // If navigated from Dashboard or History with a machine pre-selected
     useEffect(() => {
@@ -116,13 +168,13 @@ export default function BuscadorMaquinaPage() {
         }
     };
 
-    const handleAction = (action: 'status' | 'mechanic') => {
+    const handleAction = (action: 'status') => {
         if (!searchedMachine) return;
-        navigate('/mantenimiento/registro', {
+        navigate('/mantenimiento/dashboard', {
             state: {
-                preselectedMachine: searchedMachine,
+                machineNumber: searchedMachine.number,
                 plantId: selectedPlantId,
-                focusField: action === 'mechanic' ? 'generatedBy' : 'targetStatus'
+                status: searchedMachine.status
             }
         });
     };
@@ -162,6 +214,7 @@ export default function BuscadorMaquinaPage() {
                                 fullWidth
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
+                                slotProps={{ htmlInput: { inputMode: 'numeric' } }}
                                 sx={{
                                     '& .MuiOutlinedInput-root': { color: 'white' },
                                     '& .MuiInputLabel-root': { color: '#9ca3af' },
@@ -190,7 +243,15 @@ export default function BuscadorMaquinaPage() {
                 <Grid container spacing={3}>
                     {/* Main Info & Actions */}
                     <Grid size={{ xs: 12, lg: 8 }}>
-                        <Card sx={{ bgcolor: '#111827', borderRadius: 3, p: { xs: 2, md: 4 }, border: '1px solid #1f2937', height: '100%' }}>
+                        <Card sx={{ 
+                            bgcolor: '#111827', 
+                            borderRadius: 3, 
+                            p: { xs: 2, md: 4 }, 
+                            border: '1px solid #1f2937', 
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4, flexWrap: 'wrap', gap: 2 }}>
                                 <Box>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
@@ -216,22 +277,13 @@ export default function BuscadorMaquinaPage() {
 
                                 <Box sx={{ display: 'flex', gap: 1.5 }}>
                                     <Button
-                                        variant="outlined"
-                                        color="primary"
-                                        startIcon={<EngineeringIcon />}
-                                        onClick={() => handleAction('mechanic')}
-                                        sx={{ borderRadius: 2, fontWeight: 600, border: '1px solid #3b82f640' }}
-                                    >
-                                        Asignar Responsable
-                                    </Button>
-                                    <Button
                                         variant="contained"
                                         color="primary"
                                         startIcon={<BuildIcon />}
                                         onClick={() => handleAction('status')}
                                         sx={{ borderRadius: 2, fontWeight: 700, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                     >
-                                        Cambiar Estado
+                                        Editar
                                     </Button>
                                 </Box>
                             </Box>
@@ -243,7 +295,7 @@ export default function BuscadorMaquinaPage() {
                                             <TimerIcon sx={{ fontSize: 14 }} /> ÚLTIMO CAMBIO
                                         </Typography>
                                         <Typography variant="h6" sx={{ color: 'white', mt: 0.5 }}>
-                                            {searchedMachine.lastStatusChange ? new Date(searchedMachine.lastStatusChange).toLocaleString() : 'Sin registros'}
+                                            {searchedMachine.lastStatusChange ? new Date(searchedMachine.lastStatusChange).toLocaleString([], { hour12: false }) : 'Sin registros'}
                                         </Typography>
                                     </Box>
                                 </Grid>
@@ -271,65 +323,95 @@ export default function BuscadorMaquinaPage() {
 
                             <Divider sx={{ my: 4, borderColor: '#374151' }} />
 
-                            <Typography variant="h6" sx={{ color: 'white', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <HistoryIcon color="primary" /> Historial de Intervenciones
-                            </Typography>
-
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                {loadingLogs ? <Spinner /> : history.length === 0 ? (
-                                    <Typography sx={{ color: '#6b7280', fontStyle: 'italic' }}>No hay registros recientes para esta máquina.</Typography>
-                                ) : history.map((log: any, idx: number) => (
-                                    <Box key={log.id} sx={{ 
-                                        p: 2.5, 
-                                        bgcolor: idx === 0 ? '#1e293b40' : 'transparent', 
-                                        borderRadius: 2, 
-                                        border: '1px solid #374151',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 3
+                            {!isMobile ? (
+                                <>
+                                    <Typography variant="h6" sx={{ color: 'white', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <HistoryIcon color="primary" /> Historial de Intervenciones
+                                    </Typography>
+                                    <Box sx={{ 
+                                        display: 'flex', 
+                                        flexDirection: 'column', 
+                                        gap: 2, 
+                                        flex: 1,
+                                        overflowY: 'auto',
+                                        pr: 1,
+                                        '&::-webkit-scrollbar': { width: '6px' },
+                                        '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
+                                        '&::-webkit-scrollbar-thumb': { bgcolor: '#374151', borderRadius: '10px' },
+                                        '&::-webkit-scrollbar-thumb:hover': { bgcolor: '#4b5563' }
                                     }}>
-                                        <Box sx={{ minWidth: 100 }}>
-                                            <Typography variant="body2" sx={{ color: '#9ca3af', fontWeight: 600 }}>
-                                                {new Date(log.timestamp).toLocaleDateString()}
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ color: '#6b7280' }}>
-                                                {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </Typography>
-                                        </Box>
-                                        
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1 }}>
-                                            <Chip 
-                                                size="small" 
-                                                label={statusLabels[log.fromStatus] || log.fromStatus} 
-                                                variant="outlined" 
-                                                sx={{ color: '#6b7280', borderColor: '#374151', fontSize: '0.7rem' }} 
-                                            />
-                                            <Typography sx={{ color: '#4b5563' }}>→</Typography>
-                                            <Chip 
-                                                size="small" 
-                                                label={statusLabels[log.toStatus] || log.toStatus} 
-                                                sx={{ bgcolor: `${statusColors[log.toStatus]}20`, color: statusColors[log.toStatus], fontWeight: 700 }} 
-                                            />
-                                        </Box>
-
-                                        <Box sx={{ flex: 2 }}>
-                                            <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
-                                                {log.generatedBy}
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ color: '#9ca3af' }}>
-                                                {log.failureType ? `${log.failureType}: ` : ''}{log.observation || 'Sin observación'}
-                                            </Typography>
+                                        {loadingLogs ? <Spinner /> : history.length === 0 ? (
+                                            <Typography sx={{ color: '#6b7280', fontStyle: 'italic' }}>No hay registros recientes para esta máquina.</Typography>
+                                        ) : history.map((log: any, idx: number) => (
+                                            <LogItem key={log.id} log={log} idx={idx} />
+                                        ))}
+                                    </Box>
+                                </>
+                            ) : (
+                                <>
+                                    <Box 
+                                        onClick={() => setIsHistoryDrawerOpen(true)}
+                                        sx={{ 
+                                            display: 'flex', 
+                                            justifyContent: 'space-between', 
+                                            alignItems: 'center', 
+                                            mb: 3, 
+                                            cursor: 'pointer',
+                                            '&:hover': { opacity: 0.8 }
+                                        }}
+                                    >
+                                        <Typography variant="h6" sx={{ color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <HistoryIcon color="primary" /> Historial de Intervenciones
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#3b82f6' }}>
+                                            <Typography variant="caption" sx={{ fontWeight: 700 }}>VER TODO</Typography>
+                                            <OpenInFullIcon sx={{ fontSize: 16 }} />
                                         </Box>
                                     </Box>
-                                ))}
-                                
-                                <Button 
-                                    sx={{ mt: 2, color: '#3b82f6', alignSelf: 'flex-start' }}
-                                    onClick={() => navigate('/mantenimiento/historial', { state: { machineNumber: searchedMachine.number } })}
-                                >
-                                    Ver historial completo
-                                </Button>
-                            </Box>
+                                    <Box sx={{ p: 2, bgcolor: '#1e293b40', borderRadius: 2, border: '1px solid #374151', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} onClick={() => setIsHistoryDrawerOpen(true)}>
+                                        <Box>
+                                            <Typography variant="body2" sx={{ color: 'white', fontWeight: 600 }}>Última intervención</Typography>
+                                            <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                                                {history[0] ? `${new Date(history[0].timestamp).toLocaleDateString()} - ${history[0].generatedBy}` : 'Sin registros'}
+                                            </Typography>
+                                        </Box>
+                                        <ArrowForwardIosIcon sx={{ color: '#4b5563', fontSize: 16 }} />
+                                    </Box>
+                                </>
+                            )}
+
+                            {/* Mobile History Drawer */}
+                            <Drawer
+                                anchor="bottom"
+                                open={isHistoryDrawerOpen}
+                                onClose={() => setIsHistoryDrawerOpen(false)}
+                                PaperProps={{
+                                    sx: {
+                                        bgcolor: '#111827',
+                                        color: 'white',
+                                        borderTop: '1px solid #374151',
+                                        borderTopLeftRadius: 20,
+                                        borderTopRightRadius: 20,
+                                        height: '80vh',
+                                        p: 3,
+                                        zIndex: 2000
+                                    }
+                                }}
+                            >
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                                    <Typography variant="h6" sx={{ fontWeight: 800 }}>Historial de Intervenciones</Typography>
+                                    <IconButton onClick={() => setIsHistoryDrawerOpen(false)} sx={{ color: '#9ca3af' }}>
+                                        <CloseIcon />
+                                    </IconButton>
+                                </Box>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto', pb: 4 }}>
+                                    {loadingLogs ? <Spinner /> : history.length === 0 ? (
+                                        <Typography sx={{ color: '#6b7280', fontStyle: 'italic' }}>No hay registros para esta máquina.</Typography>
+                                    ) : history.map((log: any, idx: number) => (
+                                        <LogItem key={log.id} log={log} idx={idx} />
+                                    ))}
+                                </Box>
+                            </Drawer>
                         </Card>
                     </Grid>
 
@@ -402,6 +484,29 @@ export default function BuscadorMaquinaPage() {
                                                 <Typography variant="body2" sx={{ color: 'white', fontWeight: 600 }}>{spec.value || 'N/A'}</Typography>
                                             </Box>
                                         ))}
+                                    </Box>
+                                </Card>
+                            </Grid>
+
+                            {/* Media Compatibility Mock Card */}
+                            <Grid size={{ xs: 12 }}>
+                                <Card sx={{ bgcolor: '#111827', borderRadius: 3, p: 3, border: '1px solid #1f2937' }}>
+                                    <Typography variant="h6" sx={{ color: 'white', mb: 2.5 }}>Compatibilidad de Artículos</Typography>
+                                    
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                        <Typography variant="caption" sx={{ color: '#10b981', fontWeight: 900, textTransform: 'uppercase' }}>Soporta</Typography>
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+                                            {['Media Corta', 'Media Invisble', 'Media de Tenis', 'Media de Compresión'].map(item => (
+                                                <Chip key={item} label={item} size="small" sx={{ bgcolor: '#10b98115', color: '#10b981', fontWeight: 700, fontSize: '0.65rem' }} />
+                                            ))}
+                                        </Box>
+                                        
+                                        <Typography variant="caption" sx={{ color: '#ef4444', fontWeight: 900, textTransform: 'uppercase' }}>No Soporta</Typography>
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                            {['Media de Fútbol', 'Media Térmica Pesada', 'Media con Felpa Total'].map(item => (
+                                                <Chip key={item} label={item} size="small" sx={{ bgcolor: '#ef444415', color: '#ef4444', fontWeight: 700, fontSize: '0.65rem' }} />
+                                            ))}
+                                        </Box>
                                     </Box>
                                 </Card>
                             </Grid>

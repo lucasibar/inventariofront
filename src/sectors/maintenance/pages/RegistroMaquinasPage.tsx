@@ -217,6 +217,7 @@ export default function RegistroMaquinasPage() {
                                             inputRef={machineSearchRef}
                                             label="Número de Máquina"
                                             variant="outlined"
+                                            slotProps={{ htmlInput: { inputMode: 'numeric' } }}
                                             sx={{
                                                 '& .MuiOutlinedInput-root': { color: 'white' },
                                                 '& .MuiInputLabel-root': { color: '#9ca3af' },
@@ -331,7 +332,7 @@ export default function RegistroMaquinasPage() {
                                                         sx={{ bgcolor: `${targetStatuses.find(s => s.value === event.targetStatus)?.color}20`, color: targetStatuses.find(s => s.value === event.targetStatus)?.color, fontWeight: 700 }}
                                                     />
                                                     <Typography variant="body2" sx={{ color: '#9ca3af' }}>
-                                                        {new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        {new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                                                     </Typography>
                                                 </Box>
                                             }

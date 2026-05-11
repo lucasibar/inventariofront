@@ -243,10 +243,11 @@ export default function MonitoreoVivoPage() {
     }, [machines]);
 
     const handleMachineClick = (machine: any) => {
-        navigate('/mantenimiento/registro', {
+        navigate('/mantenimiento/dashboard', {
             state: {
-                preselectedMachine: machine,
-                plantId: selectedPlantId
+                machineNumber: machine.number,
+                plantId: selectedPlantId,
+                status: machine.status
             }
         });
     };

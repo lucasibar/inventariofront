@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Box, Typography, IconButton, List, ListItem, Collapse, Fade, Chip, TextField } from '@mui/material';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Box, Typography, IconButton, List, ListItem, Collapse, Fade, Chip, TextField, Button } from '@mui/material';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SearchIcon from '@mui/icons-material/Search';
@@ -13,6 +14,7 @@ import CodeIcon from '@mui/icons-material/Code';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import TimerIcon from '@mui/icons-material/Timer';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import MapIcon from '@mui/icons-material/Map';
 import { Spinner, Select } from '../../../shared/ui';
 import { 
     useGetPlantsQuery, 
@@ -59,11 +61,14 @@ const formatStatus = (status: string) => {
 };
 
 const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortMode: 'mtbf' | 'mttr' | null }) => {
+    const navigate = useNavigate();
     const [updateStatus] = useUpdateMachineStatusMutation();
 
     const [isEditingStatus, setIsEditingStatus] = useState(false);
     const [isEditingFailure, setIsEditingFailure] = useState(false);
     const [isEditingMechanic, setIsEditingMechanic] = useState(false);
+    const [isEditingObservation, setIsEditingObservation] = useState(false);
+    const [obsText, setObsText] = useState(machine.lastObservation || '');
     
     const mechanicName = useMemo(() => machine.lastChangeBy || 'Sin Asignar', [machine.lastChangeBy]);
 
@@ -78,21 +83,21 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
         return `${mins}m`;
     }, [machine.lastStatusChange, machine.createdAt]);
 
-    const handleQuickUpdate = async (updates: Partial<{ status: string, failureType: string, generatedBy: string }>) => {
+    const handleQuickUpdate = async (updates: Partial<{ status: string, failureType: string, generatedBy: string, observation: string }>) => {
         await updateStatus({
             id: machine.id,
             status: (updates.status || machine.status) as any,
             failureType: updates.failureType || machine.lastFailureType || 'Ninguna',
             generatedBy: updates.generatedBy || machine.lastChangeBy || 'Sin Asignar',
-            observation: machine.lastObservation || '',
+            observation: updates.observation !== undefined ? updates.observation : (machine.lastObservation || ''),
             timestamp: new Date().toISOString()
         });
         setIsEditingStatus(false);
         setIsEditingFailure(false);
         setIsEditingMechanic(false);
+        setIsEditingObservation(false);
     };
-
-    return (
+    return (
         <ListItem sx={{ 
             bgcolor: 'rgba(255,255,255,0.02)', 
             mb: 0.5, 
@@ -100,114 +105,160 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
             p: 1.8, 
             borderBottom: '1px solid rgba(255,255,255,0.05)', 
             display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
             width: '100%'
         }}>
-            {/* LEFT SIDE: Machine Number and Responsible */}
-            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                <Typography variant="h5" sx={{ fontWeight: 900, color: '#fff', lineHeight: 1 }}>
-                    {machine.number}
-                </Typography>
-                
-                {isEditingMechanic ? (
-                    <select
-                        autoFocus
-                        value={mechanicName}
-                        onChange={(e) => handleQuickUpdate({ generatedBy: e.target.value })}
-                        onBlur={() => setIsEditingMechanic(false)}
-                        style={{ width: '100px', background: '#1a1d24', color: 'white', border: '1px solid #374151', borderRadius: '4px', outline: 'none', fontSize: '0.7rem', marginTop: '4px' }}
-                    >
-                        {responsables.map(r => (
-                            <option key={r} value={r}>{r}</option>
-                        ))}
-                    </select>
-                ) : (
+            {/* Main Row */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                {/* LEFT SIDE: Machine Number and Responsible */}
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                     <Typography 
-                        variant="caption" 
-                        onClick={() => setIsEditingMechanic(true)}
-                        sx={{ color: machine.lastChangeBy ? '#6b7280' : '#ef4444', cursor: 'pointer', mt: 0.5, fontSize: '0.75rem', fontWeight: 700 }}
+                        variant="h5" 
+                        onClick={() => navigate('/mantenimiento/buscador', { state: { machine, plantId: machine.plantId } })}
+                        sx={{ fontWeight: 900, color: '#fff', lineHeight: 1, cursor: 'pointer', '&:hover': { color: '#3b82f6' } }}
                     >
-                        {machine.lastChangeBy || 'Sin asignar'}
+                        {machine.number}
                     </Typography>
-                )}
-            </Box>
-            
-            {/* RIGHT SIDE: Status, Failure Type, Time */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
-                {sortMode ? (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: sortMode === 'mtbf' ? '#10b981' : '#f87171' }}>
-                        {sortMode === 'mtbf' ? <EngineeringIcon sx={{ fontSize: 14 }} /> : <TimerIcon sx={{ fontSize: 14 }} />}
-                        <Typography sx={{ fontWeight: 900, fontSize: '1.2rem' }}>
-                            {sortMode === 'mtbf' ? `${machine.mtbf || 0}d` : `${machine.mttr || 0}h`}
+                    
+                    {isEditingMechanic ? (
+                        <select
+                            autoFocus
+                            value={mechanicName}
+                            onChange={(e) => handleQuickUpdate({ generatedBy: e.target.value })}
+                            onBlur={() => setIsEditingMechanic(false)}
+                            style={{ width: '100px', background: '#1a1d24', color: 'white', border: '1px solid #374151', borderRadius: '4px', outline: 'none', fontSize: '0.7rem', marginTop: '4px' }}
+                        >
+                            {responsables.map(r => (
+                                <option key={r} value={r}>{r}</option>
+                            ))}
+                        </select>
+                    ) : (
+                        <Typography 
+                            variant="caption" 
+                            onClick={() => setIsEditingMechanic(true)}
+                            sx={{ color: machine.lastChangeBy ? '#6b7280' : '#ef4444', cursor: 'pointer', mt: 0.5, fontSize: '0.75rem', fontWeight: 700 }}
+                        >
+                            {machine.lastChangeBy || 'Sin asignar'}
                         </Typography>
-                    </Box>
-                ) : (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                        {isEditingStatus ? (
-                            <select
-                                autoFocus
-                                value={machine.status}
-                                onChange={(e) => handleQuickUpdate({ status: e.target.value })}
-                                onBlur={() => setIsEditingStatus(false)}
-                                style={{ background: '#1a1d24', color: 'white', border: '1px solid #374151', borderRadius: '4px', outline: 'none', fontSize: '0.7rem', padding: '2px' }}
-                            >
-                                {Object.keys(statusColors).map(s => (
-                                    <option key={s} value={s}>{formatStatus(s)}</option>
-                                ))}
-                            </select>
+                    )}
+                </Box>
+                
+                {/* RIGHT SIDE: Status, Failure Type, Time and Edit Observation */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+                        {sortMode ? (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: sortMode === 'mtbf' ? '#10b981' : '#f87171' }}>
+                                {sortMode === 'mtbf' ? <EngineeringIcon sx={{ fontSize: 14 }} /> : <TimerIcon sx={{ fontSize: 14 }} />}
+                                <Typography sx={{ fontWeight: 900, fontSize: '1.2rem' }}>
+                                    {sortMode === 'mtbf' ? `${machine.mtbf || 0}d` : `${machine.mttr || 0}h`}
+                                </Typography>
+                            </Box>
                         ) : (
-                            <Box 
-                                onClick={() => setIsEditingStatus(true)}
-                                sx={{ 
-                                    display: 'flex', alignItems: 'center', gap: 0.5,
-                                    color: statusColors[machine.status], 
-                                    fontWeight: 900, 
-                                    cursor: 'pointer', 
-                                    px: 1, 
-                                    py: 0.3, 
-                                    bgcolor: `${statusColors[machine.status]}15`, 
-                                    borderRadius: '4px',
-                                    border: `1px solid ${statusColors[machine.status]}30`,
-                                    fontSize: '0.65rem',
-                                    textTransform: 'uppercase'
-                                }}
-                            >
-                                {statusIcons[machine.status]}
-                                {formatStatus(machine.status)}
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                {isEditingStatus ? (
+                                    <select
+                                        autoFocus
+                                        value={machine.status}
+                                        onChange={(e) => handleQuickUpdate({ status: e.target.value })}
+                                        onBlur={() => setIsEditingStatus(false)}
+                                        style={{ background: '#1a1d24', color: 'white', border: '1px solid #374151', borderRadius: '4px', outline: 'none', fontSize: '0.7rem', padding: '2px' }}
+                                    >
+                                        {Object.keys(statusColors).map(s => (
+                                            <option key={s} value={s}>{formatStatus(s)}</option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <Box 
+                                        onClick={() => setIsEditingStatus(true)}
+                                        sx={{ 
+                                            display: 'flex', alignItems: 'center', gap: 0.5,
+                                            color: statusColors[machine.status], 
+                                            fontWeight: 900, 
+                                            cursor: 'pointer', 
+                                            px: 1, 
+                                            py: 0.3, 
+                                            bgcolor: `${statusColors[machine.status]}15`, 
+                                            borderRadius: '4px',
+                                            border: `1px solid ${statusColors[machine.status]}30`,
+                                            fontSize: '0.65rem',
+                                            textTransform: 'uppercase'
+                                        }}
+                                    >
+                                        {statusIcons[machine.status]}
+                                        {formatStatus(machine.status)}
+                                    </Box>
+                                )}
+
+                                {isEditingFailure ? (
+                                    <select
+                                        autoFocus
+                                        value={machine.lastFailureType || 'Ninguna'}
+                                        onChange={(e) => handleQuickUpdate({ failureType: e.target.value })}
+                                        onBlur={() => setIsEditingFailure(false)}
+                                        style={{ width: '120px', background: '#1a1d24', color: 'white', border: '1px solid #374151', borderRadius: '4px', outline: 'none', fontSize: '0.65rem', marginTop: '4px' }}
+                                    >
+                                        {failureTypes.map(f => (
+                                            <option key={f} value={f}>{f}</option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <Typography 
+                                        variant="caption" 
+                                        onClick={() => setIsEditingFailure(true)}
+                                        sx={{ color: '#9ca3af', fontSize: '0.65rem', fontWeight: 600, cursor: 'pointer', mt: 0.3, display: 'flex', alignItems: 'center', gap: 0.3 }}
+                                    >
+                                        <ErrorOutlineIcon sx={{ fontSize: 10 }} />
+                                        {machine.lastFailureType || 'Sin fallo'}
+                                    </Typography>
+                                )}
                             </Box>
                         )}
-
-                        {isEditingFailure ? (
-                            <select
-                                autoFocus
-                                value={machine.lastFailureType || 'Ninguna'}
-                                onChange={(e) => handleQuickUpdate({ failureType: e.target.value })}
-                                onBlur={() => setIsEditingFailure(false)}
-                                style={{ width: '120px', background: '#1a1d24', color: 'white', border: '1px solid #374151', borderRadius: '4px', outline: 'none', fontSize: '0.65rem', marginTop: '4px' }}
+                        
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.3 }}>
+                            <IconButton 
+                                size="small" 
+                                onClick={() => setIsEditingObservation(!isEditingObservation)}
+                                sx={{ 
+                                    p: 0, 
+                                    color: machine.lastObservation ? '#3b82f6' : '#4b5563', 
+                                    '&:hover': { color: '#fff' } 
+                                }}
                             >
-                                {failureTypes.map(f => (
-                                    <option key={f} value={f}>{f}</option>
-                                ))}
-                            </select>
-                        ) : (
-                            <Typography 
-                                variant="caption" 
-                                onClick={() => setIsEditingFailure(true)}
-                                sx={{ color: '#9ca3af', fontSize: '0.65rem', fontWeight: 600, cursor: 'pointer', mt: 0.3, display: 'flex', alignItems: 'center', gap: 0.3 }}
-                            >
-                                <ErrorOutlineIcon sx={{ fontSize: 10 }} />
-                                {machine.lastFailureType || 'Sin fallo'}
+                                <VisibilityIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                            <Typography variant="caption" sx={{ color: '#4b5563', fontWeight: 800, fontSize: '0.6rem' }}>
+                                Hace {timeAgo}
                             </Typography>
-                        )}
+                        </Box>
                     </Box>
-                )}
-                
-                <Typography variant="caption" sx={{ color: '#4b5563', fontWeight: 800, fontSize: '0.6rem' }}>
-                    Hace {timeAgo}
-                </Typography>
+                </Box>
             </Box>
+
+            {/* Observation Edit Overlay / Expansion */}
+            <Collapse in={isEditingObservation} sx={{ width: '100%' }}>
+                <Box sx={{ mt: 1, p: 1.5, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <TextField
+                        fullWidth
+                        multiline
+                        rows={2}
+                        placeholder="Escribe una observación..."
+                        value={obsText}
+                        onChange={(e) => setObsText(e.target.value)}
+                        variant="standard"
+                        InputProps={{
+                            disableUnderline: true,
+                            sx: { color: 'white', fontSize: '0.8rem', fontStyle: 'italic' }
+                        }}
+                    />
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
+                        <Button size="small" onClick={() => { setIsEditingObservation(false); setObsText(machine.lastObservation || ''); }} sx={{ color: '#6b7280', fontSize: '0.6rem' }}>Cancelar</Button>
+                        <Button size="small" onClick={() => handleQuickUpdate({ observation: obsText })} sx={{ color: '#10b981', fontWeight: 900, fontSize: '0.6rem' }}>Guardar</Button>
+                    </Box>
+                </Box>
+            </Collapse>
         </ListItem>
+
     );
 };
 
@@ -261,12 +312,28 @@ const StatusButton = ({ status, count, active, onClick }: { status: string, coun
 };
 
 export default function DashboardMantenimientoPage() {
+    const navigate = useNavigate();
+    const location = useLocation();
     const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
     const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
     const [showFilters, setShowFilters] = useState(false);
     const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [sortMode, setSortMode] = useState<'mtbf' | 'mttr' | null>(null);
+
+    // Consume navigation state
+    useEffect(() => {
+        const state = location.state as { machineNumber?: number | string; plantId?: string; status?: string } | null;
+        if (state) {
+            if (state.plantId) setSelectedPlantId(state.plantId);
+            if (state.machineNumber) setSearchQuery(String(state.machineNumber));
+            if (state.status) {
+                setSelectedStatus(state.status);
+                setSortMode(null);
+            }
+            setShowFilters(true);
+        }
+    }, [location.state]);
 
     const { data: plants = [], isLoading: loadingPlants } = useGetPlantsQuery();
     const { data: machineTypes = [], isLoading: loadingTypes } = useGetMachineTypesQuery();
@@ -451,11 +518,26 @@ export default function DashboardMantenimientoPage() {
 
                     <Fade in timeout={300}>
                         <Box>
-                            <Box sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center' }}>
+                            <Box sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <Typography sx={{ fontWeight: 900, display: 'flex', alignItems: 'center', gap: 1, fontSize: '0.8rem', color: '#4b5563', textTransform: 'uppercase' }}>
                                     {sortMode ? `ORDENADO POR ${sortMode}` : (selectedStatus ? formatStatus(selectedStatus) : 'INCIDENCIAS')}
                                     <Chip label={filteredMachines.length} size="small" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 800, bgcolor: 'rgba(255,255,255,0.05)' }} />
                                 </Typography>
+                                
+                                <Button 
+                                    size="small"
+                                    startIcon={<MapIcon />}
+                                    onClick={() => navigate('/mantenimiento/monitoreo')}
+                                    sx={{ 
+                                        color: '#6b7280', 
+                                        fontWeight: 800, 
+                                        fontSize: '0.65rem',
+                                        textTransform: 'uppercase',
+                                        '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.05)' }
+                                    }}
+                                >
+                                    Volver al Mapa
+                                </Button>
                             </Box>
 
                             <List disablePadding sx={{ width: '100%' }}>
