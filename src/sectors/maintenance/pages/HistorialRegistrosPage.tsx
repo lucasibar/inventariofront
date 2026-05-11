@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
-    Box, Typography, Card, Table, TableBody, TableCell, TableContainer, 
-    TableHead, TableRow, Chip, TextField, Grid, IconButton, Tooltip,
-    Dialog, DialogTitle, DialogContent, DialogActions, Button, MenuItem, useMediaQuery, useTheme, Divider
+    Box, Typography, Card, Chip, TextField, Grid, IconButton,
+    Dialog, DialogTitle, DialogContent, DialogActions, Button, MenuItem, useTheme
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -51,7 +50,6 @@ const statusLabels: Record<string, string> = {
 
 export default function HistorialRegistrosPage() {
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const navigate = useNavigate();
     const [startDate, setStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 7)).toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);

@@ -12,7 +12,6 @@ import {
     Button,
     Fab,
     Drawer,
-    MenuItem,
     CircularProgress,
     Autocomplete,
     Divider,
@@ -21,11 +20,9 @@ import {
     LinearProgress
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import FilterListIcon from '@mui/icons-material/FilterList';
 import AddIcon from '@mui/icons-material/Add';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import StoreIcon from '@mui/icons-material/Store';
 import CloseIcon from '@mui/icons-material/Close';
@@ -52,7 +49,6 @@ import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognitio
 // API Hooks
 import { 
     useGetPurchaseOrdersQuery, 
-    useGetDashboardStatsQuery,
     useGetUnlinkedMovementsQuery,
     useLinkMovementMutation,
     useCreatePurchaseOrderMutation,
@@ -124,7 +120,6 @@ const ComboCard = ({ combo, onBuy }: any) => (
 // ... (Subcomponents like PurchaseOrderCard, UnlinkedMovementCard, NewOrderDrawer, ConciliationDrawer remain similar but adapted)
 
 export default function DashboardComprasPage() {
-    const isMobile = useIsMobile();
     const [tab, setTab] = useState(2); // Start on Criticals (index 2 in previous, but now we reorder)
     const [searchQuery, setSearchQuery] = useState('');
     const [plantFilter, setPlantFilter] = useState('');
@@ -147,8 +142,6 @@ export default function DashboardComprasPage() {
     const [deleteOrder] = useDeletePurchaseOrderMutation();
     
     const suppliers = useMemo(() => partners.filter((p: any) => p.type === 'SUPPLIER' || p.type === 'BOTH'), [partners]);
-    const plants = useMemo(() => Array.from(new Set(depots.map((d: any) => d.planta))).filter(Boolean), [depots]);
-    const filteredDepots = useMemo(() => plantFilter ? depots.filter((d: any) => d.planta === plantFilter) : depots, [depots, plantFilter]);
 
     const { transcript, listening, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition();
     useEffect(() => { if (transcript) setSearchQuery(transcript); }, [transcript]);
