@@ -11,6 +11,7 @@ import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import MemoryIcon from '@mui/icons-material/Memory';
 import ContentCutIcon from '@mui/icons-material/ContentCut';
 import CodeIcon from '@mui/icons-material/Code';
+import MapIcon from '@mui/icons-material/Map';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import TimerIcon from '@mui/icons-material/Timer';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';

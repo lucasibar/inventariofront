@@ -280,7 +280,7 @@ export default function BuscadorMaquinaPage() {
                                         variant="contained"
                                         color="primary"
                                         startIcon={<BuildIcon />}
-                                        onClick={() => handleAction('status')}
+                                        onClick={() => handleAction()}
                                         sx={{ borderRadius: 2, fontWeight: 700, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                     >
                                         Editar
