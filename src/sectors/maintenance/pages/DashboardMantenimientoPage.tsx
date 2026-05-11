@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Box, Typography, IconButton, List, ListItem, Collapse, Fade, Chip, TextField, Button } from '@mui/material';
+import { Box, Typography, IconButton, List, ListItem, Collapse, Fade, Chip, TextField, Button, Menu, MenuItem } from '@mui/material';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SearchIcon from '@mui/icons-material/Search';
@@ -64,9 +64,9 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
     const navigate = useNavigate();
     const [updateStatus] = useUpdateMachineStatusMutation();
 
-    const [isEditingStatus, setIsEditingStatus] = useState(false);
-    const [isEditingFailure, setIsEditingFailure] = useState(false);
-    const [isEditingMechanic, setIsEditingMechanic] = useState(false);
+    const [anchorElStatus, setAnchorElStatus] = useState<null | HTMLElement>(null);
+    const [anchorElFailure, setAnchorElFailure] = useState<null | HTMLElement>(null);
+    const [anchorElMechanic, setAnchorElMechanic] = useState<null | HTMLElement>(null);
     const [isEditingObservation, setIsEditingObservation] = useState(false);
     const [obsText, setObsText] = useState(machine.lastObservation || '');
     
@@ -92,9 +92,9 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
             observation: updates.observation !== undefined ? updates.observation : (machine.lastObservation || ''),
             timestamp: new Date().toISOString()
         });
-        setIsEditingStatus(false);
-        setIsEditingFailure(false);
-        setIsEditingMechanic(false);
+        setAnchorElStatus(null);
+        setAnchorElFailure(null);
+        setAnchorElMechanic(null);
         setIsEditingObservation(false);
     };
     return (
@@ -121,27 +121,30 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                         {machine.number}
                     </Typography>
                     
-                    {isEditingMechanic ? (
-                        <select
-                            autoFocus
-                            value={mechanicName}
-                            onChange={(e) => handleQuickUpdate({ generatedBy: e.target.value })}
-                            onBlur={() => setIsEditingMechanic(false)}
-                            style={{ width: '100px', background: '#1a1d24', color: 'white', border: '1px solid #374151', borderRadius: '4px', outline: 'none', fontSize: '0.7rem', marginTop: '4px' }}
-                        >
-                            {responsables.map(r => (
-                                <option key={r} value={r}>{r}</option>
-                            ))}
-                        </select>
-                    ) : (
-                        <Typography 
-                            variant="caption" 
-                            onClick={() => setIsEditingMechanic(true)}
-                            sx={{ color: machine.lastChangeBy ? '#6b7280' : '#ef4444', cursor: 'pointer', mt: 0.5, fontSize: '0.75rem', fontWeight: 700 }}
-                        >
-                            {machine.lastChangeBy || 'Sin asignar'}
-                        </Typography>
-                    )}
+                    <Typography 
+                        variant="caption" 
+                        onClick={(e) => setAnchorElMechanic(e.currentTarget)}
+                        sx={{ color: machine.lastChangeBy ? '#6b7280' : '#ef4444', cursor: 'pointer', mt: 0.5, fontSize: '0.75rem', fontWeight: 700 }}
+                    >
+                        {machine.lastChangeBy || 'Sin asignar'}
+                    </Typography>
+
+                    <Menu
+                        anchorEl={anchorElMechanic}
+                        open={Boolean(anchorElMechanic)}
+                        onClose={() => setAnchorElMechanic(null)}
+                        PaperProps={{ sx: { bgcolor: '#1a1d24', color: 'white', border: '1px solid #374151', maxHeight: 300 } }}
+                    >
+                        {responsables.map(r => (
+                            <MenuItem 
+                                key={r} 
+                                onClick={() => handleQuickUpdate({ generatedBy: r })}
+                                sx={{ fontSize: '0.75rem', py: 0.5, '&:hover': { bgcolor: '#3b82f6' } }}
+                            >
+                                {r}
+                            </MenuItem>
+                        ))}
+                    </Menu>
                 </Box>
                 
                 {/* RIGHT SIDE: Status, Failure Type, Time and Edit Observation */}
@@ -156,62 +159,67 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                             </Box>
                         ) : (
                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                {isEditingStatus ? (
-                                    <select
-                                        autoFocus
-                                        value={machine.status}
-                                        onChange={(e) => handleQuickUpdate({ status: e.target.value })}
-                                        onBlur={() => setIsEditingStatus(false)}
-                                        style={{ background: '#1a1d24', color: 'white', border: '1px solid #374151', borderRadius: '4px', outline: 'none', fontSize: '0.7rem', padding: '2px' }}
-                                    >
-                                        {Object.keys(statusColors).map(s => (
-                                            <option key={s} value={s}>{formatStatus(s)}</option>
-                                        ))}
-                                    </select>
-                                ) : (
-                                    <Box 
-                                        onClick={() => setIsEditingStatus(true)}
-                                        sx={{ 
-                                            display: 'flex', alignItems: 'center', gap: 0.5,
-                                            color: statusColors[machine.status], 
-                                            fontWeight: 900, 
-                                            cursor: 'pointer', 
-                                            px: 1, 
-                                            py: 0.3, 
-                                            bgcolor: `${statusColors[machine.status]}15`, 
-                                            borderRadius: '4px',
-                                            border: `1px solid ${statusColors[machine.status]}30`,
-                                            fontSize: '0.65rem',
-                                            textTransform: 'uppercase'
-                                        }}
-                                    >
-                                        {statusIcons[machine.status]}
-                                        {formatStatus(machine.status)}
-                                    </Box>
-                                )}
+                                <Box 
+                                    onClick={(e) => setAnchorElStatus(e.currentTarget)}
+                                    sx={{ 
+                                        display: 'flex', alignItems: 'center', gap: 0.5,
+                                        color: statusColors[machine.status], 
+                                        fontWeight: 900, 
+                                        cursor: 'pointer', 
+                                        px: 1, 
+                                        py: 0.3, 
+                                        bgcolor: `${statusColors[machine.status]}15`, 
+                                        borderRadius: '4px',
+                                        border: `1px solid ${statusColors[machine.status]}30`,
+                                        fontSize: '0.65rem',
+                                        textTransform: 'uppercase'
+                                    }}
+                                >
+                                    {statusIcons[machine.status]}
+                                    {formatStatus(machine.status)}
+                                </Box>
+                                <Menu
+                                    anchorEl={anchorElStatus}
+                                    open={Boolean(anchorElStatus)}
+                                    onClose={() => setAnchorElStatus(null)}
+                                    PaperProps={{ sx: { bgcolor: '#1a1d24', color: 'white', border: '1px solid #374151' } }}
+                                >
+                                    {Object.keys(statusColors).map(s => (
+                                        <MenuItem 
+                                            key={s} 
+                                            onClick={() => handleQuickUpdate({ status: s })}
+                                            sx={{ fontSize: '0.75rem', py: 0.5, color: statusColors[s], '&:hover': { bgcolor: `${statusColors[s]}15` } }}
+                                        >
+                                            {formatStatus(s)}
+                                        </MenuItem>
+                                    ))}
+                                </Menu>
 
-                                {isEditingFailure ? (
-                                    <select
-                                        autoFocus
-                                        value={machine.lastFailureType || 'Ninguna'}
-                                        onChange={(e) => handleQuickUpdate({ failureType: e.target.value })}
-                                        onBlur={() => setIsEditingFailure(false)}
-                                        style={{ width: '120px', background: '#1a1d24', color: 'white', border: '1px solid #374151', borderRadius: '4px', outline: 'none', fontSize: '0.65rem', marginTop: '4px' }}
-                                    >
-                                        {failureTypes.map(f => (
-                                            <option key={f} value={f}>{f}</option>
-                                        ))}
-                                    </select>
-                                ) : (
-                                    <Typography 
-                                        variant="caption" 
-                                        onClick={() => setIsEditingFailure(true)}
-                                        sx={{ color: '#9ca3af', fontSize: '0.65rem', fontWeight: 600, cursor: 'pointer', mt: 0.3, display: 'flex', alignItems: 'center', gap: 0.3 }}
-                                    >
-                                        <ErrorOutlineIcon sx={{ fontSize: 10 }} />
-                                        {machine.lastFailureType || 'Sin fallo'}
-                                    </Typography>
-                                )}
+                                <Typography 
+                                    variant="caption" 
+                                    onClick={(e) => setAnchorElFailure(e.currentTarget)}
+                                    sx={{ color: '#9ca3af', fontSize: '0.65rem', fontWeight: 600, cursor: 'pointer', mt: 0.3, display: 'flex', alignItems: 'center', gap: 0.3 }}
+                                >
+                                    <ErrorOutlineIcon sx={{ fontSize: 10 }} />
+                                    {machine.lastFailureType || 'Sin fallo'}
+                                </Typography>
+
+                                <Menu
+                                    anchorEl={anchorElFailure}
+                                    open={Boolean(anchorElFailure)}
+                                    onClose={() => setAnchorElFailure(null)}
+                                    PaperProps={{ sx: { bgcolor: '#1a1d24', color: 'white', border: '1px solid #374151', maxHeight: 300 } }}
+                                >
+                                    {failureTypes.map(f => (
+                                        <MenuItem 
+                                            key={f} 
+                                            onClick={() => handleQuickUpdate({ failureType: f })}
+                                            sx={{ fontSize: '0.75rem', py: 0.5, '&:hover': { bgcolor: '#3b82f6' } }}
+                                        >
+                                            {f}
+                                        </MenuItem>
+                                    ))}
+                                </Menu>
                             </Box>
                         )}
                         
