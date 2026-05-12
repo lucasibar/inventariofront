@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { 
     Box, Typography, Button, TextField, MenuItem, Card as MuiCard, 
     CardContent, Divider, Autocomplete, IconButton, List, ListItem, 
-    ListItemText, ListItemSecondaryAction, Paper, Chip, Grid 
+    ListItemText, ListItemSecondaryAction, Paper, Chip, Grid, FormControlLabel, Checkbox
 } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { useSelector } from 'react-redux';
@@ -48,6 +48,8 @@ interface PendingEvent {
     observation: string;
     generatedBy: string;
     timestamp: string;
+    machineId?: string;
+    machineLabel?: string;
 }
 
 export default function RegistroMaquinasPage() {
@@ -59,7 +61,21 @@ export default function RegistroMaquinasPage() {
     const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
     const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
     const [selectedMachineId, setSelectedMachineId] = useState<string | null>(null);
+    const [machineInputValue, setMachineInputValue] = useState<string>('');
     const [pendingEvents, setPendingEvents] = useState<PendingEvent[]>([]);
+
+    const [enableSecondState, setEnableSecondState] = useState<boolean>(false);
+
+    const defaultNightStart = useMemo(() => {
+        const d = new Date();
+        d.setHours(5, 0, 0, 0);
+        return new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+    }, []);
+
+    const [secondStatus, setSecondStatus] = useState('ACTIVA');
+    const [secondTimestamp, setSecondTimestamp] = useState(defaultNightStart);
+    const [secondFailure, setSecondFailure] = useState('Ninguna');
+    const [secondObservation, setSecondObservation] = useState('');
     
     // Queries
     const { data: plants = [], isLoading: loadingPlants } = useGetPlantsQuery();
@@ -118,20 +134,54 @@ export default function RegistroMaquinasPage() {
     const machineOptions = useMemo(() => machines.map((m: any) => ({ value: m.id, label: `Máquina ${m.number} - ${m.codigoInterno || ''}`, number: m.number })), [machines]);
 
     const addEvent = () => {
-        const values = getValues();
-        if (!selectedMachineId) return alert('Seleccione una máquina primero');
+        let machineIdToUse = selectedMachineId;
+        // Fallback resolution if they typed the machine number directly
+        if (!machineIdToUse && machineInputValue.trim()) {
+            const matched = machineOptions.find((m: any) => String(m.number) === machineInputValue.trim());
+            if (matched) {
+                machineIdToUse = matched.value;
+                setSelectedMachineId(matched.value);
+            }
+        }
 
-        const newEvent: PendingEvent = {
+        if (!machineIdToUse) {
+            return alert('Por favor seleccione o escriba un número de máquina válido primero.');
+        }
+
+        const matchedMachine = machineOptions.find((m: any) => m.value === machineIdToUse);
+        const machineLabelVal = matchedMachine ? matchedMachine.label : `Máquina ID: ${machineIdToUse}`;
+
+        const values = getValues();
+        const generatedByVal = values.generatedBy;
+
+        const event1: PendingEvent = {
             id: Math.random().toString(36).substr(2, 9),
-            ...values
+            ...values,
+            machineId: machineIdToUse,
+            machineLabel: machineLabelVal
         };
 
-        // Add and sort by timestamp
-        setPendingEvents(prev => [...prev, newEvent].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()));
+        const newEventsList = [event1];
+
+        if (enableSecondState) {
+            const event2: PendingEvent = {
+                id: Math.random().toString(36).substr(2, 9),
+                targetStatus: secondStatus,
+                failureType: secondFailure,
+                observation: secondObservation,
+                generatedBy: generatedByVal,
+                timestamp: secondTimestamp,
+                machineId: machineIdToUse,
+                machineLabel: machineLabelVal
+            };
+            newEventsList.push(event2);
+        }
+
+        setPendingEvents(prev => [...prev, ...newEventsList].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()));
         
-        // Reset only values that usually change
+        // Reset fields
         setValue('observation', '');
-        // Keep status and mechanic as they might be the starting point for the next event
+        setSecondObservation('');
     };
 
     const removeEvent = (id: string) => {
@@ -144,7 +194,7 @@ export default function RegistroMaquinasPage() {
         try {
             for (const event of pendingEvents) {
                 await updateStatus({
-                    id: selectedMachineId,
+                    id: event.machineId || selectedMachineId,
                     plantId: selectedPlantId,
                     typeId: selectedTypeId,
                     status: event.targetStatus,
@@ -210,6 +260,8 @@ export default function RegistroMaquinasPage() {
                                     getOptionLabel={(opt) => opt.label}
                                     value={machineOptions.find((o: any) => o.value === selectedMachineId) || null}
                                     onChange={(_e, newVal) => setSelectedMachineId(newVal?.value || null)}
+                                    inputValue={machineInputValue}
+                                    onInputChange={(_e, newInputValue) => setMachineInputValue(newInputValue)}
                                     loading={loadingMachines}
                                     renderInput={(params) => (
                                         <TextField
@@ -234,72 +286,161 @@ export default function RegistroMaquinasPage() {
                             <Divider sx={{ my: 3, borderColor: '#1f2937' }} />
 
                             <Typography variant="h6" sx={{ mb: 2, color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
-                                2. Evento de Mantenimiento
+                                2. Eventos de Mantenimiento
                             </Typography>
 
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                                <Controller
-                                    name="targetStatus"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <TextField {...field} select fullWidth label="Estado" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }}>
-                                            {targetStatuses.map((opt) => (
-                                                <MenuItem key={opt.value} value={opt.value}>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                        <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: opt.color }} />
-                                                        {opt.label}
-                                                    </Box>
-                                                </MenuItem>
-                                            ))}
-                                        </TextField>
-                                    )}
-                                />
+                                {/* Evento Principal */}
+                                <Box sx={{ p: 2, bgcolor: '#1f293740', borderRadius: 2, border: '1px solid #374151' }}>
+                                    <Typography variant="subtitle2" sx={{ color: '#3b82f6', mb: 2, fontWeight: 700 }}>
+                                        Primer Cambio de Estado (Obligatorio)
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                        <Controller
+                                            name="targetStatus"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <TextField {...field} select fullWidth size="small" label="Estado" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }}>
+                                                    {targetStatuses.map((opt) => (
+                                                        <MenuItem key={opt.value} value={opt.value}>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: opt.color }} />
+                                                                {opt.label}
+                                                            </Box>
+                                                        </MenuItem>
+                                                    ))}
+                                                </TextField>
+                                            )}
+                                        />
 
-                                <Controller
-                                    name="timestamp"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <TextField {...field} fullWidth type="datetime-local" label="Fecha/Hora del evento" variant="outlined" InputLabelProps={{ shrink: true }} sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }} />
-                                    )}
-                                />
+                                        <Controller
+                                            name="timestamp"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <TextField {...field} fullWidth size="small" type="datetime-local" label="Fecha/Hora del evento" variant="outlined" InputLabelProps={{ shrink: true }} sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }} />
+                                            )}
+                                        />
 
-                                <Controller
-                                    name="generatedBy"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <TextField {...field} select fullWidth label="Responsable" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }}>
-                                            {responsables.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-                                        </TextField>
-                                    )}
-                                />
+                                        <Controller
+                                            name="generatedBy"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <TextField {...field} select fullWidth size="small" label="Responsable" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }}>
+                                                    {responsables.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+                                                </TextField>
+                                            )}
+                                        />
 
-                                <Controller
-                                    name="failureType"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <TextField {...field} select fullWidth label="Tipo de Falla" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }}>
-                                            {failureTypes.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-                                        </TextField>
-                                    )}
-                                />
+                                        <Controller
+                                            name="failureType"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <TextField {...field} select fullWidth size="small" label="Tipo de Falla" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }}>
+                                                    {failureTypes.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+                                                </TextField>
+                                            )}
+                                        />
 
-                                <Controller
-                                    name="observation"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <TextField {...field} fullWidth multiline rows={2} label="Observación" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }} />
-                                    )}
-                                />
+                                        <Controller
+                                            name="observation"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <TextField {...field} fullWidth size="small" multiline rows={2} label="Observación" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }} />
+                                            )}
+                                        />
+                                    </Box>
+                                </Box>
+
+                                {/* Checkbox Opcional */}
+                                <Box sx={{ bgcolor: '#111827', p: 1, borderRadius: 1, border: '1px dashed #374151' }}>
+                                    <FormControlLabel
+                                        control={
+                                            <Checkbox 
+                                                checked={enableSecondState} 
+                                                onChange={(e) => setEnableSecondState(e.target.checked)} 
+                                                sx={{ color: '#6b7280', '&.Mui-checked': { color: '#10b981' } }}
+                                            />
+                                        }
+                                        label={
+                                            <Typography variant="body2" sx={{ color: enableSecondState ? '#10b981' : '#9ca3af', fontWeight: enableSecondState ? 700 : 400 }}>
+                                                Añadir segundo cambio de estado secuencial (Ej. Reactivación / Fin de Parada)
+                                            </Typography>
+                                        }
+                                    />
+                                </Box>
+
+                                {/* Evento Secundario Opcional */}
+                                {enableSecondState && (
+                                    <Box sx={{ p: 2, bgcolor: '#10b98110', borderRadius: 2, border: '1px solid #10b98130' }}>
+                                        <Typography variant="subtitle2" sx={{ color: '#10b981', mb: 2, fontWeight: 700 }}>
+                                            Segundo Cambio de Estado (Consecutivo)
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                            <TextField 
+                                                select 
+                                                fullWidth 
+                                                size="small"
+                                                label="Estado Posterior" 
+                                                value={secondStatus} 
+                                                onChange={(e) => setSecondStatus(e.target.value)}
+                                                sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }}
+                                            >
+                                                {targetStatuses.map((opt) => (
+                                                    <MenuItem key={opt.value} value={opt.value}>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: opt.color }} />
+                                                            {opt.label}
+                                                        </Box>
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+
+                                            <TextField 
+                                                fullWidth 
+                                                size="small"
+                                                type="datetime-local" 
+                                                label="Fecha/Hora posterior" 
+                                                value={secondTimestamp} 
+                                                onChange={(e) => setSecondTimestamp(e.target.value)}
+                                                InputLabelProps={{ shrink: true }} 
+                                                sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }} 
+                                            />
+
+                                            <TextField 
+                                                select 
+                                                fullWidth 
+                                                size="small"
+                                                label="Tipo de Falla" 
+                                                value={secondFailure} 
+                                                onChange={(e) => setSecondFailure(e.target.value)}
+                                                sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }}
+                                            >
+                                                {failureTypes.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+                                            </TextField>
+
+                                            <TextField 
+                                                fullWidth 
+                                                size="small"
+                                                multiline 
+                                                rows={2} 
+                                                label="Observación Posterior" 
+                                                value={secondObservation} 
+                                                onChange={(e) => setSecondObservation(e.target.value)}
+                                                sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }} 
+                                            />
+                                        </Box>
+                                    </Box>
+                                )}
 
                                 <Button 
-                                    variant="outlined" 
+                                    variant="contained" 
                                     color="secondary" 
                                     fullWidth 
                                     startIcon={<AddIcon />}
                                     onClick={addEvent}
-                                    sx={{ mt: 1, py: 1.5, borderRadius: 2, fontWeight: 700, borderWidth: 2 }}
+                                    sx={{ py: 1.5, borderRadius: 2, fontWeight: 800, bgcolor: '#3b82f6', '&:hover': { bgcolor: '#2563eb' } }}
                                 >
-                                    Añadir a la secuencia
+                                    {enableSecondState ? 'Añadir Ambos Estados a la Secuencia' : 'Añadir a la Secuencia'}
                                 </Button>
                             </Box>
                         </CardContent>
@@ -325,15 +466,20 @@ export default function RegistroMaquinasPage() {
                                     <ListItem key={event.id} sx={{ mb: 2, bgcolor: '#1f293750', borderRadius: 2, border: '1px solid #37415140' }}>
                                         <ListItemText 
                                             primary={
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                    <Chip 
-                                                        size="small" 
-                                                        label={targetStatuses.find(s => s.value === event.targetStatus)?.label} 
-                                                        sx={{ bgcolor: `${targetStatuses.find(s => s.value === event.targetStatus)?.color}20`, color: targetStatuses.find(s => s.value === event.targetStatus)?.color, fontWeight: 700 }}
-                                                    />
-                                                    <Typography variant="body2" sx={{ color: '#9ca3af' }}>
-                                                        {new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                                    <Typography variant="caption" sx={{ color: '#e5e7eb', fontWeight: 700 }}>
+                                                        {event.machineLabel || 'Máquina Seleccionada'}
                                                     </Typography>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                        <Chip 
+                                                            size="small" 
+                                                            label={targetStatuses.find(s => s.value === event.targetStatus)?.label} 
+                                                            sx={{ bgcolor: `${targetStatuses.find(s => s.value === event.targetStatus)?.color}20`, color: targetStatuses.find(s => s.value === event.targetStatus)?.color, fontWeight: 700 }}
+                                                        />
+                                                        <Typography variant="body2" sx={{ color: '#9ca3af' }}>
+                                                            {new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                                        </Typography>
+                                                    </Box>
                                                 </Box>
                                             }
                                             secondary={

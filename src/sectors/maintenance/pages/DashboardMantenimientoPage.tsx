@@ -67,6 +67,8 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
     const [anchorElStatus, setAnchorElStatus] = useState<null | HTMLElement>(null);
     const [anchorElFailure, setAnchorElFailure] = useState<null | HTMLElement>(null);
     const [anchorElMechanic, setAnchorElMechanic] = useState<null | HTMLElement>(null);
+    const [anchorElTime, setAnchorElTime] = useState<null | HTMLElement>(null);
+    const [customTimestamp, setCustomTimestamp] = useState<string>('');
     const [isEditingObservation, setIsEditingObservation] = useState(false);
     const [obsText, setObsText] = useState(machine.lastObservation || '');
 
@@ -81,18 +83,19 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
         return `${mins}m`;
     }, [machine.lastStatusChange, machine.createdAt]);
 
-    const handleQuickUpdate = async (updates: Partial<{ status: string, failureType: string, generatedBy: string, observation: string }>) => {
+    const handleQuickUpdate = async (updates: Partial<{ status: string, failureType: string, generatedBy: string, observation: string, timestamp: string }>) => {
         await updateStatus({
             id: machine.id,
             status: (updates.status || machine.status) as any,
             failureType: updates.failureType || machine.lastFailureType || 'Ninguna',
             generatedBy: updates.generatedBy || machine.lastChangeBy || 'Sin Asignar',
             observation: updates.observation !== undefined ? updates.observation : (machine.lastObservation || ''),
-            timestamp: new Date().toISOString()
+            timestamp: updates.timestamp || new Date().toISOString()
         });
         setAnchorElStatus(null);
         setAnchorElFailure(null);
         setAnchorElMechanic(null);
+        setAnchorElTime(null);
         setIsEditingObservation(false);
     };
     return (
@@ -233,9 +236,55 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                             >
                                 <VisibilityIcon sx={{ fontSize: 14 }} />
                             </IconButton>
-                            <Typography variant="caption" sx={{ color: '#4b5563', fontWeight: 800, fontSize: '0.6rem' }}>
+                            <Typography 
+                                variant="caption" 
+                                onClick={(e) => {
+                                    setAnchorElTime(e.currentTarget);
+                                    const baseDate = machine.lastStatusChange ? new Date(machine.lastStatusChange) : new Date(machine.createdAt);
+                                    const tzoffset = baseDate.getTimezoneOffset() * 60000;
+                                    const localISOTime = new Date(baseDate.getTime() - tzoffset).toISOString().slice(0, 16);
+                                    setCustomTimestamp(localISOTime);
+                                }}
+                                sx={{ color: '#4b5563', fontWeight: 800, fontSize: '0.6rem', cursor: 'pointer', '&:hover': { color: '#fff' } }}
+                            >
                                 Hace {timeAgo}
                             </Typography>
+
+                            <Menu
+                                anchorEl={anchorElTime}
+                                open={Boolean(anchorElTime)}
+                                onClose={() => setAnchorElTime(null)}
+                                PaperProps={{ sx: { bgcolor: '#1a1d24', color: 'white', border: '1px solid #374151', p: 1.5 } }}
+                            >
+                                <Typography variant="caption" sx={{ color: '#9ca3af', display: 'block', mb: 1, fontWeight: 700 }}>
+                                    Fecha/Hora del Registro
+                                </Typography>
+                                <TextField
+                                    type="datetime-local"
+                                    size="small"
+                                    value={customTimestamp}
+                                    onChange={(e) => setCustomTimestamp(e.target.value)}
+                                    sx={{ 
+                                        input: { color: 'white', fontSize: '0.75rem' }, 
+                                        mb: 1,
+                                        bgcolor: 'rgba(0,0,0,0.3)',
+                                        borderRadius: 1
+                                    }}
+                                />
+                                <Button 
+                                    size="small" 
+                                    fullWidth 
+                                    variant="contained" 
+                                    color="primary"
+                                    onClick={() => {
+                                        const isoDate = new Date(customTimestamp).toISOString();
+                                        handleQuickUpdate({ timestamp: isoDate } as any);
+                                    }}
+                                    sx={{ fontSize: '0.7rem', fontWeight: 800 }}
+                                >
+                                    Actualizar Fecha
+                                </Button>
+                            </Menu>
                         </Box>
                     </Box>
                 </Box>
