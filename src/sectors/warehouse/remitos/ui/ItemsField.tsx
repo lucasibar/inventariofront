@@ -16,7 +16,7 @@ const CREATE_OPTION = { __isCreateOption: true, codigoInterno: '', descripcion: 
 export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
     const { control, register, setValue, watch } = useFormContext();
     const supplierName = watch('supplierName');
-    const { fields, append, remove } = useFieldArray({
+    const { fields, prepend, remove } = useFieldArray({
         control,
         name: 'lines'
     });
@@ -52,7 +52,7 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                     startIcon={<AddIcon />}
                     variant="text"
                     size="small"
-                    onClick={() => append({
+                    onClick={() => prepend({
                         codigoInterno: '',
                         descripcion: '',
                         qtyPrincipal: 0,
