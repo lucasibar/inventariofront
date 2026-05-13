@@ -110,29 +110,41 @@ export const maintenanceApi = api.injectEndpoints({
             }),
             invalidatesTags: ['Maintenance', 'Machine'],
             async onQueryStarted({ id, plantId, typeId, status, generatedBy }, { dispatch, queryFulfilled }) {
-                const patchResult1 = dispatch(
-                    maintenanceApi.util.updateQueryData('getMachines', { plantId, typeId }, (draft) => {
-                        const machine = draft.find((m: any) => m.id === id);
-                        if (machine) {
-                            machine.status = status;
-                            if (generatedBy) machine.lastChangeBy = generatedBy;
-                        }
-                    })
-                );
-                const patchResult2 = dispatch(
-                    maintenanceApi.util.updateQueryData('getMachines', { plantId }, (draft) => {
-                        const machine = draft.find((m: any) => m.id === id);
-                        if (machine) {
-                            machine.status = status;
-                            if (generatedBy) machine.lastChangeBy = generatedBy;
-                        }
-                    })
-                );
+                // If we have plantId, we can perform a targeted optimistic update
+                const patches = [];
+                
+                if (plantId) {
+                    // Update the specific plant/type query
+                    patches.push(dispatch(
+                        maintenanceApi.util.updateQueryData('getMachines', { plantId, typeId }, (draft) => {
+                            const machine = draft?.find((m: any) => m.id === id);
+                            if (machine) {
+                                machine.status = status;
+                                if (generatedBy) machine.lastChangeBy = generatedBy;
+                                machine.lastStatusChange = new Date().toISOString();
+                            }
+                        })
+                    ));
+                    
+                    // Also update the plant-only query if it was called without typeId
+                    if (typeId) {
+                        patches.push(dispatch(
+                            maintenanceApi.util.updateQueryData('getMachines', { plantId }, (draft) => {
+                                const machine = draft?.find((m: any) => m.id === id);
+                                if (machine) {
+                                    machine.status = status;
+                                    if (generatedBy) machine.lastChangeBy = generatedBy;
+                                    machine.lastStatusChange = new Date().toISOString();
+                                }
+                            })
+                        ));
+                    }
+                }
+
                 try {
                     await queryFulfilled;
                 } catch {
-                    patchResult1.undo();
-                    patchResult2.undo();
+                    patches.forEach(patch => patch.undo());
                 }
             },
         }),

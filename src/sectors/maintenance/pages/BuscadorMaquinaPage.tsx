@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Box, Typography, Card, Grid, TextField, Button, Divider, Chip, Avatar, Tooltip, Drawer, IconButton, useMediaQuery, useTheme } from '@mui/material';
+import { Box, Typography, Card, TextField, Button, Divider, Chip, Avatar, Tooltip, Drawer, IconButton, useMediaQuery, useTheme } from '@mui/material';
+import Grid from '@mui/material/Grid2';
 import { PageHeader, Spinner, Select } from '../../../shared/ui';
 import SearchIcon from '@mui/icons-material/Search';
 import BuildIcon from '@mui/icons-material/Build';
@@ -21,29 +22,10 @@ import {
 } from '../api/maintenance.api';
 import type { Machine } from '../api/maintenance.api';
 
-const statusColors: Record<string, string> = {
-    ACTIVA: '#10b981',
-    REVISAR: '#eab308',
-    VELOCIDAD_REDUCIDA: '#f472b6',
-    FALTA_COSTURA: '#a855f7',
-    PARADA: '#ef4444',
-    ELECTRONIC: '#3b82f6',
-    FALTA_PROGRAMA: '#fb923c',
-    REPUESTOS: '#94a3b8',
-    OTRO: '#6b7280',
-};
-
-const statusLabels: Record<string, string> = {
-    ACTIVA: 'Activa',
-    REVISAR: 'En Revisión',
-    VELOCIDAD_REDUCIDA: 'Vel. Reducida',
-    FALTA_COSTURA: 'Costura',
-    PARADA: 'Parada',
-    ELECTRONIC: 'Electrónica',
-    FALTA_PROGRAMA: 'Programa',
-    REPUESTOS: 'Repuestos',
-    OTRO: 'Otro',
-};
+import { 
+    MAINTENANCE_STATUS_COLORS as statusColors,
+    MAINTENANCE_STATUS_LABELS as statusLabels
+} from '../constants/maintenanceConstants';
 
 const LogItem = ({ log, idx }: { log: any; idx: number }) => (
     <Box sx={{ 

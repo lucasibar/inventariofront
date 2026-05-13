@@ -12,29 +12,18 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { IconButton } from '@mui/material';
 
-const STATUS_COLORS: Record<string, string> = {
-    ACTIVA: '#4ade80',         // Verde
-    REVISAR: '#fbbf24',        // Amarillo
-    VELOCIDAD_REDUCIDA: '#92400e', // Marrón
-    PARADA: '#f87171',         // Rojo
-    ELECTRONIC: '#22d3ee',     // Azul Cyan
-    FALTA_COSTURA: '#a855f7',  // Violeta
-    FALTA_PROGRAMA: '#ffffff', // Blanco
-    REPUESTOS: '#f472b6',      // Rosa
-    OTRO: '#94a3b8',           // Gris
-    SIN_DATOS: '#94a3b8'       // Gris
+import { 
+    MAINTENANCE_STATUS_COLORS as STATUS_COLORS,
+    MAINTENANCE_STATUS_LABELS as STATUS_LABELS
+} from '../constants/maintenanceConstants';
+
+const STATUS_COLORS_WITH_FALLBACK = {
+    ...STATUS_COLORS,
+    SIN_DATOS: '#94a3b8'
 };
 
-const STATUS_LABELS: Record<string, string> = {
-    ACTIVA: 'Activa',
-    REVISAR: 'En Revisión',
-    VELOCIDAD_REDUCIDA: 'Velocidad Reducida',
-    PARADA: 'Parada',
-    ELECTRONIC: 'Electrónica',
-    FALTA_COSTURA: 'Falta Costura',
-    FALTA_PROGRAMA: 'Falta Programa',
-    REPUESTOS: 'Repuestos',
-    OTRO: 'Otro',
+const STATUS_LABELS_WITH_FALLBACK = {
+    ...STATUS_LABELS,
     SIN_DATOS: 'Sin Datos'
 };
 
@@ -45,11 +34,11 @@ const MachineNode = ({ number, status, onClick }: {
 }) => {
     if (number === null) return <Box sx={{ width: 42, height: 42 }} />;
 
-    const statusColor = STATUS_COLORS[status] || STATUS_COLORS.SIN_DATOS;
+    const statusColor = STATUS_COLORS_WITH_FALLBACK[status] || STATUS_COLORS_WITH_FALLBACK.SIN_DATOS;
     const isSpecialStatus = status !== 'ACTIVA' && status !== 'SIN_DATOS';
 
     return (
-        <Tooltip title={`Máquina ${number} - ${STATUS_LABELS[status] || status}`} arrow>
+        <Tooltip title={`Máquina ${number} - ${STATUS_LABELS_WITH_FALLBACK[status] || status}`} arrow>
             <Box
                 onClick={onClick}
                 sx={{
@@ -253,18 +242,18 @@ export default function MonitoreoVivoPage() {
     };
 
     const activasBreakdown = [
-        { label: 'Activa', value: statusCounts.ACTIVA, color: STATUS_COLORS.ACTIVA },
-        { label: 'En Revisión', value: statusCounts.REVISAR, color: STATUS_COLORS.REVISAR },
-        { label: 'Vel. Reducida', value: statusCounts.VELOCIDAD_REDUCIDA, color: STATUS_COLORS.VELOCIDAD_REDUCIDA },
-        { label: 'Costura', value: statusCounts.FALTA_COSTURA, color: STATUS_COLORS.FALTA_COSTURA },
+        { label: 'Activa', value: statusCounts.ACTIVA, color: STATUS_COLORS_WITH_FALLBACK.ACTIVA },
+        { label: 'En Revisión', value: statusCounts.REVISAR, color: STATUS_COLORS_WITH_FALLBACK.REVISAR },
+        { label: 'Vel. Reducida', value: statusCounts.VELOCIDAD_REDUCIDA, color: STATUS_COLORS_WITH_FALLBACK.VELOCIDAD_REDUCIDA },
+        { label: 'Costura', value: statusCounts.FALTA_COSTURA, color: STATUS_COLORS_WITH_FALLBACK.FALTA_COSTURA },
     ];
 
     const paradasBreakdown = [
-        { label: 'Parada', value: statusCounts.PARADA, color: STATUS_COLORS.PARADA },
-        { label: 'Electrónica', value: statusCounts.ELECTRONIC, color: STATUS_COLORS.ELECTRONIC },
-        { label: 'Repuesto', value: statusCounts.REPUESTOS, color: STATUS_COLORS.REPUESTOS },
-        { label: 'Programa', value: statusCounts.FALTA_PROGRAMA, color: STATUS_COLORS.FALTA_PROGRAMA },
-        { label: 'Otro', value: statusCounts.OTRO, color: STATUS_COLORS.OTRO },
+        { label: 'Parada', value: statusCounts.PARADA, color: STATUS_COLORS_WITH_FALLBACK.PARADA },
+        { label: 'Electrónica', value: statusCounts.ELECTRONIC, color: STATUS_COLORS_WITH_FALLBACK.ELECTRONIC },
+        { label: 'Repuesto', value: statusCounts.REPUESTOS, color: STATUS_COLORS_WITH_FALLBACK.REPUESTOS },
+        { label: 'Programa', value: statusCounts.FALTA_PROGRAMA, color: STATUS_COLORS_WITH_FALLBACK.FALTA_PROGRAMA },
+        { label: 'Otro', value: statusCounts.OTRO, color: STATUS_COLORS_WITH_FALLBACK.OTRO },
     ];
 
     if (loadingMachines) return <Spinner />;
@@ -292,7 +281,7 @@ export default function MonitoreoVivoPage() {
                     title="Máquinas Activas"
                     count={totalActivas}
                     total={totalMachines}
-                    color={STATUS_COLORS.ACTIVA}
+                    color={STATUS_COLORS_WITH_FALLBACK.ACTIVA}
                     breakdown={activasBreakdown}
                     subtitle="Composición Activas"
                 />
@@ -300,7 +289,7 @@ export default function MonitoreoVivoPage() {
                     title="Máquinas Paradas"
                     count={totalMachines - totalActivas}
                     total={totalMachines}
-                    color={STATUS_COLORS.PARADA}
+                    color={STATUS_COLORS_WITH_FALLBACK.PARADA}
                     breakdown={paradasBreakdown}
                     subtitle="Composición Paradas"
                 />

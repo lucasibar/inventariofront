@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Card, CardContent, Grid, Chip, Button, Avatar, Tooltip, Divider } from '@mui/material';
+import { Box, Typography, Card, CardContent, Chip, Button, Avatar, Tooltip, Divider } from '@mui/material';
+import Grid from '@mui/material/Grid2';
 import { PageHeader, Spinner, Select } from '../../../shared/ui';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import BuildIcon from '@mui/icons-material/Build';
@@ -15,21 +16,10 @@ import {
 
 const stoppedStatuses = ['PARADA', 'ELECTRONIC', 'REPUESTOS', 'FALTA_PROGRAMA', 'OTRO'];
 
-const statusColors: Record<string, string> = {
-    PARADA: '#ef4444',
-    ELECTRONIC: '#3b82f6',
-    FALTA_PROGRAMA: '#fb923c',
-    REPUESTOS: '#94a3b8',
-    OTRO: '#6b7280',
-};
-
-const statusLabels: Record<string, string> = {
-    PARADA: 'Parada',
-    ELECTRONIC: 'Electrónica',
-    FALTA_PROGRAMA: 'Programa',
-    REPUESTOS: 'Repuestos',
-    OTRO: 'Otro',
-};
+import { 
+    MAINTENANCE_STATUS_COLORS as statusColors,
+    MAINTENANCE_STATUS_LABELS as statusLabels
+} from '../constants/maintenanceConstants';
 
 export default function PendientesPage() {
     const navigate = useNavigate();

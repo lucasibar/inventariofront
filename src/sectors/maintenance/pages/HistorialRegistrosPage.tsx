@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
-    Box, Typography, Card, Chip, TextField, Grid, IconButton,
+    Box, Typography, Card, Chip, TextField, IconButton,
     Dialog, DialogTitle, DialogContent, DialogActions, Button, MenuItem, Tooltip
 } from '@mui/material';
+import Grid from '@mui/material/Grid2';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import SearchIcon from '@mui/icons-material/Search';
@@ -22,39 +23,12 @@ import {
     resetHistoryFilters 
 } from '../model/maintenanceSlice';
 
-const failureTypes = [
-    'Sin Asignar', 'Ninguna', 'Cosedora Cilindro', 'Cosedora Brazo', 'Cosedora Cierre', 'Error electronico',
-    'Error Puesta 0', 'Error Motores', 'Mal vanizado', 'Logo contaminado',
-    'Tejido(Muerde/revienta/pica/tirones)', 'Goma', 'Puntada', 'Transferencia',
-    'Aguja', 'Platina', 'Menguados', 'Corta', 'Electronico', 'Lubricacion',
-    'Mancha', 'Corte', 'REPUESTO', 'Corte de luz.', 'Programacion'
-];
-
-const responsables = ['Sin Asignar', 'Gaston', 'Ruben', 'Daniel', 'Alexis', 'Violeta', 'Leandro', 'Gaspar', 'Ramón', 'Tejedor'];
-
-const statusColors: Record<string, string> = {
-    ACTIVA: '#10b981',
-    REVISAR: '#eab308',
-    VELOCIDAD_REDUCIDA: '#f472b6',
-    PARADA: '#ef4444',
-    ELECTRONIC: '#3b82f6',
-    FALTA_COSTURA: '#a855f7',
-    FALTA_PROGRAMA: '#fb923c',
-    REPUESTOS: '#94a3b8',
-    OTRO: '#6b7280',
-};
-
-const statusLabels: Record<string, string> = {
-    ACTIVA: 'Activa',
-    REVISAR: 'En Revisión',
-    VELOCIDAD_REDUCIDA: 'Vel. Reducida',
-    FALTA_COSTURA: 'Costura',
-    PARADA: 'Parada',
-    ELECTRONIC: 'Electrónica',
-    FALTA_PROGRAMA: 'Programa',
-    REPUESTOS: 'Repuestos',
-    OTRO: 'Otro',
-};
+import { 
+    FAILURE_TYPES as failureTypes, 
+    RESPONSABLES as responsables, 
+    MAINTENANCE_STATUS_COLORS as statusColors,
+    MAINTENANCE_STATUS_LABELS as statusLabels
+} from '../constants/maintenanceConstants';
 
 export default function HistorialRegistrosPage() {
     const navigate = useNavigate();
@@ -222,19 +196,19 @@ export default function HistorialRegistrosPage() {
             </Box>
 
             <Grid container spacing={2}>
-                <Grid item xs={6} sm={3}>
+                <Grid size={{ xs: 6, sm: 3 }}>
                     <Typography variant="caption" sx={{ color: '#4b5563', display: 'block', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.6rem' }}>Duración</Typography>
                     <Typography variant="body2" sx={{ color: '#10b981', fontWeight: 800 }}>{log.durationFormatted || '-'}</Typography>
                 </Grid>
-                <Grid item xs={6} sm={3}>
+                <Grid size={{ xs: 6, sm: 3 }}>
                     <Typography variant="caption" sx={{ color: '#4b5563', display: 'block', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.6rem' }}>Falla</Typography>
                     <Typography variant="body2" sx={{ color: '#d1d5db', fontWeight: 700 }}>{log.failureType || 'Ninguna'}</Typography>
                 </Grid>
-                <Grid item xs={6} sm={3}>
+                <Grid size={{ xs: 6, sm: 3 }}>
                     <Typography variant="caption" sx={{ color: '#4b5563', display: 'block', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.6rem' }}>Responsable</Typography>
                     <Typography variant="body2" sx={{ color: '#d1d5db', fontWeight: 700 }}>{log.generatedBy || '-'}</Typography>
                 </Grid>
-                <Grid item xs={6} sm={3}>
+                <Grid size={{ xs: 6, sm: 3 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
                         <Tooltip title="Editar detalles locales">
                             <IconButton size="small" sx={{ color: '#3b82f6' }} onClick={() => setEditLogData(log)}>
@@ -248,7 +222,7 @@ export default function HistorialRegistrosPage() {
                         </Tooltip>
                     </Box>
                 </Grid>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                     <Typography variant="caption" sx={{ color: '#4b5563', display: 'block', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.6rem', mb: 0.5 }}>Observaciones</Typography>
                     <Box sx={{ p: 1.5, bgcolor: 'rgba(255,255,255,0.01)', borderRadius: 1, border: '1px solid rgba(255,255,255,0.03)' }}>
                         <Typography variant="body2" sx={{ color: '#9ca3af', fontStyle: log.observation ? 'normal' : 'italic', whiteSpace: 'pre-line' }}>
@@ -270,7 +244,7 @@ export default function HistorialRegistrosPage() {
 
             <Card sx={{ bgcolor: '#111827', borderRadius: 2, mb: 4, p: 2.5, border: '1px solid #1f2937', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>
                 <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} md={2}>
+                    <Grid size={{ xs: 12, md: 2 }}>
                         <TextField
                             label="N° Máquina"
                             variant="outlined"
@@ -288,7 +262,7 @@ export default function HistorialRegistrosPage() {
                             }}
                         />
                     </Grid>
-                    <Grid item xs={12} md={2.5}>
+                    <Grid size={{ xs: 12, md: 2.5 }}>
                         <Select 
                             label="Planta"
                             value={localPlantId}
@@ -296,7 +270,7 @@ export default function HistorialRegistrosPage() {
                             options={plantOptions}
                         />
                     </Grid>
-                    <Grid item xs={12} md={2.5}>
+                    <Grid size={{ xs: 12, md: 2.5 }}>
                         <Select 
                             label="Movimiento / Estado"
                             value={localStatusFilter}
@@ -304,7 +278,7 @@ export default function HistorialRegistrosPage() {
                             options={statusOptions}
                         />
                     </Grid>
-                    <Grid item xs={12} md={2.5}>
+                    <Grid size={{ xs: 12, md: 2.5 }}>
                         <TextField
                             label="Fecha Inicio"
                             type="date"
@@ -322,7 +296,7 @@ export default function HistorialRegistrosPage() {
                             }}
                         />
                     </Grid>
-                    <Grid item xs={12} md={2.5}>
+                    <Grid size={{ xs: 12, md: 2.5 }}>
                         <TextField
                             label="Fecha Fin"
                             type="date"

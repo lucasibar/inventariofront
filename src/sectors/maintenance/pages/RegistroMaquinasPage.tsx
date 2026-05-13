@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { 
     Box, Typography, Button, TextField, MenuItem, Card as MuiCard, 
     CardContent, Divider, Autocomplete, IconButton, List, ListItem, 
-    ListItemText, ListItemSecondaryAction, Paper, Chip, Grid, FormControlLabel, Checkbox
+    ListItemText, ListItemSecondaryAction, Paper, Chip, FormControlLabel, Checkbox
 } from '@mui/material';
+import Grid from '@mui/material/Grid2';
 import { useForm, Controller } from 'react-hook-form';
 import { useSelector } from 'react-redux';
 import { PageHeader, Spinner, Select } from '../../../shared/ui';
@@ -19,25 +20,22 @@ import {
     useUpdateMachineStatusMutation
 } from '../api/maintenance.api';
 
-const responsables = ['Sin Asignar', 'Gaston', 'Ruben', 'Daniel', 'Alexis', 'Violeta', 'Leandro', 'Gaspar', 'Ramón', 'Tejedor'];
-
-const failureTypes = [
-    'Sin Asignar', 'Ninguna', 'Cosedora Cilindro', 'Cosedora Brazo', 'Cosedora Cierre', 'Error electronico',
-    'Error Puesta 0', 'Error Motores', 'Mal vanizado', 'Logo contaminado',
-    'Tejido(Muerde/revienta/pica/tirones)', 'Goma', 'Puntada', 'Transferencia',
-    'Aguja', 'Platina', 'Menguados', 'Corta', 'Electronico', 'Lubricacion',
-    'Mancha', 'Corte', 'REPUESTO', 'Corte de luz.', 'Programacion'
-];
+import { 
+    FAILURE_TYPES as failureTypes, 
+    RESPONSABLES as responsables, 
+    MAINTENANCE_STATUS_COLORS as statusColors,
+    MAINTENANCE_STATUS_LABELS as statusLabels
+} from '../constants/maintenanceConstants';
 
 const targetStatuses = [
-    { value: 'ACTIVA', label: 'Activa', color: '#10b981' },
-    { value: 'REVISAR', label: 'Revisar', color: '#eab308' },
-    { value: 'VELOCIDAD_REDUCIDA', label: 'Velocidad Reducida', color: '#f472b6' },
-    { value: 'FALTA_COSTURA', label: 'Falta Costura', color: '#a855f7' },
-    { value: 'PARADA', label: 'Parada', color: '#ef4444' },
-    { value: 'ELECTRONIC', label: 'Electronic', color: '#3b82f6' },
-    { value: 'FALTA_PROGRAMA', label: 'Falta Programa', color: '#fb923c' },
-    { value: 'REPUESTOS', label: 'Repuestos', color: '#94a3b8' },
+    { value: 'ACTIVA', label: 'Activa', color: statusColors.ACTIVA },
+    { value: 'REVISAR', label: 'Revisar', color: statusColors.REVISAR },
+    { value: 'VELOCIDAD_REDUCIDA', label: 'Velocidad Reducida', color: statusColors.VELOCIDAD_REDUCIDA },
+    { value: 'FALTA_COSTURA', label: 'Falta Costura', color: statusColors.FALTA_COSTURA },
+    { value: 'PARADA', label: 'Parada', color: statusColors.PARADA },
+    { value: 'ELECTRONIC', label: 'Electronic', color: statusColors.ELECTRONIC },
+    { value: 'FALTA_PROGRAMA', label: 'Falta Programa', color: statusColors.FALTA_PROGRAMA },
+    { value: 'REPUESTOS', label: 'Repuestos', color: statusColors.REPUESTOS },
 ];
 
 interface PendingEvent {
@@ -218,7 +216,7 @@ export default function RegistroMaquinasPage() {
 
             <Grid container spacing={3}>
                 {/* Form Side */}
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                     <MuiCard sx={{ bgcolor: '#111827', borderRadius: 2, border: '1px solid #1f2937' }}>
                         <CardContent sx={{ p: 3 }}>
                             <Typography variant="h6" sx={{ mb: 2, color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -432,7 +430,7 @@ export default function RegistroMaquinasPage() {
                 </Grid>
 
                 {/* Queue Side */}
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                     <Paper sx={{ bgcolor: '#111827', borderRadius: 2, p: 3, border: '1px solid #1f2937', minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
                         <Typography variant="h6" sx={{ color: 'white', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                             <HistoryIcon /> Cola de Movimientos a Enviar ({pendingEvents.length})

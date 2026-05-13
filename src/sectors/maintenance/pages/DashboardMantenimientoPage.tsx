@@ -26,15 +26,12 @@ import {
 } from '../api/maintenance.api';
 import type { Machine } from '../api/maintenance.api';
 
-const statusColors: Record<string, string> = {
-    ACTIVA: '#10b981',
-    PARADA: '#ef4444',
-    REVISAR: '#f59e0b',
-    VELOCIDAD_REDUCIDA: '#f97316',
-    ELECTRONIC: '#3b82f6',
-    FALTA_COSTURA: '#8b5cf6',
-    FALTA_PROGRAMA: '#06b6d4',
-};
+import { 
+    FAILURE_TYPES as failureTypes, 
+    RESPONSABLES as responsables, 
+    MAINTENANCE_STATUS_COLORS as statusColors,
+    MAINTENANCE_STATUS_LABELS as statusLabels
+} from '../constants/maintenanceConstants';
 
 const statusIcons: Record<string, React.ReactNode> = {
     ACTIVA: <CheckCircleIcon sx={{ fontSize: '0.8rem' }} />,
@@ -44,16 +41,9 @@ const statusIcons: Record<string, React.ReactNode> = {
     ELECTRONIC: <MemoryIcon sx={{ fontSize: '0.8rem' }} />,
     FALTA_COSTURA: <ContentCutIcon sx={{ fontSize: '0.8rem' }} />,
     FALTA_PROGRAMA: <CodeIcon sx={{ fontSize: '0.8rem' }} />,
+    REPUESTOS: <EngineeringIcon sx={{ fontSize: '0.8rem' }} />,
+    OTRO: <ErrorOutlineIcon sx={{ fontSize: '0.8rem' }} />,
 };
-
-const responsables = ['Sin Asignar', 'Gaston', 'Ruben', 'Daniel', 'Alexis', 'Violeta', 'Leandro', 'Gaspar', 'Ramón', 'Tejedor'];
-const failureTypes = [
-    'Sin Asignar', 'Ninguna', 'Cosedora Cilindro', 'Cosedora Brazo', 'Cosedora Cierre', 'Error electronico',
-    'Error Puesta 0', 'Error Motores', 'Mal vanizado', 'Logo contaminado',
-    'Tejido(Muerde/revienta/pica/tirones)', 'Goma', 'Puntada', 'Transferencia',
-    'Aguja', 'Platina', 'Menguados', 'Corta', 'Electronico', 'Lubricacion',
-    'Mancha', 'Corte', 'REPUESTO', 'Corte de luz.', 'Programacion'
-];
 
 const formatStatus = (status: string) => {
     if (status === 'VELOCIDAD_REDUCIDA') return 'Vel. Reducida';
