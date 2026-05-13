@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
 import { 
     Box, Typography, Button, TextField, MenuItem, Card as MuiCard, 
     CardContent, Divider, Autocomplete, IconButton, List, ListItem, 
@@ -48,20 +47,18 @@ interface PendingEvent {
     observation: string;
     generatedBy: string;
     timestamp: string;
-    machineId?: string;
-    machineLabel?: string;
+    machineId: string;
+    machineLabel: string;
 }
 
 export default function RegistroMaquinasPage() {
     const user = useSelector(selectCurrentUser);
-    const location = useLocation();
     const machineSearchRef = useRef<HTMLInputElement>(null);
     
     // Selectors state
     const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
     const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
     const [selectedMachineId, setSelectedMachineId] = useState<string | null>(null);
-    const [machineInputValue, setMachineInputValue] = useState<string>('');
     const [pendingEvents, setPendingEvents] = useState<PendingEvent[]>([]);
 
     const [enableSecondState, setEnableSecondState] = useState<boolean>(false);
@@ -111,45 +108,24 @@ export default function RegistroMaquinasPage() {
         }
     });
 
-    // Auto-focus on machine search
+    // Auto-focus on machine search when plant/type loads
     useEffect(() => {
         if (machineSearchRef.current) {
             machineSearchRef.current.focus();
         }
     }, [loadingMachines]);
 
-    // Handle pre-selection from location state
-    useEffect(() => {
-        const state = location.state as { preselectedMachine?: any; plantId?: string; focusField?: string } | null;
-        if (state?.preselectedMachine && machines.length > 0) {
-            setSelectedMachineId(state.preselectedMachine.id);
-            if (state.preselectedMachine.lastChangeBy) {
-                setValue('generatedBy', state.preselectedMachine.lastChangeBy);
-            }
-        }
-    }, [location.state, machines, setValue]);
-
     const plantOptions = useMemo(() => plants.map((p: any) => ({ value: p.id, label: p.name })), [plants]);
     const typeOptions = useMemo(() => machineTypes.map((t: any) => ({ value: t.id, label: t.name })), [machineTypes]);
     const machineOptions = useMemo(() => machines.map((m: any) => ({ value: m.id, label: `Máquina ${m.number} - ${m.codigoInterno || ''}`, number: m.number })), [machines]);
 
     const addEvent = () => {
-        let machineIdToUse = selectedMachineId;
-        // Fallback resolution if they typed the machine number directly
-        if (!machineIdToUse && machineInputValue.trim()) {
-            const matched = machineOptions.find((m: any) => String(m.number) === machineInputValue.trim());
-            if (matched) {
-                machineIdToUse = matched.value;
-                setSelectedMachineId(matched.value);
-            }
+        if (!selectedMachineId) {
+            return alert('Por favor seleccione una máquina del listado desplegable primero.');
         }
 
-        if (!machineIdToUse) {
-            return alert('Por favor seleccione o escriba un número de máquina válido primero.');
-        }
-
-        const matchedMachine = machineOptions.find((m: any) => m.value === machineIdToUse);
-        const machineLabelVal = matchedMachine ? matchedMachine.label : `Máquina ID: ${machineIdToUse}`;
+        const matchedMachine = machineOptions.find((m: any) => m.value === selectedMachineId);
+        const machineLabelVal = matchedMachine ? matchedMachine.label : `Máquina ID: ${selectedMachineId}`;
 
         const values = getValues();
         const generatedByVal = values.generatedBy;
@@ -157,7 +133,7 @@ export default function RegistroMaquinasPage() {
         const event1: PendingEvent = {
             id: Math.random().toString(36).substr(2, 9),
             ...values,
-            machineId: machineIdToUse,
+            machineId: selectedMachineId,
             machineLabel: machineLabelVal
         };
 
@@ -171,7 +147,7 @@ export default function RegistroMaquinasPage() {
                 observation: secondObservation,
                 generatedBy: generatedByVal,
                 timestamp: secondTimestamp,
-                machineId: machineIdToUse,
+                machineId: selectedMachineId,
                 machineLabel: machineLabelVal
             };
             newEventsList.push(event2);
@@ -179,9 +155,17 @@ export default function RegistroMaquinasPage() {
 
         setPendingEvents(prev => [...prev, ...newEventsList].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()));
         
-        // Reset fields
+        // Reset fields and clear machine selection to allow picking the next machine seamlessly
+        setSelectedMachineId(null);
         setValue('observation', '');
         setSecondObservation('');
+        
+        // Focus back to machine autocomplete for fast sequential entry
+        setTimeout(() => {
+            if (machineSearchRef.current) {
+                machineSearchRef.current.focus();
+            }
+        }, 50);
     };
 
     const removeEvent = (id: string) => {
@@ -194,7 +178,7 @@ export default function RegistroMaquinasPage() {
         try {
             for (const event of pendingEvents) {
                 await updateStatus({
-                    id: event.machineId || selectedMachineId,
+                    id: event.machineId,
                     plantId: selectedPlantId,
                     typeId: selectedTypeId,
                     status: event.targetStatus,
@@ -205,7 +189,7 @@ export default function RegistroMaquinasPage() {
                 }).unwrap();
             }
             
-            alert(`Se registraron ${pendingEvents.length} cambios correctamente.`);
+            alert(`Se registraron ${pendingEvents.length} movimientos correctamente.`);
             setPendingEvents([]);
             setSelectedMachineId(null);
             reset({
@@ -227,8 +211,8 @@ export default function RegistroMaquinasPage() {
     return (
         <Box sx={{ p: 3, maxWidth: '1000px', margin: '0 auto' }}>
             <PageHeader 
-                title="Carga de Novedades" 
-                subtitle="Registra cambios de estado individuales o múltiples (turno noche)"
+                title="Carga de Novedades por Lote" 
+                subtitle="Formulario optimizado para cargar múltiples movimientos y estados de diferentes máquinas a la vez"
             />
 
             <Grid container spacing={3}>
@@ -237,7 +221,7 @@ export default function RegistroMaquinasPage() {
                     <MuiCard sx={{ bgcolor: '#111827', borderRadius: 2, border: '1px solid #1f2937' }}>
                         <CardContent sx={{ p: 3 }}>
                             <Typography variant="h6" sx={{ mb: 2, color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
-                                1. Identificar Máquina
+                                1. Seleccionar Máquina
                             </Typography>
                             
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
@@ -260,16 +244,15 @@ export default function RegistroMaquinasPage() {
                                     getOptionLabel={(opt) => opt.label}
                                     value={machineOptions.find((o: any) => o.value === selectedMachineId) || null}
                                     onChange={(_e, newVal) => setSelectedMachineId(newVal?.value || null)}
-                                    inputValue={machineInputValue}
-                                    onInputChange={(_e, newInputValue) => setMachineInputValue(newInputValue)}
                                     loading={loadingMachines}
                                     renderInput={(params) => (
                                         <TextField
                                             {...params}
                                             inputRef={machineSearchRef}
-                                            label="Número de Máquina"
+                                            label="Buscar Máquina (N° o Código)"
                                             variant="outlined"
-                                            slotProps={{ htmlInput: { inputMode: 'numeric' } }}
+                                            placeholder="Escriba para filtrar..."
+                                            slotProps={{ htmlInput: { ...params.inputProps, inputMode: 'numeric' } }}
                                             sx={{
                                                 '& .MuiOutlinedInput-root': { color: 'white' },
                                                 '& .MuiInputLabel-root': { color: '#9ca3af' },
@@ -286,21 +269,21 @@ export default function RegistroMaquinasPage() {
                             <Divider sx={{ my: 3, borderColor: '#1f2937' }} />
 
                             <Typography variant="h6" sx={{ mb: 2, color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
-                                2. Eventos de Mantenimiento
+                                2. Datos del Movimiento
                             </Typography>
 
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                                 {/* Evento Principal */}
                                 <Box sx={{ p: 2, bgcolor: '#1f293740', borderRadius: 2, border: '1px solid #374151' }}>
                                     <Typography variant="subtitle2" sx={{ color: '#3b82f6', mb: 2, fontWeight: 700 }}>
-                                        Primer Cambio de Estado (Obligatorio)
+                                        Movimiento a Registrar
                                     </Typography>
                                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                         <Controller
                                             name="targetStatus"
                                             control={control}
                                             render={({ field }) => (
-                                                <TextField {...field} select fullWidth size="small" label="Estado" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }}>
+                                                <TextField {...field} select fullWidth size="small" label="Estado Destino" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }}>
                                                     {targetStatuses.map((opt) => (
                                                         <MenuItem key={opt.value} value={opt.value}>
                                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -363,7 +346,7 @@ export default function RegistroMaquinasPage() {
                                         }
                                         label={
                                             <Typography variant="body2" sx={{ color: enableSecondState ? '#10b981' : '#9ca3af', fontWeight: enableSecondState ? 700 : 400 }}>
-                                                Añadir segundo cambio de estado secuencial (Ej. Reactivación / Fin de Parada)
+                                                Añadir segundo cambio de estado secuencial para esta misma máquina
                                             </Typography>
                                         }
                                     />
@@ -440,7 +423,7 @@ export default function RegistroMaquinasPage() {
                                     onClick={addEvent}
                                     sx={{ py: 1.5, borderRadius: 2, fontWeight: 800, bgcolor: '#3b82f6', '&:hover': { bgcolor: '#2563eb' } }}
                                 >
-                                    {enableSecondState ? 'Añadir Ambos Estados a la Secuencia' : 'Añadir a la Secuencia'}
+                                    {enableSecondState ? 'Añadir Ambos Estados a la Cola' : 'Añadir a la Cola de Carga'}
                                 </Button>
                             </Box>
                         </CardContent>
@@ -451,13 +434,13 @@ export default function RegistroMaquinasPage() {
                 <Grid size={{ xs: 12, md: 6 }}>
                     <Paper sx={{ bgcolor: '#111827', borderRadius: 2, p: 3, border: '1px solid #1f2937', minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
                         <Typography variant="h6" sx={{ color: 'white', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <HistoryIcon /> Secuencia a Procesar
+                            <HistoryIcon /> Cola de Movimientos a Enviar ({pendingEvents.length})
                         </Typography>
 
                         {pendingEvents.length === 0 ? (
-                            <Box sx={{ flex: 1, display: 'flex', flexWrap: 'wrap', placeContent: 'center', opacity: 0.5 }}>
+                            <Box sx={{ flex: 1, display: 'flex', flexWrap: 'wrap', placeContent: 'center', opacity: 0.5, minHeight: 200 }}>
                                 <Typography sx={{ color: '#9ca3af', textAlign: 'center' }}>
-                                    Añade cambios de estado para ver la secuencia cronológica aquí.
+                                    Selecciona una máquina y añade movimientos para ver la lista a procesar en lote.
                                 </Typography>
                             </Box>
                         ) : (
@@ -468,7 +451,7 @@ export default function RegistroMaquinasPage() {
                                             primary={
                                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                                                     <Typography variant="caption" sx={{ color: '#e5e7eb', fontWeight: 700 }}>
-                                                        {event.machineLabel || 'Máquina Seleccionada'}
+                                                        {event.machineLabel}
                                                     </Typography>
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                         <Chip 
@@ -477,7 +460,7 @@ export default function RegistroMaquinasPage() {
                                                             sx={{ bgcolor: `${targetStatuses.find(s => s.value === event.targetStatus)?.color}20`, color: targetStatuses.find(s => s.value === event.targetStatus)?.color, fontWeight: 700 }}
                                                         />
                                                         <Typography variant="body2" sx={{ color: '#9ca3af' }}>
-                                                            {new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                                            {new Date(event.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short', hour12: false })}
                                                         </Typography>
                                                     </Box>
                                                 </Box>
@@ -510,7 +493,7 @@ export default function RegistroMaquinasPage() {
                                 onClick={submitAll}
                                 sx={{ py: 2, borderRadius: 2, fontWeight: 800, boxShadow: '0 10px 15px -3px rgba(59, 130, 246, 0.3)' }}
                             >
-                                {isUpdating ? 'Procesando...' : `Confirmar y Registrar ${pendingEvents.length} cambios`}
+                                {isUpdating ? 'Procesando Lote...' : `Confirmar y Registrar ${pendingEvents.length} Movimientos`}
                             </Button>
                         </Box>
                     </Paper>
