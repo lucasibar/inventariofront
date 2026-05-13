@@ -4,6 +4,7 @@ import { api } from '../shared/api';
 import authReducer from '../entities/auth/model/authSlice';
 import notificationsReducer from '../entities/notifications/notificationsSlice';
 import productionReducer from '../sectors/production/model/productionSlice';
+import maintenanceReducer from '../sectors/maintenance/model/maintenanceSlice';
 
 export const store = configureStore({
     reducer: {
@@ -11,6 +12,7 @@ export const store = configureStore({
         auth: authReducer,
         notifications: notificationsReducer,
         production: productionReducer,
+        maintenance: maintenanceReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().concat(api.middleware),

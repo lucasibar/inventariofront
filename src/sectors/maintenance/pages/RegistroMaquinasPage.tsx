@@ -185,7 +185,8 @@ export default function RegistroMaquinasPage() {
                     failureType: event.failureType,
                     observation: event.observation,
                     generatedBy: event.generatedBy,
-                    timestamp: event.timestamp
+                    timestamp: event.timestamp,
+                    isBatch: true
                 }).unwrap();
             }
             
@@ -217,7 +218,7 @@ export default function RegistroMaquinasPage() {
 
             <Grid container spacing={3}>
                 {/* Form Side */}
-                <Grid size={{ xs: 12, md: 6 }}>
+                <Grid item xs={12} md={6}>
                     <MuiCard sx={{ bgcolor: '#111827', borderRadius: 2, border: '1px solid #1f2937' }}>
                         <CardContent sx={{ p: 3 }}>
                             <Typography variant="h6" sx={{ mb: 2, color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -431,7 +432,7 @@ export default function RegistroMaquinasPage() {
                 </Grid>
 
                 {/* Queue Side */}
-                <Grid size={{ xs: 12, md: 6 }}>
+                <Grid item xs={12} md={6}>
                     <Paper sx={{ bgcolor: '#111827', borderRadius: 2, p: 3, border: '1px solid #1f2937', minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
                         <Typography variant="h6" sx={{ color: 'white', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                             <HistoryIcon /> Cola de Movimientos a Enviar ({pendingEvents.length})

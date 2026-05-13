@@ -174,14 +174,60 @@ export const maintenanceApi = api.injectEndpoints({
                 method: 'PATCH',
                 body,
             }),
-            invalidatesTags: ['Maintenance'],
+            async onQueryStarted({ id, ...body }, { dispatch, getState, queryFulfilled }) {
+                try {
+                    const { data: updatedLog } = await queryFulfilled;
+                    const state = getState() as any;
+                    const filters = state.maintenance?.historyFilters;
+                    if (filters) {
+                        const queryArgs = {
+                            startDate: filters.startDate,
+                            endDate: filters.endDate,
+                            plantId: filters.plantId || undefined,
+                            status: filters.statusFilter || undefined,
+                            machineNumber: filters.machineNumber || undefined
+                        };
+                        dispatch(
+                            maintenanceApi.util.updateQueryData('getLogs', queryArgs, (draft) => {
+                                const index = draft.findIndex((log: any) => log.id === id);
+                                if (index !== -1) {
+                                    Object.assign(draft[index], body, updatedLog || {});
+                                }
+                            })
+                        );
+                    }
+                } catch {}
+            },
         }),
         deleteLog: builder.mutation({
             query: (id: any) => ({
                 url: `maintenance/logs/${id}`,
                 method: 'DELETE',
             }),
-            invalidatesTags: ['Maintenance'],
+            async onQueryStarted(id, { dispatch, getState, queryFulfilled }) {
+                try {
+                    await queryFulfilled;
+                    const state = getState() as any;
+                    const filters = state.maintenance?.historyFilters;
+                    if (filters) {
+                        const queryArgs = {
+                            startDate: filters.startDate,
+                            endDate: filters.endDate,
+                            plantId: filters.plantId || undefined,
+                            status: filters.statusFilter || undefined,
+                            machineNumber: filters.machineNumber || undefined
+                        };
+                        dispatch(
+                            maintenanceApi.util.updateQueryData('getLogs', queryArgs, (draft) => {
+                                const index = draft.findIndex((log: any) => log.id === id);
+                                if (index !== -1) {
+                                    draft.splice(index, 1);
+                                }
+                            })
+                        );
+                    }
+                } catch {}
+            },
         }),
         getMaintenanceStats: builder.query({
             query: (params: any) => ({
