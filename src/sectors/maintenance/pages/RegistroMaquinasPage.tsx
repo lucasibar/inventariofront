@@ -79,22 +79,27 @@ export default function RegistroMaquinasPage() {
     const { data: machineTypes = [], isLoading: loadingTypes } = useGetMachineTypesQuery();
     const { data: machines = [], isLoading: loadingMachines } = useGetMachinesQuery(
         { plantId: selectedPlantId || '', typeId: selectedTypeId || '' },
-        { skip: !selectedPlantId || !selectedTypeId }
+        { skip: !selectedPlantId }
     );
     const [updateStatus, { isLoading: isUpdating }] = useUpdateMachineStatusMutation();
 
     // Defaults
     useEffect(() => {
         if (plants.length > 0 && !selectedPlantId) {
-            const derWill = plants.find((p: any) => p.name.toLowerCase().includes('der will') || p.name.toLowerCase().includes('derwill'));
-            setSelectedPlantId(derWill?.id || plants[0].id);
+            const state = location.state as { plantId?: string; preselectedMachine?: any } | null;
+            const targetPlantId = state?.plantId || state?.preselectedMachine?.plantId;
+            if (targetPlantId) {
+                setSelectedPlantId(targetPlantId);
+            } else {
+                const derWill = plants.find((p: any) => p.name.toLowerCase().includes('der will') || p.name.toLowerCase().includes('derwill'));
+                setSelectedPlantId(derWill?.id || plants[0].id);
+            }
         }
-    }, [plants, selectedPlantId]);
+    }, [plants, selectedPlantId, location.state]);
 
     useEffect(() => {
         if (machineTypes.length > 0 && !selectedTypeId) {
-            const tej = machineTypes.find((t: any) => t.name.toLowerCase().includes('tejedur'));
-            setSelectedTypeId(tej?.id || machineTypes[0].id);
+            setSelectedTypeId('ALL');
         }
     }, [machineTypes, selectedTypeId]);
 
@@ -115,13 +120,61 @@ export default function RegistroMaquinasPage() {
         }
     }, [loadingMachines]);
 
+<<<<<<< HEAD
+=======
+    // Handle pre-selection from location state
+    const preselectionProcessedRef = useRef(false);
+    useEffect(() => {
+        const state = location.state as { preselectedMachine?: any; plantId?: string; focusField?: string } | null;
+        if (state?.preselectedMachine && machines.length > 0 && !preselectionProcessedRef.current) {
+            preselectionProcessedRef.current = true;
+            setSelectedMachineId(state.preselectedMachine.id);
+            setMachineInputValue(String(state.preselectedMachine.number));
+            if (state.preselectedMachine.lastChangeBy && state.preselectedMachine.lastChangeBy !== 'Sin Asignar' && state.preselectedMachine.lastChangeBy !== 'Tejedor') {
+                setValue('generatedBy', state.preselectedMachine.lastChangeBy);
+            }
+        }
+    }, [location.state, machines, setValue]);
+
+>>>>>>> 95663aefdd2a24d089e006e7b2b21fd493c4299e
     const plantOptions = useMemo(() => plants.map((p: any) => ({ value: p.id, label: p.name })), [plants]);
-    const typeOptions = useMemo(() => machineTypes.map((t: any) => ({ value: t.id, label: t.name })), [machineTypes]);
+    const typeOptions = useMemo(() => [
+        { value: 'ALL', label: 'Todos los tipos' },
+        ...machineTypes.map((t: any) => ({ value: t.id, label: t.name }))
+    ], [machineTypes]);
     const machineOptions = useMemo(() => machines.map((m: any) => ({ value: m.id, label: `Máquina ${m.number} - ${m.codigoInterno || ''}`, number: m.number })), [machines]);
 
     const addEvent = () => {
+<<<<<<< HEAD
         if (!selectedMachineId) {
             return alert('Por favor seleccione una máquina del listado desplegable primero.');
+=======
+        let machineIdToUse = selectedMachineId;
+        const currentInput = machineInputValue.trim().toLowerCase();
+
+        // Si ya había una máquina seleccionada pero el usuario modificó el input escribiendo otro número
+        if (machineIdToUse) {
+            const currentSelectedObj = machineOptions.find((m: any) => m.value === machineIdToUse);
+            if (currentSelectedObj) {
+                const labelStr = currentSelectedObj.label.toLowerCase();
+                const numStr = String(currentSelectedObj.number);
+                // Si lo que está escrito no coincide con la etiqueta ni con el número de la máquina seleccionada
+                if (!labelStr.includes(currentInput) && currentInput !== numStr) {
+                    machineIdToUse = null;
+                }
+            }
+        }
+
+        // Búsqueda flexible por número o código interno si no hay ID válido
+        if (!machineIdToUse && currentInput) {
+            const matched = machineOptions.find((m: any) => 
+                String(m.number) === currentInput || 
+                m.label.toLowerCase().includes(currentInput)
+            );
+            if (matched) {
+                machineIdToUse = matched.value;
+            }
+>>>>>>> 95663aefdd2a24d089e006e7b2b21fd493c4299e
         }
 
         const matchedMachine = machineOptions.find((m: any) => m.value === selectedMachineId);
@@ -159,6 +212,7 @@ export default function RegistroMaquinasPage() {
         setSelectedMachineId(null);
         setValue('observation', '');
         setSecondObservation('');
+<<<<<<< HEAD
         
         // Focus back to machine autocomplete for fast sequential entry
         setTimeout(() => {
@@ -166,6 +220,10 @@ export default function RegistroMaquinasPage() {
                 machineSearchRef.current.focus();
             }
         }, 50);
+=======
+        setSelectedMachineId(null);
+        setMachineInputValue('');
+>>>>>>> 95663aefdd2a24d089e006e7b2b21fd493c4299e
     };
 
     const removeEvent = (id: string) => {
@@ -240,10 +298,23 @@ export default function RegistroMaquinasPage() {
                                 />
                                 
                                 <Autocomplete
+                                    freeSolo
                                     options={machineOptions}
-                                    getOptionLabel={(opt) => opt.label}
+                                    getOptionLabel={(opt) => typeof opt === 'string' ? opt : opt.label}
                                     value={machineOptions.find((o: any) => o.value === selectedMachineId) || null}
+<<<<<<< HEAD
                                     onChange={(_e, newVal) => setSelectedMachineId(newVal?.value || null)}
+=======
+                                    onChange={(_e, newVal) => {
+                                        if (typeof newVal === 'string') {
+                                            setSelectedMachineId(null);
+                                        } else {
+                                            setSelectedMachineId(newVal?.value || null);
+                                        }
+                                    }}
+                                    inputValue={machineInputValue}
+                                    onInputChange={(_e, newInputValue) => setMachineInputValue(newInputValue)}
+>>>>>>> 95663aefdd2a24d089e006e7b2b21fd493c4299e
                                     loading={loadingMachines}
                                     renderInput={(params) => (
                                         <TextField
