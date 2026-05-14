@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Card, CardContent, Chip, Button, Avatar, Tooltip, Divider, Grid2 as Grid } from '@mui/material';
+import { Box, Typography, Card, CardContent, Chip, Button, Avatar, Tooltip, Divider, Grid } from '@mui/material';
 import { PageHeader, Spinner, Select } from '../../../shared/ui';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import BuildIcon from '@mui/icons-material/Build';
@@ -79,10 +79,10 @@ export default function PendientesPage() {
             />
 
             <Grid container spacing={3} sx={{ mb: 4 }}>
-                <Grid size={{ xs: 12, md: 8 }}>
+                <Grid item xs={12} md={8}>
                     <Card sx={{ bgcolor: '#111827', borderRadius: 2, p: 3, border: '1px solid #1f2937' }}>
                         <Grid container spacing={2} alignItems="center">
-                            <Grid size={{ xs: 12, sm: 6 }}>
+                            <Grid item xs={12} sm={6}>
                                 <Select 
                                     label="Filtrar por Planta"
                                     value={selectedPlantId || ''}
@@ -101,7 +101,7 @@ export default function PendientesPage() {
                         </Grid>
                     </Card>
                 </Grid>
-                <Grid size={{ xs: 12, md: 4 }}>
+                <Grid item xs={12} md={4}>
                     <Card sx={{ bgcolor: unassignedCount > 0 ? '#7f1d1d' : '#064e3b', borderRadius: 2, p: 3, border: '1px solid #ef444430', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
                         <Box>
                             <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>SIN RESPONSABLE</Typography>
@@ -125,7 +125,7 @@ export default function PendientesPage() {
                     {pendingMachines.map((m: any) => {
                         const isUnassigned = !m.lastChangeBy || m.lastChangeBy === 'Sin Asignar' || m.lastChangeBy === 'Tejedor';
                         return (
-                            <Grid size={{ xs: 12, sm: 6, lg: 4, xl: 3 }} key={m.id}>
+                            <Grid item xs={12} sm={6} lg={4} xl={3} key={m.id}>
                                 <Card sx={{ 
                                     bgcolor: '#111827', 
                                     borderRadius: 3, 

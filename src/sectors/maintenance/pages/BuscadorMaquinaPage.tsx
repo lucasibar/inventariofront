@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Box, Typography, Card, TextField, Button, Divider, Chip, Avatar, Tooltip, Drawer, IconButton, useMediaQuery, useTheme } from '@mui/material';
-import Grid from '@mui/material/Grid2';
+import { Box, Typography, Card, TextField, Button, Divider, Chip, Avatar, Tooltip, Drawer, IconButton, useMediaQuery, useTheme, Grid } from '@mui/material';
 import { PageHeader, Spinner, Select } from '../../../shared/ui';
 import SearchIcon from '@mui/icons-material/Search';
 import BuildIcon from '@mui/icons-material/Build';
@@ -173,7 +172,7 @@ export default function BuscadorMaquinaPage() {
             <Card sx={{ bgcolor: '#111827', borderRadius: 2, p: 3, mb: 4, border: '1px solid #1f2937' }}>
                 <form onSubmit={handleSearch}>
                     <Grid container spacing={2} alignItems="center">
-                        <Grid size={{ xs: 12, md: 3 }}>
+                        <Grid item xs={12} md={3}>
                             <Select 
                                 label="Planta"
                                 value={selectedPlantId || ''}
@@ -204,7 +203,7 @@ export default function BuscadorMaquinaPage() {
                                 }}
                             />
                         </Grid>
-                        <Grid size={{ xs: 12, md: 2 }}>
+                        <Grid item xs={12} md={2}>
                             <Button 
                                 type="submit"
                                 variant="contained" 
@@ -224,7 +223,7 @@ export default function BuscadorMaquinaPage() {
             {searchedMachine && (
                 <Grid container spacing={3}>
                     {/* Main Info & Actions */}
-                    <Grid size={{ xs: 12, lg: 8 }}>
+                    <Grid item xs={12} lg={8}>
                         <Card sx={{ 
                             bgcolor: '#111827', 
                             borderRadius: 3, 
@@ -291,7 +290,7 @@ export default function BuscadorMaquinaPage() {
                                         </Typography>
                                     </Box>
                                 </Grid>
-                                <Grid size={{ xs: 12, md: 4 }}>
+                                <Grid item xs={12} md={4}>
                                     <Box sx={{ p: 2, bgcolor: '#1f293750', borderRadius: 2, border: '1px solid #37415140' }}>
                                         <Typography variant="caption" sx={{ color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                             <ErrorOutlineIcon sx={{ fontSize: 14 }} /> MOTIVO / FALLA
@@ -398,7 +397,7 @@ export default function BuscadorMaquinaPage() {
                     </Grid>
 
                     {/* Stats & Tech Info */}
-                    <Grid size={{ xs: 12, lg: 4 }}>
+                    <Grid item xs={12} lg={4}>
                         <Grid container spacing={3}>
                             {/* Performance Card */}
                             <Grid size={{ xs: 12 }}>

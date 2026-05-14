@@ -29,8 +29,7 @@ import type { Machine } from '../api/maintenance.api';
 import { 
     FAILURE_TYPES as failureTypes, 
     RESPONSABLES as responsables, 
-    MAINTENANCE_STATUS_COLORS as statusColors,
-    MAINTENANCE_STATUS_LABELS as statusLabels
+    MAINTENANCE_STATUS_COLORS as statusColors
 } from '../constants/maintenanceConstants';
 
 const statusIcons: Record<string, React.ReactNode> = {

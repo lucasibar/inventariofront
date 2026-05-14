@@ -22,7 +22,7 @@ const STATUS_COLORS_WITH_FALLBACK: Record<string, string> = {
     SIN_DATOS: '#94a3b8'
 };
 
-const STATUS_LABELS_WITH_FALLBACK = {
+const STATUS_LABELS_WITH_FALLBACK: Record<string, string> = {
     ...STATUS_LABELS,
     SIN_DATOS: 'Sin Datos'
 };

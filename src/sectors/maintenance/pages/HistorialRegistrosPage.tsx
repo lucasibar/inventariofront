@@ -2,9 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
     Box, Typography, Card, Chip, TextField, IconButton,
-    Dialog, DialogTitle, DialogContent, DialogActions, Button, MenuItem, Tooltip
+    Dialog, DialogTitle, DialogContent, DialogActions, Button, MenuItem, Tooltip, Grid
 } from '@mui/material';
-import Grid from '@mui/material/Grid2';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import SearchIcon from '@mui/icons-material/Search';
@@ -196,7 +195,7 @@ export default function HistorialRegistrosPage() {
             </Box>
 
             <Grid container spacing={2}>
-                <Grid size={{ xs: 6, sm: 3 }}>
+                <Grid item xs={6} sm={3}>
                     <Typography variant="caption" sx={{ color: '#4b5563', display: 'block', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.6rem' }}>Duración</Typography>
                     <Typography variant="body2" sx={{ color: '#10b981', fontWeight: 800 }}>{log.durationFormatted || '-'}</Typography>
                 </Grid>
@@ -222,7 +221,7 @@ export default function HistorialRegistrosPage() {
                         </Tooltip>
                     </Box>
                 </Grid>
-                <Grid size={{ xs: 12 }}>
+                <Grid item xs={12}>
                     <Typography variant="caption" sx={{ color: '#4b5563', display: 'block', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.6rem', mb: 0.5 }}>Observaciones</Typography>
                     <Box sx={{ p: 1.5, bgcolor: 'rgba(255,255,255,0.01)', borderRadius: 1, border: '1px solid rgba(255,255,255,0.03)' }}>
                         <Typography variant="body2" sx={{ color: '#9ca3af', fontStyle: log.observation ? 'normal' : 'italic', whiteSpace: 'pre-line' }}>
@@ -244,7 +243,7 @@ export default function HistorialRegistrosPage() {
 
             <Card sx={{ bgcolor: '#111827', borderRadius: 2, mb: 4, p: 2.5, border: '1px solid #1f2937', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>
                 <Grid container spacing={2} alignItems="center">
-                    <Grid size={{ xs: 12, md: 2 }}>
+                    <Grid item xs={12} md={2}>
                         <TextField
                             label="N° Máquina"
                             variant="outlined"
@@ -316,7 +315,7 @@ export default function HistorialRegistrosPage() {
                     </Grid>
 
                     {/* Fila de Filtros de Hora y Botones de Acción */}
-                    <Grid size={{ xs: 12 }} sx={{ mt: 1 }}>
+                    <Grid item xs={12} sx={{ mt: 1 }}>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', justifyContent: 'space-between' }}>
                             <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
                                 <Button 
