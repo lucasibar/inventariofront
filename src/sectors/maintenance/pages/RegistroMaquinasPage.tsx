@@ -2,9 +2,9 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { 
     Box, Typography, Button, TextField, MenuItem, Card as MuiCard, 
     CardContent, Divider, Autocomplete, IconButton, List, ListItem, 
-    ListItemText, ListItemSecondaryAction, Paper, Chip, FormControlLabel, Checkbox
+    ListItemText, ListItemSecondaryAction, Paper, Chip, FormControlLabel, Checkbox,
+    Grid2 as Grid
 } from '@mui/material';
-import Grid from '@mui/material/Grid2';
 import { useForm, Controller } from 'react-hook-form';
 import { useSelector } from 'react-redux';
 import { PageHeader, Spinner, Select } from '../../../shared/ui';
@@ -23,8 +23,7 @@ import {
 import { 
     FAILURE_TYPES as failureTypes, 
     RESPONSABLES as responsables, 
-    MAINTENANCE_STATUS_COLORS as statusColors,
-    MAINTENANCE_STATUS_LABELS as statusLabels
+    MAINTENANCE_STATUS_COLORS as statusColors
 } from '../constants/maintenanceConstants';
 
 const targetStatuses = [

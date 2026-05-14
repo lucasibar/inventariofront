@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
     Box, 
     Typography, 
@@ -117,6 +118,7 @@ const ComboCard = ({ combo, onBuy }: any) => (
 // ... (Subcomponents like PurchaseOrderCard, UnlinkedMovementCard, NewOrderDrawer, ConciliationDrawer remain similar but adapted)
 
 export default function DashboardComprasPage() {
+    const navigate = useNavigate();
     const [tab, setTab] = useState(2); // Start on Criticals (index 2 in previous, but now we reorder)
     const [searchQuery, setSearchQuery] = useState('');
     const [plantFilter, setPlantFilter] = useState('');
@@ -192,9 +194,22 @@ export default function DashboardComprasPage() {
             {isLoading ? <Box sx={{ display: 'flex', justifyContent: 'center', p: 10 }}><CircularProgress sx={{ color: colors.primary }} /></Box> : (
                 <Fade in timeout={400}>
                     <Box sx={{ px: 2 }}>
-                        <Typography variant="caption" sx={{ fontWeight: 900, color: colors.textDim, textTransform: 'uppercase', mb: 1.5, display: 'block' }}>
-                            {tab === 2 ? 'MATERIALES Y COMBOS CRÍTICOS' : tab === 1 ? 'REMITOS PENDIENTES DE VINCULACIÓN' : 'ÓRDENES DE COMPRA ACTIVAS'}
-                        </Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                            <Typography variant="caption" sx={{ fontWeight: 900, color: colors.textDim, textTransform: 'uppercase', display: 'block' }}>
+                                {tab === 2 ? 'MATERIALES Y COMBOS CRÍTICOS' : tab === 1 ? 'REMITOS PENDIENTES DE VINCULACIÓN' : 'ÓRDENES DE COMPRA ACTIVAS'}
+                            </Typography>
+                            <Button 
+                                size="small" 
+                                onClick={() => {
+                                    if (tab === 2) navigate('/compras/materiales-criticos');
+                                    if (tab === 1) navigate('/compras/conciliacion');
+                                    if (tab === 0) navigate('/pedidos-compra');
+                                }}
+                                sx={{ color: colors.primary, fontSize: '0.65rem', fontWeight: 800 }}
+                            >
+                                Ver Detalle ›
+                            </Button>
+                        </Box>
                         
                         <List disablePadding>
                             {tab === 2 && (

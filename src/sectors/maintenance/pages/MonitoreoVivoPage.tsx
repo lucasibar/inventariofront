@@ -17,7 +17,7 @@ import {
     MAINTENANCE_STATUS_LABELS as STATUS_LABELS
 } from '../constants/maintenanceConstants';
 
-const STATUS_COLORS_WITH_FALLBACK = {
+const STATUS_COLORS_WITH_FALLBACK: Record<string, string> = {
     ...STATUS_COLORS,
     SIN_DATOS: '#94a3b8'
 };

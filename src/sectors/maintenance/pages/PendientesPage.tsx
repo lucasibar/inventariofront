@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Card, CardContent, Chip, Button, Avatar, Tooltip, Divider } from '@mui/material';
-import Grid from '@mui/material/Grid2';
+import { Box, Typography, Card, CardContent, Chip, Button, Avatar, Tooltip, Divider, Grid2 as Grid } from '@mui/material';
 import { PageHeader, Spinner, Select } from '../../../shared/ui';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import BuildIcon from '@mui/icons-material/Build';
