@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useGetAlertsQuery } from '../sectors/warehouse/stock/api/stock.api';
 import { logout, selectCurrentUser } from '../entities/auth/model/authSlice';
 import { setCurrentAlerts, selectHasUnreadNotifications } from '../entities/notifications/notificationsSlice';
-import { useIsMobile, useSwipeNavigation } from './ui';
+import { useIsMobile } from './ui';
 
 const navGroups = [
     {
@@ -142,7 +142,7 @@ export default function Layout() {
         setMobileMenuOpen(false);
     }, [location.pathname]);
 
-    // Swipe Navigation for Dashboards
+    // Navigation logic for Dashboards (Buttons only, swipe removed)
     const dashboards = [
         { path: '/produccion/dashboard', label: 'Producción' },
         { path: '/deposito/dashboard', label: 'Depósito' },
@@ -152,20 +152,6 @@ export default function Layout() {
 
     const currentDashboardIndex = dashboards.findIndex(d => location.pathname === d.path);
     const isDashboardPage = currentDashboardIndex !== -1;
-
-    const handleSwipeLeft = () => {
-        if (!isDashboardPage || !isMobile) return;
-        const nextIndex = (currentDashboardIndex + 1) % dashboards.length;
-        navigate(dashboards[nextIndex].path);
-    };
-
-    const handleSwipeRight = () => {
-        if (!isDashboardPage || !isMobile) return;
-        const prevIndex = (currentDashboardIndex - 1 + dashboards.length) % dashboards.length;
-        navigate(dashboards[prevIndex].path);
-    };
-
-    const { onTouchStart, onTouchMove, onTouchEnd } = useSwipeNavigation(handleSwipeLeft, handleSwipeRight);
 
     useEffect(() => {
         const handleOpenMenu = () => setMobileMenuOpen(true);
@@ -470,9 +456,6 @@ export default function Layout() {
 
             {/* Main Content Area */}
             <main 
-                onTouchStart={onTouchStart}
-                onTouchMove={onTouchMove}
-                onTouchEnd={onTouchEnd}
                 style={{
                     flex: 1,
                     overflowY: 'auto',
@@ -487,54 +470,59 @@ export default function Layout() {
                 {isMobile && isDashboardPage && (
                     <div style={{
                         position: 'fixed',
-                        bottom: '16px',
+                        bottom: '20px',
                         left: '50%',
                         transform: 'translateX(-50%)',
                         display: 'flex',
-                        gap: '8px',
+                        gap: '4px',
                         background: 'rgba(26, 29, 46, 0.95)',
-                        backdropFilter: 'blur(10px)',
-                        padding: '6px 12px',
-                        borderRadius: '24px',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                        backdropFilter: 'blur(12px)',
+                        padding: '4px',
+                        borderRadius: '16px',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
                         zIndex: 2000,
-                        alignItems: 'center'
+                        alignItems: 'center',
+                        width: 'min(92vw, 400px)'
                     }}>
                         {dashboards.map((d, i) => (
                             <button
                                 key={d.path}
                                 onClick={() => navigate(d.path)}
                                 style={{
-                                    width: '8px',
-                                    height: '8px',
-                                    borderRadius: '50%',
-                                    background: currentDashboardIndex === i ? '#6366f1' : '#374151',
+                                    flex: 1,
+                                    padding: '8px 4px',
+                                    borderRadius: '12px',
+                                    background: currentDashboardIndex === i ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
                                     border: 'none',
-                                    padding: 0,
                                     cursor: 'pointer',
-                                    transition: 'all 0.2s'
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    transition: 'all 0.2s',
+                                    color: currentDashboardIndex === i ? '#a5b4fc' : '#6b7280',
                                 }}
-                            />
+                            >
+                                <span style={{ 
+                                    fontSize: '9px', 
+                                    fontWeight: currentDashboardIndex === i ? 800 : 600,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.02em',
+                                    textAlign: 'center',
+                                    whiteSpace: 'nowrap'
+                                }}>
+                                    {d.label}
+                                </span>
+                                <div style={{ 
+                                    width: '4px', 
+                                    height: '4px', 
+                                    borderRadius: '50%', 
+                                    background: currentDashboardIndex === i ? '#6366f1' : 'transparent',
+                                    transition: 'all 0.2s'
+                                }} />
+                            </button>
                         ))}
-                        <div style={{ width: '1px', height: '14px', background: 'rgba(255,255,255,0.1)', margin: '0 4px' }} />
-                        <button 
-                            onClick={() => {
-                                const nextIndex = (currentDashboardIndex + 1) % dashboards.length;
-                                navigate(dashboards[nextIndex].path);
-                            }}
-                            style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#a5b4fc',
-                                fontSize: '11px',
-                                fontWeight: 800,
-                                textTransform: 'uppercase',
-                                padding: '4px 8px'
-                            }}
-                        >
-                            {dashboards[(currentDashboardIndex + 1) % dashboards.length].label} ›
-                        </button>
                     </div>
                 )}
             </main>
