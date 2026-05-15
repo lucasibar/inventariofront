@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useGetItemsQuery } from '../../config/items/api/items.api';
+import { useGetItemsQuery } from '../materiales/api/items.api';
 import { useGetConsumptionAnalyticsQuery } from '../stock/api/stock.api';
 import { PageHeader, Card, SearchSelect, Input, Spinner, Badge } from '../../../shared/ui';
 import { 

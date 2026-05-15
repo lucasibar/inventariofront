@@ -4,9 +4,9 @@ import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     Button, TextField, MenuItem, Typography, Box
 } from '@mui/material';
-import { useCreateItemMutation, useUpdateItemMutation, useGetItemCategoriesQuery, useCreateItemCategoryMutation } from '../items/api/items.api';
-import { useGetBoxTypesQuery } from '../items/api/box-types.api';
-import { useGetPartnersQuery } from '../partners/api/partners.api';
+import { useCreateItemMutation, useUpdateItemMutation, useGetItemCategoriesQuery, useCreateItemCategoryMutation } from '../api/items.api';
+import { useGetBoxTypesQuery } from '../api/box-types.api';
+import { useGetPartnersQuery } from '../../../config/partners/api/partners.api';
 import { Autocomplete, createFilterOptions } from '@mui/material';
 
 const filter = createFilterOptions<any>();

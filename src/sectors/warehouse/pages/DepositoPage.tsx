@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useDeferredValue } from 'react';
 import { useSelector } from 'react-redux';
-import { useGetItemsQuery } from '../../config/items/api/items.api';
+import { useGetItemsQuery } from '../materiales/api/items.api';
 import { useGetDepotsQuery, useCreateDepotMutation, useUpdateDepotMutation, useCreatePositionMutation, useUpdatePositionMutation, useDeleteDepotMutation } from '../deposito/api/deposito.api';
 import { selectCurrentUser } from '../../../entities/auth/model/authSlice';
 import { PageHeader, Card, Btn, Input, Modal, Badge, Spinner } from '../../../shared/ui';

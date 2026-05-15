@@ -60,7 +60,7 @@ import {
     useMoveStockMutation
 } from '../stock/api/stock.api';
 import { useGetDepotsQuery } from '../deposito/api/deposito.api';
-import { useGetItemsQuery, useUpdateItemMutation } from '../../config/items/api/items.api';
+import { useGetItemsQuery, useUpdateItemMutation } from '../materiales/api/items.api';
 import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
 import { useGetRemitosEntradaQuery } from '../remitosEntrada/api/remitos-entrada.api';
 import { useGetRemitosSalidaQuery } from '../remitosSalida/api/remitos-salida.api';

@@ -4,9 +4,9 @@ import {
     useCreateBoxTypeMutation, 
     useUpdateBoxTypeMutation, 
     useDeleteBoxTypeMutation 
-} from '../items/api/box-types.api';
-import { useGetPartnersQuery } from '../partners/api/partners.api';
-import { useBulkAssignBoxTypeMutation, useGetItemsQuery, useUpdateItemMutation } from '../items/api/items.api';
+} from '../materiales/api/box-types.api';
+import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
+import { useBulkAssignBoxTypeMutation, useGetItemsQuery, useUpdateItemMutation } from '../materiales/api/items.api';
 import { PageHeader, Card, Btn, Input, Spinner, Badge, Modal, Select } from '../../../shared/ui';
 
 /* ─── Box Preview Component ─── */

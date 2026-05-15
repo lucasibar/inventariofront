@@ -12,7 +12,7 @@ import { RemitoDetailModal } from '../remitos/ui/RemitoDetailModal';
 import { CreatePartnerDialog } from '../../config/components/CreatePartnerDialog';
 import { useGetOrdersQuery } from '../../sales/api/orders.api';
 import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
-import { useGetItemsQuery } from '../../config/items/api/items.api';
+import { useGetItemsQuery } from '../materiales/api/items.api';
 import { PageHeader, Card, Btn, Input, Select, SearchSelect, Modal, Table, Badge } from '../../../shared/ui';
 
 export default function RemitosSalidaPage() {

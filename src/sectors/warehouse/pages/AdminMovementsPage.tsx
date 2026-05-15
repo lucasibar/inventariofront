@@ -5,7 +5,7 @@ import {
     useReverseMovementMutation 
 } from '../stock/api/stock.api';
 import { useGetDepotsQuery } from '../deposito/api/deposito.api';
-import { useGetItemsQuery } from '../../config/items/api/items.api';
+import { useGetItemsQuery } from '../materiales/api/items.api';
 import { PageHeader, Card, Badge, Btn, Select, SearchSelect, Input, useIsMobile, ActionMenu, ResponsiveTable } from '../../../shared/ui';
 import { selectCurrentUser } from '../../../entities/auth/model/authSlice';
 

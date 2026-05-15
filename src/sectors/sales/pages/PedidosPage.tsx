@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '../../../entities/auth/model/authSlice';
 import { useGetOrdersQuery, useCreateOrderMutation, useDeleteOrderMutation } from '../api/orders.api';
 import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
-import { useGetItemsQuery } from '../../config/items/api/items.api';
+import { useGetItemsQuery } from '../../warehouse/materiales/api/items.api';
 import { useGetAlertsQuery } from '../../warehouse/stock/api/stock.api';
 import { PageHeader, Card, Btn, Input, SearchSelect, Modal, Table, Badge, Spinner } from '../../../shared/ui';
 

@@ -10,7 +10,7 @@ import {
     Paper,
     Grid
 } from '@mui/material';
-import { useCreateItemMutation, useGetItemCategoriesQuery } from '../../items/api/items.api';
+import { useCreateItemMutation, useGetItemCategoriesQuery } from '../../../warehouse/materiales/api/items.api';
 
 interface CreateItemFormProps {
     onSuccess?: () => void;

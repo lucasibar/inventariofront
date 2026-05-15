@@ -7,7 +7,7 @@ import { CreatePartnerDialog } from '../../../config/components/CreatePartnerDia
 import type { CreateRemitoDto } from '../model/create-remito.dto';
 import { useState, useMemo, useEffect } from 'react';
 import { AiRemitoCarga } from '../../../../components/ai/AiRemitoCarga';
-import { useGetItemsQuery } from '../../../config/items/api/items.api';
+import { useGetItemsQuery } from '../../materiales/api/items.api';
 
 export const CreateRemitoForm = () => {
     const { data: allItems = [] } = useGetItemsQuery({});

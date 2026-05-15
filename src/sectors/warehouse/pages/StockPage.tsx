@@ -11,11 +11,11 @@ import {
 import { useDespachoDirectoMutation } from '../remitosSalida/api/remitos-salida.api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGetDepotsQuery } from '../deposito/api/deposito.api';
-import { useGetItemsQuery, useGetItemCategoriesQuery } from '../../config/items/api/items.api';
+import { useGetItemsQuery, useGetItemCategoriesQuery } from '../materiales/api/items.api';
 import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
 import { PageHeader, Select, SearchSelect, Spinner, Btn, Modal, Input, EditableCell, useIsMobile } from '../../../shared/ui';
 import { rawBase } from '../../../shared/api';
-import { CreateItemDialog } from '../../config/components/CreateItemDialog';
+import { CreateItemDialog } from '../materiales/components/CreateItemDialog';
 import { CreatePartnerDialog } from '../../config/components/CreatePartnerDialog';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser, selectAllowedDepots } from '../../../entities/auth/model/authSlice';

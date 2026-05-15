@@ -6,7 +6,7 @@ import {
     useUpdatePurchaseOrderStatusMutation
 } from '../purchase-orders/api/purchase-orders.api';
 import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
-import { useGetItemsQuery } from '../../config/items/api/items.api';
+import { useGetItemsQuery } from '../../warehouse/materiales/api/items.api';
 import { PageHeader, Card, Btn, Input, SearchSelect, Modal, Table, Badge, Spinner } from '../../../shared/ui';
 
 export default function PedidosCompraPage() {

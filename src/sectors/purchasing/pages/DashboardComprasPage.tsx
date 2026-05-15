@@ -59,7 +59,7 @@ import {
 } from '../purchase-orders/api/purchase-orders.api';
 import { useGetAlertsQuery } from '../../warehouse/stock/api/stock.api';
 import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
-import { useGetItemsQuery } from '../../config/items/api/items.api';
+import { useGetItemsQuery } from '../../warehouse/materiales/api/items.api';
 // Design System Colors - Purchasing Theme (Indigo/Purple)
 const colors = {
     primary: '#818cf8', // Indigo

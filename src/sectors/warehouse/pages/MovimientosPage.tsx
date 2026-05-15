@@ -3,10 +3,10 @@ import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import { useGetDepotsQuery } from '../deposito/api/deposito.api';
 import { useGetStockQuery, useBulkMoveStockMutation, useAdjustStockMutation, useReassignBatchMutation, useLazyCheckBatchQuery, useQuickAddStockMutation, useDeleteStockMutation } from '../stock/api/stock.api';
 import { useDespachoDirectoMutation } from '../remitosSalida/api/remitos-salida.api';
-import { useGetItemsQuery } from '../../config/items/api/items.api';
+import { useGetItemsQuery } from '../materiales/api/items.api';
 import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
 import { PageHeader, Card, Table, Select, SearchSelect, Input, Btn, Modal, EditableCell, useIsMobile, Badge } from '../../../shared/ui';
-import { CreateItemDialog } from '../../config/components/CreateItemDialog';
+import { CreateItemDialog } from '../materiales/components/CreateItemDialog';
 import { CreatePartnerDialog } from '../../config/components/CreatePartnerDialog';
 
 import { useSelector } from 'react-redux';

@@ -8,8 +8,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { useState, useMemo } from 'react';
-import { CreateItemDialog } from '../../../config/components/CreateItemDialog';
-import { useGetItemsQuery } from '../../../config/items/api/items.api';
+import { CreateItemDialog } from '../../materiales/components/CreateItemDialog';
+import { useGetItemsQuery } from '../../materiales/api/items.api';
 
 const CREATE_OPTION = { __isCreateOption: true, codigoInterno: '', descripcion: '+ Agregar nuevo material', id: '__CREATE__' };
 

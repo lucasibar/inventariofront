@@ -8,7 +8,7 @@ import {
 } from '../../warehouse/stock/api/stock.api';
 import { useGetStockQuery } from '../../warehouse/stock/api/stock.api';
 import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
-import { useGetItemsQuery } from '../../config/items/api/items.api';
+import { useGetItemsQuery } from '../../warehouse/materiales/api/items.api';
 import { PageHeader, Card, Badge, Btn, Modal, Table, Spinner, Input, Select, ActionMenu, useIsMobile } from '../../../shared/ui';
 
 export default function MaterialesCriticosPage() {

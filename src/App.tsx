@@ -6,10 +6,10 @@ import { useSelector } from 'react-redux';
 import { selectCurrentUser } from './entities/auth/model/authSlice';
 
 // Sector: Config
-import MaterialesPage from './sectors/config/pages/MaterialesPage';
+import MaterialesPage from './sectors/warehouse/pages/MaterialesPage';
 import SociosPage from './sectors/config/pages/SociosPage';
 import UsersPage from './sectors/config/pages/UsersPage';
-import BoxTypesPage from './sectors/config/pages/BoxTypesPage';
+import BoxTypesPage from './sectors/warehouse/pages/BoxTypesPage';
 
 // Sector: Warehouse
 import DepositoPage from './sectors/warehouse/pages/DepositoPage';
