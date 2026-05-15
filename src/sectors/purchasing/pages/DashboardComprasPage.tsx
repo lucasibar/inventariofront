@@ -40,8 +40,7 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SaveIcon from '@mui/icons-material/Save';
-import BusinessIcon from '@mui/icons-material/Business';
-import WarehouseIcon from '@mui/icons-material/Warehouse';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import LayersIcon from '@mui/icons-material/Layers';
 
 // Voice Search
@@ -92,28 +91,52 @@ const KPIButton = ({ label, value, icon: Icon, color, active, onClick }: any) =>
     </Box>
 );
 
-const ComboCard = ({ combo, onBuy }: any) => (
-    <Paper elevation={0} sx={{ bgcolor: 'rgba(129, 140, 248, 0.05)', mb: 1.5, borderRadius: 3, border: `1px solid ${colors.primary}30`, overflow: 'hidden', p: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-            <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                    <LayersIcon sx={{ color: colors.primary, fontSize: 16 }} />
-                    <Typography variant="caption" sx={{ color: colors.primary, fontWeight: 900, letterSpacing: '0.05em' }}>COMBO DE COMPRA</Typography>
+const ComboCard = ({ combo, onBuy }: any) => {
+    const supplyColor = combo.daysOfSupply === null ? colors.textDim : combo.daysOfSupply < 15 ? colors.danger : combo.daysOfSupply < 30 ? colors.warning : colors.success;
+    return (
+        <Paper elevation={0} sx={{ bgcolor: 'rgba(129, 140, 248, 0.05)', mb: 1.5, borderRadius: 3, border: `1px solid ${colors.primary}30`, overflow: 'hidden', p: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
+                <Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <LayersIcon sx={{ color: colors.primary, fontSize: 16 }} />
+                        <Typography variant="caption" sx={{ color: colors.primary, fontWeight: 900, letterSpacing: '0.05em' }}>COMBO DE COMPRA</Typography>
+                    </Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: colors.text }}>{combo.title}</Typography>
+                    <Typography variant="caption" sx={{ color: colors.textDim }}>{combo.supplier?.name || 'Varios Proveedores'}</Typography>
                 </Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: colors.text }}>{combo.title}</Typography>
-                <Typography variant="caption" sx={{ color: colors.textDim }}>{combo.supplier?.name || 'Varios Proveedores'}</Typography>
+                <Box sx={{ textAlign: 'right' }}>
+                    <Typography sx={{ fontWeight: 900, fontSize: '1.4rem', color: supplyColor, lineHeight: 1 }}>
+                        {combo.daysOfSupply !== null ? `${Math.ceil(combo.daysOfSupply)}d` : '—'}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.55rem', fontWeight: 700 }}>SUSTENTO</Typography>
+                </Box>
             </Box>
-            <Chip label={`${combo.itemIds?.length || 0} ITEMS`} size="small" sx={{ bgcolor: `${colors.primary}20`, color: colors.primary, fontWeight: 900, height: 20, fontSize: '0.6rem' }} />
-        </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-            <Box>
-                <Typography variant="caption" sx={{ color: colors.textDim, display: 'block' }}>Déficit Estimado:</Typography>
-                <Typography variant="h6" sx={{ fontWeight: 900, color: colors.warning }}>{combo.deficit > 0 ? `-${combo.deficit.toFixed(0)} ${combo.unitLabel}` : 'Stock OK'}</Typography>
+            <Box sx={{ display: 'flex', gap: 2, mb: 1.5 }}>
+                <Box sx={{ flex: 1, bgcolor: 'rgba(255,255,255,0.03)', p: 1, borderRadius: 2, textAlign: 'center' }}>
+                    <Typography sx={{ fontWeight: 800, color: colors.text, fontSize: '0.95rem' }}>{Number(combo.totalStock || 0).toLocaleString()}</Typography>
+                    <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.5rem', fontWeight: 700 }}>STOCK ({combo.unitLabel})</Typography>
+                </Box>
+                <Box sx={{ flex: 1, bgcolor: 'rgba(255,255,255,0.03)', p: 1, borderRadius: 2, textAlign: 'center' }}>
+                    <Typography sx={{ fontWeight: 800, color: colors.warning, fontSize: '0.95rem' }}>{Number(combo.pendingStock || 0).toLocaleString()}</Typography>
+                    <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.5rem', fontWeight: 700 }}>PEDIDO ({combo.unitLabel})</Typography>
+                </Box>
+                <Box sx={{ flex: 1, bgcolor: 'rgba(255,255,255,0.03)', p: 1, borderRadius: 2, textAlign: 'center' }}>
+                    <Typography sx={{ fontWeight: 800, color: '#94a3b8', fontSize: '0.95rem' }}>{Number(combo.totalConsumed30Days || 0).toLocaleString()}</Typography>
+                    <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.5rem', fontWeight: 700 }}>SALIDA 30D</Typography>
+                </Box>
             </Box>
-            <Button variant="contained" startIcon={<ShoppingCartIcon />} sx={{ bgcolor: colors.primary, color: '#000', fontWeight: 900, borderRadius: 2, textTransform: 'none' }} onClick={() => onBuy(combo)}>Reponer</Button>
-        </Box>
-    </Paper>
-);
+            {combo.deficit > 0 && (
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: `${colors.danger}10`, p: 1, borderRadius: 2, border: `1px solid ${colors.danger}20` }}>
+                    <Typography variant="caption" sx={{ color: colors.danger, fontWeight: 800 }}>DÉFICIT: -{combo.deficit.toFixed(0)} {combo.unitLabel}</Typography>
+                    <Button size="small" variant="contained" startIcon={<ShoppingCartIcon />} sx={{ bgcolor: colors.primary, color: '#000', fontWeight: 900, borderRadius: 2, textTransform: 'none', fontSize: '0.7rem' }} onClick={() => onBuy(combo)}>Reponer</Button>
+                </Box>
+            )}
+            {combo.incomingDate && (
+                <Typography variant="caption" sx={{ color: colors.success, mt: 1, display: 'block', fontWeight: 700 }}>🚚 Próxima llegada: {new Date(combo.incomingDate).toLocaleDateString('es-AR')}</Typography>
+            )}
+        </Paper>
+    );
+};
 
 // ... (Subcomponents like PurchaseOrderCard, UnlinkedMovementCard, NewOrderDrawer, ConciliationDrawer remain similar but adapted)
 
@@ -121,8 +144,6 @@ export default function DashboardComprasPage() {
     const navigate = useNavigate();
     const [tab, setTab] = useState(2); // Start on Criticals (index 2 in previous, but now we reorder)
     const [searchQuery, setSearchQuery] = useState('');
-    const [plantFilter, setPlantFilter] = useState('');
-    const [depotFilter, setDepotFilter] = useState('');
     const [conciliationOpen, setConciliationOpen] = useState(false);
     const [newOrderOpen, setNewOrderOpen] = useState(false);
     const [selectedMov, setSelectedMov] = useState<any>(null);
@@ -175,10 +196,11 @@ export default function DashboardComprasPage() {
                 <IconButton sx={{ color: colors.textDim }}><InventoryIcon /></IconButton>
             </Box>
 
-            {/* Quick Filters */}
-            <Box sx={{ px: 2, pb: 2, display: 'flex', gap: 1, overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' } }}>
-                <Chip icon={<BusinessIcon style={{ color: colors.primary, fontSize: 16 }} />} label={plantFilter || "Todas las Plantas"} onClick={() => {}} variant="outlined" sx={{ borderColor: colors.border, color: plantFilter ? colors.primary : colors.textDim, bgcolor: plantFilter ? `${colors.primary}10` : 'transparent' }} onDelete={plantFilter ? () => setPlantFilter('') : undefined} />
-                <Chip icon={<WarehouseIcon style={{ color: colors.primary, fontSize: 16 }} />} label={depotFilter || "Todos los Depósitos"} onClick={() => {}} variant="outlined" sx={{ borderColor: colors.border, color: depotFilter ? colors.primary : colors.textDim, bgcolor: depotFilter ? `${colors.primary}10` : 'transparent' }} onDelete={depotFilter ? () => setDepotFilter('') : undefined} />
+            {/* Summary Strip */}
+            <Box sx={{ px: 2, pb: 1.5, display: 'flex', gap: 1, overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' } }}>
+                <Chip label={`${rawOrders.length} OCs totales`} size="small" sx={{ bgcolor: `${colors.primary}15`, color: colors.primary, fontWeight: 800, fontSize: '0.65rem' }} />
+                <Chip label={`${combos.filter((c: any) => c.daysOfSupply !== null && c.daysOfSupply < 15).length} combos urgentes`} size="small" sx={{ bgcolor: `${colors.danger}15`, color: colors.danger, fontWeight: 800, fontSize: '0.65rem' }} />
+                {metrics.delayed > 0 && <Chip label={`${metrics.delayed} demoradas`} size="small" sx={{ bgcolor: `${colors.warning}15`, color: colors.warning, fontWeight: 800, fontSize: '0.65rem' }} />}
             </Box>
 
             <Box sx={{ p: 2, pb: 1 }}><TextField placeholder="Buscar..." size="small" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} fullWidth InputProps={{ startAdornment: <SearchIcon sx={{ color: colors.textDim, mr: 1 }} />, endAdornment: browserSupportsSpeechRecognition && (<IconButton size="small" onClick={toggleListening} sx={{ color: listening ? colors.danger : colors.textDim }}>{listening ? <MicIcon /> : <MicOffIcon sx={{ opacity: 0.5 }} />}</IconButton>), sx: { bgcolor: colors.inputBg, borderRadius: 2, color: 'white', border: `1px solid ${colors.border}` } }} /></Box>
@@ -188,7 +210,7 @@ export default function DashboardComprasPage() {
                 <KPIButton label="Críticos" value={metrics.critical} icon={NotificationsActiveIcon} color={colors.danger} active={tab === 2} onClick={() => setTab(2)} />
                 <KPIButton label="Por Conciliar" value={metrics.unlinked} icon={LinkIcon} color={colors.warning} active={tab === 1} onClick={() => setTab(1)} />
                 <KPIButton label="En Curso" value={metrics.pending} icon={AssignmentIcon} color={colors.primary} active={tab === 0} onClick={() => setTab(0)} />
-                <KPIButton label="Demoras" value={metrics.delayed} icon={HistoryIcon} color={colors.danger} active={false} onClick={() => { setTab(0); setSearchQuery(''); }} />
+                <KPIButton label="Demoras" value={metrics.delayed} icon={HistoryIcon} color={colors.danger} active={tab === 3} onClick={() => setTab(3)} />
             </Box>
 
             {isLoading ? <Box sx={{ display: 'flex', justifyContent: 'center', p: 10 }}><CircularProgress sx={{ color: colors.primary }} /></Box> : (
@@ -196,11 +218,12 @@ export default function DashboardComprasPage() {
                     <Box sx={{ px: 2 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                             <Typography variant="caption" sx={{ fontWeight: 900, color: colors.textDim, textTransform: 'uppercase', display: 'block' }}>
-                                {tab === 2 ? 'MATERIALES Y COMBOS CRÍTICOS' : tab === 1 ? 'REMITOS PENDIENTES DE VINCULACIÓN' : 'ÓRDENES DE COMPRA ACTIVAS'}
+                                {tab === 3 ? 'ÓRDENES DEMORADAS' : tab === 2 ? 'MATERIALES Y COMBOS CRÍTICOS' : tab === 1 ? 'REMITOS PENDIENTES DE VINCULACIÓN' : 'ÓRDENES DE COMPRA ACTIVAS'}
                             </Typography>
                             <Button 
                                 size="small" 
                                 onClick={() => {
+                                    if (tab === 3) navigate('/pedidos-compra');
                                     if (tab === 2) navigate('/compras/materiales-criticos');
                                     if (tab === 1) navigate('/compras/conciliacion');
                                     if (tab === 0) navigate('/pedidos-compra');
@@ -225,6 +248,37 @@ export default function DashboardComprasPage() {
                             )}
 
                             {tab === 1 && (filteredMovs.length > 0 ? filteredMovs.map((m: any) => <UnlinkedMovementCard key={m.id} movement={m} onLinkRequest={(mov: any) => { setSelectedMov(mov); setConciliationOpen(true); }} />) : <Typography variant="caption" sx={{ p: 4, textAlign: 'center', display: 'block', color: colors.textDim }}>{errorUnlinked ? "Error al cargar remitos." : "Depósito al día. No hay remitos por conciliar."}</Typography>)}
+
+                            {tab === 3 && (() => {
+                                const delayed = filteredOrders.filter((o: any) => o.estado !== 'RECIBIDO' && o.estado !== 'COMPLETADO' && o.fechaEntregaEsperada && new Date(o.fechaEntregaEsperada) < new Date());
+                                return delayed.length > 0 ? delayed.map((o: any) => {
+                                    const daysLate = Math.floor((Date.now() - new Date(o.fechaEntregaEsperada).getTime()) / (1000 * 60 * 60 * 24));
+                                    return (
+                                        <Paper key={o.id} elevation={0} sx={{ bgcolor: `${colors.danger}08`, mb: 1.5, borderRadius: 3, border: `1px solid ${colors.danger}25`, overflow: 'hidden', p: 2 }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Chip label={o.numero} size="small" sx={{ bgcolor: `${colors.danger}20`, color: colors.danger, fontWeight: 900, height: 20, fontSize: '0.65rem' }} />
+                                                    <Chip label={`${daysLate}d atraso`} size="small" sx={{ bgcolor: `${colors.danger}30`, color: '#fff', fontWeight: 900, height: 18, fontSize: '0.55rem' }} />
+                                                </Box>
+                                                <Chip label={o.estado} size="small" sx={{ bgcolor: `${colors.warning}20`, color: colors.warning, fontWeight: 900, height: 18, fontSize: '0.55rem' }} />
+                                            </Box>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                                                <Avatar sx={{ width: 28, height: 28, bgcolor: `${colors.danger}15` }}><StoreIcon sx={{ color: colors.danger, fontSize: 16 }} /></Avatar>
+                                                <Box>
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: colors.text, lineHeight: 1.2 }}>{o.supplier?.name || 'S/P'}</Typography>
+                                                    <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.6rem' }}>{o.lines?.length || 0} ítems • Esperado: {new Date(o.fechaEntregaEsperada).toLocaleDateString()}</Typography>
+                                                </Box>
+                                            </Box>
+                                            {o.lines?.map((line: any, idx: number) => (
+                                                <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5, borderTop: idx === 0 ? `1px solid ${colors.border}` : 'none' }}>
+                                                    <Typography variant="caption" sx={{ color: colors.textDim }}>{line.item?.descripcion}</Typography>
+                                                    <Typography variant="caption" sx={{ color: colors.danger, fontWeight: 800 }}>{line.qtyReceived || 0}/{line.qtyOrdered} {line.item?.unidadPrincipal}</Typography>
+                                                </Box>
+                                            ))}
+                                        </Paper>
+                                    );
+                                }) : <Typography variant="caption" sx={{ p: 4, textAlign: 'center', display: 'block', color: colors.success }}>✅ No hay órdenes demoradas</Typography>;
+                            })()}
                             
                             {tab === 0 && (filteredOrders.length > 0 ? filteredOrders.map((o: any) => (
                                 <Box key={o.id} sx={{ position: 'relative' }}>
