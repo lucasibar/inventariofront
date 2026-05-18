@@ -146,16 +146,7 @@ export default function Layout() {
         setMobileMenuOpen(false);
     }, [location.pathname]);
 
-    // Navigation logic for Dashboards (Buttons only, swipe removed)
-    const dashboards = [
-        { path: '/produccion/dashboard', label: 'Producción' },
-        { path: '/deposito/dashboard', label: 'Depósito' },
-        { path: '/dashboard', label: 'Compras' },
-        { path: '/mantenimiento/dashboard', label: 'Mantenimiento' }
-    ];
 
-    const currentDashboardIndex = dashboards.findIndex(d => location.pathname === d.path);
-    const isDashboardPage = currentDashboardIndex !== -1;
 
     useEffect(() => {
         const handleOpenMenu = () => setMobileMenuOpen(true);
@@ -470,65 +461,7 @@ export default function Layout() {
             >
                 <Outlet />
 
-                {/* Mobile Dashboard Navigator */}
-                {isMobile && isDashboardPage && (
-                    <div style={{
-                        position: 'fixed',
-                        bottom: '20px',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        display: 'flex',
-                        gap: '4px',
-                        background: 'rgba(26, 29, 46, 0.95)',
-                        backdropFilter: 'blur(12px)',
-                        padding: '4px',
-                        borderRadius: '16px',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
-                        zIndex: 2000,
-                        alignItems: 'center',
-                        width: 'min(92vw, 400px)'
-                    }}>
-                        {dashboards.map((d, i) => (
-                            <button
-                                key={d.path}
-                                onClick={() => navigate(d.path)}
-                                style={{
-                                    flex: 1,
-                                    padding: '8px 4px',
-                                    borderRadius: '12px',
-                                    background: currentDashboardIndex === i ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    gap: '4px',
-                                    transition: 'all 0.2s',
-                                    color: currentDashboardIndex === i ? '#a5b4fc' : '#6b7280',
-                                }}
-                            >
-                                <span style={{ 
-                                    fontSize: '9px', 
-                                    fontWeight: currentDashboardIndex === i ? 800 : 600,
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.02em',
-                                    textAlign: 'center',
-                                    whiteSpace: 'nowrap'
-                                }}>
-                                    {d.label}
-                                </span>
-                                <div style={{ 
-                                    width: '4px', 
-                                    height: '4px', 
-                                    borderRadius: '50%', 
-                                    background: currentDashboardIndex === i ? '#6366f1' : 'transparent',
-                                    transition: 'all 0.2s'
-                                }} />
-                            </button>
-                        ))}
-                    </div>
-                )}
+
             </main>
         </div>
     );
