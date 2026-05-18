@@ -40,7 +40,6 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SaveIcon from '@mui/icons-material/Save';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import LayersIcon from '@mui/icons-material/Layers';
 
 // Voice Search

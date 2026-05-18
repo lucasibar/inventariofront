@@ -21,7 +21,7 @@ import {
     Modal,
     Checkbox
 } from '@mui/material';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import AddIcon from '@mui/icons-material/Add';
@@ -488,7 +488,6 @@ const EditStockLimitsDrawer = ({ open, onClose, initialItem }: { open: boolean, 
 
 export default function DashboardDepositoPage() {
     const isMobile = useIsMobile();
-    const navigate = useNavigate();
     const allowedDepots = useSelector(selectAllowedDepots);
     const [plantId, setPlantId] = useState<string>('');
     const [depotId, setDepotId] = useState<string>(() => sessionStorage.getItem('selectedDepotId') || '');
