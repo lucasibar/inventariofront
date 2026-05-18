@@ -17,7 +17,6 @@ import {
     Autocomplete,
     Divider,
     Paper,
-    Avatar,
     Modal,
     Checkbox
 } from '@mui/material';
@@ -26,7 +25,6 @@ import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import AddIcon from '@mui/icons-material/Add';
 import InventoryIcon from '@mui/icons-material/Inventory';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
@@ -35,22 +33,13 @@ import CategoryIcon from '@mui/icons-material/Category';
 import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import SaveIcon from '@mui/icons-material/Save';
-import FileOpenIcon from '@mui/icons-material/FileOpen';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import HistoryIcon from '@mui/icons-material/History';
-import DateRangeIcon from '@mui/icons-material/DateRange';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
-import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import ReceiptIcon from '@mui/icons-material/Receipt';
-import PersonIcon from '@mui/icons-material/Person';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
-import StraightenIcon from '@mui/icons-material/Straighten';
 
 // Voice Search
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
@@ -58,16 +47,14 @@ import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognitio
 // API Hooks
 import { 
     useGetStockQuery, 
-    useGetAlertsQuery,
     useQuickAddStockMutation,
-    useGetRecentMovementsQuery,
     useMoveStockMutation
 } from '../stock/api/stock.api';
 import { useGetDepotsQuery } from '../deposito/api/deposito.api';
 import { useGetItemsQuery, useUpdateItemMutation } from '../materiales/api/items.api';
 import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
-import { useGetRemitosEntradaQuery, useCreateRemitoEntradaMutation } from '../remitosEntrada/api/remitos-entrada.api';
-import { useGetRemitosSalidaQuery, useDespachoDirectoMutation } from '../remitosSalida/api/remitos-salida.api';
+import { useCreateRemitoEntradaMutation } from '../remitosEntrada/api/remitos-entrada.api';
+import { useDespachoDirectoMutation } from '../remitosSalida/api/remitos-salida.api';
 import { useGetPlantsQuery } from '../../maintenance/api/maintenance.api';
 import { useSelector } from 'react-redux';
 import { selectAllowedDepots } from '../../../entities/auth/model/authSlice';
@@ -164,8 +151,8 @@ const MoveStockDrawer = ({ open, onClose, entry }: { open: boolean, onClose: () 
                 posicionIdDestino: form.posicionIdDestino, 
                 itemId: entry.batch.item.id, 
                 lotId: entry.batch.id, 
-                qtyPrincipal: Number(form.qtyPrincipal), 
-                qtySecundaria: form.qtySecundaria ? Number(form.qtySecundaria) : undefined, 
+                qtyPrincipal: Number(String(form.qtyPrincipal).replace(',', '.')), 
+                qtySecundaria: form.qtySecundaria ? Number(String(form.qtySecundaria).replace(',', '.')) : undefined, 
                 fecha: new Date().toISOString() 
             }).unwrap(); 
             alert('✅ Movimiento realizado con éxito. El formulario sigue abierto para verificación.'); 
@@ -236,8 +223,8 @@ const DespachoDirectoDrawer = ({ open, onClose, entry }: { open: boolean, onClos
                 posicionId: entry.posicionId,
                 itemId: entry.batch.item.id,
                 lotId: entry.batch.id,
-                qtyPrincipal: Number(form.qtyPrincipal),
-                qtySecundaria: form.qtySecundaria ? Number(form.qtySecundaria) : undefined,
+                qtyPrincipal: Number(String(form.qtyPrincipal).replace(',', '.')),
+                qtySecundaria: form.qtySecundaria ? Number(String(form.qtySecundaria).replace(',', '.')) : undefined,
             }).unwrap();
             alert(`✅ Despachado. Remito: ${result.numero}`);
             onClose();
@@ -345,68 +332,114 @@ const MaterialCard = ({ group, isPinned, onTogglePin, isExpanded, onToggleExpand
     );
 };
 
-const MovementCard = ({ move }: { move: any }) => {
-    const date = new Date(move.fecha).toLocaleDateString();
-    
+const PositionCard = ({ group, isPinned, onTogglePin, isExpanded, onToggleExpand, onMoveRequest, onSalidaRequest }: any) => {
+    const { posicion, metrics, entries } = group;
+    const statusColor = colors.info;
+
+    const distinctItemsCount = useMemo(() => {
+        const itemIds = new Set(entries.map((e: any) => e.batch?.item?.id));
+        return itemIds.size;
+    }, [entries]);
+
     return (
-        <Paper elevation={0} sx={{ 
-            bgcolor: colors.cardBg, mb: 2, borderRadius: 3, 
-            border: `1px solid ${colors.border}`, overflow: 'hidden'
-        }}>
-            <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid rgba(255,255,255,0.03)` }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Avatar sx={{ width: 32, height: 32, bgcolor: `${colors.info}20`, border: `1px solid ${colors.info}40` }}>
-                        <SwapHorizIcon sx={{ color: colors.info, fontSize: 18 }} />
-                    </Avatar>
+        <Box sx={{ bgcolor: isPinned ? `${colors.primary}05` : colors.cardBg, mb: 1, borderRadius: 2, border: `1px solid ${isPinned ? colors.primary : colors.border}`, overflow: 'hidden', transition: 'all 0.2s ease' }}>
+            <ListItem sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5, width: '100%' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
                     <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 800, color: colors.text, lineHeight: 1.2 }}>{move.item?.descripcion}</Typography>
-                        <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.65rem' }}>Lote: {move.batch?.lotNumber}</Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="caption" sx={{ color: colors.primary, fontWeight: 800, fontSize: '0.65rem' }}>POSICIÓN</Typography>
+                            {isPinned && <Chip label="ANCLADA" size="small" sx={{ height: 16, fontSize: '0.55rem', bgcolor: colors.primary, color: '#000', fontWeight: 900 }} />}
+                        </Box>
+                        <Typography 
+                            variant="h6" 
+                            sx={{ fontWeight: 950, color: colors.text, lineHeight: 1.2, fontSize: '1.25rem' }}
+                        >
+                            {posicion.codigo || 'S/P'}
+                        </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <IconButton size="small" onClick={onTogglePin} sx={{ color: isPinned ? colors.primary : colors.textDim }}>
+                            {isPinned ? <PushPinIcon sx={{ fontSize: 18 }} /> : <PushPinOutlinedIcon sx={{ fontSize: 18 }} />}
+                        </IconButton>
+                        <IconButton size="small" onClick={onToggleExpand} sx={{ color: colors.textDim }}>
+                            {isExpanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                        </IconButton>
                     </Box>
                 </Box>
-                <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 600 }}>{date}</Typography>
-            </Box>
-
-            <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, position: 'relative' }}>
-                <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                    <LocationOnIcon sx={{ color: colors.textDim, fontSize: 16 }} />
-                    <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.6rem' }}>ORIGEN</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 800, color: colors.text }}>{move.posicionOrigen?.codigo || 'S/P'}</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                        <Typography variant="h4" sx={{ fontWeight: 900, color: statusColor }}>{metrics.kilos.toFixed(1)}</Typography>
+                        <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 700 }}>kg</Typography>
+                    </Box>
+                    <Box sx={{ textAlign: 'right' }}>
+                        <Typography variant="caption" sx={{ color: colors.textDim, display: 'flex', alignItems: 'center', gap: 0.5, fontWeight: 600 }}>
+                            <CategoryIcon sx={{ fontSize: 12 }} /> {distinctItemsCount} {distinctItemsCount === 1 ? 'material' : 'materiales'}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: colors.textDim, display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5, fontWeight: 600 }}>
+                            <SwapHorizIcon sx={{ fontSize: 12 }} /> {entries.length} {entries.length === 1 ? 'partida' : 'partidas'}
+                        </Typography>
+                    </Box>
                 </Box>
-
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5, flex: 0.5 }}>
-                    <ArrowForwardIcon sx={{ color: colors.primary, fontSize: 20 }} />
-                    <Chip label={`${move.qtyPrincipal} ${move.item?.unidadPrincipal}`} size="small" sx={{ height: 18, fontSize: '0.65rem', bgcolor: 'rgba(255,255,255,0.05)', color: colors.primary, fontWeight: 900 }} />
+            </ListItem>
+            <Collapse in={isExpanded}>
+                <Divider sx={{ borderColor: colors.border }} />
+                <Box sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.2)' }}>
+                    <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 900, mb: 1, display: 'block', textTransform: 'uppercase', fontSize: '0.6rem' }}>
+                        Detalle de Materiales y Partidas en esta Posición
+                    </Typography>
+                    <List disablePadding>
+                        {entries.map((entry: any, idx: number) => {
+                            const item = entry.batch?.item;
+                            return (
+                                <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1.2, borderBottom: idx === entries.length - 1 ? 'none' : `1px solid ${colors.border}` }}>
+                                    <Box sx={{ maxWidth: '65%' }}>
+                                        <Typography variant="body2" sx={{ fontWeight: 800, color: colors.text }}>
+                                            {item?.descripcion || 'Material sin descripción'}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: colors.textDim, display: 'block', mt: 0.2 }}>
+                                            Código: {item?.codigoInterno} | Lote: {entry.batch?.lotNumber}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: colors.textDim }}>
+                                            Proveedor: {entry.batch?.supplier?.name || 'S/D'}
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                        <Box sx={{ textAlign: 'right', minWidth: 70 }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 800, color: colors.primary }}>
+                                                {entry.qtyPrincipal} {item?.unidadPrincipal || 'kg'}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.7rem' }}>
+                                                {entry.qtySecundaria || 0} {item?.unidadSecundaria || 'Un'}
+                                            </Typography>
+                                        </Box>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                            <Button 
+                                                size="small" 
+                                                variant="outlined" 
+                                                startIcon={<SwapHorizIcon />}
+                                                sx={{ borderColor: colors.info, color: colors.info, textTransform: 'none', fontWeight: 800, fontSize: '0.65rem', borderRadius: 1.5 }}
+                                                onClick={() => onMoveRequest(entry)}
+                                            >
+                                                Mover
+                                            </Button>
+                                            <Button 
+                                                size="small" 
+                                                variant="outlined" 
+                                                startIcon={<TrendingUpIcon />}
+                                                sx={{ borderColor: colors.danger, color: colors.danger, textTransform: 'none', fontWeight: 800, fontSize: '0.65rem', borderRadius: 1.5 }}
+                                                onClick={() => onSalidaRequest(entry)}
+                                            >
+                                                Salida
+                                            </Button>
+                                        </div>
+                                    </Box>
+                                </Box>
+                            );
+                        })}
+                    </List>
                 </Box>
-
-                <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                    <LocationOnIcon sx={{ color: colors.success, fontSize: 16 }} />
-                    <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.6rem' }}>DESTINO</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 800, color: colors.success }}>{move.posicionDestino?.codigo || 'S/P'}</Typography>
-                </Box>
-            </Box>
-
-            <Divider sx={{ borderColor: 'rgba(255,255,255,0.03)' }} />
-            
-            <Box sx={{ px: 2, py: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'rgba(255,255,255,0.01)' }}>
-                <Typography variant="caption" sx={{ color: colors.textDim, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <StraightenIcon sx={{ fontSize: 12 }} /> ID: #{move.id}
-                </Typography>
-                <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 700 }}>
-                    {move.qtySecundaria ? `${move.qtySecundaria} ${move.item?.unidadSecundaria || 'Un'}` : ''}
-                </Typography>
-            </Box>
-        </Paper>
-    );
-};
-
-const RemitoCard = ({ remito, type }: { remito: any, type: 'ENTRADA' | 'SALIDA' }) => {
-    const itemCount = (remito.items?.length || remito.lines?.length || 0);
-    const date = new Date(remito.fecha).toLocaleDateString();
-    const mainColor = type === 'ENTRADA' ? colors.success : colors.danger;
-    return (
-        <Paper elevation={0} sx={{ bgcolor: colors.cardBg, mb: 2, borderRadius: 3, border: `1px solid ${colors.border}`, overflow: 'hidden', position: 'relative' }}>
-            <Box sx={{ p: 2, borderBottom: `1px dashed ${colors.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><ReceiptIcon sx={{ color: mainColor, fontSize: 18 }} /><Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 900, letterSpacing: '0.1em' }}>REMITO {type}</Typography></Box><Chip label={remito.numero} size="small" sx={{ bgcolor: `${mainColor}20`, color: mainColor, fontWeight: 900, height: 20, fontSize: '0.7rem' }} /></Box>
-            <Box sx={{ p: 2 }}><Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}><Box sx={{ bgcolor: 'rgba(255,255,255,0.05)', p: 1, borderRadius: 2 }}><PersonIcon sx={{ color: colors.primary, fontSize: 20 }} /></Box><Box><Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.65rem', display: 'block' }}>{type === 'ENTRADA' ? 'PROVEEDOR' : 'CLIENTE'}</Typography><Typography variant="body1" sx={{ fontWeight: 800, color: colors.text }}>{remito.partner?.name || remito.clientName || 'Consumidor Final'}</Typography></Box></Box><Divider sx={{ borderColor: 'rgba(255,255,255,0.05)', mb: 1.5 }} /><Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><CalendarMonthIcon sx={{ color: colors.textDim, fontSize: 16 }} /><Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 600 }}>{date}</Typography></Box><Box sx={{ textAlign: 'right' }}><Typography variant="caption" sx={{ color: colors.textDim, display: 'block', fontSize: '0.65rem' }}>TOTAL ÍTEMS</Typography><Typography variant="body2" sx={{ fontWeight: 900, color: colors.primary }}>{itemCount} líneas</Typography></Box></Box><Button fullWidth size="small" startIcon={<FileOpenIcon />} sx={{ mt: 2, bgcolor: 'rgba(255,255,255,0.02)', color: colors.textDim, fontWeight: 800, textTransform: 'none', borderRadius: 2, '&:hover': { bgcolor: 'rgba(255,255,255,0.05)', color: colors.text } }}>Ver Detalle Completo</Button></Box><Box sx={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 4, bgcolor: mainColor }} /></Paper>
+            </Collapse>
+        </Box>
     );
 };
 
@@ -437,13 +470,13 @@ const QuickAddDrawer = ({ open, onClose }: { open: boolean, onClose: () => void 
                         itemId: form.itemId,
                         lotNumber: form.lotNumber,
                         posicionId: form.posicionId,
-                        qtyPrincipal: Number(form.qtyPrincipal),
-                        qtySecundaria: form.qtySecundaria ? Number(form.qtySecundaria) : undefined
+                        qtyPrincipal: Number(String(form.qtyPrincipal).replace(',', '.')),
+                        qtySecundaria: form.qtySecundaria ? Number(String(form.qtySecundaria).replace(',', '.')) : undefined
                     }]
                 }).unwrap();
                 alert('✅ Remito de Entrada creado correctamente');
             } else {
-                await quickAddStock({ depositoId: form.depositoId, posicionId: form.posicionId, itemId: form.itemId, supplierId: form.supplierId, lotNumber: form.lotNumber, qtyPrincipal: Number(form.qtyPrincipal), qtySecundaria: form.qtySecundaria ? Number(form.qtySecundaria) : undefined, fecha: form.fecha }).unwrap(); 
+                await quickAddStock({ depositoId: form.depositoId, posicionId: form.posicionId, itemId: form.itemId, supplierId: form.supplierId, lotNumber: form.lotNumber, qtyPrincipal: Number(String(form.qtyPrincipal).replace(',', '.')), qtySecundaria: form.qtySecundaria ? Number(String(form.qtySecundaria).replace(',', '.')) : undefined, fecha: form.fecha }).unwrap(); 
                 alert('✅ Stock adicionado correctamente');
             }
             onClose(); 
@@ -505,12 +538,18 @@ export default function DashboardDepositoPage() {
     const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
     const [salidaDrawerOpen, setSalidaDrawerOpen] = useState(false);
     const [selectedEntryToSalida, setSelectedEntryToSalida] = useState<any>(null);
-    const togglePin = (id: string) => { setPinnedIds((prev: Set<string>) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; }); };
+    const togglePin = (id: string) => { 
+        setPinnedIds((prev: Set<string>) => { 
+            const next = new Set(prev); 
+            if (next.has(id)) next.delete(id); 
+            else next.add(id); 
+            return next; 
+        }); 
+    };
     const { transcript, listening, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition();
     useEffect(() => { if (transcript) setSearchQuery(transcript); }, [transcript]);
     const toggleListening = () => { if (listening) SpeechRecognition.stopListening(); else { resetTranscript(); SpeechRecognition.startListening({ language: 'es-AR', continuous: true }); } };
-    const [dateFrom, setDateFrom] = useState(() => { const d = new Date(); d.setDate(d.getDate() - 7); return d.toISOString().split('T')[0]; });
-    const [dateTo, setDateTo] = useState(() => new Date().toISOString().split('T')[0]);
+    
     useEffect(() => { if (depotId) sessionStorage.setItem('selectedDepotId', depotId); }, [depotId]);
     const { data: rawPlants = [] } = useGetPlantsQuery();
     const { data: rawDepots = [] } = useGetDepotsQuery();
@@ -518,69 +557,163 @@ export default function DashboardDepositoPage() {
     const depots = useMemo(() => { let filtered = allowedDepots ? rawDepots.filter((d: any) => allowedDepots.includes(d.id)) : rawDepots; if (plantId) filtered = filtered.filter((d: any) => d.plantId === plantId); return filtered; }, [rawDepots, allowedDepots, plantId]);
     useEffect(() => { if (rawPlants.length > 0 && !plantId) { const derwill = rawPlants.find((p: any) => p.name.toLowerCase().includes('derwill')); if (derwill) setPlantId(derwill.id); } }, [rawPlants, plantId]);
     useEffect(() => { if (depots.length > 0 && !depotId) { const hilado = depots.find((d: any) => d.nombre.toLowerCase().includes('hilado')); if (hilado) setDepotId(hilado.id); else setDepotId(depots[0].id); } }, [depots, depotId]);
+    
     const { data: rawStock = [], isLoading: loadingStock } = useGetStockQuery({ depotId: depotId || undefined, positionId: positionId || undefined }, { skip: !depotId });
-    const { data: alerts = [], isLoading: loadingAlerts } = useGetAlertsQuery();
-    const { data: recentMoves = [], isLoading: loadingMoves } = useGetRecentMovementsQuery({ depositoId: depotId || undefined, desde: dateFrom, hasta: dateTo }, { skip: activeKpi !== 'Moves' });
-    const { data: remitosEntrada = [], isLoading: loadingEntradas } = useGetRemitosEntradaQuery(undefined, { skip: activeKpi !== 'Entradas' });
-    const { data: remitosSalida = [], isLoading: loadingSalidas } = useGetRemitosSalidaQuery(undefined, { skip: activeKpi !== 'Salidas' });
-    const filteredRemitosEntrada = useMemo(() => remitosEntrada.filter((r: any) => { const d = r.fecha.split('T')[0]; return d >= dateFrom && d <= dateTo; }), [remitosEntrada, dateFrom, dateTo]);
-    const filteredRemitosSalida = useMemo(() => remitosSalida.filter((r: any) => { const d = r.fecha.split('T')[0]; return d >= dateFrom && d <= dateTo; }), [remitosSalida, dateFrom, dateTo]);
-    const { groupedData, metrics } = useMemo(() => {
-        const genMetrics = { kilos: 0, alerts: alerts.length, moves: recentMoves.length, entradas: filteredRemitosEntrada.length, salidas: filteredRemitosSalida.length, picking: rawStock.length > 0 ? 1 : 0 };
+    
+    const { groupedData, groupedPositionsData, metrics } = useMemo(() => {
+        const genMetrics = { 
+            kilos: 0, 
+            picking: rawStock.length > 0 ? 1 : 0,
+            positionsCount: 0
+        };
         const groups: Record<string, any> = {};
+        const positionGroups: Record<string, any> = {};
+        const occupiedPositions = new Set<string>();
         const searchTerms = searchQuery.toLowerCase().split(' ').filter(t => t.length > 0);
+        
         rawStock.forEach((entry: any) => {
-            const itemId = entry.batch?.item?.id; if (!itemId) return;
+            const itemId = entry.batch?.item?.id; 
+            if (!itemId) return;
+            
+            const positionId = entry.posicionId || entry.posicion?.id || 'sin-posicion';
+            const positionCode = entry.posicion?.codigo || 'S/P';
+            
+            if (entry.posicionId || entry.posicion?.id) {
+                occupiedPositions.add(entry.posicionId || entry.posicion?.id);
+            }
+
             const matchesSearch = searchTerms.length === 0 || searchTerms.every(term => {
                 const itemDesc = (entry.batch?.item?.descripcion || '').toLowerCase();
                 const itemCode = (entry.batch?.item?.codigoInterno || '').toLowerCase();
                 const supplierName = (entry.batch?.supplier?.name || '').toLowerCase();
                 const categoryName = (entry.batch?.item?.category?.nombre || '').toLowerCase();
                 const lotNumber = (entry.batch?.lotNumber || '').toLowerCase();
-                return itemDesc.includes(term) || itemCode.includes(term) || supplierName.includes(term) || categoryName.includes(term) || lotNumber.includes(term);
+                const posCode = (entry.posicion?.codigo || '').toLowerCase();
+                return itemDesc.includes(term) || itemCode.includes(term) || supplierName.includes(term) || categoryName.includes(term) || lotNumber.includes(term) || posCode.includes(term);
             });
+
             const isPinned = pinnedIds.has(itemId);
+            const isPositionPinned = pinnedIds.has(positionId);
             const passesCategory = selectedCategory === 'Todos' || entry.batch?.item?.category?.nombre === selectedCategory;
-            const shouldInclude = isPinned || (matchesSearch && passesCategory);
-            if (shouldInclude) {
-                if (!groups[itemId]) { groups[itemId] = { item: entry.batch.item, entries: [], metrics: { kilos: 0, units: 0 }, isPinned, passesSearchAndCategory: matchesSearch && passesCategory }; }
+
+            // For Material grouping
+            const shouldIncludeMaterial = isPinned || (matchesSearch && passesCategory);
+            if (shouldIncludeMaterial) {
+                if (!groups[itemId]) { 
+                    groups[itemId] = { 
+                        item: entry.batch.item, 
+                        entries: [], 
+                        metrics: { kilos: 0, units: 0 }, 
+                        isPinned, 
+                        passesSearchAndCategory: matchesSearch && passesCategory 
+                    }; 
+                }
                 groups[itemId].entries.push(entry);
                 groups[itemId].metrics.kilos += Number(entry.qtyPrincipal || 0);
-                let passesKpiFilter = true; if (activeKpi === 'Alertas') passesKpiFilter = alerts.some((a: any) => a.itemId === itemId);
-                if (matchesSearch && passesCategory && passesKpiFilter) genMetrics.kilos += Number(entry.qtyPrincipal || 0);
+                
+                if (matchesSearch && passesCategory) {
+                    genMetrics.kilos += Number(entry.qtyPrincipal || 0);
+                }
+            }
+
+            // For Position grouping
+            const shouldIncludePosition = isPositionPinned || (matchesSearch && passesCategory);
+            if (shouldIncludePosition) {
+                if (!positionGroups[positionId]) {
+                    positionGroups[positionId] = {
+                        posicion: entry.posicion || { id: positionId, codigo: positionCode },
+                        entries: [],
+                        metrics: { kilos: 0, itemsCount: 0 },
+                        isPinned: isPositionPinned,
+                        passesSearchAndCategory: matchesSearch && passesCategory
+                    };
+                }
+                positionGroups[positionId].entries.push(entry);
+                positionGroups[positionId].metrics.kilos += Number(entry.qtyPrincipal || 0);
             }
         });
+
+        genMetrics.positionsCount = occupiedPositions.size;
+
         let data = Object.values(groups);
-        if (activeKpi === 'Alertas') data = data.filter((g: any) => g.isPinned || alerts.some((a: any) => a.itemId === g.item.id));
         data.sort((a: any, b: any) => (a.isPinned === b.isPinned) ? 0 : a.isPinned ? -1 : 1);
-        return { groupedData: data, metrics: genMetrics };
-    }, [rawStock, searchQuery, selectedCategory, activeKpi, alerts, recentMoves, filteredRemitosEntrada, filteredRemitosSalida, pinnedIds]);
-    const categoriesList = useMemo(() => { const cats = new Set<string>(); cats.add('Todos'); rawStock.forEach((s: any) => { if (s.batch?.item?.category?.nombre) cats.add(s.batch.item.category.nombre); }); return Array.from(cats); }, [rawStock]);
-    const isLoading = loadingStock || (activeKpi === 'Alertas' && loadingAlerts) || (activeKpi === 'Moves' && loadingMoves) || (activeKpi === 'Entradas' && loadingEntradas) || (activeKpi === 'Salidas' && loadingSalidas);
+
+        let positionsData = Object.values(positionGroups);
+        positionsData.sort((a: any, b: any) => {
+            if (a.isPinned !== b.isPinned) {
+                return a.isPinned ? -1 : 1;
+            }
+            return a.posicion.codigo.localeCompare(b.posicion.codigo);
+        });
+
+        return { groupedData: data, groupedPositionsData: positionsData, metrics: genMetrics };
+    }, [rawStock, searchQuery, selectedCategory, pinnedIds]);
+    
+    const categoriesList = useMemo(() => { 
+        const cats = new Set<string>(); 
+        cats.add('Todos'); 
+        rawStock.forEach((s: any) => { 
+            if (s.batch?.item?.category?.nombre) cats.add(s.batch.item.category.nombre); 
+        }); 
+        return Array.from(cats); 
+    }, [rawStock]);
+    
+    const isLoading = loadingStock;
 
     return (
         <Box sx={{ bgcolor: colors.bg, minHeight: '100vh', color: colors.text, pb: 10, maxWidth: '1400px', margin: '0 auto' }}>
             {!isMobile && (<Box sx={{ display: 'flex', alignItems: 'center', p: 1.5, bgcolor: 'rgba(255,255,255,0.02)', borderBottom: `1px solid ${colors.border}`, position: 'sticky', top: 0, zIndex: 100, backdropFilter: 'blur(10px)' }}><IconButton onClick={() => document.dispatchEvent(new CustomEvent('open-sidebar-menu'))} sx={{ color: colors.textDim, mr: 1 }}><MoreVertIcon /></IconButton><Typography variant="h6" sx={{ flex: 1, fontWeight: 900, color: colors.primary, fontSize: '0.9rem', textTransform: 'uppercase' }}>Dashboard Depósito</Typography><IconButton onClick={() => setShowFilters(!showFilters)} sx={{ color: showFilters ? colors.primary : colors.textDim }}><FilterListIcon /></IconButton></Box>)}
             {isMobile && (<Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1, px: 2 }}><IconButton onClick={() => document.dispatchEvent(new CustomEvent('open-sidebar-menu'))} sx={{ color: colors.textDim }}><MoreVertIcon /></IconButton><IconButton onClick={() => setShowFilters(!showFilters)} sx={{ color: showFilters ? colors.primary : colors.textDim }}><FilterListIcon /></IconButton></Box>)}
             <Box sx={{ p: 2, pb: 1, display: 'flex', gap: 1 }}><TextField placeholder="Buscar material, código o lote..." size="small" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} fullWidth InputProps={{ startAdornment: <SearchIcon sx={{ color: colors.textDim, mr: 1 }} />, endAdornment: browserSupportsSpeechRecognition && (<IconButton size="small" onClick={toggleListening} sx={{ color: listening ? colors.danger : colors.textDim }}>{listening ? <MicIcon /> : <MicOffIcon sx={{ opacity: 0.5 }} />}</IconButton>), sx: { bgcolor: colors.inputBg, borderRadius: 2, color: 'white', border: `1px solid ${colors.border}` } }} /></Box>
+            
             <Box sx={{ display: 'flex', overflowX: 'auto', gap: 1, p: 1.5, pt: 0, '&::-webkit-scrollbar': { display: 'none' } }}>
                 <KPIButton label="Stock" value={metrics.kilos > 1000 ? `${(metrics.kilos / 1000).toFixed(1)}k` : metrics.kilos.toFixed(0)} unit="kg" icon={InventoryIcon} color={colors.primary} active={!activeKpi} onClick={() => setActiveKpi(null)} />
+                <KPIButton label="Posiciones" value={metrics.positionsCount} unit="pos" icon={LocationOnIcon} color={colors.info} active={activeKpi === 'Posiciones'} onClick={() => setActiveKpi('Posiciones')} />
                 <KPIButton label="Picking" value={groupedData.length} unit="items" icon={LocalShippingIcon} color={colors.info} active={activeKpi === 'Picking'} onClick={() => setActiveKpi('Picking')} />
-                <KPIButton label="Crítico" value={metrics.alerts} unit="items" icon={WarningAmberIcon} color={colors.danger} active={activeKpi === 'Alertas'} onClick={() => setActiveKpi('Alertas')} />
-                <KPIButton label="Movim." value={metrics.moves} unit="periodo" icon={HistoryIcon} color={colors.info} active={activeKpi === 'Moves'} onClick={() => setActiveKpi('Moves')} />
-                <KPIButton label="Entradas" value={metrics.entradas} unit="periodo" icon={LocalShippingIcon} color={colors.success} active={activeKpi === 'Entradas'} onClick={() => setActiveKpi('Entradas')} />
-                <KPIButton label="Salidas" value={metrics.salidas} unit="periodo" icon={TrendingUpIcon} color="#f87171" active={activeKpi === 'Salidas'} onClick={() => setActiveKpi('Salidas')} />
             </Box>
-            <Collapse in={showFilters}><Box sx={{ px: 2, pb: 2, display: 'flex', flexDirection: 'column', gap: 1.5, bgcolor: 'rgba(255,255,255,0.01)', borderRadius: 2, m: 2, p: 2, border: `1px solid ${colors.border}` }}><Box sx={{ display: 'flex', gap: 1.5 }}><TextField select label="Planta" value={plantId} onChange={(e) => setPlantId(e.target.value)} fullWidth size="small" InputProps={{ sx: { bgcolor: colors.inputBg, color: 'white' } }}>{plants.map((p: any) => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}</TextField><TextField select label="Depósito" value={depotId} onChange={(e) => setDepotId(e.target.value)} fullWidth size="small" InputProps={{ sx: { bgcolor: colors.inputBg, color: 'white' } }}>{depots.map((d: any) => <MenuItem key={d.id} value={d.id}>{d.nombre}</MenuItem>)}</TextField></Box><TextField select label="Posición" value={positionId} onChange={(e) => setPositionId(e.target.value)} fullWidth size="small" InputProps={{ sx: { bgcolor: colors.inputBg, color: 'white' } }}><MenuItem value="">Todas las posiciones</MenuItem>{depots.find(d => d.id === depotId)?.positions?.map((p: any) => <MenuItem key={p.id} value={p.id}>{p.codigo}</MenuItem>)}</TextField><Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}><DateRangeIcon sx={{ color: colors.textDim }} /><TextField type="date" label="Desde" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} fullWidth size="small" InputLabelProps={{ shrink: true }} InputProps={{ sx: { bgcolor: colors.inputBg, color: 'white' } }} /><TextField type="date" label="Hasta" value={dateTo} onChange={(e) => setDateTo(e.target.value)} fullWidth size="small" InputLabelProps={{ shrink: true }} InputProps={{ sx: { bgcolor: colors.inputBg, color: 'white' } }} /></Box></Box></Collapse>
+            
+            <Collapse in={showFilters}>
+                <Box sx={{ px: 2, pb: 2, display: 'flex', flexDirection: 'column', gap: 1.5, bgcolor: 'rgba(255,255,255,0.01)', borderRadius: 2, m: 2, p: 2, border: `1px solid ${colors.border}` }}>
+                    <Box sx={{ display: 'flex', gap: 1.5 }}>
+                        <TextField select label="Planta" value={plantId} onChange={(e) => setPlantId(e.target.value)} fullWidth size="small" InputProps={{ sx: { bgcolor: colors.inputBg, color: 'white' } }}>
+                            {plants.map((p: any) => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}
+                        </TextField>
+                        <TextField select label="Depósito" value={depotId} onChange={(e) => setDepotId(e.target.value)} fullWidth size="small" InputProps={{ sx: { bgcolor: colors.inputBg, color: 'white' } }}>
+                            {depots.map((d: any) => <MenuItem key={d.id} value={d.id}>{d.nombre}</MenuItem>)}
+                        </TextField>
+                    </Box>
+                    <TextField select label="Posición" value={positionId} onChange={(e) => setPositionId(e.target.value)} fullWidth size="small" InputProps={{ sx: { bgcolor: colors.inputBg, color: 'white' } }}>
+                        <MenuItem value="">Todas las posiciones</MenuItem>
+                        {depots.find(d => d.id === depotId)?.positions?.map((p: any) => <MenuItem key={p.id} value={p.id}>{p.codigo}</MenuItem>)}
+                    </TextField>
+                </Box>
+            </Collapse>
+            
             <Box sx={{ display: 'flex', overflowX: 'auto', gap: 1, px: 2, pb: 2 }}>{categoriesList.map(cat => <Chip key={cat} label={cat} onClick={() => setSelectedCategory(cat)} sx={{ bgcolor: selectedCategory === cat ? colors.primary : colors.inputBg, color: selectedCategory === cat ? '#000' : colors.textDim, fontWeight: 800, fontSize: '0.65rem' }} />)}</Box>
+            
             {isLoading ? <Box sx={{ display: 'flex', justifyContent: 'center', p: 10 }}><CircularProgress /></Box> : (
                 <Fade in timeout={400}>
                     <Box sx={{ px: 2 }}>
-                        <Typography variant="caption" sx={{ fontWeight: 900, color: colors.textDim, textTransform: 'uppercase', mb: 1, display: 'block' }}>{activeKpi === 'Alertas' ? 'ALERTA STOCK BAJO' : activeKpi === 'Moves' ? 'MOVIMIENTOS EN PERIODO' : activeKpi === 'Entradas' ? 'REMITOS EN PERIODO' : activeKpi === 'Salidas' ? 'SALIDAS EN PERIODO' : 'INVENTARIO DISPONIBLE'}</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 900, color: colors.textDim, textTransform: 'uppercase', mb: 1, display: 'block' }}>
+                            {activeKpi === 'Posiciones' ? 'POSICIONES CON STOCK' : 'INVENTARIO DISPONIBLE'}
+                        </Typography>
                         <List disablePadding>
-                            {activeKpi === 'Moves' ? recentMoves.map((m: any) => <MovementCard key={m.id} move={m} />) : 
-                             activeKpi === 'Entradas' ? filteredRemitosEntrada.map((r: any) => <RemitoCard key={r.id} remito={r} type="ENTRADA" />) : 
-                             activeKpi === 'Salidas' ? filteredRemitosSalida.map((r: any) => <RemitoCard key={r.id} remito={r} type="SALIDA" />) : 
+                            {activeKpi === 'Posiciones' ? (
+                                 groupedPositionsData.length > 0 ? groupedPositionsData.map((g: any) => (
+                                     <PositionCard 
+                                         key={g.posicion.id} 
+                                         group={g} 
+                                         isPinned={pinnedIds.has(g.posicion.id)} 
+                                         onTogglePin={() => togglePin(g.posicion.id)} 
+                                         isExpanded={expandedItemId === g.posicion.id} 
+                                         onToggleExpand={() => setExpandedItemId(expandedItemId === g.posicion.id ? null : g.posicion.id)} 
+                                         onMoveRequest={(entry: any) => { setSelectedEntryToMove(entry); setMoveDrawerOpen(true); }} 
+                                         onSalidaRequest={(entry: any) => { setSelectedEntryToSalida(entry); setSalidaDrawerOpen(true); }} 
+                                     />
+                                 )) : (
+                                     <Box sx={{ p: 8, textAlign: 'center' }}><InventoryIcon sx={{ fontSize: 40, color: colors.border, mb: 2 }} /><Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 800, display: 'block' }}>SIN RESULTADOS</Typography></Box>
+                                 )
+                             ) :
                              groupedData.length > 0 ? groupedData.map((g: any) => (
                                 <MaterialCard key={g.item.id} group={g} isPinned={pinnedIds.has(g.item.id)} onTogglePin={() => togglePin(g.item.id)} isExpanded={expandedItemId === g.item.id} onToggleExpand={() => setExpandedItemId(expandedItemId === g.item.id ? null : g.item.id)} onMoveRequest={(entry: any) => { setSelectedEntryToMove(entry); setMoveDrawerOpen(true); }} onSalidaRequest={(entry: any) => { setSelectedEntryToSalida(entry); setSalidaDrawerOpen(true); }} onEditLimits={(item: any) => { setSelectedItemToEditLimits(item); setEditLimitsOpen(true); }} />
                              )) : 
@@ -589,7 +722,8 @@ export default function DashboardDepositoPage() {
                     </Box>
                 </Fade>
             )}
-            <Fab sx={{ position: 'fixed', bottom: 20, right: 20, bgcolor: activeKpi === 'Alertas' ? colors.info : colors.primary, color: activeKpi === 'Alertas' ? '#fff' : '#000', '&:hover': { bgcolor: activeKpi === 'Alertas' ? '#2563eb' : '#d97706' } }} onClick={() => activeKpi === 'Alertas' ? setEditLimitsOpen(true) : setQuickAddOpen(true)}>{activeKpi === 'Alertas' ? <SettingsSuggestIcon /> : <AddIcon />}</Fab>
+            
+            <Fab sx={{ position: 'fixed', bottom: 20, right: 20, bgcolor: colors.primary, color: '#000', '&:hover': { bgcolor: '#d97706' } }} onClick={() => setQuickAddOpen(true)}><AddIcon /></Fab>
             <QuickAddDrawer open={quickAddOpen} onClose={() => setQuickAddOpen(false)} />
             <EditStockLimitsDrawer open={editLimitsOpen} onClose={() => setEditLimitsOpen(false)} initialItem={selectedItemToEditLimits} />
             <MoveStockDrawer open={moveDrawerOpen} onClose={() => setMoveDrawerOpen(false)} entry={selectedEntryToMove} />

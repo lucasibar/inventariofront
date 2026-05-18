@@ -229,8 +229,8 @@ export default function MovimientosPage() {
         const destPos = sourceSide === 'left' ? posicionIdRight : posicionIdLeft;
 
         const itemsToMove = pendingItems.map(item => {
-            const qp = Number(item.qtyP);
-            const qs = Number(item.qtyS);
+            const qp = Number(String(item.qtyP).replace(',', '.'));
+            const qs = Number(String(item.qtyS).replace(',', '.'));
             
             if (isNaN(qp) || qp <= 0) throw new Error(`Cantidad inválida para ${item.descripcion}`);
             if (qp > item.maxP) throw new Error(`No podés mover más de lo disponible para ${item.descripcion}`);
