@@ -20,6 +20,37 @@ import { CreatePartnerDialog } from '../../config/components/CreatePartnerDialog
 import { useSelector } from 'react-redux';
 import { selectCurrentUser, selectAllowedDepots } from '../../../entities/auth/model/authSlice';
 
+interface DebouncedSearchInputProps {
+    value: string;
+    onChange: (val: string) => void;
+    delay?: number;
+    label?: string;
+    placeholder?: string;
+}
+
+function DebouncedSearchInput({ value, onChange, delay = 300, ...props }: DebouncedSearchInputProps) {
+    const [localValue, setLocalValue] = useState(value);
+
+    useEffect(() => {
+        setLocalValue(value);
+    }, [value]);
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            onChange(localValue);
+        }, delay);
+        return () => clearTimeout(handler);
+    }, [localValue, onChange, delay]);
+
+    return (
+        <Input
+            {...props}
+            value={localValue}
+            onChange={setLocalValue}
+        />
+    );
+}
+
 export default function StockPage() {
     const user = useSelector(selectCurrentUser);
     const allowedDepots = useSelector(selectAllowedDepots);
@@ -387,7 +418,7 @@ export default function StockPage() {
                 />
                 <div style={{ flex: 2, display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
                     <div style={{ flex: 1 }}>
-                        <Input
+                        <DebouncedSearchInput
                             label="Búsqueda Rápida"
                             placeholder="Buscar..."
                             value={searchTerm}
