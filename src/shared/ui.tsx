@@ -529,13 +529,39 @@ export function EditableCell({ value, onSave, numeric, style, inputStyle }: { va
     }, [value]);
 
     React.useEffect(() => {
-        if (value === lastSavedValue) {
+        if (lastSavedValue === null) return;
+        
+        let isMatch = false;
+        if (numeric) {
+            const valNum = Number(value);
+            const savedNum = Number(lastSavedValue);
+            isMatch = !isNaN(valNum) && !isNaN(savedNum) && valNum === savedNum;
+        } else {
+            isMatch = value === lastSavedValue;
+        }
+
+        if (isMatch) {
             setLastSavedValue(null);
         }
-    }, [value, lastSavedValue]);
+    }, [value, lastSavedValue, numeric]);
+
+    React.useEffect(() => {
+        if (lastSavedValue === null) return;
+
+        // Safety fallback: if after 6 seconds the value hasn't synced, clear the spinner
+        const timeoutId = setTimeout(() => {
+            setLastSavedValue(null);
+        }, 6000);
+
+        return () => clearTimeout(timeoutId);
+    }, [lastSavedValue]);
 
     const commit = async () => {
-        if (draft === value) { setEditing(false); return; }
+        const isUnchanged = numeric
+            ? Number(draft) === Number(value)
+            : draft === value;
+        if (isUnchanged) { setEditing(false); return; }
+        
         setSaving(true);
         try {
             await onSave(draft);
