@@ -519,15 +519,27 @@ export function EditableCell({ value, onSave, numeric, style, inputStyle }: { va
     const [editing, setEditing] = React.useState(false);
     const [draft, setDraft] = React.useState(value);
     const [saving, setSaving] = React.useState(false);
+    const [lastSavedValue, setLastSavedValue] = React.useState<string | null>(null);
     const ref = React.useRef<HTMLInputElement>(null);
 
     React.useEffect(() => { if (editing) ref.current?.focus(); }, [editing]);
+
+    React.useEffect(() => {
+        setDraft(value);
+    }, [value]);
+
+    React.useEffect(() => {
+        if (value === lastSavedValue) {
+            setLastSavedValue(null);
+        }
+    }, [value, lastSavedValue]);
 
     const commit = async () => {
         if (draft === value) { setEditing(false); return; }
         setSaving(true);
         try {
             await onSave(draft);
+            setLastSavedValue(draft);
             setEditing(false);
         } catch (e) {
             console.error("Error saving cell:", e);
@@ -535,6 +547,33 @@ export function EditableCell({ value, onSave, numeric, style, inputStyle }: { va
             setSaving(false);
         }
     };
+
+    if (lastSavedValue !== null) {
+        return (
+            <span
+                style={{
+                    color: '#9ca3af',
+                    fontStyle: 'italic',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'not-allowed',
+                    ...style
+                }}
+            >
+                {lastSavedValue}
+                <span className="mini-spinner" style={{
+                    width: '10px',
+                    height: '10px',
+                    border: '2px solid rgba(99, 102, 241, 0.1)',
+                    borderTop: '2px solid #6366f1',
+                    borderRadius: '50%',
+                    display: 'inline-block',
+                    animation: 'spin 0.8s linear infinite'
+                }}></span>
+            </span>
+        );
+    }
 
     if (!editing) return (
         <span
@@ -553,20 +592,35 @@ export function EditableCell({ value, onSave, numeric, style, inputStyle }: { va
     );
 
     return (
-        <input
-            ref={ref}
-            type={numeric ? 'number' : 'text'}
-            value={draft}
-            onChange={e => setDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false); }}
-            disabled={saving}
-            style={{
-                width: '100%', minWidth: '60px', background: '#0f1117', border: '1px solid #6366f1',
-                borderRadius: '6px', padding: '3px 8px', color: '#f3f4f6',
-                fontSize: '13px', outline: 'none',
-                ...inputStyle
-            }}
-        />
+        <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', width: '100%' }}>
+            <input
+                ref={ref}
+                type={numeric ? 'number' : 'text'}
+                value={draft}
+                onChange={e => setDraft(e.target.value)}
+                onBlur={commit}
+                onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false); }}
+                disabled={saving}
+                style={{
+                    width: '100%', minWidth: '60px', background: '#0f1117', border: '1px solid #6366f1',
+                    borderRadius: '6px', padding: '3px 8px', color: '#f3f4f6',
+                    fontSize: '13px', outline: 'none',
+                    paddingRight: saving ? '24px' : '8px',
+                    ...inputStyle
+                }}
+            />
+            {saving && (
+                <span className="mini-spinner" style={{
+                    position: 'absolute',
+                    right: '8px',
+                    width: '10px',
+                    height: '10px',
+                    border: '2px solid rgba(99, 102, 241, 0.1)',
+                    borderTop: '2px solid #6366f1',
+                    borderRadius: '50%',
+                    animation: 'spin 0.8s linear infinite'
+                }}></span>
+            )}
+        </div>
     );
 }
