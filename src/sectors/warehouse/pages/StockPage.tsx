@@ -62,6 +62,7 @@ export default function StockPage() {
     const [positionId, setPositionId] = useState<string>('');
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [expandedMaterials, setExpandedMaterials] = useState<string[]>([]);
+    const [deletingKeys, setDeletingKeys] = useState<string[]>([]);
 
     const [searchParams, setSearchParams] = useSearchParams();
     
@@ -269,8 +270,12 @@ export default function StockPage() {
         } catch (e: any) { alert(e?.data?.message || 'Error en adición rápida'); }
     };
 
+    const getEntryKey = (entry: any) => `${entry.depositoId || depotId}-${entry.posicionId}-${entry.batch.item.id}-${entry.lotId}`;
+
     const handleDeleteLine = async (entry: any) => {
         if (!window.confirm(`¿Eliminar esta línea de stock (${entry.qtyPrincipal} ${entry.batch.item.unidadPrincipal})?`)) return;
+        const key = getEntryKey(entry);
+        setDeletingKeys(prev => [...prev, key]);
         try {
             await deleteStock({
                 depositoId: entry.depositoId || depotId,
@@ -279,7 +284,10 @@ export default function StockPage() {
                 lotId: entry.lotId,
                 fecha: new Date().toISOString()
             }).unwrap();
-        } catch (e: any) { alert(e?.data?.message || 'Error al eliminar línea de stock'); }
+        } catch (e: any) { 
+            alert(e?.data?.message || 'Error al eliminar línea de stock'); 
+            setDeletingKeys(prev => prev.filter(k => k !== key));
+        }
     };
 
     const handleExportExcel = async () => {
@@ -313,6 +321,10 @@ export default function StockPage() {
         depotId: depotId || undefined,
         positionId: positionId || undefined
     }, { skip: !depotId });
+
+    useEffect(() => {
+        setDeletingKeys([]);
+    }, [rawStock]);
 
     const { groupedData, generalMetrics } = useMemo(() => {
         const general = { kilos: 0, units: 0, positions: new Set<string>() };
@@ -520,8 +532,16 @@ export default function StockPage() {
                                                 <tbody>
                                                     {group.entries.map((entry: any) => {
                                                         const isOldest = entry.batch.lotNumber === group.minLotNumber;
+                                                        const isDeleting = deletingKeys.includes(getEntryKey(entry));
                                                         return (
-                                                            <tr key={entry.id} className="hoverable-row">
+                                                            <tr 
+                                                                key={entry.id} 
+                                                                className="hoverable-row"
+                                                                style={{
+                                                                    opacity: isDeleting ? 0.5 : 1,
+                                                                    pointerEvents: isDeleting ? 'none' : 'auto'
+                                                                }}
+                                                            >
                                                                 <td 
                                                                     style={{ color: '#6366f1', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}
                                                                     onClick={(e) => { 
@@ -568,13 +588,31 @@ export default function StockPage() {
                                                                             onClick={(e) => { e.stopPropagation(); openDespacho(entry); }} 
                                                                             style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '14px', padding: '4px' }}
                                                                             title="Despachar (agregar a remito de salida)"
+                                                                            disabled={isDeleting}
                                                                         >📦</button>
                                                                         {isAdmin && (
-                                                                            <button 
-                                                                                onClick={(e) => { e.stopPropagation(); handleDeleteLine(entry); }} 
-                                                                                style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', padding: '4px' }}
-                                                                                title="Eliminar esta línea"
-                                                                            >🗑️</button>
+                                                                            isDeleting ? (
+                                                                                <span className="mini-spinner" style={{
+                                                                                    width: '12px',
+                                                                                    height: '12px',
+                                                                                    border: '2px solid rgba(239, 68, 68, 0.1)',
+                                                                                    borderTop: '2px solid #ef4444',
+                                                                                    borderRadius: '50%',
+                                                                                    display: 'inline-block',
+                                                                                    animation: 'spin 0.8s linear infinite',
+                                                                                    margin: '4px'
+                                                                                }}></span>
+                                                                            ) : (
+                                                                                <button 
+                                                                                    onClick={(e) => { 
+                                                                                        e.stopPropagation(); 
+                                                                                        setDeletingKeys(prev => [...prev, getEntryKey(entry)]);
+                                                                                        handleDeleteLine(entry); 
+                                                                                    }} 
+                                                                                    style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', padding: '4px' }}
+                                                                                    title="Eliminar esta línea"
+                                                                                >🗑️</button>
+                                                                            )
                                                                         )}
                                                                     </div>
                                                                 </td>
