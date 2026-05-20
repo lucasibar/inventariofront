@@ -280,8 +280,7 @@ export default function StockPage() {
 
     const { data: rawStock = [], isFetching, isLoading } = useGetStockQuery({ 
         depotId: depotId || undefined,
-        positionId: positionId || undefined,
-        q: searchTerm || undefined
+        positionId: positionId || undefined
     }, { skip: !depotId });
 
     const { groupedData, generalMetrics } = useMemo(() => {
