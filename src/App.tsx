@@ -38,6 +38,7 @@ import RegistroMaquinasPage from './sectors/maintenance/pages/RegistroMaquinasPa
 import HistorialRegistrosPage from './sectors/maintenance/pages/HistorialRegistrosPage';
 import BuscadorMaquinaPage from './sectors/maintenance/pages/BuscadorMaquinaPage';
 import PendientesPage from './sectors/maintenance/pages/PendientesPage';
+import InformeTurnosPage from './sectors/maintenance/pages/InformeTurnosPage';
 
 // Sector: Production
 import CargarProduccionPage from './sectors/production/pages/CargarProduccionPage';
@@ -116,6 +117,7 @@ function App() {
                 <Route path="/mantenimiento/historial" element={<HistorialRegistrosPage />} />
                 <Route path="/mantenimiento/buscador" element={<BuscadorMaquinaPage />} />
                 <Route path="/mantenimiento/pendientes" element={<PendientesPage />} />
+                <Route path="/mantenimiento/informe-turnos" element={<InformeTurnosPage />} />
 
                 {/* Producción */}
                 <Route path="/produccion/cargar" element={<CargarProduccionPage />} />

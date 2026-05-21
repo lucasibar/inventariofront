@@ -151,7 +151,12 @@ export default function HistorialRegistrosPage() {
         if (!filters.useTimeFilter) return logs;
         return logs.filter((log: any) => {
             const timeStr = new Date(log.timestamp).toTimeString().slice(0, 5);
-            return timeStr >= filters.startTime && timeStr <= filters.endTime;
+            if (filters.startTime <= filters.endTime) {
+                return timeStr >= filters.startTime && timeStr <= filters.endTime;
+            } else {
+                // Cross-midnight range (e.g. 18:00 to 06:00)
+                return timeStr >= filters.startTime || timeStr <= filters.endTime;
+            }
         });
     }, [logs, filters.useTimeFilter, filters.startTime, filters.endTime]);
 

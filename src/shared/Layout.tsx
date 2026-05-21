@@ -46,6 +46,7 @@ const navGroups = [
             { to: '/mantenimiento/historial', label: '📜 Historial' },
             { to: '/mantenimiento/buscador', label: '🔍 Detalle' },
             { to: '/mantenimiento/pendientes', label: '📑 Pendientes' },
+            { to: '/mantenimiento/informe-turnos', label: '📊 Informe Turnos' },
         ]
     },
     {
