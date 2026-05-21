@@ -164,9 +164,33 @@ export default function InformeTurnosPage() {
     }, [period]);
 
     const { data: plants = [] } = useGetPlantsQuery();
-    const { data: logs = [], isLoading } = useGetLogsQuery({
+
+    // 1. Detailed logs query for the selected period
+    const { data: logs = [], isLoading: isDetailedLoading } = useGetLogsQuery({
         startDate: dateRange.startDate,
         endDate: dateRange.endDate,
+        plantId: plantFilter || undefined,
+    });
+
+    // 2. Simplified logs query for the last 2 months
+    const twoMonthsRange = useMemo(() => {
+        const now = new Date();
+        const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        
+        const formatLocalDate = (date: Date) => {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        };
+        
+        return { startDate: formatLocalDate(prevMonth), endDate: formatLocalDate(now) };
+    }, []);
+
+    const { data: simplifiedLogs = [], isLoading: isSimplifiedLoading } = useGetLogsQuery({
+        startDate: twoMonthsRange.startDate,
+        endDate: twoMonthsRange.endDate,
+        simplified: 'true',
         plantId: plantFilter || undefined,
     });
 
@@ -178,18 +202,63 @@ export default function InformeTurnosPage() {
         return { day: analyze(logs, DAY_START, DAY_END), night: analyze(logs, DAY_END, DAY_START) };
     }, [logs]);
 
+    // Process simplified logs to build the two monthly charts
+    const monthlyChartsData = useMemo(() => {
+        const now = new Date();
+        const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        
+        const getMonthKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const prevMonthKey = getMonthKey(prevMonth);
+        const currentMonthKey = getMonthKey(now);
+        
+        const getMonthName = (d: Date) => {
+            const name = d.toLocaleString('es-AR', { month: 'long', timeZone: 'America/Argentina/Buenos_Aires' });
+            return name.charAt(0).toUpperCase() + name.slice(1);
+        };
+        
+        const prevMonthName = getMonthName(prevMonth);
+        const currentMonthName = getMonthName(now);
+        
+        const prevMonthLogs = simplifiedLogs?.filter((l: any) => {
+            const d = new Date(l.timestamp);
+            return getMonthKey(d) === prevMonthKey;
+        }) || [];
+        
+        const currentMonthLogs = simplifiedLogs?.filter((l: any) => {
+            const d = new Date(l.timestamp);
+            return getMonthKey(d) === currentMonthKey;
+        }) || [];
+        
+        const prevMonthDay = analyze(prevMonthLogs, DAY_START, DAY_END);
+        const prevMonthNight = analyze(prevMonthLogs, DAY_END, DAY_START);
+        
+        const currentMonthDay = analyze(currentMonthLogs, DAY_START, DAY_END);
+        const currentMonthNight = analyze(currentMonthLogs, DAY_END, DAY_START);
+        
+        return [
+            {
+                monthName: prevMonthName,
+                data: [
+                    { name: 'Paradas', '☀️ Día': prevMonthDay.stops, '🌙 Noche': prevMonthNight.stops },
+                    { name: 'Reparaciones', '☀️ Día': prevMonthDay.repairs, '🌙 Noche': prevMonthNight.repairs },
+                ]
+            },
+            {
+                monthName: currentMonthName,
+                data: [
+                    { name: 'Paradas', '☀️ Día': currentMonthDay.stops, '🌙 Noche': currentMonthNight.stops },
+                    { name: 'Reparaciones', '☀️ Día': currentMonthDay.repairs, '🌙 Noche': currentMonthNight.repairs },
+                ]
+            }
+        ];
+    }, [simplifiedLogs]);
+
     const toggleSidebar = () => document.dispatchEvent(new CustomEvent('open-sidebar-menu'));
 
     const plantOptions = useMemo(() => [
         { value: '', label: 'Todas' },
         ...plants.map((p: any) => ({ value: p.id, label: p.name }))
     ], [plants]);
-
-    // Chart data
-    const barData = [
-        { name: 'Paradas', '☀️ Día': day.stops, '🌙 Noche': night.stops },
-        { name: 'Reparaciones', '☀️ Día': day.repairs, '🌙 Noche': night.repairs },
-    ];
 
     // Top faults
     const allFaults = new Set([...Object.keys(day.faults), ...Object.keys(night.faults)]);
@@ -225,26 +294,6 @@ export default function InformeTurnosPage() {
     const thStyle: React.CSSProperties = { padding: '6px 8px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: '#4b5563', textAlign: 'left', borderBottom: '1px solid #1f2937' };
     const tdStyle = (i: number): React.CSSProperties => ({ padding: '6px 8px', fontSize: '12px', fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.03)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' });
 
-    if (isLoading) {
-        return (
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 2 }}>
-                <Spinner />
-                <Typography sx={{ 
-                    color: '#9ca3af', 
-                    fontSize: '0.9rem', 
-                    fontWeight: 600,
-                    animation: 'pulse 1.5s ease-in-out infinite',
-                    '@keyframes pulse': {
-                        '0%, 100%': { opacity: 0.6 },
-                        '50%': { opacity: 1 }
-                    }
-                }}>
-                    Descargando datos de turnos e informes...
-                </Typography>
-            </Box>
-        );
-    }
-
     return (
         <Box sx={{ p: 0, maxWidth: '1400px', margin: '0 auto', color: 'white', pb: 10 }}>
 
@@ -260,14 +309,14 @@ export default function InformeTurnosPage() {
                 <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', gap: 2 }}>
                     <Box sx={{ textAlign: 'center' }}>
                         <Typography sx={{ color: '#eab308', fontWeight: 900, fontSize: '1.4rem', lineHeight: 1 }}>
-                            {day.stops}
+                            {isDetailedLoading ? '...' : day.stops}
                         </Typography>
                         <Typography sx={{ color: '#4b5563', fontWeight: 800, fontSize: '0.5rem', textTransform: 'uppercase' }}>☀️ Paradas Día</Typography>
                     </Box>
                     <Box sx={{ width: '1px', bgcolor: 'rgba(255,255,255,0.1)' }} />
                     <Box sx={{ textAlign: 'center' }}>
                         <Typography sx={{ color: '#818cf8', fontWeight: 900, fontSize: '1.4rem', lineHeight: 1 }}>
-                            {night.stops}
+                            {isDetailedLoading ? '...' : night.stops}
                         </Typography>
                         <Typography sx={{ color: '#4b5563', fontWeight: 800, fontSize: '0.5rem', textTransform: 'uppercase' }}>🌙 Paradas Noche</Typography>
                     </Box>
@@ -277,7 +326,7 @@ export default function InformeTurnosPage() {
                             color: night.rate < 50 ? '#ef4444' : '#10b981',
                             fontWeight: 900, fontSize: '1.4rem', lineHeight: 1
                         }}>
-                            {night.rate.toFixed(0)}%
+                            {isDetailedLoading ? '...' : `${night.rate.toFixed(0)}%`}
                         </Typography>
                         <Typography sx={{ color: '#4b5563', fontWeight: 800, fontSize: '0.5rem', textTransform: 'uppercase' }}>🌙 Resolución</Typography>
                     </Box>
@@ -316,7 +365,7 @@ export default function InformeTurnosPage() {
             </Collapse>
 
             {/* ── Executive Summary (inline, no card overhead) ── */}
-            {night.unresolved > 0 && (
+            {!isDetailedLoading && night.unresolved > 0 && (
                 <Box sx={{ px: 2, py: 1.5, bgcolor: 'rgba(239,68,68,0.06)', borderBottom: '1px solid rgba(239,68,68,0.15)' }}>
                     <Typography sx={{ color: '#d1d5db', fontSize: '0.8rem', lineHeight: 1.6 }}>
                         ⚠️ En los últimos <strong>{period} días</strong>, el turno noche acumuló <strong style={{ color: '#ef4444' }}>{night.unresolved} paradas sin resolver</strong> que
@@ -329,14 +378,27 @@ export default function InformeTurnosPage() {
             {/* ── KPI Strip (horizontal scrollable) ── */}
             <Box sx={{
                 display: 'flex', overflowX: 'auto', gap: 1, p: 1.5,
-                '&::-webkit-scrollbar': { display: 'none' }, msOverflowStyle: 'none', scrollbarWidth: 'none'
+                '&::-webkit-scrollbar': { display: 'none' }, msOverflowStyle: 'none', scrollbarWidth: 'none',
+                minHeight: '80px',
+                position: 'relative'
             }}>
-                <StatBox label="Paradas" dayVal={day.stops} nightVal={night.stops} invert />
-                <StatBox label="Máq. Paradas" dayVal={day.uniqueStopped} nightVal={night.uniqueStopped} invert />
-                <StatBox label="Reparaciones" dayVal={day.repairs} nightVal={night.repairs} />
-                <StatBox label="Resolución" dayVal={day.rate} nightVal={night.rate} fmt="%" />
-                <StatBox label="Sin Resolver" dayVal={day.unresolved} nightVal={night.unresolved} invert />
-                <StatBox label="T. Medio Rep." dayVal={day.avgRepairMs} nightVal={night.avgRepairMs} fmt="dur" invert />
+                {isDetailedLoading ? (
+                    <Box sx={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'center', py: 1 }}>
+                        <Spinner />
+                        <Typography sx={{ color: '#6b7280', fontSize: '0.75rem', fontWeight: 600, ml: 1 }}>
+                            Cargando KPIs...
+                        </Typography>
+                    </Box>
+                ) : (
+                    <>
+                        <StatBox label="Paradas" dayVal={day.stops} nightVal={night.stops} invert />
+                        <StatBox label="Máq. Paradas" dayVal={day.uniqueStopped} nightVal={night.uniqueStopped} invert />
+                        <StatBox label="Reparaciones" dayVal={day.repairs} nightVal={night.repairs} />
+                        <StatBox label="Resolución" dayVal={day.rate} nightVal={night.rate} fmt="%" />
+                        <StatBox label="Sin Resolver" dayVal={day.unresolved} nightVal={night.unresolved} invert />
+                        <StatBox label="T. Medio Rep." dayVal={day.avgRepairMs} nightVal={night.avgRepairMs} fmt="dur" invert />
+                    </>
+                )}
             </Box>
 
             {/* ── Tab Navigation ── */}
@@ -372,31 +434,46 @@ export default function InformeTurnosPage() {
                     {/* RESUMEN */}
                     {tab === 'resumen' && (
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            {/* Bar Chart */}
-                            <Box sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, p: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
-                                <Typography sx={{ fontWeight: 800, fontSize: '0.8rem', color: '#6b7280', mb: 1.5, textTransform: 'uppercase' }}>
-                                    Comparativa General
-                                </Typography>
-                                <ResponsiveContainer width="100%" height={220}>
-                                    <BarChart data={barData} barGap={4} barCategoryGap="25%">
-                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                        <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={{ stroke: '#1f2937' }} />
-                                        <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={{ stroke: '#1f2937' }} />
-                                        <RechartsTooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '6px', color: '#f3f4f6', fontSize: '11px' }} />
-                                        <Bar dataKey="☀️ Día" fill="#eab308" radius={[3, 3, 0, 0]} />
-                                        <Bar dataKey="🌙 Noche" fill="#818cf8" radius={[3, 3, 0, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </Box>
-
-
+                            {isSimplifiedLoading ? (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 6, gap: 2 }}>
+                                    <Spinner />
+                                    <Typography sx={{ color: '#9ca3af', fontSize: '0.85rem', fontWeight: 600 }}>
+                                        Cargando comparativas mensuales...
+                                    </Typography>
+                                </Box>
+                            ) : (
+                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                                    {monthlyChartsData.map((monthData, idx) => (
+                                        <Box key={idx} sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, p: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
+                                            <Typography sx={{ fontWeight: 800, fontSize: '0.8rem', color: '#a5b4fc', mb: 1.5, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                Comparativa General - {monthData.monthName}
+                                            </Typography>
+                                            <ResponsiveContainer width="100%" height={220}>
+                                                <BarChart data={monthData.data} barGap={4} barCategoryGap="25%">
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                                                    <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={{ stroke: '#1f2937' }} />
+                                                    <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={{ stroke: '#1f2937' }} />
+                                                    <RechartsTooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '6px', color: '#f3f4f6', fontSize: '11px' }} />
+                                                    <Bar dataKey="☀️ Día" fill="#eab308" radius={[3, 3, 0, 0]} />
+                                                    <Bar dataKey="🌙 Noche" fill="#818cf8" radius={[3, 3, 0, 0]} />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </Box>
+                                    ))}
+                                </Box>
+                            )}
                         </Box>
                     )}
 
                     {/* FALLAS */}
                     {tab === 'fallas' && (
                         <Box sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-                            {faultRows.length === 0 ? (
+                            {isDetailedLoading ? (
+                                <Box sx={{ p: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                                    <Spinner />
+                                    <Typography sx={{ color: '#9ca3af', fontSize: '0.85rem', fontWeight: 600 }}>Cargando desglose de fallas...</Typography>
+                                </Box>
+                            ) : faultRows.length === 0 ? (
                                 <Box sx={{ p: 6, textAlign: 'center' }}>
                                     <Typography sx={{ color: '#374151', fontWeight: 800 }}>SIN DATOS DE FALLAS</Typography>
                                 </Box>
@@ -428,7 +505,12 @@ export default function InformeTurnosPage() {
                     {/* MECÁNICOS */}
                     {tab === 'mecanicos' && (
                         <Box sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-                            {mechRows.length === 0 ? (
+                            {isDetailedLoading ? (
+                                <Box sx={{ p: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                                    <Spinner />
+                                    <Typography sx={{ color: '#9ca3af', fontSize: '0.85rem', fontWeight: 600 }}>Cargando desglose de mecánicos...</Typography>
+                                </Box>
+                            ) : mechRows.length === 0 ? (
                                 <Box sx={{ p: 6, textAlign: 'center' }}>
                                     <Typography sx={{ color: '#374151', fontWeight: 800 }}>SIN DATOS</Typography>
                                 </Box>
@@ -460,7 +542,12 @@ export default function InformeTurnosPage() {
                     {/* MÁQUINAS */}
                     {tab === 'maquinas' && (
                         <Box sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-                            {machRows.length === 0 ? (
+                            {isDetailedLoading ? (
+                                <Box sx={{ p: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                                    <Spinner />
+                                    <Typography sx={{ color: '#9ca3af', fontSize: '0.85rem', fontWeight: 600 }}>Cargando desglose de máquinas...</Typography>
+                                </Box>
+                            ) : machRows.length === 0 ? (
                                 <Box sx={{ p: 6, textAlign: 'center' }}>
                                     <Typography sx={{ color: '#374151', fontWeight: 800 }}>SIN DATOS</Typography>
                                 </Box>

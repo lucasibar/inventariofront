@@ -163,7 +163,7 @@ export const FailureFormModal: React.FC<FailureFormModalProps> = ({ open, onClos
                         />
 
                         <Typography variant="caption" color="text.secondary">
-                            Fecha y Hora: {new Date().toLocaleString()}
+                            Fecha y Hora: {new Date().toLocaleString([], { hour12: false })}
                         </Typography>
                     </Box>
                 </DialogContent>
