@@ -108,13 +108,19 @@ const navGroups = [
 
 const navStyle = (isActive: boolean, isMobile: boolean): React.CSSProperties => ({
     display: 'flex', alignItems: 'center', gap: '12px',
-    padding: isMobile ? '14px 20px' : '10px 14px', textDecoration: 'none',
+    paddingTop: isMobile ? '14px' : '10px',
+    paddingBottom: isMobile ? '14px' : '10px',
+    paddingRight: isMobile ? '20px' : '14px',
+    paddingLeft: isMobile ? '20px' : '14px',
+    textDecoration: 'none',
     color: isActive ? '#a5b4fc' : '#9ca3af',
     background: isActive ? 'rgba(165,180,252,0.08)' : 'transparent',
     borderLeft: isActive ? '3px solid #6366f1' : '3px solid transparent',
     fontSize: isMobile ? '15px' : '13px', whiteSpace: 'nowrap',
     transition: 'all 0.15s',
 });
+
+const EMPTY_ALERTS: any[] = [];
 
 export default function Layout() {
     const isMobile = useIsMobile();
@@ -127,7 +133,7 @@ export default function Layout() {
     const [collapsed, setCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-    const { data: alerts = [] } = useGetAlertsQuery(undefined, { pollingInterval: 120000 });
+    const { data: alerts = EMPTY_ALERTS } = useGetAlertsQuery(undefined, { pollingInterval: 120000 });
     const hasUnread = useSelector(selectHasUnreadNotifications);
     const dispatch = useDispatch();
     const navigate = useNavigate();

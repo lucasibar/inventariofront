@@ -14,7 +14,13 @@ const isActive = (s: string) => ACTIVE_STATUSES.includes(s);
 
 function isInShift(timestamp: string, shiftStart: string, shiftEnd: string): boolean {
     const d = new Date(timestamp);
-    const time = d.getHours() * 100 + d.getMinutes();
+    const timeStr = d.toLocaleTimeString('es-AR', {
+        timeZone: 'America/Argentina/Buenos_Aires',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    });
+    const time = parseInt(timeStr.replace(':', ''));
     const start = parseInt(shiftStart.replace(':', ''));
     const end = parseInt(shiftEnd.replace(':', ''));
     if (start <= end) return time >= start && time < end;
@@ -73,7 +79,12 @@ function analyze(logs: any[], s: string, e: string): ShiftData {
     }
 
     let repMs = 0, repC = 0;
-    for (const l of repaired) { if (l.durationMs > 0) { repMs += l.durationMs; repC++; } }
+    for (const l of stopped) {
+        if (l.isResolved && l.durationMs > 0) {
+            repMs += l.durationMs;
+            repC++;
+        }
+    }
 
     return {
         total: sl.length,
@@ -141,7 +152,15 @@ export default function InformeTurnosPage() {
         const end = new Date();
         const start = new Date();
         start.setDate(end.getDate() - days);
-        return { startDate: start.toISOString().split('T')[0], endDate: end.toISOString().split('T')[0] };
+        
+        const formatLocalDate = (date: Date) => {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        };
+        
+        return { startDate: formatLocalDate(start), endDate: formatLocalDate(end) };
     }, [period]);
 
     const { data: plants = [] } = useGetPlantsQuery();
@@ -212,7 +231,25 @@ export default function InformeTurnosPage() {
     const thStyle: React.CSSProperties = { padding: '6px 8px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: '#4b5563', textAlign: 'left', borderBottom: '1px solid #1f2937' };
     const tdStyle = (i: number): React.CSSProperties => ({ padding: '6px 8px', fontSize: '12px', fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.03)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' });
 
-    if (isLoading) return <Spinner />;
+    if (isLoading) {
+        return (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 2 }}>
+                <Spinner />
+                <Typography sx={{ 
+                    color: '#9ca3af', 
+                    fontSize: '0.9rem', 
+                    fontWeight: 600,
+                    animation: 'pulse 1.5s ease-in-out infinite',
+                    '@keyframes pulse': {
+                        '0%, 100%': { opacity: 0.6 },
+                        '50%': { opacity: 1 }
+                    }
+                }}>
+                    Descargando datos de turnos e informes...
+                </Typography>
+            </Box>
+        );
+    }
 
     return (
         <Box sx={{ p: 0, maxWidth: '1400px', margin: '0 auto', color: 'white', pb: 10 }}>
