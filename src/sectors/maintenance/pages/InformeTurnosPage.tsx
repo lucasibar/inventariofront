@@ -189,7 +189,6 @@ export default function InformeTurnosPage() {
     const barData = [
         { name: 'Paradas', '☀️ Día': day.stops, '🌙 Noche': night.stops },
         { name: 'Reparaciones', '☀️ Día': day.repairs, '🌙 Noche': night.repairs },
-        { name: 'Sin resolver', '☀️ Día': day.unresolved, '🌙 Noche': night.unresolved },
     ];
 
     const donutDay = [
