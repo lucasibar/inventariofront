@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Chip, Fade, Collapse, Button, IconButton } from '@mui/material';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { Spinner, Select } from '../../../shared/ui';
@@ -191,15 +191,6 @@ export default function InformeTurnosPage() {
         { name: 'Reparaciones', '☀️ Día': day.repairs, '🌙 Noche': night.repairs },
     ];
 
-    const donutDay = [
-        { name: 'Resueltas', value: day.repairs, fill: '#10b981' },
-        { name: 'Pendientes', value: day.unresolved, fill: '#374151' },
-    ];
-    const donutNight = [
-        { name: 'Resueltas', value: night.repairs, fill: '#10b981' },
-        { name: 'Pendientes', value: night.unresolved, fill: '#374151' },
-    ];
-
     // Top faults
     const allFaults = new Set([...Object.keys(day.faults), ...Object.keys(night.faults)]);
     const faultRows = Array.from(allFaults)
@@ -209,12 +200,13 @@ export default function InformeTurnosPage() {
     // Mechanics
     const allMechs = new Set([...Object.keys(day.mechanics), ...Object.keys(night.mechanics)]);
     const mechRows = Array.from(allMechs)
-        .map(name => ({
-            name,
-            ds: day.mechanics[name]?.stops || 0, dr: day.mechanics[name]?.repairs || 0,
-            ns: night.mechanics[name]?.stops || 0, nr: night.mechanics[name]?.repairs || 0,
-        }))
-        .sort((a, b) => (b.dr + b.nr) - (a.dr + a.nr));
+        .map(name => {
+            const dr = day.mechanics[name]?.repairs || 0;
+            const nr = night.mechanics[name]?.repairs || 0;
+            return { name, dr, nr, t: dr + nr };
+        })
+        .filter(r => r.t > 0)
+        .sort((a, b) => b.t - a.t);
 
     // Machines
     const allMach = new Set([...Object.keys(day.machines), ...Object.keys(night.machines)]);
@@ -222,9 +214,12 @@ export default function InformeTurnosPage() {
         .map(id => {
             const d = day.machines[id] || { num: 0, stops: 0, repairs: 0 };
             const n = night.machines[id] || { num: 0, stops: 0, repairs: 0 };
-            return { id, num: d.num || n.num, ds: d.stops, dr: d.repairs, ns: n.stops, nr: n.repairs, t: d.stops + n.stops };
+            const stops = d.stops + n.stops;
+            const repairs = d.repairs + n.repairs;
+            const unresolved = Math.max(0, stops - repairs);
+            return { id, num: d.num || n.num, stops, repairs, unresolved };
         })
-        .sort((a, b) => b.t - a.t).slice(0, 15);
+        .sort((a, b) => b.stops - a.stops);
 
     // Row style helper
     const thStyle: React.CSSProperties = { padding: '6px 8px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: '#4b5563', textAlign: 'left', borderBottom: '1px solid #1f2937' };
@@ -394,27 +389,7 @@ export default function InformeTurnosPage() {
                                 </ResponsiveContainer>
                             </Box>
 
-                            {/* Donut Charts */}
-                            <Box sx={{ display: 'flex', gap: 2 }}>
-                                {[
-                                    { label: '☀️ Resolución Día', data: donutDay, rate: day.rate },
-                                    { label: '🌙 Resolución Noche', data: donutNight, rate: night.rate },
-                                ].map(({ label, data, rate }) => (
-                                    <Box key={label} sx={{ flex: 1, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, p: 2, border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
-                                        <Typography sx={{ fontWeight: 800, fontSize: '0.7rem', color: '#6b7280', mb: 1, textTransform: 'uppercase' }}>{label}</Typography>
-                                        <ResponsiveContainer width="100%" height={110}>
-                                            <PieChart>
-                                                <Pie data={data} dataKey="value" cx="50%" cy="50%" innerRadius={30} outerRadius={45} paddingAngle={3} strokeWidth={0}>
-                                                    {data.map((e, i) => <Cell key={i} fill={e.fill} />)}
-                                                </Pie>
-                                            </PieChart>
-                                        </ResponsiveContainer>
-                                        <Typography sx={{ fontWeight: 900, fontSize: '1.3rem', color: rate >= 50 ? '#10b981' : '#ef4444', mt: -1 }}>
-                                            {rate.toFixed(0)}%
-                                        </Typography>
-                                    </Box>
-                                ))}
-                            </Box>
+
                         </Box>
                     )}
 
@@ -462,20 +437,18 @@ export default function InformeTurnosPage() {
                                     <thead>
                                         <tr>
                                             <th style={thStyle}>Mecánico</th>
-                                            <th style={{ ...thStyle, textAlign: 'center', color: '#eab308' }}>☀️ Paró</th>
-                                            <th style={{ ...thStyle, textAlign: 'center', color: '#10b981' }}>☀️ Reparó</th>
-                                            <th style={{ ...thStyle, textAlign: 'center', color: '#818cf8' }}>🌙 Paró</th>
-                                            <th style={{ ...thStyle, textAlign: 'center', color: '#10b981' }}>🌙 Reparó</th>
+                                            <th style={{ ...thStyle, textAlign: 'center', color: '#eab308' }}>☀️ Día</th>
+                                            <th style={{ ...thStyle, textAlign: 'center', color: '#818cf8' }}>🌙 Noche</th>
+                                            <th style={{ ...thStyle, textAlign: 'center', color: '#10b981' }}>Total</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {mechRows.map((r, i) => (
                                             <tr key={r.name}>
                                                 <td style={{ ...tdStyle(i), color: '#d1d5db' }}>{r.name}</td>
-                                                <td style={{ ...tdStyle(i), color: '#eab308', textAlign: 'center', fontWeight: 800 }}>{r.ds}</td>
-                                                <td style={{ ...tdStyle(i), color: '#10b981', textAlign: 'center', fontWeight: 800 }}>{r.dr}</td>
-                                                <td style={{ ...tdStyle(i), color: '#818cf8', textAlign: 'center', fontWeight: 800 }}>{r.ns}</td>
-                                                <td style={{ ...tdStyle(i), color: '#10b981', textAlign: 'center', fontWeight: 800 }}>{r.nr}</td>
+                                                <td style={{ ...tdStyle(i), color: '#eab308', textAlign: 'center', fontWeight: 800 }}>{r.dr}</td>
+                                                <td style={{ ...tdStyle(i), color: '#818cf8', textAlign: 'center', fontWeight: 800 }}>{r.nr}</td>
+                                                <td style={{ ...tdStyle(i), color: '#10b981', textAlign: 'center', fontWeight: 800 }}>{r.t}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -496,11 +469,9 @@ export default function InformeTurnosPage() {
                                     <thead>
                                         <tr>
                                             <th style={thStyle}>Máquina</th>
-                                            <th style={{ ...thStyle, textAlign: 'center', color: '#eab308' }}>☀️ Par.</th>
-                                            <th style={{ ...thStyle, textAlign: 'center', color: '#10b981' }}>☀️ Rep.</th>
-                                            <th style={{ ...thStyle, textAlign: 'center', color: '#818cf8' }}>🌙 Par.</th>
-                                            <th style={{ ...thStyle, textAlign: 'center', color: '#10b981' }}>🌙 Rep.</th>
-                                            <th style={{ ...thStyle, textAlign: 'center' }}>Total</th>
+                                            <th style={{ ...thStyle, textAlign: 'center', color: '#ef4444' }}>Paradas</th>
+                                            <th style={{ ...thStyle, textAlign: 'center', color: '#10b981' }}>Reparaciones</th>
+                                            <th style={{ ...thStyle, textAlign: 'center', color: '#fbbf24' }}>Pendientes</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -514,11 +485,9 @@ export default function InformeTurnosPage() {
                                                         MÁQ {r.num}
                                                     </span>
                                                 </td>
-                                                <td style={{ ...tdStyle(i), color: '#eab308', textAlign: 'center', fontWeight: 800 }}>{r.ds}</td>
-                                                <td style={{ ...tdStyle(i), color: '#10b981', textAlign: 'center', fontWeight: 800 }}>{r.dr}</td>
-                                                <td style={{ ...tdStyle(i), color: '#818cf8', textAlign: 'center', fontWeight: 800 }}>{r.ns}</td>
-                                                <td style={{ ...tdStyle(i), color: '#10b981', textAlign: 'center', fontWeight: 800 }}>{r.nr}</td>
-                                                <td style={{ ...tdStyle(i), color: '#6b7280', textAlign: 'center', fontWeight: 800 }}>{r.t}</td>
+                                                <td style={{ ...tdStyle(i), color: '#ef4444', textAlign: 'center', fontWeight: 800 }}>{r.stops}</td>
+                                                <td style={{ ...tdStyle(i), color: '#10b981', textAlign: 'center', fontWeight: 800 }}>{r.repairs}</td>
+                                                <td style={{ ...tdStyle(i), color: r.unresolved > 0 ? '#ef4444' : '#6b7280', textAlign: 'center', fontWeight: 800 }}>{r.unresolved}</td>
                                             </tr>
                                         ))}
                                     </tbody>
