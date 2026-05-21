@@ -128,7 +128,7 @@ const StatBox = ({ label, dayVal, nightVal, fmt = 'n', invert }: {
 export default function InformeTurnosPage() {
     const navigate = useNavigate();
 
-    const [period, setPeriod] = useState<'7' | '15' | '30'>('30');
+    const [period, setPeriod] = useState<'7' | '15' | '30'>('7');
     const [plantFilter, setPlantFilter] = useState('');
     const [showFilters, setShowFilters] = useState(false);
     const [tab, setTab] = useState<'resumen' | 'fallas' | 'mecanicos' | 'maquinas'>('resumen');
