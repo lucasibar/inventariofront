@@ -1,14 +1,12 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Chip, Fade, Collapse, Button, TextField, IconButton } from '@mui/material';
+import { Box, Typography, Chip, Fade, Collapse, Button, IconButton } from '@mui/material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { Spinner, Select } from '../../../shared/ui';
 import { useGetLogsQuery, useGetPlantsQuery } from '../api/maintenance.api';
-import {
-    MAINTENANCE_STATUS_COLORS as statusColors
-} from '../constants/maintenanceConstants';
+
 
 // ─── Helpers ────────────────────────────────────────────────────────
 const ACTIVE_STATUSES = ['ACTIVA', 'REVISAR', 'VELOCIDAD_REDUCIDA', 'FALTA_COSTURA'];
