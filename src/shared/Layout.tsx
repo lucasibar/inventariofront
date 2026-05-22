@@ -5,6 +5,7 @@ import { useGetAlertsQuery } from '../sectors/warehouse/stock/api/stock.api';
 import { logout, selectCurrentUser } from '../entities/auth/model/authSlice';
 import { setCurrentAlerts, selectHasUnreadNotifications } from '../entities/notifications/notificationsSlice';
 import { useIsMobile, PageLoader } from './ui';
+import { ErrorBoundary } from './ErrorBoundary';
 
 const navGroups = [
     {
@@ -467,9 +468,11 @@ export default function Layout() {
                     width: '100%'
                 }}
             >
-                <Suspense fallback={<PageLoader />}>
-                    <Outlet />
-                </Suspense>
+                <ErrorBoundary>
+                    <Suspense fallback={<PageLoader />}>
+                        <Outlet key={location.pathname} />
+                    </Suspense>
+                </ErrorBoundary>
             </main>
         </div>
     );
