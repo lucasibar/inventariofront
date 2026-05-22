@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useGetAlertsQuery } from '../sectors/warehouse/stock/api/stock.api';
 import { logout, selectCurrentUser } from '../entities/auth/model/authSlice';
 import { setCurrentAlerts, selectHasUnreadNotifications } from '../entities/notifications/notificationsSlice';
-import { useIsMobile } from './ui';
+import { useIsMobile, PageLoader } from './ui';
 
 const navGroups = [
     {
@@ -129,6 +129,7 @@ export default function Layout() {
     const isAdmin = role === 'ADMIN';
     const isCompras = role === 'COMPRAS';
     const isOperario = role === 'OPERATOR';
+    const isSupervisor = role === 'SUPERVISOR';
 
     const [collapsed, setCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -173,7 +174,7 @@ export default function Layout() {
         ...group,
         items: group.items.filter(item => {
             if (isAdmin) return true;
-            if (isOperario) return ['/deposito/dashboard', '/movimientos', '/stock', '/items', '/items/box-types', '/deposito/auditoria-picking', '/remitos-salida', '/reporte-salidas', '/tasks', '/deposito', '/mantenimiento/dashboard', '/mantenimiento/monitoreo', '/mantenimiento/registro', '/mantenimiento/historial', '/mantenimiento/buscador', '/produccion/cargar', '/produccion/dashboard'].includes(item.to);
+            if (isOperario || isSupervisor) return ['/deposito/dashboard', '/movimientos', '/stock', '/items', '/items/box-types', '/deposito/auditoria-picking', '/remitos-salida', '/reporte-salidas', '/tasks', '/deposito', '/mantenimiento/dashboard', '/mantenimiento/monitoreo', '/mantenimiento/registro', '/mantenimiento/historial', '/mantenimiento/buscador', '/produccion/cargar', '/produccion/dashboard'].includes(item.to);
             if (isCompras) return ['/deposito/dashboard', '/dashboard', '/compras/materiales-criticos', '/compras/alertas-stock', '/compras/conciliacion', '/pedidos-compra', '/remitos-entrada', '/reporte-salidas', '/items', '/dashboard/capacity', '/dashboard/volumes', '/items/box-types', '/socios'].includes(item.to);
             return false;
         })
@@ -466,9 +467,9 @@ export default function Layout() {
                     width: '100%'
                 }}
             >
-                <Outlet />
-
-
+                <Suspense fallback={<PageLoader />}>
+                    <Outlet />
+                </Suspense>
             </main>
         </div>
     );

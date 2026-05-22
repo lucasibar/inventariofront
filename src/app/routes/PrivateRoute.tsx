@@ -5,14 +5,9 @@ import { selectIsAuthenticated, logout, selectCurrentUser } from '../../entities
 import { useVerifySessionQuery } from '../../entities/auth/api/authApi';
 import { Spinner } from '../../shared/ui';
 
-interface PrivateRouteProps {
-    allowedRoles?: string[];
-}
-
-export const PrivateRoute = ({ allowedRoles }: PrivateRouteProps) => {
+export const PrivateRoute = () => {
     const dispatch = useDispatch();
     const isAuthenticated = useSelector(selectIsAuthenticated);
-    const user = useSelector(selectCurrentUser);
 
     const { isLoading, isError } = useVerifySessionQuery(undefined, {
         skip: !isAuthenticated,
@@ -46,7 +41,21 @@ export const PrivateRoute = ({ allowedRoles }: PrivateRouteProps) => {
         );
     }
 
-    if (allowedRoles && user && !allowedRoles.includes(user.role.toUpperCase())) {
+    return <Outlet />;
+};
+
+interface RoleGuardProps {
+    allowedRoles: string[];
+}
+
+export const RoleGuard = ({ allowedRoles }: RoleGuardProps) => {
+    const user = useSelector(selectCurrentUser);
+
+    if (!user) {
+        return <Navigate to="/login" replace />;
+    }
+
+    if (!allowedRoles.includes(user.role.toUpperCase())) {
         return <Navigate to="/" replace />;
     }
 
