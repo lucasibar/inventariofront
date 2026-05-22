@@ -8,6 +8,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import SearchIcon from '@mui/icons-material/Search';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { PageHeader, Spinner, Select } from '../../../shared/ui';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
@@ -123,6 +124,115 @@ export default function HistorialRegistrosPage() {
 
     const handleResetFilters = () => {
         dispatch(resetHistoryFilters());
+    };
+
+    const escapeXml = (unsafe: string) => {
+        if (!unsafe) return '';
+        return unsafe.replace(/[<>&'"]/g, (c) => {
+            switch (c) {
+                case '<': return '&lt;';
+                case '>': return '&gt;';
+                case '&': return '&amp;';
+                case '\'': return '&apos;';
+                case '"': return '&quot;';
+                default: return c;
+            }
+        });
+    };
+
+    const handleExportExcel = () => {
+        if (filteredLogs.length === 0) return;
+        
+        let xml = `<?xml version="1.0" encoding="utf-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:navigator"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+  <Author>Sistema de Inventario</Author>
+  <Created>${new Date().toISOString()}</Created>
+ </DocumentProperties>
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Bottom"/>
+   <Borders/>
+   <Font ss:FontName="Segoe UI" x:Family="Swiss" ss:Size="10" ss:Color="#333333"/>
+   <Interior/>
+   <NumberFormat/>
+   <Protection/>
+  </Style>
+  <Style ss:ID="Header">
+   <Font ss:FontName="Segoe UI" x:Family="Swiss" ss:Size="10" ss:Color="#FFFFFF" ss:Bold="1"/>
+   <Interior ss:Color="#1F2937" ss:Pattern="Solid"/>
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+  </Style>
+  <Style ss:ID="RowStyle">
+   <Alignment ss:Vertical="Center"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Historial">
+  <Table ss:DefaultColumnWidth="120">
+   <Column ss:Width="120"/> <!-- Fecha -->
+   <Column ss:Width="80"/>  <!-- Máquina -->
+   <Column ss:Width="100"/> <!-- Planta -->
+   <Column ss:Width="120"/> <!-- Estado Anterior -->
+   <Column ss:Width="120"/> <!-- Estado Nuevo -->
+   <Column ss:Width="90"/>  <!-- Duración -->
+   <Column ss:Width="120"/> <!-- Tipo Falla -->
+   <Column ss:Width="120"/> <!-- Responsable -->
+   <Column ss:Width="250"/> <!-- Observaciones -->
+   <Row ss:AutoFitHeight="0" ss:Height="24">
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Fecha / Hora</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Máquina</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Planta</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Estado Anterior</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Estado Nuevo</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Duración</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Tipo de Falla</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Responsable</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Observaciones</Data></Cell>
+   </Row>`;
+
+        filteredLogs.forEach((log: any) => {
+            const dateStr = new Date(log.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short', hour12: false });
+            const machineNum = log.machine?.number || log.machineId?.slice(0, 6) || '-';
+            const plantName = log.machine?.plant?.name || plants.find((p: any) => p.id === log.machine?.plantId)?.name || '-';
+            const fromStatus = statusLabels[log.fromStatus] || log.fromStatus || '-';
+            const toStatus = statusLabels[log.toStatus] || log.toStatus || '-';
+            const duration = log.durationFormatted || '-';
+            const failureType = log.failureType || 'Ninguna';
+            const generatedBy = log.generatedBy || '-';
+            const observation = log.observation || '';
+
+            xml += `
+   <Row ss:AutoFitHeight="1" ss:StyleID="RowStyle">
+    <Cell><Data ss:Type="String">${escapeXml(dateStr)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(String(machineNum))}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(plantName)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(fromStatus)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(toStatus)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(duration)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(failureType)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(generatedBy)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(observation)}</Data></Cell>
+   </Row>`;
+        });
+
+        xml += `
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+        const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `historial_mantenimiento_${new Date().toISOString().split('T')[0]}.xls`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     const handleDelete = async () => {
@@ -370,6 +480,29 @@ export default function HistorialRegistrosPage() {
                                     sx={{ color: '#9ca3af', borderColor: '#374151', '&:hover': { borderColor: '#6b7280', color: 'white' } }}
                                 >
                                     Limpiar
+                                </Button>
+                                <Button 
+                                    variant="contained" 
+                                    onClick={handleExportExcel}
+                                    disabled={filteredLogs.length === 0}
+                                    startIcon={<FileDownloadIcon />}
+                                    sx={{ 
+                                        bgcolor: '#10b981', 
+                                        color: '#ffffff', 
+                                        fontWeight: 800, 
+                                        borderRadius: 1.5, 
+                                        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                                        '&:hover': {
+                                            bgcolor: '#059669',
+                                            boxShadow: '0 4px 16px rgba(16, 185, 129, 0.4)',
+                                        },
+                                        '&:disabled': {
+                                            bgcolor: 'rgba(16, 185, 129, 0.12)',
+                                            color: 'rgba(255, 255, 255, 0.3)'
+                                        }
+                                    }}
+                                >
+                                    Exportar Excel
                                 </Button>
                                 <Button 
                                     variant="contained" 
