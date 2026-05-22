@@ -563,7 +563,7 @@ export default function DashboardMantenimientoPage() {
                     <Fade in timeout={300}>
                         <Box>
                             <Box sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <Typography sx={{ fontWeight: 900, display: 'flex', alignItems: 'center', gap: 1, fontSize: '0.8rem', color: '#4b5563', textTransform: 'uppercase' }}>
+                                <Typography component="div" sx={{ fontWeight: 900, display: 'flex', alignItems: 'center', gap: 1, fontSize: '0.8rem', color: '#4b5563', textTransform: 'uppercase' }}>
                                     {sortMode ? `ORDENADO POR ${sortMode}` : (selectedStatus ? formatStatus(selectedStatus) : 'INCIDENCIAS')}
                                     <Chip label={filteredMachines.length} size="small" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 800, bgcolor: 'rgba(255,255,255,0.05)' }} />
                                 </Typography>

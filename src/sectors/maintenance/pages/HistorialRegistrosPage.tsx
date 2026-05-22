@@ -47,6 +47,7 @@ export default function HistorialRegistrosPage() {
     const [localUseTimeFilter, setLocalUseTimeFilter] = useState(filters.useTimeFilter);
     const [localStartTime, setLocalStartTime] = useState(filters.startTime);
     const [localEndTime, setLocalEndTime] = useState(filters.endTime);
+    const [visibleCount, setVisibleCount] = useState(50);
 
     // Synchronize local state if filters change externally
     useEffect(() => {
@@ -89,6 +90,11 @@ export default function HistorialRegistrosPage() {
         status: filters.statusFilter || undefined,
         machineNumber: filters.machineNumber || undefined
     });
+
+    // Reset pagination when filters or data changes
+    useEffect(() => {
+        setVisibleCount(50);
+    }, [filters, logs]);
 
     // Deletion state
     const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -269,6 +275,10 @@ export default function HistorialRegistrosPage() {
             }
         });
     }, [logs, filters.useTimeFilter, filters.startTime, filters.endTime]);
+
+    const visibleLogs = useMemo(() => {
+        return filteredLogs.slice(0, visibleCount);
+    }, [filteredLogs, visibleCount]);
 
     const LogItem = ({ log }: { log: any }) => (
         <Card sx={{ 
@@ -533,11 +543,32 @@ export default function HistorialRegistrosPage() {
                     ) : (
                         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                             <Typography variant="caption" sx={{ color: '#6b7280', mb: 1, display: 'block', fontWeight: 700 }}>
-                                Mostrando {filteredLogs.length} resultados ordenados del más reciente al más antiguo
+                                Mostrando {Math.min(visibleCount, filteredLogs.length)} de {filteredLogs.length} resultados ordenados del más reciente al más antiguo
                             </Typography>
-                            {filteredLogs.map((log: any) => (
+                            {visibleLogs.map((log: any) => (
                                 <LogItem key={log.id} log={log} />
                             ))}
+                            {filteredLogs.length > visibleCount && (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 3 }}>
+                                    <Button
+                                        variant="outlined"
+                                        onClick={() => setVisibleCount(prev => prev + 50)}
+                                        sx={{ 
+                                            color: '#3b82f6', 
+                                            borderColor: '#374151', 
+                                            fontWeight: 800,
+                                            borderRadius: 1.5,
+                                            px: 4,
+                                            '&:hover': {
+                                                borderColor: '#6b7280',
+                                                bgcolor: 'rgba(255, 255, 255, 0.02)'
+                                            }
+                                        }}
+                                    >
+                                        Ver más ({filteredLogs.length - visibleCount} restantes)
+                                    </Button>
+                                </Box>
+                            )}
                         </Box>
                     )}
                 </Box>
