@@ -18,9 +18,10 @@ const LoginPage: React.FC = () => {
 
     const getLandingPage = (role?: string) => {
         const r = role?.toUpperCase();
-        if (r === 'OPERATOR') return '/stock';
         if (r === 'COMPRAS') return '/dashboard';
-        return '/stock';
+        if (r === 'ADMIN') return '/mantenimiento/dashboard';
+        if (r === 'OPERATOR' || r === 'SUPERVISOR') return '/deposito/dashboard';
+        return '/deposito/dashboard';
     };
 
     useEffect(() => {

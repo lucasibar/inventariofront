@@ -28,7 +28,7 @@ interface NotificationsState {
 const STORAGE_KEY = 'notifications_last_seen_hash';
 
 const initialState: NotificationsState = {
-    lastSeenHash: sessionStorage.getItem(STORAGE_KEY) || '',
+    lastSeenHash: localStorage.getItem(STORAGE_KEY) || '',
     currentHash: '',
 };
 
@@ -43,7 +43,7 @@ const notificationsSlice = createSlice({
         /** Marca las alertas actuales como vistas (se llama al entrar a /notificaciones) */
         markAsSeen: (state) => {
             state.lastSeenHash = state.currentHash;
-            sessionStorage.setItem(STORAGE_KEY, state.currentHash);
+            localStorage.setItem(STORAGE_KEY, state.currentHash);
         },
     },
 });

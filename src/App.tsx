@@ -1,4 +1,4 @@
-import { lazy } from 'react';
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { PrivateRoute, RoleGuard } from './app/routes/PrivateRoute';
 import { LoginPage } from './pages/login/LoginPage';
@@ -72,6 +72,11 @@ function App() {
 
   return (
     <BrowserRouter>
+      <Suspense fallback={
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0f1117' }}>
+          <div style={{ color: '#6b7280', fontSize: '14px', letterSpacing: '1px', textTransform: 'uppercase' }}>Cargando...</div>
+        </div>
+      }>
       <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route element={<PrivateRoute />}>
@@ -140,6 +145,7 @@ function App() {
             </Route>
           </Route>
         </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

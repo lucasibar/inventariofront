@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useReducer } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectIsAuthenticated, logout, selectCurrentUser } from '../../entities/auth/model/authSlice';
@@ -8,10 +8,24 @@ import { Spinner } from '../../shared/ui';
 export const PrivateRoute = () => {
     const dispatch = useDispatch();
     const isAuthenticated = useSelector(selectIsAuthenticated);
+    const hasToken = !!localStorage.getItem('token');
 
     const { isLoading, isError } = useVerifySessionQuery(undefined, {
         skip: !isAuthenticated,
     });
+
+    // Timeout: if verification takes more than 10s, stop blocking
+    const timedOut = useRef(false);
+    const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
+
+    useEffect(() => {
+        if (!isLoading) return;
+        const timer = setTimeout(() => {
+            timedOut.current = true;
+            forceUpdate();
+        }, 10000);
+        return () => clearTimeout(timer);
+    }, [isLoading]);
 
     useEffect(() => {
         if (isError) {
@@ -19,9 +33,12 @@ export const PrivateRoute = () => {
         }
     }, [isError, dispatch]);
 
+    // Not authenticated at all -> login
     if (!isAuthenticated || (isError && !isLoading)) return <Navigate to="/login" replace />;
 
-    if (isLoading) {
+    // If we have a token in storage, show content immediately while verifying in background
+    // Only show spinner if there's no cached token (first visit)
+    if (isLoading && !hasToken && !timedOut.current) {
         return (
             <div style={{
                 display: 'flex',
