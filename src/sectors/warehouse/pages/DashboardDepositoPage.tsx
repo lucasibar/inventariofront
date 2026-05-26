@@ -42,7 +42,7 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 // Voice Search
-import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
+// import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 
 // API Hooks
 import { 
@@ -546,9 +546,12 @@ export default function DashboardDepositoPage() {
             return next; 
         }); 
     };
-    const { transcript, listening, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition();
-    useEffect(() => { if (transcript) setSearchQuery(transcript); }, [transcript]);
-    const toggleListening = () => { if (listening) SpeechRecognition.stopListening(); else { resetTranscript(); SpeechRecognition.startListening({ language: 'es-AR', continuous: true }); } };
+    // const { transcript, listening, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition();
+    // useEffect(() => { if (transcript) setSearchQuery(transcript); }, [transcript]);
+    // const toggleListening = () => { if (listening) SpeechRecognition.stopListening(); else { resetTranscript(); SpeechRecognition.startListening({ language: 'es-AR', continuous: true }); } };
+    const browserSupportsSpeechRecognition = false;
+    const listening = false;
+    const toggleListening = () => {};
     
     useEffect(() => { if (depotId) sessionStorage.setItem('selectedDepotId', depotId); }, [depotId]);
     const { data: rawPlants = [] } = useGetPlantsQuery();
