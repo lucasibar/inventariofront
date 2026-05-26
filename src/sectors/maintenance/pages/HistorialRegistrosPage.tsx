@@ -463,6 +463,7 @@ export default function HistorialRegistrosPage() {
                                             value={localStartTime}
                                             onChange={(e) => setLocalStartTime(e.target.value)}
                                             InputLabelProps={{ shrink: true }}
+                                            slotProps={{ htmlInput: { step: 60 } }}
                                             sx={{ width: 130, '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
                                         />
                                         <TextField
@@ -473,6 +474,7 @@ export default function HistorialRegistrosPage() {
                                             value={localEndTime}
                                             onChange={(e) => setLocalEndTime(e.target.value)}
                                             InputLabelProps={{ shrink: true }}
+                                            slotProps={{ htmlInput: { step: 60 } }}
                                             sx={{ width: 130, '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
                                         />
                                     </>
@@ -596,16 +598,17 @@ export default function HistorialRegistrosPage() {
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
                         <TextField
-                            label="Fecha / Hora del Movimiento"
-                            type="datetime-local"
-                            fullWidth
-                            size="small"
-                            variant="outlined"
-                            InputLabelProps={{ shrink: true }}
-                            value={editLogData?.timestamp ? new Date(new Date(editLogData.timestamp).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : ''}
-                            onChange={(e) => setEditLogData({ ...editLogData, timestamp: new Date(e.target.value).toISOString() })}
-                            sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
-                        />
+                                label="Fecha / Hora del Movimiento"
+                                type="datetime-local"
+                                fullWidth
+                                size="small"
+                                variant="outlined"
+                                InputLabelProps={{ shrink: true }}
+                                value={editLogData?.timestamp ? new Date(new Date(editLogData.timestamp).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : ''}
+                                onChange={(e) => setEditLogData({ ...editLogData, timestamp: new Date(e.target.value).toISOString() })}
+                                slotProps={{ htmlInput: { step: 60 } }}
+                                sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                            />
                         <TextField
                             select
                             fullWidth

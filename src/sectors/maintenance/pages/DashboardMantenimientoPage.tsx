@@ -253,6 +253,11 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                                     size="small"
                                     value={customTimestamp}
                                     onChange={(e) => setCustomTimestamp(e.target.value)}
+                                    slotProps={{
+                                        htmlInput: {
+                                            step: 60 // 1 minute steps
+                                        }
+                                    }}
                                     sx={{ 
                                         input: { color: 'white', fontSize: '0.75rem' }, 
                                         mb: 1,

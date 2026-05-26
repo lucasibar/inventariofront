@@ -298,7 +298,7 @@ export default function RegistroMaquinasPage() {
                                             name="timestamp"
                                             control={control}
                                             render={({ field }) => (
-                                                <TextField {...field} fullWidth size="small" type="datetime-local" label="Fecha/Hora del evento" variant="outlined" InputLabelProps={{ shrink: true }} sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }} />
+                                                <TextField {...field} fullWidth size="small" type="datetime-local" label="Fecha/Hora del evento" variant="outlined" InputLabelProps={{ shrink: true }} slotProps={{ htmlInput: { step: 60 } }} sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }} />
                                             )}
                                         />
 
@@ -384,6 +384,7 @@ export default function RegistroMaquinasPage() {
                                                 value={secondTimestamp} 
                                                 onChange={(e) => setSecondTimestamp(e.target.value)}
                                                 InputLabelProps={{ shrink: true }} 
+                                                slotProps={{ htmlInput: { step: 60 } }}
                                                 sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }} 
                                             />
 
