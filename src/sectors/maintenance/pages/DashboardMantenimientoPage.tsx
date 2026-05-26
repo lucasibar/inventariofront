@@ -57,7 +57,9 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
     const [anchorElFailure, setAnchorElFailure] = useState<null | HTMLElement>(null);
     const [anchorElMechanic, setAnchorElMechanic] = useState<null | HTMLElement>(null);
     const [anchorElTime, setAnchorElTime] = useState<null | HTMLElement>(null);
-    const [customTimestamp, setCustomTimestamp] = useState<string>('');
+    const [customDate, setCustomDate] = useState<string>('');
+    const [customHour, setCustomHour] = useState<string>('00');
+    const [customMinute, setCustomMinute] = useState<string>('00');
     const [isEditingObservation, setIsEditingObservation] = useState(false);
     const [obsText, setObsText] = useState(machine.lastObservation || '');
 
@@ -232,7 +234,13 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                                     const baseDate = machine.lastStatusChange ? new Date(machine.lastStatusChange) : new Date(machine.createdAt);
                                     const tzoffset = baseDate.getTimezoneOffset() * 60000;
                                     const localISOTime = new Date(baseDate.getTime() - tzoffset).toISOString().slice(0, 16);
-                                    setCustomTimestamp(localISOTime);
+                                    const [datePart, timePart] = localISOTime.split('T');
+                                    setCustomDate(datePart);
+                                    if (timePart) {
+                                        const [h, m] = timePart.split(':');
+                                        setCustomHour(h);
+                                        setCustomMinute(m);
+                                    }
                                 }}
                                 sx={{ color: '#4b5563', fontWeight: 800, fontSize: '0.6rem', cursor: 'pointer', '&:hover': { color: '#fff' } }}
                             >
@@ -248,30 +256,53 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                                 <Typography variant="caption" sx={{ color: '#9ca3af', display: 'block', mb: 1, fontWeight: 700 }}>
                                     Fecha/Hora del Registro
                                 </Typography>
-                                <TextField
-                                    type="datetime-local"
-                                    size="small"
-                                    value={customTimestamp}
-                                    onChange={(e) => setCustomTimestamp(e.target.value)}
-                                    slotProps={{
-                                        htmlInput: {
-                                            step: 60 // 1 minute steps
-                                        }
-                                    }}
-                                    sx={{ 
-                                        input: { color: 'white', fontSize: '0.75rem' }, 
-                                        mb: 1,
-                                        bgcolor: 'rgba(0,0,0,0.3)',
-                                        borderRadius: 1
-                                    }}
-                                />
+                                <Box sx={{ display: 'flex', gap: 1, mb: 1.5, flexDirection: 'column' }}>
+                                    <TextField
+                                        type="date"
+                                        size="small"
+                                        value={customDate}
+                                        onChange={(e) => setCustomDate(e.target.value)}
+                                        InputLabelProps={{ shrink: true }}
+                                        sx={{ input: { color: 'white', fontSize: '0.75rem' }, bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 1 }}
+                                    />
+                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                        <TextField
+                                            select
+                                            size="small"
+                                            label="Hora"
+                                            value={customHour}
+                                            onChange={(e) => setCustomHour(e.target.value)}
+                                            InputLabelProps={{ shrink: true }}
+                                            sx={{ flex: 1, '& .MuiOutlinedInput-root': { color: 'white', fontSize: '0.75rem' }, bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 1 }}
+                                        >
+                                            {Array.from({ length: 24 }).map((_, h) => {
+                                                const hStr = String(h).padStart(2, '0');
+                                                return <MenuItem key={hStr} value={hStr}>{hStr}</MenuItem>;
+                                            })}
+                                        </TextField>
+                                        <TextField
+                                            select
+                                            size="small"
+                                            label="Min"
+                                            value={customMinute}
+                                            onChange={(e) => setCustomMinute(e.target.value)}
+                                            InputLabelProps={{ shrink: true }}
+                                            sx={{ flex: 1, '& .MuiOutlinedInput-root': { color: 'white', fontSize: '0.75rem' }, bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 1 }}
+                                        >
+                                            {Array.from({ length: 60 }).map((_, m) => {
+                                                const mStr = String(m).padStart(2, '0');
+                                                return <MenuItem key={mStr} value={mStr}>{mStr}</MenuItem>;
+                                            })}
+                                        </TextField>
+                                    </Box>
+                                </Box>
                                 <Button 
                                     size="small" 
                                     fullWidth 
                                     variant="contained" 
                                     color="primary"
                                     onClick={() => {
-                                        const isoDate = new Date(customTimestamp).toISOString();
+                                        const isoDate = new Date(`${customDate}T${customHour}:${customMinute}:00`).toISOString();
                                         handleQuickUpdate({ timestamp: isoDate } as any);
                                     }}
                                     sx={{ fontSize: '0.7rem', fontWeight: 800 }}

@@ -455,28 +455,81 @@ export default function HistorialRegistrosPage() {
 
                                 {localUseTimeFilter && (
                                     <>
-                                        <TextField
-                                            label="Hora Inicio"
-                                            type="time"
-                                            variant="outlined"
-                                            size="small"
-                                            value={localStartTime}
-                                            onChange={(e) => setLocalStartTime(e.target.value)}
-                                            InputLabelProps={{ shrink: true }}
-                                            slotProps={{ htmlInput: { step: 60 } }}
-                                            sx={{ width: 130, '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
-                                        />
-                                        <TextField
-                                            label="Hora Fin"
-                                            type="time"
-                                            variant="outlined"
-                                            size="small"
-                                            value={localEndTime}
-                                            onChange={(e) => setLocalEndTime(e.target.value)}
-                                            InputLabelProps={{ shrink: true }}
-                                            slotProps={{ htmlInput: { step: 60 } }}
-                                            sx={{ width: 130, '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
-                                        />
+                                        {/* Hora Inicio */}
+                                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                            <TextField
+                                                select
+                                                label="H. Inicio"
+                                                variant="outlined"
+                                                size="small"
+                                                value={localStartTime ? localStartTime.split(':')[0] : '00'}
+                                                onChange={(e) => {
+                                                    const m = localStartTime ? localStartTime.split(':')[1] : '00';
+                                                    setLocalStartTime(`${e.target.value}:${m}`);
+                                                }}
+                                                sx={{ width: 95, '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                                            >
+                                                {Array.from({ length: 24 }).map((_, h) => {
+                                                    const hStr = String(h).padStart(2, '0');
+                                                    return <MenuItem key={hStr} value={hStr}>{hStr}</MenuItem>;
+                                                })}
+                                            </TextField>
+                                            <TextField
+                                                select
+                                                label="M. Inicio"
+                                                variant="outlined"
+                                                size="small"
+                                                value={localStartTime ? localStartTime.split(':')[1] : '00'}
+                                                onChange={(e) => {
+                                                    const h = localStartTime ? localStartTime.split(':')[0] : '00';
+                                                    setLocalStartTime(`${h}:${e.target.value}`);
+                                                }}
+                                                sx={{ width: 95, '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                                            >
+                                                {Array.from({ length: 60 }).map((_, m) => {
+                                                    const mStr = String(m).padStart(2, '0');
+                                                    return <MenuItem key={mStr} value={mStr}>{mStr}</MenuItem>;
+                                                })}
+                                            </TextField>
+                                        </Box>
+
+                                        {/* Hora Fin */}
+                                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                            <TextField
+                                                select
+                                                label="H. Fin"
+                                                variant="outlined"
+                                                size="small"
+                                                value={localEndTime ? localEndTime.split(':')[0] : '23'}
+                                                onChange={(e) => {
+                                                    const m = localEndTime ? localEndTime.split(':')[1] : '59';
+                                                    setLocalEndTime(`${e.target.value}:${m}`);
+                                                }}
+                                                sx={{ width: 95, '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                                            >
+                                                {Array.from({ length: 24 }).map((_, h) => {
+                                                    const hStr = String(h).padStart(2, '0');
+                                                    return <MenuItem key={hStr} value={hStr}>{hStr}</MenuItem>;
+                                                })}
+                                            </TextField>
+                                            <TextField
+                                                select
+                                                label="M. Fin"
+                                                variant="outlined"
+                                                size="small"
+                                                value={localEndTime ? localEndTime.split(':')[1] : '59'}
+                                                onChange={(e) => {
+                                                    const h = localEndTime ? localEndTime.split(':')[0] : '23';
+                                                    setLocalEndTime(`${h}:${e.target.value}`);
+                                                }}
+                                                sx={{ width: 95, '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                                            >
+                                                {Array.from({ length: 60 }).map((_, m) => {
+                                                    const mStr = String(m).padStart(2, '0');
+                                                    return <MenuItem key={mStr} value={mStr}>{mStr}</MenuItem>;
+                                                })}
+                                            </TextField>
+                                        </Box>
                                     </>
                                 )}
                             </Box>
@@ -597,18 +650,68 @@ export default function HistorialRegistrosPage() {
                 <DialogTitle sx={{ fontWeight: 800 }}>Editar Movimiento en el Historial</DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
-                        <TextField
-                                label="Fecha / Hora del Movimiento"
-                                type="datetime-local"
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                            <Typography variant="caption" sx={{ color: '#9ca3af', fontWeight: 700 }}>
+                                Fecha / Hora del Movimiento
+                            </Typography>
+                            <TextField
+                                type="date"
                                 fullWidth
                                 size="small"
                                 variant="outlined"
                                 InputLabelProps={{ shrink: true }}
-                                value={editLogData?.timestamp ? new Date(new Date(editLogData.timestamp).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : ''}
-                                onChange={(e) => setEditLogData({ ...editLogData, timestamp: new Date(e.target.value).toISOString() })}
-                                slotProps={{ htmlInput: { step: 60 } }}
-                                sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                                value={editLogData?.timestamp ? new Date(new Date(editLogData.timestamp).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0] : ''}
+                                onChange={(e) => {
+                                    const datePart = e.target.value;
+                                    const currentISO = editLogData?.timestamp ? new Date(new Date(editLogData.timestamp).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString() : new Date().toISOString();
+                                    const timePart = currentISO.slice(11, 16);
+                                    setEditLogData({ ...editLogData, timestamp: new Date(`${datePart}T${timePart}:00`).toISOString() });
+                                }}
+                                sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
                             />
+                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                <TextField
+                                    select
+                                    fullWidth
+                                    size="small"
+                                    label="Hora"
+                                    value={editLogData?.timestamp ? new Date(new Date(editLogData.timestamp).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(11, 13) : '00'}
+                                    onChange={(e) => {
+                                        const h = e.target.value;
+                                        const currentISO = editLogData?.timestamp ? new Date(new Date(editLogData.timestamp).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString() : new Date().toISOString();
+                                        const datePart = currentISO.slice(0, 10);
+                                        const m = currentISO.slice(14, 16);
+                                        setEditLogData({ ...editLogData, timestamp: new Date(`${datePart}T${h}:${m}:00`).toISOString() });
+                                    }}
+                                    sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                                >
+                                    {Array.from({ length: 24 }).map((_, h) => {
+                                        const hStr = String(h).padStart(2, '0');
+                                        return <MenuItem key={hStr} value={hStr}>{hStr}</MenuItem>;
+                                    })}
+                                </TextField>
+                                <TextField
+                                    select
+                                    fullWidth
+                                    size="small"
+                                    label="Minuto"
+                                    value={editLogData?.timestamp ? new Date(new Date(editLogData.timestamp).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(14, 16) : '00'}
+                                    onChange={(e) => {
+                                        const m = e.target.value;
+                                        const currentISO = editLogData?.timestamp ? new Date(new Date(editLogData.timestamp).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString() : new Date().toISOString();
+                                        const datePart = currentISO.slice(0, 10);
+                                        const h = currentISO.slice(11, 13);
+                                        setEditLogData({ ...editLogData, timestamp: new Date(`${datePart}T${h}:${m}:00`).toISOString() });
+                                    }}
+                                    sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                                >
+                                    {Array.from({ length: 60 }).map((_, m) => {
+                                        const mStr = String(m).padStart(2, '0');
+                                        return <MenuItem key={mStr} value={mStr}>{mStr}</MenuItem>;
+                                    })}
+                                </TextField>
+                            </Box>
+                        </Box>
                         <TextField
                             select
                             fullWidth
