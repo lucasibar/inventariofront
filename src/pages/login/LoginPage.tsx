@@ -117,6 +117,12 @@ const LoginPage: React.FC = () => {
                         >
                             {isLoading ? <Spinner /> : 'Iniciar Sesión'}
                         </Btn>
+
+                        {isLoading && (
+                            <div style={{ color: '#9ca3af', fontSize: '12px', textAlign: 'center', marginTop: '4px', lineHeight: '1.4' }}>
+                                ℹ️ El servidor gratuito de Render tarda aproximadamente 50 segundos en despertar tras un periodo de inactividad. Por favor, aguarda un instante...
+                            </div>
+                        )}
                     </form>
                 </Card>
 

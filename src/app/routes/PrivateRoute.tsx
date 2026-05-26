@@ -54,6 +54,9 @@ export const PrivateRoute = () => {
                 <div style={{ fontSize: '14px', color: '#6b7280', letterSpacing: '1px', textTransform: 'uppercase' }}>
                     Verificando sesión...
                 </div>
+                <div style={{ fontSize: '12px', color: '#4b5563', marginTop: '12px', maxWidth: '320px', textAlign: 'center', lineHeight: '1.4' }}>
+                    Si es la primera visita en un rato, el servidor gratuito de Render puede tardar hasta 1 minuto en "despertar".
+                </div>
             </div>
         );
     }
