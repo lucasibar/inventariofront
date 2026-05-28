@@ -25,6 +25,7 @@ export default function ReporteConsumoDetalladoPage() {
     const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
     const [selectedRemito, setSelectedRemito] = useState<any>(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
+    const [excludedMaterialIds, setExcludedMaterialIds] = useState<Record<string, boolean>>({});
 
     const toggleItemExpanded = (itemId: string) => {
         setExpandedItems(prev => ({
@@ -33,24 +34,19 @@ export default function ReporteConsumoDetalladoPage() {
         }));
     };
 
-    // Calculate aggregated metrics and charts data
-    const { itemsBreakdown, timelineData, barChartData, totalKilos } = useMemo(() => {
+    // Calculate items breakdown (list of all materials found in the period)
+    const itemsBreakdown = useMemo(() => {
         const groups: Record<string, {
             item: { id: string; codigoInterno: string; descripcion: string; unidadPrincipal: string };
             totalQty: number;
             movements: any[];
         }> = {};
 
-        let sumKilos = 0;
-        const dailyTotals: Record<string, number> = {};
-
         movements.forEach(m => {
             if (!m.item) return;
             const itemId = m.item.id;
             const qty = Math.abs(Number(m.qtyPrincipal || 0));
-            sumKilos += qty;
 
-            // Group by item
             if (!groups[itemId]) {
                 groups[itemId] = {
                     item: m.item,
@@ -60,14 +56,30 @@ export default function ReporteConsumoDetalladoPage() {
             }
             groups[itemId].totalQty += qty;
             groups[itemId].movements.push(m);
+        });
+
+        return Object.values(groups).sort((a, b) => b.totalQty - a.totalQty);
+    }, [movements]);
+
+    // Calculate aggregated metrics and charts data based on filtered (non-excluded) materials
+    const { timelineData, barChartData, totalKilos } = useMemo(() => {
+        let sumKilos = 0;
+        const dailyTotals: Record<string, number> = {};
+
+        movements.forEach(m => {
+            if (!m.item) return;
+            const itemId = m.item.id;
+            
+            // Skip calculations for excluded materials
+            if (excludedMaterialIds[itemId]) return;
+
+            const qty = Math.abs(Number(m.qtyPrincipal || 0));
+            sumKilos += qty;
 
             // Group by date for progressive chart
             const dateStr = m.fecha;
             dailyTotals[dateStr] = (dailyTotals[dateStr] || 0) + qty;
         });
-
-        // Convert to sorted array
-        const sortedBreakdown = Object.values(groups).sort((a, b) => b.totalQty - a.totalQty);
 
         // Build progressive area chart data (timeline sorted ascending)
         const sortedDates = Object.keys(dailyTotals).sort();
@@ -80,20 +92,40 @@ export default function ReporteConsumoDetalladoPage() {
             };
         });
 
-        // Build vertical/horizontal bar chart data for mobile
-        const bars = sortedBreakdown.map(g => ({
-            name: g.item.codigoInterno,
-            kilos: Number(g.totalQty.toFixed(2)),
-            descripcion: g.item.descripcion
-        })).slice(0, 10); // top 10 materials to fit nicely
+        // Build vertical/horizontal bar chart data (only for active selected materials)
+        const bars = itemsBreakdown
+            .filter(g => !excludedMaterialIds[g.item.id])
+            .map(g => ({
+                name: g.item.codigoInterno,
+                kilos: Number(g.totalQty.toFixed(2)),
+                descripcion: g.item.descripcion
+            })).slice(0, 10); // top 10 selected materials
 
         return {
-            itemsBreakdown: sortedBreakdown,
             timelineData: timeline,
             barChartData: bars,
             totalKilos: sumKilos
         };
-    }, [movements]);
+    }, [movements, excludedMaterialIds, itemsBreakdown]);
+
+    const toggleMaterialSelection = (itemId: string) => {
+        setExcludedMaterialIds(prev => ({
+            ...prev,
+            [itemId]: !prev[itemId]
+        }));
+    };
+
+    const selectAllMaterials = () => {
+        setExcludedMaterialIds({});
+    };
+
+    const deselectAllMaterials = () => {
+        const allExcluded: Record<string, boolean> = {};
+        itemsBreakdown.forEach(g => {
+            allExcluded[g.item.id] = true;
+        });
+        setExcludedMaterialIds(allExcluded);
+    };
 
     // Handle clicking a remito link
     const handleRemitoClick = async (e: React.MouseEvent, docId: string | null, docNum: string | null) => {
@@ -216,9 +248,23 @@ export default function ReporteConsumoDetalladoPage() {
 
                     {/* Material List with accordions */}
                     <Card style={{ padding: '0px', overflow: 'hidden' }}>
-                        <div style={{ padding: '16px 20px', borderBottom: '1px solid #1e293b', background: '#111827', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ padding: '16px 20px', borderBottom: '1px solid #1e293b', background: '#111827', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                             <span style={{ fontWeight: 700, color: '#f3f4f6' }}>Materiales Consumidos</span>
-                            <span style={{ fontSize: '12px', color: '#9ca3af' }}>Ordenado por Kilos</span>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                <button 
+                                    onClick={selectAllMaterials}
+                                    style={{ background: 'none', border: 'none', color: '#38bdf8', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}
+                                >
+                                    ✓ Seleccionar Todos
+                                </button>
+                                <button 
+                                    onClick={deselectAllMaterials}
+                                    style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}
+                                >
+                                    ✗ Desmarcar Todos
+                                </button>
+                                <span style={{ fontSize: '12px', color: '#64748b' }}>| Ordenado por Kilos</span>
+                            </div>
                         </div>
 
                         {itemsBreakdown.length === 0 ? (
@@ -229,6 +275,7 @@ export default function ReporteConsumoDetalladoPage() {
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 {itemsBreakdown.map((group) => {
                                     const isExpanded = !!expandedItems[group.item.id];
+                                    const isSelected = !excludedMaterialIds[group.item.id];
                                     return (
                                         <div key={group.item.id} style={{ borderBottom: '1px solid #1e293b' }}>
                                             
@@ -245,17 +292,31 @@ export default function ReporteConsumoDetalladoPage() {
                                                     transition: 'background 0.2s ease'
                                                 }}
                                             >
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, minWidth: 0 }}>
-                                                    <span style={{ fontWeight: 700, color: '#fff', fontSize: '15px' }}>
-                                                        {group.item.codigoInterno}
-                                                    </span>
-                                                    <span style={{ color: '#9ca3af', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                        {group.item.descripcion}
-                                                    </span>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                                                    <input 
+                                                        type="checkbox"
+                                                        checked={isSelected}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        onChange={() => toggleMaterialSelection(group.item.id)}
+                                                        style={{ 
+                                                            cursor: 'pointer', 
+                                                            width: '18px', 
+                                                            height: '18px', 
+                                                            accentColor: '#38bdf8' 
+                                                        }}
+                                                    />
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, minWidth: 0 }}>
+                                                        <span style={{ fontWeight: 700, color: isSelected ? '#fff' : '#64748b', fontSize: '15px', textDecoration: isSelected ? 'none' : 'line-through' }}>
+                                                            {group.item.codigoInterno}
+                                                        </span>
+                                                        <span style={{ color: isSelected ? '#9ca3af' : '#475569', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                            {group.item.descripcion}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                                                     <div style={{ textAlign: 'right' }}>
-                                                        <span style={{ fontWeight: 800, color: '#38bdf8', fontSize: '16px' }}>
+                                                        <span style={{ fontWeight: 800, color: isSelected ? '#38bdf8' : '#475569', fontSize: '16px' }}>
                                                             {group.totalQty.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                         </span>
                                                         <span style={{ color: '#64748b', fontSize: '12px', marginLeft: '4px' }}>
