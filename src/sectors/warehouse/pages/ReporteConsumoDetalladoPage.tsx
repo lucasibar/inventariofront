@@ -19,14 +19,12 @@ export default function ReporteConsumoDetalladoPage() {
     });
     const [hasta, setHasta] = useState(() => new Date().toISOString().split('T')[0]);
 
-    // Accordion expand/collapse state by item ID
+    const { data: movements = [], isFetching } = useGetRecentMovementsQuery({ desde, hasta, tipo: 'REMITO_SALIDA' });
+    const [triggerGetRemitoDetail] = useLazyGetRemitoSalidaQuery();
+
     const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
-
-
-        desde,
-        hasta,
-        tipo: 'REMITO_SALIDA'
-    });
+    const [selectedRemito, setSelectedRemito] = useState<any>(null);
+    const [showDetailModal, setShowDetailModal] = useState(false);
 
     const toggleItemExpanded = (itemId: string) => {
         setExpandedItems(prev => ({
