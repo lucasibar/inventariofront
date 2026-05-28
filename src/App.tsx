@@ -22,6 +22,7 @@ const RemitosSalidaPage = lazy(() => import('./sectors/warehouse/pages/RemitosSa
 const AuditoriaPickingPage = lazy(() => import('./sectors/warehouse/pages/AuditoriaPickingPage'));
 const WorkspaceTasksPage = lazy(() => import('./sectors/warehouse/pages/WorkspaceTasksPage'));
 const ReporteSalidasPage = lazy(() => import('./sectors/warehouse/pages/ReporteSalidasPage'));
+const ReporteConsumoDetalladoPage = lazy(() => import('./sectors/warehouse/pages/ReporteConsumoDetalladoPage'));
 const DashboardDepositoPage = lazy(() => import('./sectors/warehouse/pages/DashboardDepositoPage'));
 
 // Sector: Purchasing
@@ -108,6 +109,7 @@ function App() {
                   <Route path="/deposito/auditoria-picking" element={<AuditoriaPickingPage />} />
                   <Route path="/remitos-salida" element={<RemitosSalidaPage />} />
                   <Route path="/reporte-salidas" element={<ReporteSalidasPage />} />
+                  <Route path="/reporte-consumo-detallado" element={<ReporteConsumoDetalladoPage />} />
                   <Route path="/stock" element={<StockPage />} />
                   <Route path="/movimientos" element={<MovimientosPage />} />
                   <Route path="/tasks" element={<WorkspaceTasksPage />} />

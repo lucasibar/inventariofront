@@ -113,7 +113,7 @@ export const stockApi = api.injectEndpoints({
             query: ({ itemId, ...body }) => ({ url: `stock/item/${itemId}`, method: 'DELETE', body }),
             invalidatesTags: ['Stock'],
         }),
-        getRecentMovements: builder.query<any[], { desde?: string; hasta?: string; depositoId?: string; itemId?: string; lotNumber?: string }>({
+        getRecentMovements: builder.query<any[], { desde?: string; hasta?: string; depositoId?: string; itemId?: string; lotNumber?: string; tipo?: string }>({
             query: (params) => {
                 const p = new URLSearchParams();
                 if (params.desde) p.set('desde', params.desde);
@@ -121,6 +121,7 @@ export const stockApi = api.injectEndpoints({
                 if (params.depositoId) p.set('depositoId', params.depositoId);
                 if (params.itemId) p.set('itemId', params.itemId);
                 if (params.lotNumber) p.set('lotNumber', params.lotNumber);
+                if (params.tipo) p.set('tipo', params.tipo);
                 return `movimientos?${p.toString()}`;
             },
             providesTags: ['Stock'],
