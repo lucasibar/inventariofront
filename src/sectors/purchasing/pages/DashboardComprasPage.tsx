@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
     Box, 
@@ -43,7 +43,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import LayersIcon from '@mui/icons-material/Layers';
 
 // Voice Search
-import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
+// import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 
 // API Hooks
 import { 
@@ -161,9 +161,12 @@ export default function DashboardComprasPage() {
     
     const suppliers = useMemo(() => partners.filter((p: any) => p.type === 'SUPPLIER' || p.type === 'BOTH'), [partners]);
 
-    const { transcript, listening, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition();
-    useEffect(() => { if (transcript) setSearchQuery(transcript); }, [transcript]);
-    const toggleListening = () => { if (listening) SpeechRecognition.stopListening(); else { resetTranscript(); SpeechRecognition.startListening({ language: 'es-AR', continuous: true }); } };
+    // const { transcript, listening, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition();
+    // useEffect(() => { if (transcript) setSearchQuery(transcript); }, [transcript]);
+    // const toggleListening = () => { if (listening) SpeechRecognition.stopListening(); else { resetTranscript(); SpeechRecognition.startListening({ language: 'es-AR', continuous: true }); } };
+    const browserSupportsSpeechRecognition = false;
+    const listening = false;
+    const toggleListening = () => {};
 
     // Unified Processing (Snappy UI)
     const { filteredOrders, filteredMovs, metrics } = useMemo(() => {

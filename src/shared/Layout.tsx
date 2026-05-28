@@ -471,7 +471,7 @@ export default function Layout() {
             >
                 <ErrorBoundary>
                     <Suspense fallback={<PageLoader />}>
-                        <Outlet key={location.pathname} />
+                        <Outlet />
                     </Suspense>
                 </ErrorBoundary>
             </main>

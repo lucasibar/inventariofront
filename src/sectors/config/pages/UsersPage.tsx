@@ -24,6 +24,8 @@ export default function UsersPage() {
     });
 
     const [editingDepotsFor, setEditingDepotsFor] = useState<User | null>(null);
+    const [editingPasswordFor, setEditingPasswordFor] = useState<User | null>(null);
+    const [newPasswordVal, setNewPasswordVal] = useState('');
 
     const handleCreateSubmit = async () => {
         if (!newUserForm.username || !newUserForm.password) {
@@ -103,6 +105,9 @@ export default function UsersPage() {
             {u.isActive !== false ? 'ACTIVO' : 'INACTIVO'}
         </Badge>,
         <div style={{ display: 'flex', gap: '8px' }}>
+            <Btn small variant="secondary" onClick={() => setEditingPasswordFor(u)}>
+                Contraseña
+            </Btn>
             <Btn small variant="secondary" onClick={() => handleToggleActive(u)}>
                 {u.isActive !== false ? 'Desactivar' : 'Activar'}
             </Btn>
@@ -199,6 +204,37 @@ export default function UsersPage() {
                             handleUpdateDepots(editingDepotsFor.id, editingDepotsFor.allowedDepotIds);
                             setEditingDepotsFor(null);
                         }}>Guardar Cambios</Btn>
+                    </div>
+                </Modal>
+            )}
+
+            {/* Modal Cambiar Contraseña */}
+            {editingPasswordFor && (
+                <Modal title={`Cambiar contraseña de ${editingPasswordFor.username}`} onClose={() => { setEditingPasswordFor(null); setNewPasswordVal(''); }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+                        <Input 
+                            label="Nueva Contraseña" 
+                            type="password"
+                            value={newPasswordVal} 
+                            onChange={setNewPasswordVal} 
+                        />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                        <Btn variant="secondary" onClick={() => { setEditingPasswordFor(null); setNewPasswordVal(''); }}>Cancelar</Btn>
+                        <Btn onClick={async () => {
+                            if (!newPasswordVal) {
+                                alert('Por favor ingresa una contraseña.');
+                                return;
+                            }
+                            try {
+                                await updateUser({ id: editingPasswordFor.id, data: { password: newPasswordVal } }).unwrap();
+                                alert('Contraseña actualizada correctamente.');
+                                setEditingPasswordFor(null);
+                                setNewPasswordVal('');
+                            } catch (e: any) {
+                                alert(e?.data?.message || 'Error al cambiar contraseña');
+                            }
+                        }}>Guardar Contraseña</Btn>
                     </div>
                 </Modal>
             )}

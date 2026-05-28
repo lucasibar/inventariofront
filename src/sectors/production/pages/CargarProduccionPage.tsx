@@ -42,7 +42,7 @@ export default function CargarProduccionPage() {
             bagCode,
             firstQuality: parseInt(firstQuality),
             secondQuality: parseInt(secondQuality),
-            timestamp: new Date().toLocaleTimeString(),
+            timestamp: new Date().toLocaleTimeString('es-AR', { hour12: false }),
         };
 
         dispatch(addRecord(newRecord));

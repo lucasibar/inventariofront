@@ -60,14 +60,14 @@ export default function RegistroMaquinasPage() {
 
     const [enableSecondState, setEnableSecondState] = useState<boolean>(false);
 
-    const defaultNightStart = useMemo(() => {
-        const d = new Date();
-        d.setHours(5, 0, 0, 0);
-        return new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
-    }, []);
+    const defaultDate = useMemo(() => new Date().toISOString().split('T')[0], []);
+    const defaultHour = useMemo(() => String(new Date().getHours()).padStart(2, '0'), []);
+    const defaultMinute = useMemo(() => String(new Date().getMinutes()).padStart(2, '0'), []);
 
     const [secondStatus, setSecondStatus] = useState('ACTIVA');
-    const [secondTimestamp, setSecondTimestamp] = useState(defaultNightStart);
+    const [secondDate, setSecondDate] = useState(defaultDate);
+    const [secondHour, setSecondHour] = useState('05');
+    const [secondMinute, setSecondMinute] = useState('00');
     const [secondFailure, setSecondFailure] = useState('Ninguna');
     const [secondObservation, setSecondObservation] = useState('');
     
@@ -101,7 +101,9 @@ export default function RegistroMaquinasPage() {
             failureType: 'Ninguna',
             observation: '',
             generatedBy: (user as any)?.name || (user as any)?.username || '',
-            timestamp: new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16),
+            date: defaultDate,
+            hour: defaultHour,
+            minute: defaultMinute,
         }
     });
 
@@ -121,15 +123,19 @@ export default function RegistroMaquinasPage() {
             return alert('Por favor seleccione una máquina del listado desplegable primero.');
         }
 
+        const values = getValues();
         const matchedMachine = machineOptions.find((m: any) => m.value === selectedMachineId);
         const machineLabelVal = matchedMachine ? matchedMachine.label : `Máquina ID: ${selectedMachineId}`;
 
-        const values = getValues();
-        const generatedByVal = values.generatedBy;
+        const timestamp1 = new Date(`${values.date}T${values.hour}:${values.minute}:00`).toISOString();
 
         const event1: PendingEvent = {
             id: Math.random().toString(36).substr(2, 9),
-            ...values,
+            targetStatus: values.targetStatus,
+            failureType: values.failureType,
+            observation: values.observation,
+            generatedBy: values.generatedBy,
+            timestamp: timestamp1,
             machineId: selectedMachineId,
             machineLabel: machineLabelVal
         };
@@ -137,13 +143,14 @@ export default function RegistroMaquinasPage() {
         const newEventsList = [event1];
 
         if (enableSecondState) {
+            const timestamp2 = new Date(`${secondDate}T${secondHour}:${secondMinute}:00`).toISOString();
             const event2: PendingEvent = {
                 id: Math.random().toString(36).substr(2, 9),
                 targetStatus: secondStatus,
                 failureType: secondFailure,
                 observation: secondObservation,
-                generatedBy: generatedByVal,
-                timestamp: secondTimestamp,
+                generatedBy: values.generatedBy,
+                timestamp: timestamp2,
                 machineId: selectedMachineId,
                 machineLabel: machineLabelVal
             };
@@ -195,7 +202,9 @@ export default function RegistroMaquinasPage() {
                 failureType: 'Ninguna',
                 observation: '',
                 generatedBy: (user as any)?.name || (user as any)?.username || '',
-                timestamp: new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16),
+                date: defaultDate,
+                hour: defaultHour,
+                minute: defaultMinute,
             });
             
         } catch (error) {
@@ -295,12 +304,39 @@ export default function RegistroMaquinasPage() {
                                         />
 
                                         <Controller
-                                            name="timestamp"
+                                            name="date"
                                             control={control}
                                             render={({ field }) => (
-                                                <TextField {...field} fullWidth size="small" type="datetime-local" label="Fecha/Hora del evento" variant="outlined" InputLabelProps={{ shrink: true }} sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }} />
+                                                <TextField {...field} fullWidth size="small" type="date" label="Fecha del evento" variant="outlined" InputLabelProps={{ shrink: true }} sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }} />
                                             )}
                                         />
+
+                                        <Box sx={{ display: 'flex', gap: 2 }}>
+                                            <Controller
+                                                name="hour"
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <TextField {...field} select fullWidth size="small" label="Hora del evento" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }}>
+                                                        {Array.from({ length: 24 }).map((_, h) => {
+                                                            const hStr = String(h).padStart(2, '0');
+                                                            return <MenuItem key={hStr} value={hStr}>{hStr}</MenuItem>;
+                                                        })}
+                                                    </TextField>
+                                                )}
+                                            />
+                                            <Controller
+                                                name="minute"
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <TextField {...field} select fullWidth size="small" label="Minuto del evento" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }}>
+                                                        {Array.from({ length: 60 }).map((_, m) => {
+                                                            const mStr = String(m).padStart(2, '0');
+                                                            return <MenuItem key={mStr} value={mStr}>{mStr}</MenuItem>;
+                                                        })}
+                                                    </TextField>
+                                                )}
+                                            />
+                                        </Box>
 
                                         <Controller
                                             name="generatedBy"
@@ -379,13 +415,44 @@ export default function RegistroMaquinasPage() {
                                             <TextField 
                                                 fullWidth 
                                                 size="small"
-                                                type="datetime-local" 
-                                                label="Fecha/Hora posterior" 
-                                                value={secondTimestamp} 
-                                                onChange={(e) => setSecondTimestamp(e.target.value)}
+                                                type="date" 
+                                                label="Fecha posterior" 
+                                                value={secondDate} 
+                                                onChange={(e) => setSecondDate(e.target.value)}
                                                 InputLabelProps={{ shrink: true }} 
                                                 sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }} 
                                             />
+
+                                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                                <TextField 
+                                                    select 
+                                                    fullWidth 
+                                                    size="small"
+                                                    label="Hora posterior" 
+                                                    value={secondHour} 
+                                                    onChange={(e) => setSecondHour(e.target.value)}
+                                                    sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }} 
+                                                >
+                                                    {Array.from({ length: 24 }).map((_, h) => {
+                                                        const hStr = String(h).padStart(2, '0');
+                                                        return <MenuItem key={hStr} value={hStr}>{hStr}</MenuItem>;
+                                                    })}
+                                                </TextField>
+                                                <TextField 
+                                                    select 
+                                                    fullWidth 
+                                                    size="small"
+                                                    label="Minuto posterior" 
+                                                    value={secondMinute} 
+                                                    onChange={(e) => setSecondMinute(e.target.value)}
+                                                    sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' } }} 
+                                                >
+                                                    {Array.from({ length: 60 }).map((_, m) => {
+                                                        const mStr = String(m).padStart(2, '0');
+                                                        return <MenuItem key={mStr} value={mStr}>{mStr}</MenuItem>;
+                                                    })}
+                                                </TextField>
+                                            </Box>
 
                                             <TextField 
                                                 select 

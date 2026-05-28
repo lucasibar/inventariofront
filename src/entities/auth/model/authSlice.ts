@@ -9,10 +9,10 @@ interface AuthState {
 }
 
 const initialState: AuthState = (() => {
-    // Switching to sessionStorage to improve security and avoid leftover state
+    // Using localStorage so sessions persist across tabs and browser restarts
     const user = (() => {
         try {
-            const stored = sessionStorage.getItem('user');
+            const stored = localStorage.getItem('user');
             if (!stored || stored === 'null' || stored === 'undefined') return null;
             return JSON.parse(stored);
         } catch (e) {
@@ -21,7 +21,7 @@ const initialState: AuthState = (() => {
     })();
 
     const token = (() => {
-        const storedToken = sessionStorage.getItem('token');
+        const storedToken = localStorage.getItem('token');
         if (!storedToken || storedToken === 'null' || storedToken === 'undefined') return null;
         return storedToken;
     })();
@@ -44,16 +44,15 @@ const authSlice = createSlice({
             state.user = user;
             state.token = token;
             state.isAuthenticated = true;
-            sessionStorage.setItem('token', token);
-            sessionStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(user));
         },
         logout: (state) => {
             state.user = null;
             state.token = null;
             state.isAuthenticated = false;
-            sessionStorage.removeItem('token');
-            sessionStorage.removeItem('user');
-            sessionStorage.clear();
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
         },
     },
 });
@@ -70,4 +69,3 @@ export const selectAllowedDepots = (state: any) => {
     if (user?.role?.toUpperCase() === 'ADMIN') return null; // Admins have no restrictions
     return user?.allowedDepotIds || [];
 };
-
