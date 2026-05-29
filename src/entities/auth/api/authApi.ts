@@ -50,6 +50,13 @@ export const authApi = api.injectEndpoints({
             }),
             invalidatesTags: ['User'],
         }),
+        changeMyPassword: build.mutation<void, { password: string }>({
+            query: (body) => ({
+                url: 'auth/me/password',
+                method: 'PATCH',
+                body,
+            }),
+        }),
     }),
 });
 
@@ -58,6 +65,7 @@ export const {
     useVerifySessionQuery, 
     useGetUsersQuery, 
     useCreateUserMutation, 
-    useUpdateUserMutation 
+    useUpdateUserMutation,
+    useChangeMyPasswordMutation
 } = authApi;
 

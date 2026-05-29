@@ -6,7 +6,7 @@ import {
     type User
 } from '../../../entities/auth/api/authApi';
 import { useGetDepotsQuery } from '../../warehouse/deposito/api/deposito.api';
-import { PageHeader, Card, Table, Btn, Modal, Input, Badge } from '../../../shared/ui';
+import { PageHeader, Card, Table, Btn, Modal, Input, Badge, EditableCell } from '../../../shared/ui';
 
 export default function UsersPage() {
     const { data: users = [], isLoading: loadingUsers } = useGetUsersQuery();
@@ -68,7 +68,12 @@ export default function UsersPage() {
     const cols = ['Usuario', 'Rol', 'Depósitos Permitidos', 'Estado', 'Acciones'];
     
     const rows = users.map(u => [
-        <div style={{ fontWeight: 600, color: '#f3f4f6' }}>{u.username}</div>,
+        <div style={{ fontWeight: 600, color: '#f3f4f6' }}>
+            <EditableCell 
+                value={u.username} 
+                onSave={async (v) => { await updateUser({ id: u.id, data: { username: v } }).unwrap(); }} 
+            />
+        </div>,
         <select 
             value={u.role} 
             onChange={(e) => handleUpdateRole(u, e.target.value)}

@@ -4,8 +4,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useGetAlertsQuery } from '../sectors/warehouse/stock/api/stock.api';
 import { logout, selectCurrentUser } from '../entities/auth/model/authSlice';
 import { api } from './api';
+import { useChangeMyPasswordMutation } from '../entities/auth/api/authApi';
 import { setCurrentAlerts, selectHasUnreadNotifications } from '../entities/notifications/notificationsSlice';
-import { useIsMobile, PageLoader } from './ui';
+import { useIsMobile, PageLoader, Modal, Input, Btn } from './ui';
 import { ErrorBoundary } from './ErrorBoundary';
 
 const navGroups = [
@@ -136,6 +137,9 @@ export default function Layout() {
 
     const [collapsed, setCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [newPasswordVal, setNewPasswordVal] = useState('');
+    const [changePassword] = useChangeMyPasswordMutation();
 
     const { data: alerts = EMPTY_ALERTS } = useGetAlertsQuery(undefined, { pollingInterval: 120000 });
     const hasUnread = useSelector(selectHasUnreadNotifications);
@@ -446,6 +450,20 @@ export default function Layout() {
                 <div style={{ borderTop: '1px solid #2a2d3e', padding: '8px 0' }}>
                     <button
                         type="button"
+                        onClick={() => setShowPasswordModal(true)}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: '12px',
+                            padding: isMobile ? '16px 20px' : '10px 14px', width: '100%',
+                            background: 'transparent', border: 'none',
+                            color: '#9ca3af', fontSize: isMobile ? '15px' : '13px',
+                            cursor: 'pointer', transition: 'all 0.15s',
+                        }}
+                    >
+                        <span style={{ fontSize: isMobile ? '20px' : '16px', minWidth: '24px' }}>🔑</span>
+                        {(!collapsed || isMobile) && <span>Cambiar Clave</span>}
+                    </button>
+                    <button
+                        type="button"
                         onClick={handleLogout}
                         style={{
                             display: 'flex', alignItems: 'center', gap: '12px',
@@ -477,6 +495,36 @@ export default function Layout() {
                     </Suspense>
                 </ErrorBoundary>
             </main>
+
+            {showPasswordModal && (
+                <Modal title="Cambiar mi Contraseña" onClose={() => { setShowPasswordModal(false); setNewPasswordVal(''); }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+                        <Input 
+                            label="Nueva Contraseña" 
+                            type="password"
+                            value={newPasswordVal} 
+                            onChange={setNewPasswordVal} 
+                        />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                        <Btn variant="secondary" onClick={() => { setShowPasswordModal(false); setNewPasswordVal(''); }}>Cancelar</Btn>
+                        <Btn onClick={async () => {
+                            if (!newPasswordVal) {
+                                alert('Por favor ingresa una contraseña.');
+                                return;
+                            }
+                            try {
+                                await changePassword({ password: newPasswordVal }).unwrap();
+                                alert('Contraseña actualizada correctamente.');
+                                setShowPasswordModal(false);
+                                setNewPasswordVal('');
+                            } catch (e: any) {
+                                alert(e?.data?.message || 'Error al cambiar contraseña');
+                            }
+                        }}>Guardar Contraseña</Btn>
+                    </div>
+                </Modal>
+            )}
         </div>
     );
 }
