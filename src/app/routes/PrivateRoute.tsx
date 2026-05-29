@@ -15,7 +15,7 @@ export const PrivateRoute = () => {
     // Skip verification if there's no token at all (instant redirect to login)
     const shouldSkip = !isAuthenticated && !hasToken;
 
-    const { data, isLoading, isError, isFetching, isSuccess, refetch } = useVerifySessionQuery(undefined, {
+    const { isError, isFetching, isSuccess } = useVerifySessionQuery(undefined, {
         skip: shouldSkip,
         // CRITICAL: Always refetch on mount to avoid using stale cached results
         refetchOnMountOrArgChange: true,
