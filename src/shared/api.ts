@@ -15,14 +15,14 @@ const baseQuery = fetchBaseQuery({
 
 let isLoggingOut = false;
 
-const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (args, api, extraOptions) => {
-    const result = await baseQuery(args, api, extraOptions);
+const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (args, store, extraOptions) => {
+    const result = await baseQuery(args, store, extraOptions);
     const isLoginRequest = typeof args === 'string' ? args.includes('auth/login') : args.url.includes('auth/login');
 
     if (result.error && result.error.status === 401 && !isLoginRequest && !isLoggingOut) {
         isLoggingOut = true;
-        api.dispatch(logout());
-        // Small delay to let Redux state update before resetting the flag
+        store.dispatch(logout());
+        store.dispatch(api.util.resetApiState());
         setTimeout(() => { isLoggingOut = false; }, 1000);
     }
     return result;

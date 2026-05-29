@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useLoginMutation } from '../../entities/auth/api/authApi';
 import { setCredentials, selectIsAuthenticated } from '../../entities/auth/model/authSlice';
+import { api } from '../../shared/api';
 import { Card, Btn, Input, Spinner } from '../../shared/ui';
 
 const LoginPage: React.FC = () => {
@@ -41,6 +42,7 @@ const LoginPage: React.FC = () => {
 
         try {
             const userData = await login({ username, pass: password }).unwrap();
+            dispatch(api.util.resetApiState());
             dispatch(setCredentials({ user: userData.user, token: userData.access_token }));
             navigate(getLandingPage(userData.user.role));
         } catch (err: any) {

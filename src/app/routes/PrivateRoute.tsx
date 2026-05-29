@@ -1,8 +1,10 @@
-import { useEffect, useRef, useReducer } from 'react';
+import { useEffect, useRef, useReducer, useCallback } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { selectIsAuthenticated, logout, selectCurrentUser } from '../../entities/auth/model/authSlice';
+import { selectIsAuthenticated, logout } from '../../entities/auth/model/authSlice';
 import { useVerifySessionQuery } from '../../entities/auth/api/authApi';
+import { selectCurrentUser } from '../../entities/auth/model/authSlice';
+import { api } from '../../shared/api';
 import { Spinner } from '../../shared/ui';
 
 export const PrivateRoute = () => {
@@ -10,35 +12,72 @@ export const PrivateRoute = () => {
     const isAuthenticated = useSelector(selectIsAuthenticated);
     const hasToken = !!localStorage.getItem('token');
 
-    const { isLoading, isError } = useVerifySessionQuery(undefined, {
-        skip: !isAuthenticated,
+    // Skip verification if there's no token at all (instant redirect to login)
+    const shouldSkip = !isAuthenticated && !hasToken;
+
+    const { data, isLoading, isError, isFetching, isSuccess, refetch } = useVerifySessionQuery(undefined, {
+        skip: shouldSkip,
+        // CRITICAL: Always refetch on mount to avoid using stale cached results
+        refetchOnMountOrArgChange: true,
     });
 
-    // Timeout: if verification takes more than 10s, stop blocking
+    // Track whether we've received a FRESH response (not cached)
+    const hasReceivedFreshResponse = useRef(false);
+    const hasTriggeredLogout = useRef(false);
+
+    // Timeout: if server takes too long (Render cold start), show content optimistically
     const timedOut = useRef(false);
     const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
 
     useEffect(() => {
-        if (!isLoading) return;
+        if (!isFetching) return;
+        // Reset on new fetch
+        timedOut.current = false;
+        hasReceivedFreshResponse.current = false;
+        hasTriggeredLogout.current = false;
+
         const timer = setTimeout(() => {
             timedOut.current = true;
             forceUpdate();
-        }, 10000);
+        }, 15000);
         return () => clearTimeout(timer);
-    }, [isLoading]);
+    }, [isFetching]);
+
+    // Mark when we get a fresh response (fetching finished)
+    useEffect(() => {
+        if (!isFetching && !shouldSkip && (isSuccess || isError)) {
+            hasReceivedFreshResponse.current = true;
+        }
+    }, [isFetching, isSuccess, isError, shouldSkip]);
+
+    // Handle session verification failure — only on FRESH responses
+    const doLogout = useCallback(() => {
+        if (hasTriggeredLogout.current) return;
+        hasTriggeredLogout.current = true;
+        dispatch(api.util.resetApiState());
+        dispatch(logout());
+    }, [dispatch]);
 
     useEffect(() => {
-        if (isError) {
-            dispatch(logout());
+        if (isError && hasReceivedFreshResponse.current && !hasTriggeredLogout.current) {
+            doLogout();
         }
-    }, [isError, dispatch]);
+    }, [isError, doLogout]);
 
-    // Not authenticated at all -> login
-    if (!isAuthenticated || (isError && !isLoading)) return <Navigate to="/login" replace />;
+    // --- Render logic ---
 
-    // If we have a token in storage, show content immediately while verifying in background
-    // Only show spinner if there's no cached token (first visit)
-    if (isLoading && !hasToken && !timedOut.current) {
+    // No token at all → instant redirect
+    if (!isAuthenticated && !hasToken) {
+        return <Navigate to="/login" replace />;
+    }
+
+    // Fresh error response from server → session invalid → redirect
+    if (isError && hasReceivedFreshResponse.current) {
+        return <Navigate to="/login" replace />;
+    }
+
+    // Still waiting for server response (and haven't timed out)
+    if (isFetching && !timedOut.current) {
         return (
             <div style={{
                 display: 'flex',
@@ -61,6 +100,7 @@ export const PrivateRoute = () => {
         );
     }
 
+    // Session verified or timed out → show content
     return <Outlet />;
 };
 

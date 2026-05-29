@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useGetAlertsQuery } from '../sectors/warehouse/stock/api/stock.api';
 import { logout, selectCurrentUser } from '../entities/auth/model/authSlice';
+import { api } from './api';
 import { setCurrentAlerts, selectHasUnreadNotifications } from '../entities/notifications/notificationsSlice';
 import { useIsMobile, PageLoader } from './ui';
 import { ErrorBoundary } from './ErrorBoundary';
@@ -186,6 +187,7 @@ export default function Layout() {
 
 
     const handleLogout = () => {
+        dispatch(api.util.resetApiState());
         dispatch(logout());
         navigate('/login', { replace: true });
     };
