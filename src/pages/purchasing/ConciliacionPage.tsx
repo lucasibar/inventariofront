@@ -3,8 +3,8 @@ import {
     useGetUnlinkedMovementsQuery, 
     useGetPurchaseOrdersQuery,
     useLinkMovementMutation 
-} from '../purchase-orders/api/purchase-orders.api';
-import { PageHeader, Card, Btn, Spinner } from '../../../shared/ui';
+} from '../../features/purchasing/purchase-orders/api/purchase-orders.api';
+import { PageHeader, Card, Btn, Spinner } from '../../shared/ui';
 
 export default function ConciliacionPage() {
     const { data: unlinkedMovements = [], isLoading: loadingMovs } = useGetUnlinkedMovementsQuery();

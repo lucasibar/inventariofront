@@ -6,8 +6,8 @@ import {
     useGetMachinesQuery,
     useGetMetricsQuery,
     useGetMachineTypesQuery
-} from '../api/maintenance.api';
-import { Spinner } from '../../../shared/ui';
+} from '../../entities/maintenance/api/maintenance.api';
+import { Spinner } from '../../shared/ui';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { IconButton } from '@mui/material';
@@ -15,7 +15,7 @@ import { IconButton } from '@mui/material';
 import { 
     MAINTENANCE_STATUS_COLORS as STATUS_COLORS,
     MAINTENANCE_STATUS_LABELS as STATUS_LABELS
-} from '../constants/maintenanceConstants';
+} from '../../features/maintenance/constants/maintenanceConstants';
 
 const STATUS_COLORS_WITH_FALLBACK: Record<string, string> = {
     ...STATUS_COLORS,

@@ -1,5 +1,5 @@
-import { useGetAlertsQuery } from '../../warehouse/stock/api/stock.api';
-import { PageHeader, Card, Table, Badge, Spinner } from '../../../shared/ui';
+import { useGetAlertsQuery } from '../../features/warehouse/stock/api/stock.api';
+import { PageHeader, Card, Table, Badge, Spinner } from '../../shared/ui';
 
 export default function AlertaStockPage() {
     const { data: alerts = [], isLoading } = useGetAlertsQuery();

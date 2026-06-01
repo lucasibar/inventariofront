@@ -9,26 +9,26 @@ import EditIcon from '@mui/icons-material/Edit';
 import SearchIcon from '@mui/icons-material/Search';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import { PageHeader, Spinner, Select } from '../../../shared/ui';
+import { PageHeader, Spinner, Select } from '../../shared/ui';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
     useGetLogsQuery, 
     useGetPlantsQuery, 
     useDeleteLogMutation,
     useUpdateLogMutation
-} from '../api/maintenance.api';
+} from '../../entities/maintenance/api/maintenance.api';
 import { 
     selectHistoryFilters, 
     setHistoryFilters, 
     resetHistoryFilters 
-} from '../model/maintenanceSlice';
+} from '../../entities/maintenance/model/maintenanceSlice';
 
 import { 
     FAILURE_TYPES as failureTypes, 
     RESPONSABLES as responsables, 
     MAINTENANCE_STATUS_COLORS as statusColors,
     MAINTENANCE_STATUS_LABELS as statusLabels
-} from '../constants/maintenanceConstants';
+} from '../../features/maintenance/constants/maintenanceConstants';
 
 export default function HistorialRegistrosPage() {
     const navigate = useNavigate();

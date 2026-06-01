@@ -4,13 +4,13 @@ import {
     useCreatePurchaseOrderMutation, 
     useDeletePurchaseOrderMutation,
     useUpdatePurchaseOrderStatusMutation
-} from '../purchase-orders/api/purchase-orders.api';
-import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
-import { useGetItemsQuery } from '../../warehouse/materiales/api/items.api';
-import { PageHeader, Card, Badge, Btn, Input, SearchSelect, Modal, Table, Spinner, Select } from '../../../shared/ui';
+} from '../../features/purchasing/purchase-orders/api/purchase-orders.api';
+import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
+import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.api';
+import { PageHeader, Card, Badge, Btn, Input, SearchSelect, Modal, Table, Spinner, Select } from '../../shared/ui';
 import { useSelector } from 'react-redux';
-import { selectCurrentUser, selectAllowedDepots } from '../../../entities/auth/model/authSlice';
-import { useGetDepotsQuery } from '../../warehouse/deposito/api/deposito.api';
+import { selectCurrentUser, selectAllowedDepots } from '../../entities/auth/model/authSlice';
+import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
 
 export default function PedidosCompraPage() {
     const user = useSelector(selectCurrentUser);

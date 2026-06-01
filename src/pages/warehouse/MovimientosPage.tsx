@@ -1,16 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
-import { useGetDepotsQuery } from '../deposito/api/deposito.api';
-import { useGetStockQuery, useBulkMoveStockMutation, useAdjustStockMutation, useReassignBatchMutation, useLazyCheckBatchQuery, useQuickAddStockMutation, useDeleteStockMutation } from '../stock/api/stock.api';
-import { useDespachoDirectoMutation } from '../remitosSalida/api/remitos-salida.api';
-import { useGetItemsQuery } from '../materiales/api/items.api';
-import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
-import { PageHeader, Card, Table, Select, SearchSelect, Input, Btn, Modal, EditableCell, useIsMobile, Badge } from '../../../shared/ui';
-import { CreateItemDialog } from '../materiales/components/CreateItemDialog';
-import { CreatePartnerDialog } from '../../config/components/CreatePartnerDialog';
+import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
+import { useGetStockQuery, useBulkMoveStockMutation, useAdjustStockMutation, useReassignBatchMutation, useLazyCheckBatchQuery, useQuickAddStockMutation, useDeleteStockMutation } from '../../features/warehouse/stock/api/stock.api';
+import { useDespachoDirectoMutation } from '../../features/warehouse/remitosSalida/api/remitos-salida.api';
+import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.api';
+import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
+import { PageHeader, Card, Table, Select, SearchSelect, Input, Btn, Modal, EditableCell, useIsMobile, Badge } from '../../shared/ui';
+import { CreateItemDialog } from '../../features/warehouse/materiales/components/CreateItemDialog';
+import { CreatePartnerDialog } from '../../features/config/CreatePartnerDialog';
 
 import { useSelector } from 'react-redux';
-import { selectCurrentUser, selectAllowedDepots } from '../../../entities/auth/model/authSlice';
+import { selectCurrentUser, selectAllowedDepots } from '../../entities/auth/model/authSlice';
 
 export default function MovimientosPage() {
     const isMobile = useIsMobile();

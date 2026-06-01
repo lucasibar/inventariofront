@@ -3,10 +3,10 @@ import {
     useGetRemitosEntradaQuery,
     useDeleteRemitoEntradaMutation,
     useLazyGetRemitoEntradaQuery
-} from '../remitosEntrada/api/remitos-entrada.api';
-import { CreateRemitoForm } from '../remitos/ui/CreateRemitoForm';
-import { RemitoDetailModal } from '../remitos/ui/RemitoDetailModal';
-import { PageHeader, Card, Btn, Table, Badge } from '../../../shared/ui';
+} from '../../features/warehouse/remitosEntrada/api/remitos-entrada.api';
+import { CreateRemitoForm } from '../../features/warehouse/remitos/ui/CreateRemitoForm';
+import { RemitoDetailModal } from '../../features/warehouse/remitos/ui/RemitoDetailModal';
+import { PageHeader, Card, Btn, Table, Badge } from '../../shared/ui';
 
 export default function RemitosEntradaPage() {
     const { data: remitos = [], isLoading, isError } = useGetRemitosEntradaQuery();

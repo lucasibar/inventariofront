@@ -22,8 +22,8 @@ import {
     MenuItem
 } from '@mui/material';
 import { useSelector } from 'react-redux';
-import { selectCurrentUser, selectAllowedDepots } from '../../../entities/auth/model/authSlice';
-import { useGetDepotsQuery } from '../../warehouse/deposito/api/deposito.api';
+import { selectCurrentUser, selectAllowedDepots } from '../../entities/auth/model/authSlice';
+import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -58,10 +58,10 @@ import {
     useDeletePurchaseOrderMutation,
     useUpdatePurchaseOrderStatusMutation,
     useGetCombosQuery
-} from '../purchase-orders/api/purchase-orders.api';
-import { useGetAlertsQuery } from '../../warehouse/stock/api/stock.api';
-import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
-import { useGetItemsQuery } from '../../warehouse/materiales/api/items.api';
+} from '../../features/purchasing/purchase-orders/api/purchase-orders.api';
+import { useGetAlertsQuery } from '../../features/warehouse/stock/api/stock.api';
+import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
+import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.api';
 // Design System Colors - Purchasing Theme (Indigo/Purple)
 const colors = {
     primary: '#818cf8', // Indigo

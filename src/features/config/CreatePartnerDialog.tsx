@@ -3,7 +3,7 @@ import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     Button, TextField, Box, MenuItem
 } from '@mui/material';
-import { useCreatePartnerMutation } from '../partners/api/partners.api';
+import { useCreatePartnerMutation } from './partners/api/partners.api';
 
 interface CreatePartnerDialogProps {
     open: boolean;

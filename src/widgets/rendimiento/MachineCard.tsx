@@ -1,6 +1,6 @@
 import React from 'react';
 import { Paper, Typography, Box, Tooltip } from '@mui/material';
-import type { Machine } from '../../entities/maintenance/api/maintenance.api;
+import type { Machine } from '../../entities/maintenance/api/maintenance.api';
 
 
 interface MachineCardProps {

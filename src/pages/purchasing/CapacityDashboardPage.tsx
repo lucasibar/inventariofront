@@ -1,5 +1,5 @@
-import { useGetCapacityDashboardQuery, useGetCapacityTimelineQuery } from '../dashboard/api/dashboard.api';
-import { PageHeader, Card, Spinner } from '../../../shared/ui';
+import { useGetCapacityDashboardQuery, useGetCapacityTimelineQuery } from '../../features/purchasing/dashboard/api/dashboard.api';
+import { PageHeader, Card, Spinner } from '../../shared/ui';
 import { ResponsiveContainer, ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine } from 'recharts';
 
 /* ─── Gauge Component ─── */

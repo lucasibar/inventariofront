@@ -7,18 +7,18 @@ import {
     useReassignBatchMutation,
     useLazyCheckBatchQuery,
     useUpdateBatchObservationsMutation,
-} from '../stock/api/stock.api';
-import { useDespachoDirectoMutation } from '../remitosSalida/api/remitos-salida.api';
+} from '../../features/warehouse/stock/api/stock.api';
+import { useDespachoDirectoMutation } from '../../features/warehouse/remitosSalida/api/remitos-salida.api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useGetDepotsQuery } from '../deposito/api/deposito.api';
-import { useGetItemsQuery, useGetItemCategoriesQuery } from '../materiales/api/items.api';
-import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
-import { PageHeader, Select, SearchSelect, Spinner, Btn, Modal, Input, EditableCell, useIsMobile } from '../../../shared/ui';
-import { rawBase } from '../../../shared/api';
-import { CreateItemDialog } from '../materiales/components/CreateItemDialog';
-import { CreatePartnerDialog } from '../../config/components/CreatePartnerDialog';
+import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
+import { useGetItemsQuery, useGetItemCategoriesQuery } from '../../features/warehouse/materiales/api/items.api';
+import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
+import { PageHeader, Select, SearchSelect, Spinner, Btn, Modal, Input, EditableCell, useIsMobile } from '../../shared/ui';
+import { rawBase } from '../../shared/api';
+import { CreateItemDialog } from '../../features/warehouse/materiales/components/CreateItemDialog';
+import { CreatePartnerDialog } from '../../features/config/CreatePartnerDialog';
 import { useSelector } from 'react-redux';
-import { selectCurrentUser, selectAllowedDepots } from '../../../entities/auth/model/authSlice';
+import { selectCurrentUser, selectAllowedDepots } from '../../entities/auth/model/authSlice';
 
 interface DebouncedSearchInputProps {
     value: string;

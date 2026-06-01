@@ -7,8 +7,8 @@ import {
 } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { useSelector } from 'react-redux';
-import { PageHeader, Spinner, Select } from '../../../shared/ui';
-import { selectCurrentUser } from '../../../entities/auth/model/authSlice';
+import { PageHeader, Spinner, Select } from '../../shared/ui';
+import { selectCurrentUser } from '../../entities/auth/model/authSlice';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SendIcon from '@mui/icons-material/Send';
@@ -18,13 +18,13 @@ import {
     useGetMachineTypesQuery, 
     useGetMachinesQuery,
     useUpdateMachineStatusMutation
-} from '../api/maintenance.api';
+} from '../../entities/maintenance/api/maintenance.api';
 
 import { 
     FAILURE_TYPES as failureTypes, 
     RESPONSABLES as responsables, 
     MAINTENANCE_STATUS_COLORS as statusColors
-} from '../constants/maintenanceConstants';
+} from '../../features/maintenance/constants/maintenanceConstants';
 
 const targetStatuses = [
     { value: 'ACTIVA', label: 'Activa', color: statusColors.ACTIVA },

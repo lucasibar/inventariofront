@@ -111,7 +111,7 @@ export const maintenanceApi = api.injectEndpoints({
             invalidatesTags: ['Maintenance', 'Machine'],
             async onQueryStarted({ id, plantId, typeId, status, generatedBy }, { dispatch, queryFulfilled }) {
                 // If we have plantId, we can perform a targeted optimistic update
-                const patches = [];
+                const patches: any[] = [];
                 
                 if (plantId) {
                     // Update the specific plant/type query

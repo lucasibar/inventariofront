@@ -4,10 +4,10 @@ import {
     useCreateBoxTypeMutation, 
     useUpdateBoxTypeMutation, 
     useDeleteBoxTypeMutation 
-} from '../materiales/api/box-types.api';
-import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
-import { useBulkAssignBoxTypeMutation, useGetItemsQuery, useUpdateItemMutation } from '../materiales/api/items.api';
-import { PageHeader, Card, Btn, Input, Spinner, Badge, Modal, Select } from '../../../shared/ui';
+} from '../../features/warehouse/materiales/api/box-types.api';
+import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
+import { useBulkAssignBoxTypeMutation, useGetItemsQuery, useUpdateItemMutation } from '../../features/warehouse/materiales/api/items.api';
+import { PageHeader, Card, Btn, Input, Spinner, Badge, Modal, Select } from '../../shared/ui';
 
 /* ─── Box Preview Component ─── */
 const BoxPreview = ({ l, w, h }: { l: number, w: number, h: number }) => {

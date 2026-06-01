@@ -49,16 +49,16 @@ import {
     useGetStockQuery, 
     useQuickAddStockMutation,
     useMoveStockMutation
-} from '../stock/api/stock.api';
-import { useGetDepotsQuery } from '../deposito/api/deposito.api';
-import { useGetItemsQuery, useUpdateItemMutation } from '../materiales/api/items.api';
-import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
-import { useCreateRemitoEntradaMutation } from '../remitosEntrada/api/remitos-entrada.api';
-import { useDespachoDirectoMutation } from '../remitosSalida/api/remitos-salida.api';
-import { useGetPlantsQuery } from '../../maintenance/api/maintenance.api';
+} from '../../features/warehouse/stock/api/stock.api';
+import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
+import { useGetItemsQuery, useUpdateItemMutation } from '../../features/warehouse/materiales/api/items.api';
+import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
+import { useCreateRemitoEntradaMutation } from '../../features/warehouse/remitosEntrada/api/remitos-entrada.api';
+import { useDespachoDirectoMutation } from '../../features/warehouse/remitosSalida/api/remitos-salida.api';
+import { useGetPlantsQuery } from '../../entities/maintenance/api/maintenance.api';
 import { useSelector } from 'react-redux';
-import { selectAllowedDepots } from '../../../entities/auth/model/authSlice';
-import { useIsMobile } from '../../../shared/ui';
+import { selectAllowedDepots } from '../../entities/auth/model/authSlice';
+import { useIsMobile } from '../../shared/ui';
 
 // Design System Colors
 const colors = {

@@ -4,8 +4,8 @@ import { Box, Typography, Chip, Fade, Collapse, Button, IconButton } from '@mui/
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import FilterListIcon from '@mui/icons-material/FilterList';
-import { Spinner, Select } from '../../../shared/ui';
-import { useGetLogsQuery, useGetPlantsQuery } from '../api/maintenance.api';
+import { Spinner, Select } from '../../shared/ui';
+import { useGetLogsQuery, useGetPlantsQuery } from '../../entities/maintenance/api/maintenance.api';
 
 
 // ─── Helpers ────────────────────────────────────────────────────────

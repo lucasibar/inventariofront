@@ -1,4 +1,4 @@
-import { useIsMobile } from '../../../shared/ui';
+import { useIsMobile } from '../../shared/ui';
 
 export default function NotificationsPage() {
     const isMobile = useIsMobile();

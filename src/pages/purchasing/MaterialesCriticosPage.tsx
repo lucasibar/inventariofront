@@ -5,14 +5,14 @@ import {
     useDeleteComboMutation,
     useGetComboBreakdownQuery,
     useUpdateComboMutation,
-} from '../../warehouse/stock/api/stock.api';
-import { useGetStockQuery } from '../../warehouse/stock/api/stock.api';
-import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
-import { useGetItemsQuery } from '../../warehouse/materiales/api/items.api';
-import { PageHeader, Card, Badge, Btn, Modal, Table, Spinner, Input, Select, ActionMenu, useIsMobile } from '../../../shared/ui';
+} from '../../features/warehouse/stock/api/stock.api';
+import { useGetStockQuery } from '../../features/warehouse/stock/api/stock.api';
+import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
+import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.api';
+import { PageHeader, Card, Badge, Btn, Modal, Table, Spinner, Input, Select, ActionMenu, useIsMobile } from '../../shared/ui';
 import { useSelector } from 'react-redux';
-import { selectCurrentUser, selectAllowedDepots } from '../../../entities/auth/model/authSlice';
-import { useGetDepotsQuery } from '../../warehouse/deposito/api/deposito.api';
+import { selectCurrentUser, selectAllowedDepots } from '../../entities/auth/model/authSlice';
+import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
 
 export default function MaterialesCriticosPage() {
     const isMobile = useIsMobile();

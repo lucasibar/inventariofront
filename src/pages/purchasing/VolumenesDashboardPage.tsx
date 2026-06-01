@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { useGetVolumesDashboardQuery } from '../dashboard/api/dashboard.api';
-import { PageHeader, Card, Badge, Table } from '../../../shared/ui';
+import { useGetVolumesDashboardQuery } from '../../features/purchasing/dashboard/api/dashboard.api';
+import { PageHeader, Card, Badge, Table } from '../../shared/ui';
 
 export default function VolumenesDashboardPage() {
     const { data: volumes = [], isLoading } = useGetVolumesDashboardQuery();

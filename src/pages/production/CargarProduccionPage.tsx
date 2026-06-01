@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { Box, Typography, TextField, Button, Grid, Divider, IconButton, Tooltip } from '@mui/material';
-import { PageHeader, Card, Badge } from '../../../shared/ui';
+import { PageHeader, Card, Badge } from '../../shared/ui';
 import { useDispatch, useSelector } from 'react-redux';
-import { selectTempRecords, addRecord, clearRecords } from '../model/productionSlice';
-import type { ProductionRecord } from '../model/productionSlice';
+import { selectTempRecords, addRecord, clearRecords } from '../../entities/production/model/productionSlice';
+import type { ProductionRecord } from '../../entities/production/model/productionSlice';
 import { Delete as DeleteIcon, QrCode as QrCodeIcon, Save as SaveIcon, CloudUpload as CloudUploadIcon } from '@mui/icons-material';
 
 export default function CargarProduccionPage() {

@@ -1,4 +1,4 @@
-import type { MaintenanceLog, MachineKPI as MachineKPIs, Machine } from '../../api/maintenance.api';
+import type { MaintenanceLog, MachineKPI as MachineKPIs, Machine } from '../../../../entities/maintenance/api/maintenance.api';
 
 
 

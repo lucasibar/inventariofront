@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Card, CardContent, Chip, Button, Avatar, Tooltip, Divider, Grid } from '@mui/material';
-import { PageHeader, Spinner, Select } from '../../../shared/ui';
+import { PageHeader, Spinner, Select } from '../../shared/ui';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import BuildIcon from '@mui/icons-material/Build';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
@@ -11,14 +11,14 @@ import {
     useGetPlantsQuery, 
     useGetMachinesQuery,
     useGetMachineTypesQuery
-} from '../api/maintenance.api';
+} from '../../entities/maintenance/api/maintenance.api';
 
 const stoppedStatuses = ['PARADA', 'ELECTRONIC', 'REPUESTOS', 'FALTA_PROGRAMA', 'OTRO'];
 
 import { 
     MAINTENANCE_STATUS_COLORS as statusColors,
     MAINTENANCE_STATUS_LABELS as statusLabels
-} from '../constants/maintenanceConstants';
+} from '../../features/maintenance/constants/maintenanceConstants';
 
 export default function PendientesPage() {
     const navigate = useNavigate();

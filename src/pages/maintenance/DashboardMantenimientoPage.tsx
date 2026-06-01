@@ -15,7 +15,7 @@ import MapIcon from '@mui/icons-material/Map';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import TimerIcon from '@mui/icons-material/Timer';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { Spinner, Select } from '../../../shared/ui';
+import { Spinner, Select } from '../../shared/ui';
 import { 
     useGetPlantsQuery, 
     useGetMachineTypesQuery,
@@ -23,14 +23,14 @@ import {
     useGetPlantKPIsQuery,
     useGetMachinesQuery,
     useUpdateMachineStatusMutation
-} from '../api/maintenance.api';
-import type { Machine } from '../api/maintenance.api';
+} from '../../entities/maintenance/api/maintenance.api';
+import type { Machine } from '../../entities/maintenance/api/maintenance.api';
 
 import { 
     FAILURE_TYPES as failureTypes, 
     RESPONSABLES as responsables, 
     MAINTENANCE_STATUS_COLORS as statusColors
-} from '../constants/maintenanceConstants';
+} from '../../features/maintenance/constants/maintenanceConstants';
 
 const statusIcons: Record<string, React.ReactNode> = {
     ACTIVA: <CheckCircleIcon sx={{ fontSize: '0.8rem' }} />,

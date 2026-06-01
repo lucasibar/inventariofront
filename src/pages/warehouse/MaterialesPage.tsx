@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
-import { useGetItemsQuery, useDeleteItemMutation } from '../materiales/api/items.api';
-import { PageHeader, Card, Btn, Table, Badge, SearchBar, Spinner } from '../../../shared/ui';
-import { CreateItemDialog } from '../materiales/components/CreateItemDialog';
+import { useGetItemsQuery, useDeleteItemMutation } from '../../features/warehouse/materiales/api/items.api';
+import { PageHeader, Card, Btn, Table, Badge, SearchBar, Spinner } from '../../shared/ui';
+import { CreateItemDialog } from '../../features/warehouse/materiales/components/CreateItemDialog';
 
 const ROTACION_COLORS: Record<string, string> = {
     ALTA: '#ef4444',

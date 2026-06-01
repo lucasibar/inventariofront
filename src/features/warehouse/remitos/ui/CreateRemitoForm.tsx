@@ -3,7 +3,7 @@ import { Box, Button, TextField, Typography, MenuItem, Divider, IconButton, Tool
 import { useCreateRemitoMutation, useGetDepotsQuery, useLazySearchPartnersQuery } from '../api/remito.api';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { ItemsField } from './ItemsField';
-import { CreatePartnerDialog } from '../../../config/components/CreatePartnerDialog';
+import { CreatePartnerDialog } from '../../../config/CreatePartnerDialog';
 import type { CreateRemitoDto } from '../model/create-remito.dto';
 import { useState, useMemo, useEffect } from 'react';
 export const CreateRemitoForm = () => {

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { useGetPartnersQuery, useCreatePartnerMutation, useUpdatePartnerMutation, useDeletePartnerMutation } from '../partners/api/partners.api';
-import { PageHeader, Card, Btn, Input, Select, Modal, Table, Badge, SearchBar } from '../../../shared/ui';
+import { useGetPartnersQuery, useCreatePartnerMutation, useUpdatePartnerMutation, useDeletePartnerMutation } from '../../features/config/partners/api/partners.api';
+import { PageHeader, Card, Btn, Input, Select, Modal, Table, Badge, SearchBar } from '../../shared/ui';
 
 const TYPES = [
     { value: 'SUPPLIER', label: '📦 Proveedor' },

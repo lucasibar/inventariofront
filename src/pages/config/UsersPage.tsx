@@ -4,9 +4,9 @@ import {
     useCreateUserMutation, 
     useUpdateUserMutation,
     type User
-} from '../../../entities/auth/api/authApi';
-import { useGetDepotsQuery } from '../../warehouse/deposito/api/deposito.api';
-import { PageHeader, Card, Table, Btn, Modal, Input, Badge, EditableCell } from '../../../shared/ui';
+} from '../../entities/auth/api/authApi';
+import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
+import { PageHeader, Card, Table, Btn, Modal, Input, Badge, EditableCell } from '../../shared/ui';
 
 export default function UsersPage() {
     const { data: users = [], isLoading: loadingUsers } = useGetUsersQuery();

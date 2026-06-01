@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react';
-import { useGetStockQuery, useSubmitPickingAuditMutation } from '../stock/api/stock.api';
-import { useDespachoDirectoMutation } from '../remitosSalida/api/remitos-salida.api';
-import { useGetDepotsQuery } from '../deposito/api/deposito.api';
-import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
-import { PageHeader, Card, Btn, Badge, Modal, SearchSelect, Input } from '../../../shared/ui';
+import { useGetStockQuery, useSubmitPickingAuditMutation } from '../../features/warehouse/stock/api/stock.api';
+import { useDespachoDirectoMutation } from '../../features/warehouse/remitosSalida/api/remitos-salida.api';
+import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
+import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
+import { PageHeader, Card, Btn, Badge, Modal, SearchSelect, Input } from '../../shared/ui';
 import { useSelector } from 'react-redux';
-import { selectCurrentUser } from '../../../entities/auth/model/authSlice';
+import { selectCurrentUser } from '../../entities/auth/model/authSlice';
 
 export default function AuditoriaPickingPage() {
     const { data: depots = [] } = useGetDepotsQuery();

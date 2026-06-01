@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useGetItemsQuery } from '../materiales/api/items.api';
-import { useGetConsumptionAnalyticsQuery } from '../stock/api/stock.api';
-import { PageHeader, Card, SearchSelect, Input, Spinner, Badge } from '../../../shared/ui';
+import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.api';
+import { useGetConsumptionAnalyticsQuery } from '../../features/warehouse/stock/api/stock.api';
+import { PageHeader, Card, SearchSelect, Input, Spinner, Badge } from '../../shared/ui';
 import { 
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area 
 } from 'recharts';

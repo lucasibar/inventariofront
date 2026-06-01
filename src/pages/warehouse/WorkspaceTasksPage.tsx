@@ -1,5 +1,5 @@
-import { useGetPendingTasksQuery, useCompleteTaskMutation } from '../tasks/api/tasks.api';
-import { PageHeader, Card, Spinner, Btn, Badge } from '../../../shared/ui';
+import { useGetPendingTasksQuery, useCompleteTaskMutation } from '../../features/warehouse/tasks/api/tasks.api';
+import { PageHeader, Card, Spinner, Btn, Badge } from '../../shared/ui';
 
 export default function WorkspaceTasksPage() {
     const { data: tasks = [], isLoading } = useGetPendingTasksQuery();

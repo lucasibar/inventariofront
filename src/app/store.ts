@@ -3,8 +3,8 @@ import { setupListeners } from '@reduxjs/toolkit/query';
 import { api } from '../shared/api';
 import authReducer from '../entities/auth/model/authSlice';
 import notificationsReducer from '../entities/notifications/notificationsSlice';
-import productionReducer from '../entities/production/model/productionSlice;
-import maintenanceReducer from '../entities/maintenance/model/maintenanceSlice;
+import productionReducer from '../entities/production/model/productionSlice';
+import maintenanceReducer from '../entities/maintenance/model/maintenanceSlice';
 
 export const store = configureStore({
     reducer: {

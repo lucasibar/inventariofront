@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useMemo, useDeferredValue } from 'react';
 import { useSelector } from 'react-redux';
-import { useGetItemsQuery, useGetItemCategoriesQuery, useCreateItemCategoryMutation, useUpdateItemCategoryMutation } from '../materiales/api/items.api';
-import { useGetDepotsQuery, useCreateDepotMutation, useUpdateDepotMutation, useCreatePositionMutation, useUpdatePositionMutation, useDeleteDepotMutation } from '../deposito/api/deposito.api';
-import { selectCurrentUser } from '../../../entities/auth/model/authSlice';
-import { PageHeader, Card, Btn, Input, Modal, Badge, Spinner } from '../../../shared/ui';
+import { useGetItemsQuery, useGetItemCategoriesQuery, useCreateItemCategoryMutation, useUpdateItemCategoryMutation } from '../../features/warehouse/materiales/api/items.api';
+import { useGetDepotsQuery, useCreateDepotMutation, useUpdateDepotMutation, useCreatePositionMutation, useUpdatePositionMutation, useDeleteDepotMutation } from '../../features/warehouse/deposito/api/deposito.api';
+import { selectCurrentUser } from '../../entities/auth/model/authSlice';
+import { PageHeader, Card, Btn, Input, Modal, Badge, Spinner } from '../../shared/ui';
 
 /* ─── Inline-editable cell ─── */
 function EditableCell({ value, onSave, label, type = 'text', options }: { value: string; onSave: (v: string) => Promise<void>; label?: string; type?: string; options?: { value: string, label: string }[] }) {

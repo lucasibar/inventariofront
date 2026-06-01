@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
-import { useGetRecentMovementsQuery } from '../stock/api/stock.api';
-import { useLazyGetRemitoSalidaQuery } from '../remitosSalida/api/remitos-salida.api';
-import { RemitoDetailModal } from '../remitos/ui/RemitoDetailModal';
-import { PageHeader, Card, Input, Spinner } from '../../../shared/ui';
-import { useIsMobile } from '../../../shared/ui';
+import { useGetRecentMovementsQuery } from '../../features/warehouse/stock/api/stock.api';
+import { useLazyGetRemitoSalidaQuery } from '../../features/warehouse/remitosSalida/api/remitos-salida.api';
+import { RemitoDetailModal } from '../../features/warehouse/remitos/ui/RemitoDetailModal';
+import { PageHeader, Card, Input, Spinner } from '../../shared/ui';
+import { useIsMobile } from '../../shared/ui';
 import { 
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar 
 } from 'recharts';

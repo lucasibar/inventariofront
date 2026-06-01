@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Box, Typography, Card, TextField, Button, Divider, Chip, Avatar, Tooltip, Drawer, IconButton, useMediaQuery, useTheme, Grid } from '@mui/material';
-import { PageHeader, Spinner, Select } from '../../../shared/ui';
+import { PageHeader, Spinner, Select } from '../../shared/ui';
 import SearchIcon from '@mui/icons-material/Search';
 import BuildIcon from '@mui/icons-material/Build';
 import HistoryIcon from '@mui/icons-material/History';
@@ -18,13 +18,13 @@ import {
     useGetMachineTypesQuery,
     useGetMachineKPIsQuery,
     useGetLogsQuery
-} from '../api/maintenance.api';
-import type { Machine } from '../api/maintenance.api';
+} from '../../entities/maintenance/api/maintenance.api';
+import type { Machine } from '../../entities/maintenance/api/maintenance.api';
 
 import { 
     MAINTENANCE_STATUS_COLORS as statusColors,
     MAINTENANCE_STATUS_LABELS as statusLabels
-} from '../constants/maintenanceConstants';
+} from '../../features/maintenance/constants/maintenanceConstants';
 
 const LogItem = ({ log, idx }: { log: any; idx: number }) => (
     <Box sx={{ 

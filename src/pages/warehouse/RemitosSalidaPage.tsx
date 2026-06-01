@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { selectCurrentUser } from '../../../entities/auth/model/authSlice';
+import { selectCurrentUser } from '../../entities/auth/model/authSlice';
 import { 
     useGetRemitosSalidaQuery, 
     usePreviewRemitoSalidaMutation, 
     useCreateRemitoSalidaMutation, 
     useDeleteRemitoSalidaMutation, 
     useLazyGetRemitoSalidaQuery 
-} from '../remitosSalida/api/remitos-salida.api';
-import { RemitoDetailModal } from '../remitos/ui/RemitoDetailModal';
-import { CreatePartnerDialog } from '../../config/components/CreatePartnerDialog';
-import { useGetOrdersQuery } from '../../sales/api/orders.api';
-import { useGetPartnersQuery } from '../../config/partners/api/partners.api';
-import { useGetItemsQuery } from '../materiales/api/items.api';
-import { PageHeader, Card, Btn, Input, Select, SearchSelect, Modal, Table, Badge } from '../../../shared/ui';
+} from '../../features/warehouse/remitosSalida/api/remitos-salida.api';
+import { RemitoDetailModal } from '../../features/warehouse/remitos/ui/RemitoDetailModal';
+import { CreatePartnerDialog } from '../../features/config/CreatePartnerDialog';
+import { useGetOrdersQuery } from '../../entities/sales/api/orders.api';
+import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
+import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.api';
+import { PageHeader, Card, Btn, Input, Select, SearchSelect, Modal, Table, Badge } from '../../shared/ui';
 
 export default function RemitosSalidaPage() {
     const { data: remitos = [], isLoading } = useGetRemitosSalidaQuery();
