@@ -1,7 +1,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { useGetAlertsQuery } from '../sectors/warehouse/stock/api/stock.api';
+import { useGetAlertsQuery } from '../features/warehouse/stock/api/stock.api';
 import { logout, selectCurrentUser } from '../entities/auth/model/authSlice';
 import { api } from './api';
 import { useChangeMyPasswordMutation } from '../entities/auth/api/authApi';

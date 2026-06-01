@@ -1,155 +1,175 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { RouterProvider, createBrowserRouter, Navigate } from 'react-router-dom';
 import { PrivateRoute, RoleGuard } from './app/routes/PrivateRoute';
 import { LoginPage } from './pages/login/LoginPage';
 import Layout from './shared/Layout';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser } from './entities/auth/model/authSlice';
-
+import { UserRole } from './shared/types/roles';
 
 // Sector: Config
-const MaterialesPage = lazy(() => import('./sectors/warehouse/pages/MaterialesPage'));
-const SociosPage = lazy(() => import('./sectors/config/pages/SociosPage'));
-const UsersPage = lazy(() => import('./sectors/config/pages/UsersPage'));
-const BoxTypesPage = lazy(() => import('./sectors/warehouse/pages/BoxTypesPage'));
+const MaterialesPage = lazy(() => import('./pages/warehouse/MaterialesPage'));
+const SociosPage = lazy(() => import('./pages/config/SociosPage'));
+const UsersPage = lazy(() => import('./pages/config/UsersPage'));
+const BoxTypesPage = lazy(() => import('./pages/warehouse/BoxTypesPage'));
 
 // Sector: Warehouse
-const DepositoPage = lazy(() => import('./sectors/warehouse/pages/DepositoPage'));
-const StockPage = lazy(() => import('./sectors/warehouse/pages/StockPage'));
-const MovimientosPage = lazy(() => import('./sectors/warehouse/pages/MovimientosPage'));
-const RemitosEntradaPage = lazy(() => import('./sectors/warehouse/pages/RemitosEntradaPage'));
-const RemitosSalidaPage = lazy(() => import('./sectors/warehouse/pages/RemitosSalidaPage'));
-const AuditoriaPickingPage = lazy(() => import('./sectors/warehouse/pages/AuditoriaPickingPage'));
-const WorkspaceTasksPage = lazy(() => import('./sectors/warehouse/pages/WorkspaceTasksPage'));
-const ReporteSalidasPage = lazy(() => import('./sectors/warehouse/pages/ReporteSalidasPage'));
-const ReporteConsumoDetalladoPage = lazy(() => import('./sectors/warehouse/pages/ReporteConsumoDetalladoPage'));
-const DashboardDepositoPage = lazy(() => import('./sectors/warehouse/pages/DashboardDepositoPage'));
+const DepositoPage = lazy(() => import('./pages/warehouse/DepositoPage'));
+const StockPage = lazy(() => import('./pages/warehouse/StockPage'));
+const MovimientosPage = lazy(() => import('./pages/warehouse/MovimientosPage'));
+const RemitosEntradaPage = lazy(() => import('./pages/warehouse/RemitosEntradaPage'));
+const RemitosSalidaPage = lazy(() => import('./pages/warehouse/RemitosSalidaPage'));
+const AuditoriaPickingPage = lazy(() => import('./pages/warehouse/AuditoriaPickingPage'));
+const WorkspaceTasksPage = lazy(() => import('./pages/warehouse/WorkspaceTasksPage'));
+const ReporteSalidasPage = lazy(() => import('./pages/warehouse/ReporteSalidasPage'));
+const ReporteConsumoDetalladoPage = lazy(() => import('./pages/warehouse/ReporteConsumoDetalladoPage'));
+const DashboardDepositoPage = lazy(() => import('./pages/warehouse/DashboardDepositoPage'));
 
 // Sector: Purchasing
-const DashboardComprasPage = lazy(() => import('./sectors/purchasing/pages/DashboardComprasPage'));
-const MaterialesCriticosPage = lazy(() => import('./sectors/purchasing/pages/MaterialesCriticosPage'));
-const ConciliacionPage = lazy(() => import('./sectors/purchasing/pages/ConciliacionPage'));
-const AlertaStockPage = lazy(() => import('./sectors/purchasing/pages/AlertaStockPage'));
-const CapacityDashboardPage = lazy(() => import('./sectors/purchasing/pages/CapacityDashboardPage'));
-const VolumenesDashboardPage = lazy(() => import('./sectors/purchasing/pages/VolumenesDashboardPage'));
-const PedidosCompraPage = lazy(() => import('./sectors/purchasing/pages/PedidosCompraPage'));
+const DashboardComprasPage = lazy(() => import('./pages/purchasing/DashboardComprasPage'));
+const MaterialesCriticosPage = lazy(() => import('./pages/purchasing/MaterialesCriticosPage'));
+const ConciliacionPage = lazy(() => import('./pages/purchasing/ConciliacionPage'));
+const AlertaStockPage = lazy(() => import('./pages/purchasing/AlertaStockPage'));
+const CapacityDashboardPage = lazy(() => import('./pages/purchasing/CapacityDashboardPage'));
+const VolumenesDashboardPage = lazy(() => import('./pages/purchasing/VolumenesDashboardPage'));
+const PedidosCompraPage = lazy(() => import('./pages/purchasing/PedidosCompraPage'));
 
 // Sector: Maintenance
-const DashboardMantenimientoPage = lazy(() => import('./sectors/maintenance/pages/DashboardMantenimientoPage'));
-const MonitoreoVivoPage = lazy(() => import('./sectors/maintenance/pages/MonitoreoVivoPage'));
-const RegistroMaquinasPage = lazy(() => import('./sectors/maintenance/pages/RegistroMaquinasPage'));
-const HistorialRegistrosPage = lazy(() => import('./sectors/maintenance/pages/HistorialRegistrosPage'));
-const BuscadorMaquinaPage = lazy(() => import('./sectors/maintenance/pages/BuscadorMaquinaPage'));
-const PendientesPage = lazy(() => import('./sectors/maintenance/pages/PendientesPage'));
-const InformeTurnosPage = lazy(() => import('./sectors/maintenance/pages/InformeTurnosPage'));
+const DashboardMantenimientoPage = lazy(() => import('./pages/maintenance/DashboardMantenimientoPage'));
+const MonitoreoVivoPage = lazy(() => import('./pages/maintenance/MonitoreoVivoPage'));
+const RegistroMaquinasPage = lazy(() => import('./pages/maintenance/RegistroMaquinasPage'));
+const HistorialRegistrosPage = lazy(() => import('./pages/maintenance/HistorialRegistrosPage'));
+const BuscadorMaquinaPage = lazy(() => import('./pages/maintenance/BuscadorMaquinaPage'));
+const PendientesPage = lazy(() => import('./pages/maintenance/PendientesPage'));
+const InformeTurnosPage = lazy(() => import('./pages/maintenance/InformeTurnosPage'));
 
 // Sector: Production
-const CargarProduccionPage = lazy(() => import('./sectors/production/pages/CargarProduccionPage'));
-const ProduccionNewDashboardPage = lazy(() => import('./sectors/production/pages/ProduccionNewDashboardPage'));
+const CargarProduccionPage = lazy(() => import('./pages/production/CargarProduccionPage'));
+const ProduccionNewDashboardPage = lazy(() => import('./pages/production/ProduccionNewDashboardPage'));
 
 // New Sectors Dashboards
-const AdminDashboardPage = lazy(() => import('./sectors/admin/pages/AdminDashboardPage'));
-const VentasDashboardPage = lazy(() => import('./sectors/sales/pages/VentasDashboardPage'));
-const FinanzasDashboardPage = lazy(() => import('./sectors/finance/pages/FinanzasDashboardPage'));
-const RRHHDashboardPage = lazy(() => import('./sectors/hr/pages/RRHHDashboardPage'));
+const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
+const VentasDashboardPage = lazy(() => import('./pages/sales/VentasDashboardPage'));
+const FinanzasDashboardPage = lazy(() => import('./pages/finance/FinanzasDashboardPage'));
+const RRHHDashboardPage = lazy(() => import('./pages/hr/RRHHDashboardPage'));
 
 // Other
-const AdminMovementsPage = lazy(() => import('./sectors/warehouse/pages/AdminMovementsPage'));
-const NotificationsPage = lazy(() => import('./sectors/config/pages/NotificationsPage'));
-const PedidosPage = lazy(() => import('./sectors/sales/pages/PedidosPage'));
+const AdminMovementsPage = lazy(() => import('./pages/warehouse/AdminMovementsPage'));
+const NotificationsPage = lazy(() => import('./pages/config/NotificationsPage'));
+const PedidosPage = lazy(() => import('./pages/sales/PedidosPage'));
 
 import './App.css';
 
-function App() {
-  const user = useSelector(selectCurrentUser);
-  
-  const getHome = (role?: string) => {
+const FallbackLoader = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0f1117' }}>
+    <div style={{ color: '#6b7280', fontSize: '14px', letterSpacing: '1px', textTransform: 'uppercase' }}>Cargando...</div>
+  </div>
+);
+
+const LazyRoute = ({ element: Element }: { element: any }) => (
+  <Suspense fallback={<FallbackLoader />}>
+    <Element />
+  </Suspense>
+);
+
+const getHome = (role?: string) => {
     const r = role?.toUpperCase();
-    if (r === 'COMPRAS') return '/dashboard';
-    if (r === 'ADMIN') return '/mantenimiento/dashboard';
-    if (r === 'OPERATOR' || r === 'SUPERVISOR') return '/deposito/dashboard';
+    if (r === UserRole.COMPRAS) return '/dashboard';
+    if (r === UserRole.ADMIN) return '/mantenimiento/dashboard';
+    if (r === UserRole.OPERATOR || r === UserRole.SUPERVISOR) return '/deposito/dashboard';
     return '/deposito/dashboard';
-  };
+};
 
-  return (
-    <BrowserRouter>
-      <Suspense fallback={
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0f1117' }}>
-          <div style={{ color: '#6b7280', fontSize: '14px', letterSpacing: '1px', textTransform: 'uppercase' }}>Cargando...</div>
-        </div>
-      }>
-      <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route element={<PrivateRoute />}>
-            <Route element={<Layout />}>
-              <Route path="/" element={<Navigate to={getHome(user?.role)} replace />} />
+const RootRedirect = () => {
+  const user = useSelector(selectCurrentUser);
+  return <Navigate to={getHome(user?.role)} replace />;
+};
+
+const router = createBrowserRouter([
+  {
+    path: "/login",
+    element: <LoginPage />
+  },
+  {
+    path: "/",
+    element: <PrivateRoute />,
+    children: [
+      {
+        element: <Layout />,
+        children: [
+          {
+            index: true,
+            element: <RootRedirect />
+          },
+          // Compras / Config
+          {
+            element: <RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.COMPRAS]} />,
+            children: [
+              { path: "remitos-entrada", element: <LazyRoute element={RemitosEntradaPage} /> },
+              { path: "dashboard", element: <LazyRoute element={DashboardComprasPage} /> },
+              { path: "compras/materiales-criticos", element: <LazyRoute element={MaterialesCriticosPage} /> },
+              { path: "compras/alertas-stock", element: <LazyRoute element={AlertaStockPage} /> },
+              { path: "compras/conciliacion", element: <LazyRoute element={ConciliacionPage} /> },
+              { path: "dashboard/capacity", element: <LazyRoute element={CapacityDashboardPage} /> },
+              { path: "dashboard/volumes", element: <LazyRoute element={VolumenesDashboardPage} /> },
+              { path: "items", element: <LazyRoute element={MaterialesPage} /> },
+              { path: "items/box-types", element: <LazyRoute element={BoxTypesPage} /> },
+              { path: "socios", element: <LazyRoute element={SociosPage} /> },
+              { path: "pedidos", element: <LazyRoute element={PedidosPage} /> },
+              { path: "pedidos-compra", element: <LazyRoute element={PedidosCompraPage} /> },
+            ]
+          },
+          // ADMIN
+          {
+            element: <RoleGuard allowedRoles={[UserRole.ADMIN]} />,
+            children: [
+              { path: "admin/dashboard", element: <LazyRoute element={AdminDashboardPage} /> },
+              { path: "users", element: <LazyRoute element={UsersPage} /> },
+              { path: "admin/movements", element: <LazyRoute element={AdminMovementsPage} /> },
+            ]
+          },
+          // Operario / Produccion / Deposito
+          {
+            element: <RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.OPERATOR, UserRole.COMPRAS, UserRole.SUPERVISOR]} />,
+            children: [
+              { path: "deposito/dashboard", element: <LazyRoute element={DashboardDepositoPage} /> },
+              { path: "deposito/auditoria-picking", element: <LazyRoute element={AuditoriaPickingPage} /> },
+              { path: "remitos-salida", element: <LazyRoute element={RemitosSalidaPage} /> },
+              { path: "reporte-salidas", element: <LazyRoute element={ReporteSalidasPage} /> },
+              { path: "reporte-consumo-detallado", element: <LazyRoute element={ReporteConsumoDetalladoPage} /> },
+              { path: "stock", element: <LazyRoute element={StockPage} /> },
+              { path: "movimientos", element: <LazyRoute element={MovimientosPage} /> },
+              { path: "tasks", element: <LazyRoute element={WorkspaceTasksPage} /> },
               
-              {/* Rutas para Compras / Configuración */}
-              <Route element={<RoleGuard allowedRoles={['ADMIN', 'COMPRAS']} />}>
-                  <Route path="/remitos-entrada" element={<RemitosEntradaPage />} />
-                  <Route path="/dashboard" element={<DashboardComprasPage />} />
-                  <Route path="/compras/materiales-criticos" element={<MaterialesCriticosPage />} />
-                  <Route path="/compras/alertas-stock" element={<AlertaStockPage />} />
-                  <Route path="/compras/conciliacion" element={<ConciliacionPage />} />
-                  <Route path="/dashboard/capacity" element={<CapacityDashboardPage />} />
-                  <Route path="/dashboard/volumes" element={<VolumenesDashboardPage />} />
-                  <Route path="/items" element={<MaterialesPage />} />
-                  <Route path="/items/box-types" element={<BoxTypesPage />} />
-                  <Route path="/socios" element={<SociosPage />} />
-                  <Route path="/pedidos" element={<PedidosPage />} />
-                  <Route path="/pedidos-compra" element={<PedidosCompraPage />} />
-              </Route>
+              { path: "mantenimiento/dashboard", element: <LazyRoute element={DashboardMantenimientoPage} /> },
+              { path: "mantenimiento/monitoreo", element: <LazyRoute element={MonitoreoVivoPage} /> },
+              { path: "mantenimiento/registro", element: <LazyRoute element={RegistroMaquinasPage} /> },
+              { path: "mantenimiento/historial", element: <LazyRoute element={HistorialRegistrosPage} /> },
+              { path: "mantenimiento/buscador", element: <LazyRoute element={BuscadorMaquinaPage} /> },
+              { path: "mantenimiento/pendientes", element: <LazyRoute element={PendientesPage} /> },
+              { path: "mantenimiento/informe-turnos", element: <LazyRoute element={InformeTurnosPage} /> },
 
-              {/* Rutas exclusivas de ADMIN */}
-              <Route element={<RoleGuard allowedRoles={['ADMIN']} />}>
-                  <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-                  <Route path="/users" element={<UsersPage />} />
-                  <Route path="/admin/movements" element={<AdminMovementsPage />} />
-              </Route>
+              { path: "produccion/cargar", element: <LazyRoute element={CargarProduccionPage} /> },
+              { path: "produccion/dashboard", element: <LazyRoute element={ProduccionNewDashboardPage} /> },
 
-              {/* Rutas para Operario / Producción / Depósito / Nuevos Sectores */}
-              <Route element={<RoleGuard allowedRoles={['ADMIN', 'OPERATOR', 'COMPRAS', 'SUPERVISOR']} />}>
-                  {/* Inventariado */}
-                  <Route path="/deposito/dashboard" element={<DashboardDepositoPage />} />
-                  <Route path="/deposito/auditoria-picking" element={<AuditoriaPickingPage />} />
-                  <Route path="/remitos-salida" element={<RemitosSalidaPage />} />
-                  <Route path="/reporte-salidas" element={<ReporteSalidasPage />} />
-                  <Route path="/reporte-consumo-detallado" element={<ReporteConsumoDetalladoPage />} />
-                  <Route path="/stock" element={<StockPage />} />
-                  <Route path="/movimientos" element={<MovimientosPage />} />
-                  <Route path="/tasks" element={<WorkspaceTasksPage />} />
-                  
-                  {/* Mantenimiento */}
-                  <Route path="/mantenimiento/dashboard" element={<DashboardMantenimientoPage />} />
-                  <Route path="/mantenimiento/monitoreo" element={<MonitoreoVivoPage />} />
-                  <Route path="/mantenimiento/registro" element={<RegistroMaquinasPage />} />
-                  <Route path="/mantenimiento/historial" element={<HistorialRegistrosPage />} />
-                  <Route path="/mantenimiento/buscador" element={<BuscadorMaquinaPage />} />
-                  <Route path="/mantenimiento/pendientes" element={<PendientesPage />} />
-                  <Route path="/mantenimiento/informe-turnos" element={<InformeTurnosPage />} />
+              { path: "produccion-nueva/dashboard", element: <LazyRoute element={ProduccionNewDashboardPage} /> },
+              { path: "ventas/dashboard", element: <LazyRoute element={VentasDashboardPage} /> },
+              { path: "finanzas/dashboard", element: <LazyRoute element={FinanzasDashboardPage} /> },
+              { path: "rrhh/dashboard", element: <LazyRoute element={RRHHDashboardPage} /> },
+              { path: "compras/dashboard", element: <LazyRoute element={DashboardComprasPage} /> },
+            ]
+          },
+          // Shared
+          { path: "deposito", element: <LazyRoute element={DepositoPage} /> },
+          { path: "notificaciones", element: <LazyRoute element={NotificationsPage} /> },
+        ]
+      }
+    ]
+  }
+]);
 
-                  {/* Producción */}
-                  <Route path="/produccion/cargar" element={<CargarProduccionPage />} />
-                  <Route path="/produccion/dashboard" element={<ProduccionNewDashboardPage />} />
-
-                  {/* Nuevos Sectores */}
-                  <Route path="/produccion-nueva/dashboard" element={<ProduccionNewDashboardPage />} />
-                  <Route path="/ventas/dashboard" element={<VentasDashboardPage />} />
-                  <Route path="/finanzas/dashboard" element={<FinanzasDashboardPage />} />
-                  <Route path="/rrhh/dashboard" element={<RRHHDashboardPage />} />
-                  <Route path="/compras/dashboard" element={<DashboardComprasPage />} />
-              </Route>
-
-              {/* Rutas compartidas o especiales */}
-              <Route path="/deposito" element={<DepositoPage />} />
-              <Route path="/notificaciones" element={<NotificationsPage />} />
-
-            </Route>
-          </Route>
-        </Routes>
-      </Suspense>
-    </BrowserRouter>
-  );
+function App() {
+  return <RouterProvider router={router} />;
 }
 
 export default App;
