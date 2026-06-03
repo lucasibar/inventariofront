@@ -141,8 +141,8 @@ export default function MonitoreoVivoPage() {
     }, [machineTypes]);
 
     const { data: machines = [], isLoading: loadingMachines } = useGetMachinesQuery(
-        { plantId: selectedPlantId || '' },
-        { skip: !selectedPlantId, pollingInterval: 30000 }
+        { plantId: selectedPlantId || '', typeId: tejeduriaTypeId || '' },
+        { skip: !selectedPlantId || !tejeduriaTypeId, pollingInterval: 30000 }
     );
 
     const { data: metrics } = useGetMetricsQuery(
