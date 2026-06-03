@@ -1,11 +1,11 @@
 export const MAINTENANCE_STATUS_COLORS: Record<string, string> = {
     ACTIVA: '#1fb811',
-    REVISAR: '#eab308',
-    VELOCIDAD_REDUCIDA: '#c8ff03',
+    REVISAR: '#ffbf00',
+    VELOCIDAD_REDUCIDA: '#fffb03',
     PARADA: '#ef4444',
     ELECTRONIC: '#0818aa',
     FALTA_COSTURA: '#a4f190',
-    FALTA_PROGRAMA: '#fb923c',
+    FALTA_PROGRAMA: '#00ffdd',
     REPUESTOS: '#94a3b8',
     OTRO: '#6b7280',
 };
