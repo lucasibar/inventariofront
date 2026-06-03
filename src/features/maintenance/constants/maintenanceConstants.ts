@@ -1,6 +1,6 @@
 export const MAINTENANCE_STATUS_COLORS: Record<string, string> = {
     ACTIVA: '#1fb811',
-    REVISAR: '#ffbf00',
+    REVISAR: '#ff7b00',
     VELOCIDAD_REDUCIDA: '#fffb03',
     PARADA: '#ef4444',
     ELECTRONIC: '#0818aa',
