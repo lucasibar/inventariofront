@@ -184,8 +184,10 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
 }) {
     const [search, setSearch] = useState('');
     const [open, setOpen] = useState(false);
+    const [highlightedIndex, setHighlightedIndex] = useState(-1);
     const ref = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const listRef = useRef<HTMLDivElement>(null);
 
     const selectedLabel = options.find(o => o.value === value)?.label || '';
 
@@ -205,6 +207,24 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
         return o.label.toLowerCase().includes(search.toLowerCase());
     });
 
+    useEffect(() => {
+        setHighlightedIndex(-1);
+    }, [search, open]);
+
+    useEffect(() => {
+        if (open && highlightedIndex >= 0 && listRef.current) {
+            const item = listRef.current.children[highlightedIndex] as HTMLElement;
+            if (item) {
+                const parent = listRef.current;
+                if (item.offsetTop < parent.scrollTop) {
+                    parent.scrollTop = item.offsetTop;
+                } else if (item.offsetTop + item.offsetHeight > parent.scrollTop + parent.offsetHeight) {
+                    parent.scrollTop = item.offsetTop + item.offsetHeight - parent.offsetHeight;
+                }
+            }
+        }
+    }, [highlightedIndex, open]);
+
     const handleSelect = (val: string) => {
         onChange(val);
         setOpen(false);
@@ -216,6 +236,34 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
         onChange('');
         setSearch('');
         setOpen(false);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (!open) {
+            if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                setOpen(true);
+                e.preventDefault();
+            }
+            return;
+        }
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setHighlightedIndex(prev => (prev < filtered.length - 1 ? prev + 1 : prev));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setHighlightedIndex(prev => (prev > 0 ? prev - 1 : 0));
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (highlightedIndex >= 0 && highlightedIndex < filtered.length) {
+                handleSelect(filtered[highlightedIndex].value);
+            } else if (filtered.length > 0) {
+                handleSelect(filtered[0].value);
+            }
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            setOpen(false);
+        }
     };
 
     return (
@@ -235,6 +283,7 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
                     value={open ? search : selectedLabel}
                     onChange={e => { setSearch(e.target.value); if (!open) setOpen(true); }}
                     onFocus={() => setOpen(true)}
+                    onKeyDown={handleKeyDown}
                     placeholder={value ? selectedLabel : (placeholder || 'Buscar...')}
                     disabled={disabled}
                     style={{
@@ -252,7 +301,7 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
                 <span style={{ padding: '0 8px', color: '#4b5563', fontSize: '10px', pointerEvents: 'none' }}>▼</span>
             </div>
             {open && (
-                <div style={{
+                <div ref={listRef} style={{
                     position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '4px',
                     background: '#1a1d2e', border: '1px solid #374151', borderRadius: '8px',
                     boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)', zIndex: 200,
@@ -261,23 +310,26 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
                     {filtered.length === 0 && (
                         <div style={{ padding: '12px', textAlign: 'center', color: '#4b5563', fontSize: '12px' }}>Sin resultados</div>
                     )}
-                    {filtered.map((o, i) => (
-                        <div
-                            key={o.value || `empty-${i}`}
-                            onClick={() => handleSelect(o.value)}
-                            style={{
-                                padding: '8px 12px', fontSize: '13px', cursor: 'pointer',
-                                color: o.value === value ? '#a5b4fc' : '#d1d5db',
-                                background: o.value === value ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
-                                borderBottom: i === filtered.length - 1 ? 'none' : '1px solid #1e2133',
-                                transition: 'background 0.1s',
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(99, 102, 241, 0.15)'}
-                            onMouseLeave={e => e.currentTarget.style.background = o.value === value ? 'rgba(99, 102, 241, 0.1)' : 'transparent'}
-                        >
-                            {o.label}
-                        </div>
-                    ))}
+                    {filtered.map((o, i) => {
+                        const isHighlighted = i === highlightedIndex;
+                        const isSelected = o.value === value;
+                        return (
+                            <div
+                                key={o.value || `empty-${i}`}
+                                onClick={() => handleSelect(o.value)}
+                                style={{
+                                    padding: '8px 12px', fontSize: '13px', cursor: 'pointer',
+                                    color: isSelected ? '#a5b4fc' : '#d1d5db',
+                                    background: isHighlighted ? 'rgba(99, 102, 241, 0.2)' : (isSelected ? 'rgba(99, 102, 241, 0.1)' : 'transparent'),
+                                    borderBottom: i === filtered.length - 1 ? 'none' : '1px solid #1e2133',
+                                    transition: 'background 0.1s',
+                                }}
+                                onMouseEnter={() => setHighlightedIndex(i)}
+                            >
+                                {o.label}
+                            </div>
+                        );
+                    })}
                 </div>
             )}
         </div>
