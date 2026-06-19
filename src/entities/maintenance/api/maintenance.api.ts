@@ -260,6 +260,7 @@ export const {
     useGetMachineKPIsQuery,
     useGetPlantKPIsQuery,
     useGetLogsQuery,
+    useLazyGetLogsQuery,
     useUpdateLogMutation,
     useDeleteLogMutation,
     useUpdateMachineStatusMutation,

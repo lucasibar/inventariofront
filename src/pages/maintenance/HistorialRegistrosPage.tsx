@@ -13,6 +13,7 @@ import { PageHeader, Spinner, Select } from '../../shared/ui';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
     useGetLogsQuery, 
+    useLazyGetLogsQuery,
     useGetPlantsQuery, 
     useDeleteLogMutation,
     useUpdateLogMutation
@@ -90,6 +91,7 @@ export default function HistorialRegistrosPage() {
         status: filters.statusFilter || undefined,
         machineNumber: filters.machineNumber || undefined
     });
+    const [triggerGetLogs, { isFetching: isExporting }] = useLazyGetLogsQuery();
 
     // Reset pagination when filters or data changes
     useEffect(() => {
@@ -146,10 +148,49 @@ export default function HistorialRegistrosPage() {
         });
     };
 
-    const handleExportExcel = () => {
-        if (filteredLogs.length === 0) return;
-        
-        let xml = `<?xml version="1.0" encoding="utf-8"?>
+    const handleExportExcel = async () => {
+        try {
+            // Apply the local filters to the Redux store first so the screen updates to match the downloaded data
+            dispatch(setHistoryFilters({
+                machineNumber: localMachineNumber.trim(),
+                startDate: localStartDate,
+                endDate: localEndDate,
+                plantId: localPlantId,
+                statusFilter: localStatusFilter,
+                useTimeFilter: localUseTimeFilter,
+                startTime: localStartTime,
+                endTime: localEndTime
+            }));
+
+            // Fetch the logs corresponding to the current local filter fields
+            const response = await triggerGetLogs({
+                startDate: localStartDate,
+                endDate: localEndDate,
+                plantId: localPlantId || undefined,
+                status: localStatusFilter || undefined,
+                machineNumber: localMachineNumber.trim() || undefined
+            }).unwrap();
+
+            // Local filter by time if time filter is active
+            let exportLogs = response;
+            if (localUseTimeFilter) {
+                exportLogs = response.filter((log: any) => {
+                    const timeStr = new Date(log.timestamp).toTimeString().slice(0, 5);
+                    if (localStartTime <= localEndTime) {
+                        return timeStr >= localStartTime && timeStr <= localEndTime;
+                    } else {
+                        // Cross-midnight range (e.g. 18:00 to 06:00)
+                        return timeStr >= localStartTime || timeStr <= localEndTime;
+                    }
+                });
+            }
+
+            if (exportLogs.length === 0) {
+                alert('No hay registros para exportar con los filtros seleccionados');
+                return;
+            }
+            
+            let xml = `<?xml version="1.0" encoding="utf-8"?>
 <?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
  xmlns:o="urn:schemas-microsoft-com:office:navigator"
@@ -201,18 +242,18 @@ export default function HistorialRegistrosPage() {
     <Cell ss:StyleID="Header"><Data ss:Type="String">Observaciones</Data></Cell>
    </Row>`;
 
-        filteredLogs.forEach((log: any) => {
-            const dateStr = new Date(log.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short', hour12: false });
-            const machineNum = log.machine?.number || log.machineId?.slice(0, 6) || '-';
-            const plantName = log.machine?.plant?.name || plants.find((p: any) => p.id === log.machine?.plantId)?.name || '-';
-            const fromStatus = statusLabels[log.fromStatus] || log.fromStatus || '-';
-            const toStatus = statusLabels[log.toStatus] || log.toStatus || '-';
-            const duration = log.durationFormatted || '-';
-            const failureType = log.failureType || 'Ninguna';
-            const generatedBy = log.generatedBy || '-';
-            const observation = log.observation || '';
+            exportLogs.forEach((log: any) => {
+                const dateStr = new Date(log.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short', hour12: false });
+                const machineNum = log.machine?.number || log.machineId?.slice(0, 6) || '-';
+                const plantName = log.machine?.plant?.name || plants.find((p: any) => p.id === log.machine?.plantId)?.name || '-';
+                const fromStatus = statusLabels[log.fromStatus] || log.fromStatus || '-';
+                const toStatus = statusLabels[log.toStatus] || log.toStatus || '-';
+                const duration = log.durationFormatted || '-';
+                const failureType = log.failureType || 'Ninguna';
+                const generatedBy = log.generatedBy || '-';
+                const observation = log.observation || '';
 
-            xml += `
+                xml += `
    <Row ss:AutoFitHeight="1" ss:StyleID="RowStyle">
     <Cell><Data ss:Type="String">${escapeXml(dateStr)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(String(machineNum))}</Data></Cell>
@@ -224,21 +265,25 @@ export default function HistorialRegistrosPage() {
     <Cell><Data ss:Type="String">${escapeXml(generatedBy)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(observation)}</Data></Cell>
    </Row>`;
-        });
+            });
 
-        xml += `
+            xml += `
   </Table>
  </Worksheet>
 </Workbook>`;
 
-        const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `historial_mantenimiento_${new Date().toISOString().split('T')[0]}.xls`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+            const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `historial_mantenimiento_${new Date().toISOString().split('T')[0]}.xls`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error('Error al exportar a Excel:', error);
+            alert('Error al descargar el archivo de Excel');
+        }
     };
 
     const handleDelete = async () => {
@@ -549,7 +594,7 @@ export default function HistorialRegistrosPage() {
                                 <Button 
                                     variant="contained" 
                                     onClick={handleExportExcel}
-                                    disabled={filteredLogs.length === 0}
+                                    disabled={isExporting || isFetching}
                                     startIcon={<FileDownloadIcon />}
                                     sx={{ 
                                         bgcolor: '#10b981', 
@@ -567,7 +612,7 @@ export default function HistorialRegistrosPage() {
                                         }
                                     }}
                                 >
-                                    Exportar Excel
+                                    {isExporting ? 'Exportando...' : 'Exportar Excel'}
                                 </Button>
                                 <Button 
                                     variant="contained" 
