@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     Button, TextField, MenuItem, Typography, Box
@@ -8,9 +8,7 @@ import { useCreateItemMutation, useUpdateItemMutation, useGetItemCategoriesQuery
 import { useGetBoxTypesQuery } from '../api/box-types.api';
 import { useGetPartnersQuery } from '../../../config/partners/api/partners.api';
 import { useGetDepotsQuery } from '../../deposito/api/deposito.api';
-import { Autocomplete, createFilterOptions } from '@mui/material';
-
-const filter = createFilterOptions<any>();
+import { Autocomplete } from '@mui/material';
 
 const ROTACIONES = [
     { value: 'ALTA', label: '🔴 Alta' },
