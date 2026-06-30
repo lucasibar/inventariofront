@@ -635,7 +635,14 @@ export default function StockPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '16px' }}>
                         <div style={{ display: 'flex', gap: '8px' }}>
                             <Select label="Depósito" value={qaDepot || (depots.length === 1 ? depots[0].id : '')} onChange={(val: string) => { setQaDepot(val); setQaPosition(''); }} disabled={!isAdmin && depots.length === 1} options={[{ value: '', label: 'Seleccionar...' }, ...depots.map((d: any) => ({ value: d.id, label: d.nombre }))]} style={{ flex: 1 }} />
-                            <Select label="Posición" value={qaPosition} onChange={(val: string) => setQaPosition(val)} options={[{ value: '', label: 'Seleccionar...' }, ...(depots.find((d: any) => d.id === (qaDepot || (depots.length === 1 ? depots[0].id : '')))?.positions?.map((p: any) => ({ value: p.id, label: p.codigo })) || [])]} style={{ flex: 1 }} />
+                            <SearchSelect 
+                                label="Posición" 
+                                value={qaPosition} 
+                                onChange={(val: string) => setQaPosition(val)} 
+                                options={[{ value: '', label: 'Seleccionar...' }, ...(depots.find((d: any) => d.id === (qaDepot || (depots.length === 1 ? depots[0].id : '')))?.positions?.map((p: any) => ({ value: p.id, label: p.codigo })) || [])]} 
+                                placeholder="Buscar posición..."
+                                style={{ flex: 1 }} 
+                             />
                         </div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
                             <SearchSelect label="Proveedor" value={qaSupplier} onChange={(val: string) => { setQaSupplier(val); setQaItem(''); }} options={supplierOptions} placeholder="Buscar proveedor..." style={{ flex: 1 }} />
