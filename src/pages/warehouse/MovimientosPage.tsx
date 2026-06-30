@@ -169,7 +169,7 @@ export default function MovimientosPage() {
 
     const qaFilteredItems = useMemo(() => {
         if (!qaSupplier) return items;
-        return items.filter((i: any) => !i.supplierId || i.supplierId === qaSupplier);
+        return items.filter((i: any) => i.supplierId === qaSupplier);
     }, [items, qaSupplier]);
 
     const supplierOptions = useMemo(() => [

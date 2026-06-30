@@ -112,8 +112,13 @@ export default function MaterialesCriticosPage() {
             Number(row.qtyPrincipal || 0).toFixed(2),
             row.batch?.item?.unidadPrincipal || '',
         ]);
-        const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        
+        // UTF-8 BOM to make sure Excel opens it correctly with accents and columns
+        const csvContent = "\uFEFF" + [headers, ...rows]
+            .map(r => r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(';'))
+            .join('\n');
+            
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -149,7 +154,7 @@ export default function MaterialesCriticosPage() {
             `}</style>
 
             <PageHeader title="Materiales Críticos" subtitle="Control de stock y reposición" hideTitleOnMobile>
-                {!isMobile && <Btn variant="secondary" onClick={exportToExcel}>⬇️ Exportar CSV</Btn>}
+                {!isMobile && <Btn variant="secondary" onClick={exportToExcel}>⬇️ Exportar Excel</Btn>}
                 <Btn onClick={() => setShowCreateModal(true)} small={isMobile}>+ Nuevo Combo</Btn>
             </PageHeader>
 

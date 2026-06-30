@@ -244,7 +244,7 @@ export default function StockPage() {
 
     const qaFilteredItems = useMemo(() => {
         if (!qaSupplier) return items;
-        return items.filter((i: any) => !i.supplierId || i.supplierId === qaSupplier);
+        return items.filter((i: any) => i.supplierId === qaSupplier);
     }, [items, qaSupplier]);
 
     const supplierOptions = useMemo(() => [
@@ -661,7 +661,7 @@ export default function StockPage() {
             <CreateItemDialog 
                 open={createItemModal} 
                 onClose={() => setCreateItemModal(false)} 
-                depositoId={depotId}
+                depositoId={qaDepot}
                 onSuccess={(newItem: any) => { setQaItem(newItem.id); }} 
             />
             <CreatePartnerDialog open={createPartnerModal} onClose={() => setCreatePartnerModal(false)} onSuccess={(newPartner: any) => { setQaSupplier(newPartner.id); }} />

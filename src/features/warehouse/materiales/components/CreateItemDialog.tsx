@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     Button, TextField, MenuItem, Typography, Box
@@ -98,6 +98,24 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
         }
     }, [open, initialSupplierId, initialSupplierName, editTarget, depositoId]);
     const [error, setError] = useState('');
+    const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+
+    const handleCreateCategorySubmit = async () => {
+        if (!newCategoryName.trim() || !form.depositoId) return;
+        setIsCreatingCategory(true);
+        try {
+            const res = await createCategory({ nombre: newCategoryName.trim(), depositoId: form.depositoId }).unwrap();
+            setForm({ ...form, categoryId: res.id });
+            setNewCategoryName('');
+            setCategoryDialogOpen(false);
+        } catch (e: any) {
+            alert(e?.data?.message || 'Error al crear la categoría');
+        } finally {
+            setIsCreatingCategory(false);
+        }
+    };
 
     const handleSave = async () => {
         try {
@@ -140,6 +158,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
     };
 
     return (
+        <>
         <Dialog
             open={open}
             onClose={onClose}
@@ -199,58 +218,54 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                             onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
                         />
                     </Box>
-                    <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }}>
+                    <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' }, display: 'flex', gap: 1, alignItems: 'flex-end' }}>
                         <Autocomplete
                             value={categories.find((c: any) => c.id === form.categoryId) || null}
-                            onChange={async (_, newValue) => {
-                                if (typeof newValue === 'string') {
-                                    // This shouldn't happen with the new logic, but handle just in case
-                                } else if (newValue && newValue.inputValue) {
-                                    if (form.depositoId) {
-                                        try {
-                                            const res = await createCategory({ nombre: newValue.inputValue, depositoId: form.depositoId }).unwrap();
-                                            setForm({ ...form, categoryId: res.id });
-                                        } catch (e) {
-                                            alert('Error creando categoría');
-                                        }
-                                    } else {
-                                        alert('Debe seleccionar un depósito primero');
-                                    }
-                                } else {
-                                    setForm({ ...form, categoryId: newValue?.id || '' });
-                                }
+                            onChange={(_, newValue) => {
+                                setForm({ ...form, categoryId: newValue?.id || '' });
                             }}
-                            filterOptions={(options, params) => {
-                                const filtered = filter(options, params);
-                                const { inputValue } = params;
-                                const isExisting = options.some((option) => inputValue === option.nombre);
-                                if (inputValue !== '' && !isExisting) {
-                                    filtered.push({
-                                        inputValue,
-                                        nombre: `Añadir "${inputValue}"`,
-                                    });
-                                }
-                                return filtered;
-                            }}
-                            selectOnFocus
-                            clearOnBlur
-                            handleHomeEndKeys
                             id="category-autocomplete"
                             options={categories}
                             getOptionLabel={(option) => option.nombre || ''}
-                            renderOption={(props, option) => <li {...props} key={option.id}>{option.nombre}</li>}
+                            renderOption={(props, option) => (
+                                <li {...props} key={option.id}>
+                                    {option.nombre}
+                                </li>
+                            )}
                             loading={isLoadingCats}
+                            sx={{ flex: 1 }}
                             renderInput={(params) => (
                                 <TextField
                                     {...params}
                                     label="Categoría"
                                     required
                                     variant="filled"
-                                    fullWidth
-                                    placeholder="Seleccionar o crear..."
+                                    placeholder="Seleccionar categoría..."
                                 />
                             )}
                         />
+                        <Button 
+                            variant="contained" 
+                            onClick={() => setCategoryDialogOpen(true)}
+                            disabled={!form.depositoId}
+                            sx={{ 
+                                height: 56, 
+                                minWidth: 56, 
+                                width: 56, 
+                                bgcolor: 'rgba(255,255,255,0.05)', 
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                color: 'text.primary',
+                                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+                                '&:disabled': {
+                                    bgcolor: 'rgba(255,255,255,0.02)',
+                                    color: 'rgba(255,255,255,0.3)',
+                                    borderColor: 'rgba(255,255,255,0.05)',
+                                    cursor: 'not-allowed'
+                                }
+                            }}
+                        >
+                            +
+                        </Button>
                     </Box>
                     <Box>
                         <TextField
@@ -403,5 +418,43 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                 </Button>
             </DialogActions>
         </Dialog >
+        <Dialog 
+            open={categoryDialogOpen} 
+            onClose={() => setCategoryDialogOpen(false)}
+            PaperProps={{
+                sx: { bgcolor: '#1a1d2e', color: '#f3f4f6', borderRadius: 3, p: 2 }
+            }}
+        >
+            <DialogTitle sx={{ fontWeight: 800 }}>Nueva Categoría de Material</DialogTitle>
+            <DialogContent>
+                <Typography variant="body2" sx={{ color: '#9ca3af', mb: 2 }}>
+                    Ingresa el nombre de la nueva categoría para este depósito.
+                </Typography>
+                <TextField
+                    autoFocus
+                    label="Nombre de Categoría"
+                    fullWidth
+                    variant="filled"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    InputLabelProps={{ sx: { color: '#9ca3af' } }}
+                    InputProps={{ sx: { color: '#f3f4f6' } }}
+                />
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 2 }}>
+                <Button onClick={() => setCategoryDialogOpen(false)} sx={{ color: '#9ca3af' }}>
+                    Cancelar
+                </Button>
+                <Button 
+                    onClick={handleCreateCategorySubmit} 
+                    disabled={isCreatingCategory || !newCategoryName.trim()}
+                    variant="contained"
+                    sx={{ bgcolor: '#6366f1', '&:hover': { bgcolor: '#4f46e5' } }}
+                >
+                    {isCreatingCategory ? 'Creando...' : 'Crear'}
+                </Button>
+            </DialogActions>
+        </Dialog>
+        </>
     );
 };
