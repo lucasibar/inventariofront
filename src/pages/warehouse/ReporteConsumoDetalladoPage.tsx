@@ -22,6 +22,7 @@ export default function ReporteConsumoDetalladoPage() {
     const { data: movements = [], isFetching } = useGetRecentMovementsQuery({ desde, hasta, tipo: 'REMITO_SALIDA' });
     const [triggerGetRemitoDetail] = useLazyGetRemitoSalidaQuery();
 
+    const [searchQuery, setSearchQuery] = useState('');
     const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
     const [selectedRemito, setSelectedRemito] = useState<any>(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
@@ -34,6 +35,28 @@ export default function ReporteConsumoDetalladoPage() {
         }));
     };
 
+    // Filter movements dynamically by search query
+    const filteredMovements = useMemo(() => {
+        if (!searchQuery.trim()) return movements;
+        const q = searchQuery.toLowerCase().trim();
+        return movements.filter(m => {
+            const materialCode = m.item?.codigoInterno?.toLowerCase() || '';
+            const materialDesc = m.item?.descripcion?.toLowerCase() || '';
+            const lotNumber = m.batch?.lotNumber?.toLowerCase() || '';
+            
+            // check m.supplier (loaded via m.supplier relation) or m.batchSupplier (loaded via batch.supplier relation)
+            const supplierName = m.supplier?.name?.toLowerCase() || 
+                                 m.batchSupplier?.name?.toLowerCase() || 
+                                 m.batch?.supplier?.name?.toLowerCase() || 
+                                 '';
+
+            return materialCode.includes(q) || 
+                   materialDesc.includes(q) || 
+                   lotNumber.includes(q) || 
+                   supplierName.includes(q);
+        });
+    }, [movements, searchQuery]);
+
     // Calculate items breakdown (list of all materials found in the period)
     const itemsBreakdown = useMemo(() => {
         const groups: Record<string, {
@@ -42,7 +65,7 @@ export default function ReporteConsumoDetalladoPage() {
             movements: any[];
         }> = {};
 
-        movements.forEach(m => {
+        filteredMovements.forEach(m => {
             if (!m.item) return;
             const itemId = m.item.id;
             const qty = Math.abs(Number(m.qtyPrincipal || 0));
@@ -59,14 +82,14 @@ export default function ReporteConsumoDetalladoPage() {
         });
 
         return Object.values(groups).sort((a, b) => b.totalQty - a.totalQty);
-    }, [movements]);
+    }, [filteredMovements]);
 
     // Calculate aggregated metrics and charts data based on filtered (non-excluded) materials
     const { timelineData, barChartData, totalKilos } = useMemo(() => {
         let sumKilos = 0;
         const dailyTotals: Record<string, number> = {};
 
-        movements.forEach(m => {
+        filteredMovements.forEach(m => {
             if (!m.item) return;
             const itemId = m.item.id;
             
@@ -106,7 +129,7 @@ export default function ReporteConsumoDetalladoPage() {
             barChartData: bars,
             totalKilos: sumKilos
         };
-    }, [movements, excludedMaterialIds, itemsBreakdown]);
+    }, [filteredMovements, excludedMaterialIds, itemsBreakdown]);
 
     const toggleMaterialSelection = (itemId: string) => {
         setExcludedMaterialIds(prev => ({
@@ -160,18 +183,26 @@ export default function ReporteConsumoDetalladoPage() {
 
             {/* Filters */}
             <Card style={{ padding: '20px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
+                        <Input 
+                            label="Desde" 
+                            type="date" 
+                            value={desde} 
+                            onChange={setDesde} 
+                        />
+                        <Input 
+                            label="Hasta" 
+                            type="date" 
+                            value={hasta} 
+                            onChange={setHasta} 
+                        />
+                    </div>
                     <Input 
-                        label="Desde" 
-                        type="date" 
-                        value={desde} 
-                        onChange={setDesde} 
-                    />
-                    <Input 
-                        label="Hasta" 
-                        type="date" 
-                        value={hasta} 
-                        onChange={setHasta} 
+                        label="Buscar por proveedor, lote, material, descripción o código" 
+                        placeholder="Ej: Cemento, L-2026, Arcor..." 
+                        value={searchQuery} 
+                        onChange={setSearchQuery} 
                     />
                 </div>
             </Card>
@@ -194,7 +225,7 @@ export default function ReporteConsumoDetalladoPage() {
                                 <span style={{ fontSize: '18px', color: '#94a3b8', marginLeft: '6px' }}>Kg</span>
                             </div>
                             <div style={{ fontSize: '12px', color: '#64748b', marginTop: '10px' }}>
-                                Basado en {movements.length} transacciones registradas
+                                Basado en {filteredMovements.length === movements.length ? `${movements.length}` : `${filteredMovements.length} de ${movements.length}`} transacciones registradas
                             </div>
                         </Card>
 
