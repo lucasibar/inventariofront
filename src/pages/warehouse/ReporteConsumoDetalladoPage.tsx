@@ -104,16 +104,19 @@ export default function ReporteConsumoDetalladoPage() {
             dailyTotals[dateStr] = (dailyTotals[dateStr] || 0) + qty;
         });
 
-        // Build progressive area chart data (timeline sorted ascending)
-        const sortedDates = Object.keys(dailyTotals).sort();
-        let runningTotal = 0;
-        const timeline = sortedDates.map(date => {
-            runningTotal += dailyTotals[date];
-            return {
-                fecha: date,
-                qty: Number(runningTotal.toFixed(2))
-            };
-        });
+        // Build daily consumption data filling missing dates with 0
+        const start = new Date(desde + 'T12:00:00');
+        const end = new Date(hasta + 'T12:00:00');
+        const timeline: { fecha: string; qty: number }[] = [];
+        
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            const dateStr = d.toISOString().split('T')[0];
+            const qty = dailyTotals[dateStr] || 0;
+            timeline.push({
+                fecha: dateStr,
+                qty: Number(qty.toFixed(2))
+            });
+        }
 
         // Build vertical/horizontal bar chart data (only for active selected materials)
         const bars = itemsBreakdown
@@ -129,7 +132,7 @@ export default function ReporteConsumoDetalladoPage() {
             barChartData: bars,
             totalKilos: sumKilos
         };
-    }, [filteredMovements, excludedMaterialIds, itemsBreakdown]);
+    }, [filteredMovements, excludedMaterialIds, itemsBreakdown, desde, hasta]);
 
     const toggleMaterialSelection = (itemId: string) => {
         setExcludedMaterialIds(prev => ({
@@ -229,11 +232,11 @@ export default function ReporteConsumoDetalladoPage() {
                             </div>
                         </Card>
 
-                        {/* Desktop Progressive Consumption Chart */}
+                        {/* Desktop Daily Consumption Chart */}
                         {!isMobile && (
                             <Card style={{ padding: '20px', height: '240px' }}>
                                 <h3 style={{ color: '#f3f4f6', fontSize: '14px', margin: '0 0 15px 0', fontWeight: 700 }}>
-                                    📈 Consumo Acumulado (Kilos Progresivo)
+                                    📈 Consumo Diario (Kilos)
                                 </h3>
                                 {timelineData.length === 0 ? (
                                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80%', color: '#64748b' }}>
@@ -264,7 +267,7 @@ export default function ReporteConsumoDetalladoPage() {
                                             <Area 
                                                 type="monotone" 
                                                 dataKey="qty" 
-                                                name="Acumulado" 
+                                                name="Consumo Diario" 
                                                 stroke="#0ea5e9" 
                                                 strokeWidth={2}
                                                 fillOpacity={1} 
