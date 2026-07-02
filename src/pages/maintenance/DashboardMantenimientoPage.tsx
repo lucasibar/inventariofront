@@ -75,14 +75,22 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
     }, [machine.lastStatusChange, machine.createdAt]);
 
     const handleQuickUpdate = async (updates: Partial<{ status: string, failureType: string, generatedBy: string, observation: string, timestamp: string }>) => {
-        await updateStatus({
+        const hasStatusChange = updates.status && updates.status !== machine.status;
+        const hasExplicitTimestamp = !!updates.timestamp;
+
+        const payload: any = {
             id: machine.id,
             status: (updates.status || machine.status) as any,
             failureType: updates.failureType || machine.lastFailureType || 'Ninguna',
             generatedBy: updates.generatedBy || machine.lastChangeBy || 'Sin Asignar',
             observation: updates.observation !== undefined ? updates.observation : (machine.lastObservation || ''),
-            timestamp: updates.timestamp || new Date().toISOString()
-        });
+        };
+
+        if (hasStatusChange || hasExplicitTimestamp) {
+            payload.timestamp = updates.timestamp || new Date().toISOString();
+        }
+
+        await updateStatus(payload);
         setAnchorElStatus(null);
         setAnchorElFailure(null);
         setAnchorElMechanic(null);

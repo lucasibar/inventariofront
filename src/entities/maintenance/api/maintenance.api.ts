@@ -109,7 +109,7 @@ export const maintenanceApi = api.injectEndpoints({
                 body,
             }),
             invalidatesTags: ['Maintenance', 'Machine'],
-            async onQueryStarted({ id, plantId, typeId, status, generatedBy }, { dispatch, queryFulfilled }) {
+            async onQueryStarted({ id, plantId, typeId, status, generatedBy, timestamp }, { dispatch, queryFulfilled }) {
                 // If we have plantId, we can perform a targeted optimistic update
                 const patches: any[] = [];
                 
@@ -119,9 +119,12 @@ export const maintenanceApi = api.injectEndpoints({
                         maintenanceApi.util.updateQueryData('getMachines', { plantId, typeId }, (draft) => {
                             const machine = draft?.find((m: any) => m.id === id);
                             if (machine) {
+                                const statusChanged = status && status !== machine.status;
                                 machine.status = status;
                                 if (generatedBy) machine.lastChangeBy = generatedBy;
-                                machine.lastStatusChange = new Date().toISOString();
+                                if (statusChanged || timestamp) {
+                                    machine.lastStatusChange = timestamp || new Date().toISOString();
+                                }
                             }
                         })
                     ));
@@ -132,9 +135,12 @@ export const maintenanceApi = api.injectEndpoints({
                             maintenanceApi.util.updateQueryData('getMachines', { plantId }, (draft) => {
                                 const machine = draft?.find((m: any) => m.id === id);
                                 if (machine) {
+                                    const statusChanged = status && status !== machine.status;
                                     machine.status = status;
                                     if (generatedBy) machine.lastChangeBy = generatedBy;
-                                    machine.lastStatusChange = new Date().toISOString();
+                                    if (statusChanged || timestamp) {
+                                        machine.lastStatusChange = timestamp || new Date().toISOString();
+                                    }
                                 }
                             })
                         ));
