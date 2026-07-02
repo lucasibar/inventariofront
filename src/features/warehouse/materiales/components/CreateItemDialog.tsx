@@ -4,7 +4,7 @@ import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     Button, TextField, MenuItem, Typography, Box
 } from '@mui/material';
-import { useCreateItemMutation, useUpdateItemMutation, useGetItemCategoriesQuery, useCreateItemCategoryMutation } from '../api/items.api';
+import { useCreateItemMutation, useUpdateItemMutation, useGetItemCategoriesQuery, useCreateItemCategoryMutation, useGetItemsQuery } from '../api/items.api';
 import { useGetBoxTypesQuery } from '../api/box-types.api';
 import { useGetPartnersQuery } from '../../../config/partners/api/partners.api';
 import { useGetDepotsQuery } from '../../deposito/api/deposito.api';
@@ -93,9 +93,13 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                 });
             }
             setError('');
+            setFieldErrors({});
         }
     }, [open, initialSupplierId, initialSupplierName, editTarget, depositoId]);
+
+    const { data: allItems = [] } = useGetItemsQuery({});
     const [error, setError] = useState('');
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
     const [isCreatingCategory, setIsCreatingCategory] = useState(false);
@@ -116,6 +120,37 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
     };
 
     const handleSave = async () => {
+        const errors: Record<string, string> = {};
+        if (!form.depositoId) {
+            errors.depositoId = 'Falta llenar el depósito';
+        }
+        if (!form.codigoInterno.trim()) {
+            errors.codigoInterno = 'Falta llenar el código interno';
+        } else {
+            const isDuplicate = allItems.some((item: any) => 
+                item.codigoInterno.trim().toLowerCase() === form.codigoInterno.trim().toLowerCase() &&
+                (!editTarget || item.id !== editTarget.id)
+            );
+            if (isDuplicate) {
+                errors.codigoInterno = 'Este código interno ya está registrado';
+            }
+        }
+        if (!form.descripcion.trim()) {
+            errors.descripcion = 'Falta llenar la descripción';
+        }
+        if (!form.categoryId) {
+            errors.categoryId = 'Falta seleccionar la categoría';
+        }
+        if (!form.unidadPrincipal.trim()) {
+            errors.unidadPrincipal = 'Falta llenar la unidad principal';
+        }
+
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
+            return;
+        }
+
+        setFieldErrors({});
         try {
             const { depositoId: _, ...rest } = form;
             const dto = {
@@ -173,6 +208,43 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                     Complete los datos básicos para registrar un nuevo material en el catálogo.
                 </Typography>
+                {!editTarget && (
+                    <Box sx={{ mb: 3 }}>
+                        <Autocomplete
+                            options={allItems}
+                            getOptionLabel={(option: any) => `${option.codigoInterno} - ${option.descripcion}`}
+                            onChange={(_, newValue) => {
+                                if (newValue) {
+                                    setForm({
+                                        codigoInterno: newValue.codigoInterno || '',
+                                        descripcion: newValue.descripcion || '',
+                                        categoryId: newValue.categoryId || '',
+                                        depositoId: newValue.category?.depositoId || '',
+                                        rotacion: newValue.rotacion || 'MEDIA',
+                                        stockMinimo: newValue.stockMinimo != null ? String(newValue.stockMinimo) : '',
+                                        stockMaximo: newValue.stockMaximo != null ? String(newValue.stockMaximo) : '',
+                                        kilosPorCaja: newValue.kilosPorCaja != null ? String(newValue.kilosPorCaja) : '',
+                                        unidadPrincipal: newValue.unidadPrincipal || 'KG',
+                                        unidadSecundaria: newValue.unidadSecundaria || '',
+                                        tono: newValue.tono || '',
+                                        boxTypeId: newValue.boxTypeId || '',
+                                        supplierId: newValue.supplierId || '',
+                                        supplierName: newValue.supplier?.name || '',
+                                    });
+                                }
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Copiar datos de material existente (Opcional)"
+                                    variant="outlined"
+                                    placeholder="Buscar por código o descripción..."
+                                    helperText="Seleccioná un material para rellenar automáticamente el formulario"
+                                />
+                            )}
+                        />
+                    </Box>
+                )}
                 <Box sx={{
                     display: 'grid',
                     gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
@@ -187,7 +259,12 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                             variant="filled"
                             value={form.depositoId}
                             disabled={!!editTarget || !!depositoId}
-                            onChange={(e) => setForm({ ...form, depositoId: e.target.value, categoryId: '' })}
+                            onChange={(e) => {
+                                setForm({ ...form, depositoId: e.target.value, categoryId: '' });
+                                setFieldErrors(prev => ({ ...prev, depositoId: '' }));
+                            }}
+                            error={!!fieldErrors.depositoId}
+                            helperText={fieldErrors.depositoId}
                         >
                             <MenuItem value="" disabled>Seleccione un depósito...</MenuItem>
                             {depots.map((d: any) => (
@@ -199,10 +276,16 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                         <TextField
                             label="Código Interno"
                             fullWidth
+                            required
                             variant="filled"
                             value={form.codigoInterno}
                             InputLabelProps={{ shrink: true }}
-                            onChange={(e) => setForm({ ...form, codigoInterno: e.target.value })}
+                            onChange={(e) => {
+                                setForm({ ...form, codigoInterno: e.target.value });
+                                setFieldErrors(prev => ({ ...prev, codigoInterno: '' }));
+                            }}
+                            error={!!fieldErrors.codigoInterno}
+                            helperText={fieldErrors.codigoInterno}
                         />
                     </Box>
                     <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }}>
@@ -213,7 +296,12 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                             variant="filled"
                             value={form.descripcion}
                             InputLabelProps={{ shrink: true }}
-                            onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+                            onChange={(e) => {
+                                setForm({ ...form, descripcion: e.target.value });
+                                setFieldErrors(prev => ({ ...prev, descripcion: '' }));
+                            }}
+                            error={!!fieldErrors.descripcion}
+                            helperText={fieldErrors.descripcion}
                         />
                     </Box>
                     <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' }, display: 'flex', gap: 1, alignItems: 'flex-end' }}>
@@ -221,6 +309,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                             value={categories.find((c: any) => c.id === form.categoryId) || null}
                             onChange={(_, newValue) => {
                                 setForm({ ...form, categoryId: newValue?.id || '' });
+                                setFieldErrors(prev => ({ ...prev, categoryId: '' }));
                             }}
                             id="category-autocomplete"
                             options={categories}
@@ -239,6 +328,8 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                                     required
                                     variant="filled"
                                     placeholder="Seleccionar categoría..."
+                                    error={!!fieldErrors.categoryId}
+                                    helperText={fieldErrors.categoryId}
                                 />
                             )}
                         />
@@ -355,10 +446,16 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                         <TextField
                             label="Unidad Principal"
                             fullWidth
+                            required
                             variant="filled"
                             placeholder="Ej: KG"
                             value={form.unidadPrincipal}
-                            onChange={(e) => setForm({ ...form, unidadPrincipal: e.target.value })}
+                            onChange={(e) => {
+                                setForm({ ...form, unidadPrincipal: e.target.value });
+                                setFieldErrors(prev => ({ ...prev, unidadPrincipal: '' }));
+                            }}
+                            error={!!fieldErrors.unidadPrincipal}
+                            helperText={fieldErrors.unidadPrincipal}
                         />
                     </Box>
                     <Box>
