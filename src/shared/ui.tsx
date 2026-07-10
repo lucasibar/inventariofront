@@ -764,3 +764,82 @@ export function EditableCell({ value, onSave, numeric, style, inputStyle }: { va
         </div>
     );
 }
+
+
+// HelpTooltip component for contextual help
+import { Popover as MuiPopover, Typography as MuiTypography, IconButton as MuiIconButton } from '@mui/material';
+import MuiInfoIcon from '@mui/icons-material/Info';
+
+export function HelpTooltip({ title, content, style }: { title?: string; content: string; style?: React.CSSProperties }) {
+    const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+
+    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleClose = (event: React.MouseEvent | {}) => {
+        if (event && 'stopPropagation' in event) {
+            (event as any).stopPropagation();
+        }
+        setAnchorEl(null);
+    };
+
+    const open = Boolean(anchorEl);
+    const id = open ? 'help-popover' : undefined;
+
+    return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', verticalAlign: 'middle', marginLeft: '6px', ...style }} onClick={e => e.stopPropagation()}>
+            <MuiIconButton 
+                aria-describedby={id} 
+                onClick={handleClick}
+                size="small"
+                style={{ 
+                    padding: '2px', 
+                    color: '#a5b4fc', 
+                    background: 'rgba(165, 180, 252, 0.1)', 
+                    borderRadius: '50%' 
+                }}
+            >
+                <MuiInfoIcon style={{ fontSize: '15px' }} />
+            </MuiIconButton>
+            <MuiPopover
+                id={id}
+                open={open}
+                anchorEl={anchorEl}
+                onClose={handleClose}
+                onClick={e => e.stopPropagation()}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'center',
+                }}
+                transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'center',
+                }}
+                slotProps={{
+                    paper: {
+                        style: {
+                            background: '#1a1d2e',
+                            border: '1px solid #374151',
+                            borderRadius: '8px',
+                            padding: '12px',
+                            maxWidth: '280px',
+                            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }}
+            >
+                {title && (
+                    <MuiTypography style={{ color: '#f3f4f6', fontWeight: 700, fontSize: '13px', marginBottom: '4px', fontFamily: 'inherit' }}>
+                        {title}
+                    </MuiTypography>
+                )}
+                <MuiTypography style={{ color: '#9ca3af', fontSize: '12px', lineHeight: '1.4', margin: 0, fontFamily: 'inherit' }}>
+                    {content}
+                </MuiTypography>
+            </MuiPopover>
+        </span>
+    );
+}
+

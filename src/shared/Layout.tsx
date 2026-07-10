@@ -443,7 +443,26 @@ export default function Layout() {
                             </span>
                         )}
                     </NavLink>
+
+                    {/* Ayuda menu item */}
+                    <NavLink
+                        to="/ayuda"
+                        style={({ isActive }) => ({
+                            ...navStyle(isActive, isMobile),
+                            marginTop: '4px',
+                            borderTop: 'none',
+                            paddingTop: isMobile ? '12px' : '10px',
+                        })}
+                    >
+                        <span style={{ fontSize: isMobile ? '20px' : '16px', minWidth: '24px' }}>
+                            ❓
+                        </span>
+                        {(!collapsed || isMobile) && (
+                            <span>Ayuda / Soporte</span>
+                        )}
+                    </NavLink>
                 </nav>
+
 
 
                 {/* Bottom Actions */}

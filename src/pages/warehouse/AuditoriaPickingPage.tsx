@@ -3,7 +3,7 @@ import { useGetStockQuery, useSubmitPickingAuditMutation } from '../../features/
 import { useDespachoDirectoMutation } from '../../features/warehouse/remitosSalida/api/remitos-salida.api';
 import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
 import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
-import { PageHeader, Card, Btn, Badge, Modal, SearchSelect, Input } from '../../shared/ui';
+import { PageHeader, Card, Btn, Badge, Modal, SearchSelect, Input, HelpTooltip } from '../../shared/ui';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '../../entities/auth/model/authSlice';
 
@@ -167,7 +167,9 @@ export default function AuditoriaPickingPage() {
             <PageHeader 
                 title="Auditoría de Picking" 
                 subtitle="Verifica las cantidades físicas reales en las posiciones de picking. Las diferencias se registrarán en un remito de salida consolidado." 
-            />
+            >
+                <HelpTooltip title="Auditoría de Picking" content="Si el conteo físico es menor al del sistema, anotá el número real. Al confirmar la auditoría, se creará automáticamente un remito de salida para descontar las pérdidas." />
+            </PageHeader>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '16px', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>

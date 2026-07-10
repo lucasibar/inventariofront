@@ -13,7 +13,7 @@ import { CreatePartnerDialog } from '../../features/config/CreatePartnerDialog';
 import { useGetOrdersQuery } from '../../entities/sales/api/orders.api';
 import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
 import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.api';
-import { PageHeader, Card, Btn, Input, Select, SearchSelect, Modal, Table, Badge } from '../../shared/ui';
+import { PageHeader, Card, Btn, Input, Select, SearchSelect, Modal, Table, Badge, HelpTooltip } from '../../shared/ui';
 
 export default function RemitosSalidaPage() {
     const { data: remitos = [], isLoading } = useGetRemitosSalidaQuery();
@@ -89,6 +89,7 @@ export default function RemitosSalidaPage() {
     return (
         <div style={{ padding: '24px' }}>
             <PageHeader title="Remitos de Salida" subtitle="Egreso de mercadería con FIFO desde picking">
+                <HelpTooltip title="Egresos FIFO" content="Al confirmar, el sistema descuenta stock automáticamente de las posiciones PICKING, seleccionando primero las partidas más antiguas cargadas." style={{ marginRight: '12px' }} />
                 <Btn onClick={() => { setStep('form'); setError(''); }}>+ Nuevo Remito</Btn>
             </PageHeader>
 

@@ -13,7 +13,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
 import { useGetItemsQuery, useGetItemCategoriesQuery } from '../../features/warehouse/materiales/api/items.api';
 import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
-import { PageHeader, Select, SearchSelect, Spinner, Btn, Modal, Input, EditableCell, useIsMobile } from '../../shared/ui';
+import { PageHeader, Select, SearchSelect, Spinner, Btn, Modal, Input, EditableCell, useIsMobile, HelpTooltip } from '../../shared/ui';
 import { rawBase } from '../../shared/api';
 import { CreateItemDialog } from '../../features/warehouse/materiales/components/CreateItemDialog';
 import { CreatePartnerDialog } from '../../features/config/CreatePartnerDialog';
@@ -523,8 +523,8 @@ export default function StockPage() {
                                                 <thead>
                                                     <tr>
                                                         <th style={{ width: isMobile ? '60px' : '150px' }}>Ubic.</th>
-                                                        <th>Lote</th>
-                                                        <th style={{ textAlign: 'right', width: isMobile ? '70px' : '120px' }}>Kilos</th>
+                                                        <th>Lote <HelpTooltip title="Editar Lote" content="Hacé clic sobre el lote para renombrarlo o fusionarlo con otra partida." /></th>
+                                                        <th style={{ textAlign: 'right', width: isMobile ? '70px' : '120px' }}>Kilos <HelpTooltip title="Ajuste de Stock" content="Hacé clic sobre los números de stock para editarlos y hacer un ajuste manual directo." /></th>
                                                         <th style={{ textAlign: 'right', width: isMobile ? '55px' : '120px' }}>Un.</th>
                                                         <th style={{ textAlign: 'center', width: '50px' }}></th>
                                                     </tr>

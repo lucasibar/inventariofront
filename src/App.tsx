@@ -57,6 +57,7 @@ const RRHHDashboardPage = lazy(() => import('./pages/hr/RRHHDashboardPage'));
 const AdminMovementsPage = lazy(() => import('./pages/warehouse/AdminMovementsPage'));
 const NotificationsPage = lazy(() => import('./pages/config/NotificationsPage'));
 const PedidosPage = lazy(() => import('./pages/sales/PedidosPage'));
+const HelpPage = lazy(() => import('./pages/help/HelpPage'));
 
 import './App.css';
 
@@ -162,6 +163,7 @@ const router = createBrowserRouter([
           // Shared
           { path: "deposito", element: <LazyRoute element={DepositoPage} /> },
           { path: "notificaciones", element: <LazyRoute element={NotificationsPage} /> },
+          { path: "ayuda", element: <LazyRoute element={HelpPage} /> },
         ]
       }
     ]
