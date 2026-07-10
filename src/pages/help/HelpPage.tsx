@@ -52,6 +52,18 @@ export default function HelpPage() {
                     ]
                 },
                 {
+                    title: 'Realizar un Movimiento Interno (Reubicar Stock)',
+                    details: [
+                        'Ingresá a Movimientos (🔄 Movimientos) en el menú lateral. Verás una pantalla dividida en dos paneles (Izquierdo y Derecho).',
+                        'En el panel origen (por ejemplo, Izquierdo), seleccioná el Depósito y la Posición origen de donde querés retirar la mercadería. La tabla cargará los materiales almacenados.',
+                        'En el panel destino (por ejemplo, Derecho), seleccioná el Depósito y la Posición de destino a donde querés trasladar el material.',
+                        'En la tabla del panel origen, marcá la casilla (checkbox) al inicio de la fila del material/lote que deseás mover.',
+                        'Hacé clic en el botón de transferencia (Mover seleccionados -> o <- Mover seleccionados).',
+                        'Se abrirá una ventana flotante ("Mover Stock"): ingresá la Cantidad Principal y Secundaria que vas a trasladar (podés transferir el total o realizar un traspaso parcial).',
+                        'Presioná el botón Confirmar para procesar el traslado físico en el sistema.',
+                    ]
+                },
+                {
                     title: 'Efectuar una Auditoría de Picking',
                     details: [
                         'Accedé a la sección Picking (✅ Picking) en el menú lateral.',
@@ -153,6 +165,40 @@ export default function HelpPage() {
                         'Ingresá la cantidad de piezas/unidades producidas.',
                         'Ingresá la partida o lote del insumo utilizado en el proceso.',
                         'Confirmá haciendo clic en Cargar Producción.',
+                    ]
+                }
+            ]
+        },
+        {
+            id: 'compras',
+            title: 'Compras (Purchasing)',
+            icon: '🛒',
+            description: 'Creación de pedidos de compra a proveedores y conciliación de remitos físicos.',
+            workflows: [
+                {
+                    title: 'Crear un Nuevo Pedido de Compra',
+                    details: [
+                        'Ingresá a Pedidos de Compra (📝 Pedidos de Compra) en el menú lateral.',
+                        'Hacé clic en el botón superior derecho + Nuevo Pedido.',
+                        'Completá los datos del formulario:',
+                        '  - Proveedor: Seleccioná al proveedor al que le realizarás la compra.',
+                        '  - Planta/Depósito: Elegí el destino de la entrega.',
+                        '  - Fecha de Entrega Esperada: Indicá la fecha de recepción estimada.',
+                        '  - Observaciones: (Opcional) Notas administrativas.',
+                        'Hacé clic en + Línea para agregar los materiales:',
+                        '  - Material: Buscá y elegí el material de la lista.',
+                        '  - Cantidad Pedida: Ingresá la cantidad solicitada.',
+                        'Hacé clic en Guardar para registrar el pedido de compra.',
+                    ]
+                },
+                {
+                    title: 'Conciliación de Remitos de Entrada',
+                    details: [
+                        'Entrá a Conciliación (🔗 Conciliación) en el menú lateral bajo el sector Compras.',
+                        'En el panel izquierdo verás la lista de Entradas sin vincular (remitos que ingresaron físicamente a stock pero no están asociados a ninguna orden de compra).',
+                        'Hacé clic sobre una entrada de la lista para seleccionarla.',
+                        'El panel derecho buscará y te sugerirá las Órdenes de Compra abiertas correspondientes a ese mismo proveedor e ítem.',
+                        'Hacé clic en el botón de vinculación de la orden de compra sugerida correcta para ligar el remito físico con el documento administrativo.',
                     ]
                 }
             ]
