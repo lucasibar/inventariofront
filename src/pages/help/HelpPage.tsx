@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { 
     Box, Typography, Accordion, AccordionSummary, AccordionDetails, 
     TextField, InputAdornment, Card, CardContent, Divider 
