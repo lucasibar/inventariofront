@@ -1,36 +1,34 @@
 import { useState } from 'react';
 import { 
     useGetUnlinkedMovementsQuery, 
-    useGetPurchaseOrdersQuery,
-    useLinkMovementMutation 
+    useLinkMovementReceiptMutation 
 } from '../../features/purchasing/purchase-orders/api/purchase-orders.api';
 import { PageHeader, Card, Btn, Spinner } from '../../shared/ui';
+import PurchaseOrderLinkDialog from '../../features/purchasing/purchase-orders/ui/PurchaseOrderLinkDialog';
 
 export default function ConciliacionPage() {
-    const { data: unlinkedMovements = [], isLoading: loadingMovs } = useGetUnlinkedMovementsQuery();
-    const { data: purchaseOrders = [] } = useGetPurchaseOrdersQuery();
-    const [linkMovement, { isLoading: linking }] = useLinkMovementMutation();
+    const { data: unlinkedMovements = [], isLoading: loadingMovs, refetch } = useGetUnlinkedMovementsQuery();
+    const [linkMovementReceipt, { isLoading: linking }] = useLinkMovementReceiptMutation();
 
     const [selectedMov, setSelectedMov] = useState<any>(null);
+    const [showLinkDialog, setShowLinkDialog] = useState(false);
 
-    // Filter POs that match the supplier and item of the selected movement
-    const suggestedLines = selectedMov ? purchaseOrders
-        .filter((o: any) => o.supplierId === selectedMov.supplierId && o.estado !== 'COMPLETADO')
-        .flatMap((o: any) => o.lines.map((l: any) => ({ ...l, orderNumero: o.numero, orderId: o.id })))
-        .filter((l: any) => l.itemId === selectedMov.itemId)
-        : [];
-
-    const handleLink = async (lineId: string) => {
+    const handleLinkConfirm = async (links: { purchaseOrderLineId: string; qtyAplicada: number }[]) => {
         if (!selectedMov) return;
         try {
-            await linkMovement({ 
-                movementId: selectedMov.id, 
-                purchaseOrderLineId: lineId 
+            await linkMovementReceipt({
+                movimientoId: selectedMov.id,
+                links: links.map(l => ({
+                    purchaseOrderLineId: l.purchaseOrderLineId,
+                    qtyPrincipal: l.qtyAplicada
+                }))
             }).unwrap();
             setSelectedMov(null);
+            setShowLinkDialog(false);
+            refetch();
             alert('¡Vinculación exitosa!');
-        } catch (e) {
-            alert('Error al vincular');
+        } catch (e: any) {
+            alert(e?.data?.message ?? 'Error al vincular');
         }
     };
 
@@ -76,54 +74,50 @@ export default function ConciliacionPage() {
                 </div>
 
                 <div>
-                    <h3 style={{ color: '#f3f4f6', fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>🔗 Órdenes de Compra Sugeridas</h3>
+                    <h3 style={{ color: '#f3f4f6', fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>🔗 Acción de Conciliación</h3>
                     {!selectedMov ? (
                         <Card style={{ textAlign: 'center', padding: '40px', background: 'transparent', border: '1px dashed rgba(255,255,255,0.1)' }}>
                             <p style={{ color: '#6b7280' }}>Selecciona una entrada de la izquierda para buscar coincidencias.</p>
                         </Card>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <div style={{ padding: '12px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '8px', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+                            <div style={{ padding: '16px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '8px', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
                                 <span style={{ fontSize: '11px', color: '#a5b4fc', textTransform: 'uppercase', fontWeight: 700 }}>Buscando para:</span>
-                                <div style={{ color: 'white', fontWeight: 600 }}>{selectedMov.item?.descripcion}</div>
-                                <div style={{ color: '#9ca3af', fontSize: '12px' }}>Proveedor: {selectedMov.supplier?.name}</div>
+                                <div style={{ color: 'white', fontWeight: 600, fontSize: '15px', marginTop: '4px' }}>{selectedMov.item?.descripcion}</div>
+                                <div style={{ color: '#9ca3af', fontSize: '12px', marginTop: '4px' }}>Proveedor: {selectedMov.supplier?.name}</div>
+                                <div style={{ color: '#9ca3af', fontSize: '12px' }}>Cantidad total recibida: <strong>{Number(selectedMov.qtyPrincipal).toFixed(2)} kg</strong></div>
                             </div>
 
-                            {suggestedLines.length === 0 ? (
-                                <p style={{ color: '#f87171', fontSize: '13px', textAlign: 'center', padding: '20px' }}>
-                                    No se encontraron órdenes de compra abiertas para este proveedor y material.
+                            <Card style={{ padding: '20px', textAlign: 'center' }}>
+                                <p style={{ color: '#cbd5e1', fontSize: '13px', marginBottom: '16px' }}>
+                                    Hacé click abajo para abrir el panel de vinculación e imputar este ingreso de material a las Órdenes de Compra abiertas de este proveedor.
                                 </p>
-                            ) : (
-                                suggestedLines.map((line: any) => (
-                                    <Card key={line.id} style={{ padding: '16px' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div>
-                                                <div style={{ color: '#a5b4fc', fontWeight: 700 }}>{line.orderNumero}</div>
-                                                <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                                                    Pedido: {Number(line.qtyPedido).toFixed(1)} kg • 
-                                                    Recibido: <span style={{ color: '#10b981' }}>{Number(line.qtyRecibida).toFixed(1)} kg</span>
-                                                </div>
-                                                <div style={{ fontSize: '11px', color: '#f59e0b', marginTop: '4px' }}>
-                                                    Pendiente: {(Number(line.qtyPedido) - Number(line.qtyRecibida)).toFixed(1)} kg
-                                                </div>
-                                            </div>
-                                            <Btn 
-                                                small 
-                                                disabled={linking}
-                                                onClick={() => handleLink(line.id)}
-                                            >
-                                                {linking ? '...' : 'Vincular'}
-                                            </Btn>
-                                        </div>
-                                    </Card>
-                                ))
-                            )}
+                                <Btn 
+                                    onClick={() => setShowLinkDialog(true)}
+                                    disabled={linking}
+                                    style={{ width: '100%' }}
+                                >
+                                    {linking ? 'Procesando...' : 'Vincular a Orden de Compra'}
+                                </Btn>
+                            </Card>
                             
                             <Btn variant="secondary" onClick={() => setSelectedMov(null)}>Cancelar selección</Btn>
                         </div>
                     )}
                 </div>
             </div>
+
+            {/* Modal de vinculación comercial */}
+            {showLinkDialog && selectedMov && (
+                <PurchaseOrderLinkDialog
+                    supplierId={selectedMov.supplierId}
+                    itemId={selectedMov.itemId}
+                    itemName={selectedMov.item?.descripcion || ''}
+                    qtyAvailable={Number(selectedMov.qtyPrincipal)}
+                    onClose={() => setShowLinkDialog(false)}
+                    onConfirm={handleLinkConfirm}
+                />
+            )}
         </div>
     );
 }

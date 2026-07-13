@@ -14,6 +14,14 @@ export const purchaseOrdersApi = api.injectEndpoints({
             }),
             invalidatesTags: ['PurchaseOrders', 'Dashboard'],
         }),
+        updatePurchaseOrder: builder.mutation<any, { id: string; body: any }>({
+            query: ({ id, body }) => ({
+                url: `/purchase-orders/${id}`,
+                method: 'PUT',
+                body,
+            }),
+            invalidatesTags: ['PurchaseOrders', 'Dashboard'],
+        }),
         deletePurchaseOrder: builder.mutation<any, string>({
             query: (id) => ({
                 url: `/purchase-orders/${id}`,
@@ -53,6 +61,47 @@ export const purchaseOrdersApi = api.injectEndpoints({
             query: (id) => `/combos-compra/${id}/breakdown`,
             providesTags: ['PurchaseOrders'],
         }),
+        
+        // --- NUEVOS ENDPOINTS ---
+        getNextNumber: builder.query<{ numero: string }, void>({
+            query: () => '/purchase-orders/next-number',
+            providesTags: ['PurchaseOrders'],
+        }),
+        getOrderFulfillment: builder.query<any, string>({
+            query: (id) => `/purchase-orders/${id}/fulfillment`,
+            providesTags: ['PurchaseOrders'],
+        }),
+        getPendingForItem: builder.query<any[], { supplierId: string; itemId: string }>({
+            query: ({ supplierId, itemId }) => `/purchase-orders/pending-for-item?supplierId=${supplierId}&itemId=${itemId}`,
+            providesTags: ['PurchaseOrders'],
+        }),
+        getSupplierPending: builder.query<any[], string>({
+            query: (supplierId) => `/purchase-orders/supplier/${supplierId}/pending`,
+            providesTags: ['PurchaseOrders'],
+        }),
+        linkMovementReceipt: builder.mutation<any, { movimientoId: string; links: { purchaseOrderLineId: string; qtyPrincipal: number; qtySecundaria?: number }[] }>({
+            query: (body) => ({
+                url: '/purchase-orders/receipts',
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['PurchaseOrders', 'Stock', 'Dashboard'],
+        }),
+        closeAdjustment: builder.mutation<any, { purchaseOrderLineId: string; qtyPrincipal: number; qtySecundaria?: number | null; observaciones: string }>({
+            query: (body) => ({
+                url: '/purchase-orders/receipts/close-adjustment',
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['PurchaseOrders', 'Dashboard'],
+        }),
+        unlinkReceipt: builder.mutation<any, string>({
+            query: (id) => ({
+                url: `/purchase-orders/receipts/${id}`,
+                method: 'DELETE',
+            }),
+            invalidatesTags: ['PurchaseOrders', 'Stock', 'Dashboard'],
+        }),
     }),
     overrideExisting: false,
 });
@@ -60,6 +109,7 @@ export const purchaseOrdersApi = api.injectEndpoints({
 export const {
     useGetPurchaseOrdersQuery,
     useCreatePurchaseOrderMutation,
+    useUpdatePurchaseOrderMutation,
     useDeletePurchaseOrderMutation,
     useUpdatePurchaseOrderStatusMutation,
     useGetDashboardStatsQuery,
@@ -67,4 +117,14 @@ export const {
     useLinkMovementMutation,
     useGetCombosQuery,
     useGetComboBreakdownQuery,
+    
+    // Hooks exportados para nuevos endpoints
+    useGetNextNumberQuery,
+    useGetOrderFulfillmentQuery,
+    useGetPendingForItemQuery,
+    useLazyGetPendingForItemQuery,
+    useGetSupplierPendingQuery,
+    useLinkMovementReceiptMutation,
+    useCloseAdjustmentMutation,
+    useUnlinkReceiptMutation,
 } = purchaseOrdersApi;
