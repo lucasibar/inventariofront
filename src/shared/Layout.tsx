@@ -9,7 +9,38 @@ import { setCurrentAlerts, selectHasUnreadNotifications } from '../entities/noti
 import { useIsMobile, PageLoader, Modal, Input, Btn } from './ui';
 import { ErrorBoundary } from './ErrorBoundary';
 
-const navGroups = [
+interface NavItem {
+    to: string;
+    label: string;
+}
+
+interface NavSubGroup {
+    id: string;
+    label: string;
+    isSubGroup: true;
+    items: NavItem[];
+}
+
+interface NavGroup {
+    id: string;
+    label: string;
+    icon: string;
+    items: (NavItem | NavSubGroup)[];
+}
+
+const flattenItems = (items: (NavItem | NavSubGroup)[]): NavItem[] => {
+    const flat: NavItem[] = [];
+    items.forEach(item => {
+        if ('isSubGroup' in item && item.isSubGroup) {
+            flat.push(...item.items);
+        } else {
+            flat.push(item as NavItem);
+        }
+    });
+    return flat;
+};
+
+const navGroups: NavGroup[] = [
     {
         id: 'administracion',
         label: 'Administración',
@@ -27,16 +58,29 @@ const navGroups = [
         items: [
             { to: '/deposito/dashboard', label: '📊 Dashboard Dep' },
             { to: '/stock', label: '📋 Stock' },
-            { to: '/items', label: '🏷️ Materiales' },
-            { to: '/items/box-types', label: '📦 Cajas/Embalaje' },
+            {
+                id: 'remitos',
+                label: '📄 Remitos',
+                isSubGroup: true,
+                items: [
+                    { to: '/remitos-entrada', label: '📥 Remitos Entrada' },
+                    { to: '/remitos-salida', label: '📤 Remitos Salida' },
+                ]
+            },
             { to: '/movimientos', label: '🔄 Movimientos' },
-            { to: '/remitos-entrada', label: '📥 Remitos Entrada' },
-            { to: '/remitos-salida', label: '📤 Remitos Salida' },
-            { to: '/reporte-salidas', label: '📊 Reporte Salidas' },
             { to: '/reporte-consumo-detallado', label: '📊 Consumo Detallado' },
-            { to: '/deposito', label: '🏢 Estructura' },
-            { to: '/deposito/auditoria-picking', label: '✅ Picking' },
             { to: '/tasks', label: '📝 Tareas' },
+            {
+                id: 'configuracion',
+                label: '⚙️ Configuración',
+                isSubGroup: true,
+                items: [
+                    { to: '/items', label: '🏷️ Materiales' },
+                    { to: '/items/box-types', label: '📦 Cajas/Embalaje' },
+                    { to: '/deposito', label: '🏢 Depositos' },
+                    { to: '/socios', label: '🤝 Socios' },
+                ]
+            }
         ]
     },
     {
@@ -98,14 +142,6 @@ const navGroups = [
         icon: '👥',
         items: [
             { to: '/rrhh/dashboard', label: '📊 Dashboard RRHH' },
-        ]
-    },
-    {
-        id: 'configuracion',
-        label: 'Configuración',
-        icon: '⚙️',
-        items: [
-            { to: '/socios', label: '🤝 Socios' },
         ]
     }
 ];
@@ -170,6 +206,7 @@ export default function Layout() {
     }, []);
 
     const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
+    const [expandedSubGroups, setExpandedSubGroups] = useState<string[]>([]);
 
     const toggleGroup = (id: string) => {
         setExpandedGroups(prev =>
@@ -177,17 +214,63 @@ export default function Layout() {
         );
     };
 
-    const filteredGroups = navGroups.map(group => ({
-        ...group,
-        items: group.items.filter(item => {
-            if (isAdmin) return true;
-            if (isOperario || isSupervisor) return ['/deposito/dashboard', '/movimientos', '/stock', '/items', '/items/box-types', '/deposito/auditoria-picking', '/remitos-salida', '/reporte-salidas', '/reporte-consumo-detallado', '/tasks', '/deposito', '/mantenimiento/dashboard', '/mantenimiento/monitoreo', '/mantenimiento/registro', '/mantenimiento/historial', '/mantenimiento/buscador', '/produccion/cargar', '/produccion/dashboard'].includes(item.to);
-            if (isCompras) return ['/deposito/dashboard', '/dashboard', '/compras/materiales-criticos', '/compras/alertas-stock', '/compras/conciliacion', '/pedidos-compra', '/remitos-entrada', '/reporte-salidas', '/reporte-consumo-detallado', '/items', '/dashboard/capacity', '/dashboard/volumes', '/items/box-types', '/socios'].includes(item.to);
-            return false;
-        })
-    })).filter(group => group.items.length > 0);
+    const isAllowed = (to: string) => {
+        if (isAdmin) return true;
+        if (isOperario || isSupervisor) {
+            return [
+                '/deposito/dashboard', '/movimientos', '/stock', '/items', '/items/box-types',
+                '/remitos-salida', '/reporte-consumo-detallado', '/tasks', '/deposito',
+                '/mantenimiento/dashboard', '/mantenimiento/monitoreo', '/mantenimiento/registro',
+                '/mantenimiento/historial', '/mantenimiento/buscador', '/produccion/cargar', '/produccion/dashboard'
+            ].includes(to);
+        }
+        if (isCompras) {
+            return [
+                '/deposito/dashboard', '/dashboard', '/compras/materiales-criticos',
+                '/compras/alertas-stock', '/compras/conciliacion', '/pedidos-compra',
+                '/remitos-entrada', '/reporte-consumo-detallado', '/items',
+                '/dashboard/capacity', '/dashboard/volumes', '/items/box-types', '/socios'
+            ].includes(to);
+        }
+        return false;
+    };
 
-    const allItems = navGroups.flatMap(g => g.items);
+    const filteredGroups = navGroups.map(group => {
+        const filteredItems = group.items.map(item => {
+            if ('isSubGroup' in item && item.isSubGroup) {
+                const subItems = item.items.filter(subItem => isAllowed(subItem.to));
+                if (subItems.length > 0) {
+                    return { ...item, items: subItems };
+                }
+                return null;
+            } else {
+                const stdItem = item as NavItem;
+                return isAllowed(stdItem.to) ? stdItem : null;
+            }
+        }).filter((item): item is NonNullable<typeof item> => item !== null);
+
+        return { ...group, items: filteredItems };
+    }).filter(group => group.items.length > 0);
+
+    const allItems = navGroups.flatMap(g => flattenItems(g.items));
+
+    useEffect(() => {
+        // Auto expand group and subgroup if active child is present
+        navGroups.forEach(group => {
+            const hasActive = flattenItems(group.items).some(item => location.pathname === item.to);
+            if (hasActive) {
+                setExpandedGroups(prev => prev.includes(group.id) ? prev : [...prev, group.id]);
+            }
+            group.items.forEach(item => {
+                if ('isSubGroup' in item && item.isSubGroup) {
+                    const hasActiveSub = item.items.some(sub => location.pathname === sub.to);
+                    if (hasActiveSub) {
+                        setExpandedSubGroups(prev => prev.includes(item.id) ? prev : [...prev, item.id]);
+                    }
+                }
+            });
+        });
+    }, [location.pathname]);
 
 
     const handleLogout = () => {
@@ -344,7 +427,8 @@ export default function Layout() {
                 <nav className="custom-scrollbar" style={{ flex: 1, paddingTop: '8px', overflowY: 'auto' }}>
                     {filteredGroups.map((group) => {
                         const isExpanded = expandedGroups.includes(group.id);
-                        const hasActiveChild = group.items.some(item => location.pathname === item.to);
+                        const leafItems = flattenItems(group.items);
+                        const hasActiveChild = leafItems.some(item => location.pathname === item.to);
 
                         return (
                             <div key={group.id} style={{ marginBottom: '8px' }}>
@@ -382,20 +466,92 @@ export default function Layout() {
 
                                 {(isExpanded || (collapsed && !isMobile)) && (
                                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                        {group.items.map(({ to, label }) => (
-                                            <NavLink
-                                                key={to}
-                                                to={to}
-                                                style={({ isActive }) => ({
-                                                    ...navStyle(isActive, isMobile),
-                                                    paddingLeft: (!collapsed || isMobile) ? '32px' : '14px',
-                                                    opacity: (collapsed && !isMobile && !hasActiveChild) ? 0.6 : 1
-                                                })}
-                                            >
-                                                <span style={{ fontSize: isMobile ? '20px' : '16px', minWidth: '24px' }}>{label.split(' ')[0]}</span>
-                                                {(!collapsed || isMobile) && <span>{label.split(' ').slice(1).join(' ')}</span>}
-                                            </NavLink>
-                                        ))}
+                                        {collapsed && !isMobile ? (
+                                            leafItems.map(({ to, label }) => (
+                                                <NavLink
+                                                    key={to}
+                                                    to={to}
+                                                    style={({ isActive }) => ({
+                                                        ...navStyle(isActive, isMobile),
+                                                        paddingLeft: '14px',
+                                                        opacity: !hasActiveChild ? 0.6 : 1
+                                                    })}
+                                                >
+                                                    <span style={{ fontSize: '16px', minWidth: '24px' }}>{label.split(' ')[0]}</span>
+                                                </NavLink>
+                                            ))
+                                        ) : (
+                                            group.items.map((item) => {
+                                                if ('isSubGroup' in item && item.isSubGroup) {
+                                                    const subId = item.id;
+                                                    const isSubExpanded = expandedSubGroups.includes(subId);
+                                                    const hasActiveSubChild = item.items.some(sub => location.pathname === sub.to);
+
+                                                    return (
+                                                        <div key={subId} style={{ display: 'flex', flexDirection: 'column' }}>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setExpandedSubGroups(prev =>
+                                                                        prev.includes(subId) ? prev.filter(g => g !== subId) : [...prev, subId]
+                                                                    );
+                                                                }}
+                                                                style={{
+                                                                    display: 'flex', alignItems: 'center', gap: '12px',
+                                                                    paddingTop: isMobile ? '14px' : '10px',
+                                                                    paddingBottom: isMobile ? '14px' : '10px',
+                                                                    paddingRight: isMobile ? '20px' : '14px',
+                                                                    paddingLeft: '32px',
+                                                                    background: 'transparent', border: 'none',
+                                                                    color: isSubExpanded || hasActiveSubChild ? '#a5b4fc' : '#9ca3af',
+                                                                    fontSize: isMobile ? '15px' : '13px',
+                                                                    cursor: 'pointer', transition: 'all 0.15s',
+                                                                    width: '100%', textAlign: 'left'
+                                                                }}
+                                                            >
+                                                                <span style={{ fontSize: isMobile ? '20px' : '16px', minWidth: '24px' }}>{item.label.split(' ')[0]}</span>
+                                                                <span>{item.label.split(' ').slice(1).join(' ')}</span>
+                                                                <span style={{ marginLeft: 'auto', transition: 'transform 0.2s', transform: isSubExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>
+                                                                    ›
+                                                                </span>
+                                                            </button>
+                                                            {isSubExpanded && (
+                                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                                    {item.items.map(({ to, label }) => (
+                                                                        <NavLink
+                                                                            key={to}
+                                                                            to={to}
+                                                                            style={({ isActive }) => ({
+                                                                                ...navStyle(isActive, isMobile),
+                                                                                paddingLeft: '48px',
+                                                                            })}
+                                                                        >
+                                                                            <span style={{ fontSize: isMobile ? '20px' : '16px', minWidth: '24px' }}>{label.split(' ')[0]}</span>
+                                                                            <span>{label.split(' ').slice(1).join(' ')}</span>
+                                                                        </NavLink>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                } else {
+                                                    const std = item as NavItem;
+                                                    return (
+                                                        <NavLink
+                                                            key={std.to}
+                                                            to={std.to}
+                                                            style={({ isActive }) => ({
+                                                                ...navStyle(isActive, isMobile),
+                                                                paddingLeft: '32px',
+                                                            })}
+                                                        >
+                                                            <span style={{ fontSize: isMobile ? '20px' : '16px', minWidth: '24px' }}>{std.label.split(' ')[0]}</span>
+                                                            <span>{std.label.split(' ').slice(1).join(' ')}</span>
+                                                        </NavLink>
+                                                    );
+                                                }
+                                            })
+                                        )}
                                     </div>
                                 )}
                             </div>

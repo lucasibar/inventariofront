@@ -19,9 +19,7 @@ const StockPage = lazy(() => import('../../pages/warehouse/StockPage'));
 const MovimientosPage = lazy(() => import('../../pages/warehouse/MovimientosPage'));
 const RemitosEntradaPage = lazy(() => import('../../pages/warehouse/RemitosEntradaPage'));
 const RemitosSalidaPage = lazy(() => import('../../pages/warehouse/RemitosSalidaPage'));
-const AuditoriaPickingPage = lazy(() => import('../../pages/warehouse/AuditoriaPickingPage'));
 const WorkspaceTasksPage = lazy(() => import('../../pages/warehouse/WorkspaceTasksPage'));
-const ReporteSalidasPage = lazy(() => import('../../pages/warehouse/ReporteSalidasPage'));
 const ReporteConsumoDetalladoPage = lazy(() => import('../../pages/warehouse/ReporteConsumoDetalladoPage'));
 const DashboardDepositoPage = lazy(() => import('../../pages/warehouse/DashboardDepositoPage'));
 
@@ -132,9 +130,7 @@ export const router = createBrowserRouter([
             element: <RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.OPERATOR, UserRole.COMPRAS, UserRole.SUPERVISOR]} />,
             children: [
               { path: "deposito/dashboard", element: <LazyRoute element={DashboardDepositoPage} /> },
-              { path: "deposito/auditoria-picking", element: <LazyRoute element={AuditoriaPickingPage} /> },
               { path: "remitos-salida", element: <LazyRoute element={RemitosSalidaPage} /> },
-              { path: "reporte-salidas", element: <LazyRoute element={ReporteSalidasPage} /> },
               { path: "reporte-consumo-detallado", element: <LazyRoute element={ReporteConsumoDetalladoPage} /> },
               { path: "stock", element: <LazyRoute element={StockPage} /> },
               { path: "movimientos", element: <LazyRoute element={MovimientosPage} /> },
