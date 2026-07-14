@@ -58,6 +58,8 @@ const navGroups: NavGroup[] = [
         items: [
             { to: '/deposito/dashboard', label: '📊 Dashboard Dep' },
             { to: '/stock', label: '📋 Stock' },
+            { to: '/movimientos', label: '🔄 Movimientos' },
+            { to: '/tasks', label: '📝 Tareas' },
             {
                 id: 'remitos',
                 label: '📄 Remitos',
@@ -67,9 +69,6 @@ const navGroups: NavGroup[] = [
                     { to: '/remitos-salida', label: '📤 Remitos Salida' },
                 ]
             },
-            { to: '/movimientos', label: '🔄 Movimientos' },
-            { to: '/reporte-consumo-detallado', label: '📊 Consumo Detallado' },
-            { to: '/tasks', label: '📝 Tareas' },
             {
                 id: 'configuracion',
                 label: '⚙️ Configuración',
@@ -118,6 +117,7 @@ const navGroups: NavGroup[] = [
             { to: '/compras/alertas-stock', label: '⚠️ Alertas de Stock' },
             { to: '/dashboard/capacity', label: '📈 Capacidad' },
             { to: '/dashboard/volumes', label: '📦 Volúmenes' },
+            { to: '/reporte-consumo-detallado', label: '📊 Consumo Detallado' },
         ]
     },
     {
