@@ -159,9 +159,10 @@ const BulkAssignModal = ({ onClose, boxTypes }: { onClose: () => void, boxTypes:
 
 const BoxTypesPage: React.FC = () => {
     const { data: boxTypes = [], isLoading } = useGetBoxTypesQuery();
-    const [createBoxType] = useCreateBoxTypeMutation();
-    const [updateBoxType] = useUpdateBoxTypeMutation();
+    const [createBoxType, { isLoading: isCreating }] = useCreateBoxTypeMutation();
+    const [updateBoxType, { isLoading: isUpdating }] = useUpdateBoxTypeMutation();
     const [deleteBoxType] = useDeleteBoxTypeMutation();
+    const isSaving = isCreating || isUpdating;
 
     const [editingId, setEditingId] = useState<string | null>(null);
     const [form, setForm] = useState({ nombre: '', largoCm: 0, anchoCm: 0, altoCm: 0, capacidadKilos: 0 });
@@ -175,6 +176,7 @@ const BoxTypesPage: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSaving) return;
         try {
             if (editingId) await updateBoxType({ id: editingId, data: form }).unwrap();
             else await createBoxType(form).unwrap();
@@ -209,8 +211,10 @@ const BoxTypesPage: React.FC = () => {
                         </div>
 
                         <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                            <Btn style={{ flex: 1 }}>{editingId ? 'Guardar' : 'Crear Formato'}</Btn>
-                            {editingId && <Btn variant="secondary" onClick={() => { setEditingId(null); setForm({nombre:'', largoCm:0, anchoCm:0, altoCm:0, capacidadKilos:0}); }}>X</Btn>}
+                            <Btn style={{ flex: 1 }} disabled={isSaving}>
+                                {isSaving ? 'Guardando...' : (editingId ? 'Guardar' : 'Crear Formato')}
+                            </Btn>
+                            {editingId && <Btn variant="secondary" onClick={() => { setEditingId(null); setForm({nombre:'', largoCm:0, anchoCm:0, altoCm:0, capacidadKilos:0}); }} disabled={isSaving}>X</Btn>}
                         </div>
                     </form>
                 </Card>

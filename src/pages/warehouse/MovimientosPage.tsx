@@ -65,7 +65,7 @@ export default function MovimientosPage() {
     const [adjustStock] = useAdjustStockMutation();
     const [reassignBatch] = useReassignBatchMutation();
     const [checkBatchQuery] = useLazyCheckBatchQuery();
-    const [bulkMoveStock] = useBulkMoveStockMutation();
+    const [bulkMoveStock, { isLoading: isBulkMoving }] = useBulkMoveStockMutation();
     const [quickAddStock] = useQuickAddStockMutation();
     const [deleteStock] = useDeleteStockMutation();
 
@@ -223,6 +223,7 @@ export default function MovimientosPage() {
     };
 
     const handleConfirmPartialMove = async () => {
+        if (isBulkMoving) return;
         if (!sourceSide || !pendingItems.length) return;
         
         const destDepot = sourceSide === 'left' ? depositoIdRight : depositoIdLeft;
@@ -687,8 +688,10 @@ export default function MovimientosPage() {
                     </div>
 
                     <div style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
-                        <Btn style={{ flex: 1, background: '#1f2937' }} onClick={() => setPartialMoveModal(false)}>Cancelar</Btn>
-                        <Btn style={{ flex: 1 }} onClick={handleConfirmPartialMove}>Confirmar Movimiento</Btn>
+                        <Btn style={{ flex: 1, background: '#1f2937' }} onClick={() => setPartialMoveModal(false)} disabled={isBulkMoving}>Cancelar</Btn>
+                        <Btn style={{ flex: 1 }} onClick={handleConfirmPartialMove} disabled={isBulkMoving}>
+                            {isBulkMoving ? 'Procesando...' : 'Confirmar Movimiento'}
+                        </Btn>
                     </div>
                 </Modal>
             )}

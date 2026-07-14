@@ -177,7 +177,7 @@ export default function DepositoPage() {
     const [createDepot] = useCreateDepotMutation();
     const [updateDepot] = useUpdateDepotMutation();
     const [deleteDepot] = useDeleteDepotMutation();
-    const [createPosition] = useCreatePositionMutation();
+    const [createPosition, { isLoading: isCreatingPosition }] = useCreatePositionMutation();
     const [updatePosition] = useUpdatePositionMutation();
 
     const handleDeleteDepot = async (id: string) => {
@@ -197,7 +197,7 @@ export default function DepositoPage() {
     
     // Categorías del depósito seleccionado
     const { data: categories = [], refetch: refetchCategories } = useGetItemCategoriesQuery(selectedDepotId || '', { skip: !selectedDepotId });
-    const [createCategory] = useCreateItemCategoryMutation();
+    const [createCategory, { isLoading: isCreatingCategory }] = useCreateItemCategoryMutation();
     const [updateItemCategory] = useUpdateItemCategoryMutation();
 
     useEffect(() => {
@@ -272,6 +272,7 @@ export default function DepositoPage() {
     };
 
     const handleAddPosition = async () => {
+        if (isCreatingPosition) return;
         if (!showNewPosition || !newPosForm.codigo) return;
         try {
             await createPosition({ 
@@ -288,6 +289,7 @@ export default function DepositoPage() {
     };
 
     const handleCreateCategory = async () => {
+        if (isCreatingCategory) return;
         if (!selectedDepotId || !newCategoryForm.nombre) return;
         try {
             await createCategory({
@@ -703,8 +705,10 @@ export default function DepositoPage() {
                             </div>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #1e2133', paddingTop: '16px' }}>
-                            <Btn variant="secondary" onClick={() => setShowNewPosition(null)}>Cancelar</Btn>
-                            <Btn onClick={handleAddPosition}>Crear Posición</Btn>
+                            <Btn variant="secondary" onClick={() => setShowNewPosition(null)} disabled={isCreatingPosition}>Cancelar</Btn>
+                            <Btn onClick={handleAddPosition} disabled={isCreatingPosition}>
+                                {isCreatingPosition ? 'Creando...' : 'Crear Posición'}
+                            </Btn>
                         </div>
                     </div>
                 </Modal>
@@ -719,8 +723,10 @@ export default function DepositoPage() {
                             <Input label="Alerta Stock Máximo" type="number" value={newCategoryForm.maximo} onChange={v => setNewCategoryForm(p => ({...p, maximo: v}))} placeholder="Ej: 500" />
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #1e2133', paddingTop: '16px' }}>
-                            <Btn variant="secondary" onClick={() => setShowNewCategory(false)}>Cancelar</Btn>
-                            <Btn onClick={handleCreateCategory}>Crear Categoría</Btn>
+                            <Btn variant="secondary" onClick={() => setShowNewCategory(false)} disabled={isCreatingCategory}>Cancelar</Btn>
+                            <Btn onClick={handleCreateCategory} disabled={isCreatingCategory}>
+                                {isCreatingCategory ? 'Creando...' : 'Crear Categoría'}
+                            </Btn>
                         </div>
                     </div>
                 </Modal>

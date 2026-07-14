@@ -114,7 +114,7 @@ export default function StockPage() {
     const { data: items = [] } = useGetItemsQuery({});
     const { data: partners = [] } = useGetPartnersQuery({});
     useGetItemCategoriesQuery(depotId || '', { skip: !depotId });
-    const [quickAddStock] = useQuickAddStockMutation();
+    const [quickAddStock, { isLoading: isQuickAdding }] = useQuickAddStockMutation();
     const [deleteStock] = useDeleteStockMutation();
 
     const [quickAddModal, setQuickAddModal] = useState(false);
@@ -255,6 +255,7 @@ export default function StockPage() {
     const qaSelectedItem = useMemo(() => items.find((i: any) => i.id === qaItem), [items, qaItem]);
 
     const handleQuickAddSubmit = async () => {
+        if (isQuickAdding) return;
         if (!qaDepot || !qaPosition || !qaItem || !qaSupplier || !qaLot || !qaPrincipal) {
             alert('Completá todos los campos obligatorios.');
             return;
@@ -659,8 +660,10 @@ export default function StockPage() {
                         </div>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                        <Btn variant="secondary" onClick={() => setQuickAddModal(false)}>Can</Btn>
-                        <Btn onClick={handleQuickAddSubmit}>Conf</Btn>
+                        <Btn variant="secondary" onClick={() => setQuickAddModal(false)} disabled={isQuickAdding}>Cancelar</Btn>
+                        <Btn onClick={handleQuickAddSubmit} disabled={isQuickAdding}>
+                            {isQuickAdding ? 'Guardando...' : 'Confirmar'}
+                        </Btn>
                     </div>
                 </Modal>
             )}
