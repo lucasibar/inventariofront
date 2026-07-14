@@ -727,10 +727,10 @@ export default function DashboardDepositoPage() {
             )}
             
             <Fab sx={{ position: 'fixed', bottom: 20, right: 20, bgcolor: colors.primary, color: '#000', '&:hover': { bgcolor: '#d97706' } }} onClick={() => setQuickAddOpen(true)}><AddIcon /></Fab>
-            <QuickAddDrawer open={quickAddOpen} onClose={() => setQuickAddOpen(false)} />
-            <EditStockLimitsDrawer open={editLimitsOpen} onClose={() => setEditLimitsOpen(false)} initialItem={selectedItemToEditLimits} />
-            <MoveStockDrawer open={moveDrawerOpen} onClose={() => setMoveDrawerOpen(false)} entry={selectedEntryToMove} />
-            <DespachoDirectoDrawer open={salidaDrawerOpen} onClose={() => setSalidaDrawerOpen(false)} entry={selectedEntryToSalida} />
+            {quickAddOpen && <QuickAddDrawer open={quickAddOpen} onClose={() => setQuickAddOpen(false)} />}
+            {editLimitsOpen && <EditStockLimitsDrawer open={editLimitsOpen} onClose={() => setEditLimitsOpen(false)} initialItem={selectedItemToEditLimits} />}
+            {moveDrawerOpen && <MoveStockDrawer open={moveDrawerOpen} onClose={() => { setMoveDrawerOpen(false); setSelectedEntryToMove(null); }} entry={selectedEntryToMove} />}
+            {salidaDrawerOpen && <DespachoDirectoDrawer open={salidaDrawerOpen} onClose={() => { setSalidaDrawerOpen(false); setSelectedEntryToSalida(null); }} entry={selectedEntryToSalida} />}
         </Box>
     );
 }
