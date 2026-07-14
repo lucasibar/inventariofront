@@ -1,5 +1,5 @@
 import { useState, useEffect, Suspense } from 'react';
-import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, useLocation, useNavigation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useGetAlertsQuery } from '../features/warehouse/stock/api/stock.api';
 import { logout, selectCurrentUser } from '../entities/auth/model/authSlice';
@@ -171,6 +171,9 @@ export default function Layout() {
     const isOperario = role === 'OPERATOR';
     const isSupervisor = role === 'SUPERVISOR';
 
+    const navigation = useNavigation();
+    const isNavigating = navigation.state === 'loading';
+
     const [collapsed, setCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -255,21 +258,37 @@ export default function Layout() {
     const allItems = navGroups.flatMap(g => flattenItems(g.items));
 
     useEffect(() => {
-        // Auto expand group and subgroup if active child is present
+        let activeGroupId: string | null = null;
+        let activeSubGroupId: string | null = null;
+
         navGroups.forEach(group => {
             const hasActive = flattenItems(group.items).some(item => location.pathname === item.to);
             if (hasActive) {
-                setExpandedGroups(prev => prev.includes(group.id) ? prev : [...prev, group.id]);
+                activeGroupId = group.id;
             }
             group.items.forEach(item => {
                 if ('isSubGroup' in item && item.isSubGroup) {
                     const hasActiveSub = item.items.some(sub => location.pathname === sub.to);
                     if (hasActiveSub) {
-                        setExpandedSubGroups(prev => prev.includes(item.id) ? prev : [...prev, item.id]);
+                        activeSubGroupId = item.id;
                     }
                 }
             });
         });
+
+        // Auto collapse other groups and open only the active one
+        if (activeGroupId) {
+            setExpandedGroups([activeGroupId]);
+        } else {
+            setExpandedGroups([]);
+        }
+
+        // Auto collapse other subgroups and open only the active one
+        if (activeSubGroupId) {
+            setExpandedSubGroups([activeSubGroupId]);
+        } else {
+            setExpandedSubGroups([]);
+        }
     }, [location.pathname]);
 
 
@@ -283,6 +302,27 @@ export default function Layout() {
 
     return (
         <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', height: '100vh', background: '#0f1117', color: '#f3f4f6' }}>
+            {isNavigating && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '3px',
+                    background: 'linear-gradient(90deg, #6366f1, #a5b4fc, #8b5cf6)',
+                    zIndex: 10000,
+                    animation: 'loading-bar 1.8s infinite ease-in-out',
+                    transformOrigin: '0% 50%',
+                }}>
+                    <style>{`
+                        @keyframes loading-bar {
+                            0% { transform: scaleX(0); }
+                            50% { transform: scaleX(0.7); }
+                            100% { transform: scaleX(1); opacity: 0; }
+                        }
+                    `}</style>
+                </div>
+            )}
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: #2a2d3e; borderRadius: 10px; }
@@ -664,6 +704,20 @@ export default function Layout() {
                     width: '100%'
                 }}
             >
+                {isNavigating && (
+                    <div style={{
+                        position: 'absolute',
+                        inset: 0,
+                        background: 'rgba(15, 17, 23, 0.65)',
+                        backdropFilter: 'blur(3px)',
+                        zIndex: 999,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}>
+                        <PageLoader />
+                    </div>
+                )}
                 <ErrorBoundary>
                     <Suspense fallback={<PageLoader />}>
                         <Outlet key={location.pathname} />
