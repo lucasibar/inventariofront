@@ -13,8 +13,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
 import { useGetItemsQuery, useGetItemCategoriesQuery } from '../../features/warehouse/materiales/api/items.api';
 import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
-import { PageHeader, Select, SearchSelect, Spinner, Btn, Modal, Input, EditableCell, useIsMobile, HelpTooltip } from '../../shared/ui';
-import { rawBase } from '../../shared/api';
+import { PageHeader, Select, SearchSelect, Spinner, Btn, Modal, Input, EditableCell, useIsMobile, HelpTooltip, Card, Table } from '../../shared/ui';
 import { CreateItemDialog } from '../../features/warehouse/materiales/components/CreateItemDialog';
 import { CreatePartnerDialog } from '../../features/config/CreatePartnerDialog';
 import { useSelector } from 'react-redux';
@@ -57,6 +56,15 @@ export default function StockPage() {
     const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
     const isMobile = useIsMobile();
     const navigate = useNavigate();
+
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+        return (sessionStorage.getItem('stockViewMode') as 'grid' | 'list') || (isMobile ? 'list' : 'grid');
+    });
+    const [detailGroupId, setDetailGroupId] = useState<string | null>(null);
+
+    useEffect(() => {
+        sessionStorage.setItem('stockViewMode', viewMode);
+    }, [viewMode]);
 
     const [depotId, setDepotId] = useState<string>(() => sessionStorage.getItem('selectedDepotId') || '');
     const [positionId, setPositionId] = useState<string>('');
@@ -291,33 +299,6 @@ export default function StockPage() {
         }
     };
 
-    const handleExportExcel = async () => {
-        const token = sessionStorage.getItem('token');
-        const params = new URLSearchParams();
-        if (depotId) params.set('depotId', depotId);
-        if (positionId) params.set('positionId', positionId);
-        if (searchTerm) params.set('q', searchTerm);
-        
-        const url = `${rawBase}stock/export?${params.toString()}`;
-        
-        try {
-            const response = await fetch(url, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error('Error al exportar');
-            const blob = await response.blob();
-            const downloadUrl = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.setAttribute('download', `stock_${new Date().toISOString().split('T')[0]}.xlsx`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-        } catch (e) {
-            alert('Error al descargar el archivo');
-        }
-    };
-
     const { data: rawStock = [], isFetching, isLoading } = useGetStockQuery({ 
         depotId: depotId || undefined,
         positionId: positionId || undefined
@@ -377,6 +358,8 @@ export default function StockPage() {
             generalMetrics: { ...general, positionsCount: general.positions.size }
         };
     }, [rawStock, searchTerm]);
+
+    const detailGroup = useMemo(() => groupedData.find((g: any) => g.item.id === detailGroupId), [groupedData, detailGroupId]);
 
     return (
         <div style={{ 
@@ -454,14 +437,14 @@ export default function StockPage() {
                             title="Adición Rápida"
                         >+</Btn>
                     )}
-                    {!isMobile && (
-                        <Btn 
-                            onClick={handleExportExcel} 
-                            variant="secondary"
-                            style={{ height: '38px', width: '38px', padding: 0, minWidth: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}
-                            title="Exportar Excel"
-                        >📊</Btn>
-                    )}
+                    <Btn 
+                        onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                        variant="secondary"
+                        style={{ height: '38px', width: '38px', padding: 0, minWidth: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}
+                        title={viewMode === 'grid' ? 'Vista Lista' : 'Vista Cuadrícula'}
+                    >
+                        {viewMode === 'grid' ? '📋' : '🔲'}
+                    </Btn>
                 </div>
             </div>
 
@@ -481,154 +464,179 @@ export default function StockPage() {
             {isLoading ? (
                 <div style={{ textAlign: 'center', padding: '100px' }}><Spinner /></div>
             ) : (
-                <div className="stock-grid">
-                    {groupedData.map((group) => {
-                        const isExpanded = expandedMaterials.includes(group.item.id);
-                        const categoryName = group.item.category?.nombre || group.item.categoria || '';
-                        const titleText = `${categoryName ? `${categoryName} - ` : ''}${group.item.descripcion}`.toLowerCase();
-                        const subTitleText = (group.supplier?.name || 'Sin proveedor').toLowerCase();
+                viewMode === 'grid' ? (
+                    <div className="stock-grid">
+                        {groupedData.map((group) => {
+                            const isExpanded = expandedMaterials.includes(group.item.id);
+                            const categoryName = group.item.category?.nombre || group.item.categoria || '';
+                            const titleText = `${categoryName ? `${categoryName} - ` : ''}${group.item.descripcion}`.toLowerCase();
+                            const subTitleText = (group.supplier?.name || 'Sin proveedor').toLowerCase();
 
-                        return (
-                            <div key={group.item.id} className="material-card" onClick={() => toggleMaterial(group.item.id)}>
-                                <div className="material-header">
-                                    <div className="material-title-line">
-                                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: 1 }}>
-                                            <span style={{ 
-                                                color: '#6366f1', fontSize: '18px', paddingTop: '2px',
-                                                transition: 'transform 0.2s', 
-                                                transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' 
-                                            }}>▸</span>
-                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                <div style={{ fontWeight: 700, fontSize: '15px', color: '#f3f4f6', lineHeight: 1.2 }}>
-                                                    {titleText.charAt(0).toUpperCase() + titleText.slice(1)}
-                                                </div>
-                                                <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
-                                                    {subTitleText.charAt(0).toUpperCase() + subTitleText.slice(1)}
+                            return (
+                                <div key={group.item.id} className="material-card" onClick={() => toggleMaterial(group.item.id)}>
+                                    <div className="material-header">
+                                        <div className="material-title-line">
+                                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: 1 }}>
+                                                <span style={{ 
+                                                    color: '#6366f1', fontSize: '18px', paddingTop: '2px',
+                                                    transition: 'transform 0.2s', 
+                                                    transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' 
+                                                }}>▸</span>
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <div style={{ fontWeight: 700, fontSize: '15px', color: '#f3f4f6', lineHeight: 1.2 }}>
+                                                        {titleText.charAt(0).toUpperCase() + titleText.slice(1)}
+                                                    </div>
+                                                    <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+                                                        {subTitleText.charAt(0).toUpperCase() + subTitleText.slice(1)}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'right' }}>
-                                            <div style={{ fontWeight: 800, color: '#6366f1', fontSize: '18px' }}>
-                                                {group.metrics.kilos.toLocaleString('es-AR', { minimumFractionDigits: 1 })}
-                                                <small style={{ fontSize: '10px', fontWeight: 400, marginLeft: '2px' }}>kg</small>
+                                            
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'right' }}>
+                                                <div style={{ fontWeight: 800, color: '#6366f1', fontSize: '18px' }}>
+                                                    {group.metrics.kilos.toLocaleString('es-AR', { minimumFractionDigits: 1 })}
+                                                    <small style={{ fontSize: '10px', fontWeight: 400, marginLeft: '2px' }}>kg</small>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                {isExpanded && (
-                                    <div style={{ background: 'rgba(255,255,255,0.02)', borderTop: '1px solid #2a2d3e' }}>
-                                        <div className="custom-scrollbar">
-                                            <table className="positions-table">
-                                                <thead>
-                                                    <tr>
-                                                        <th style={{ width: isMobile ? '60px' : '150px' }}>Ubic.</th>
-                                                        <th>Lote <HelpTooltip title="Editar Lote" content="Hacé clic sobre el lote para renombrarlo o fusionarlo con otra partida." /></th>
-                                                        <th style={{ textAlign: 'right', width: isMobile ? '70px' : '120px' }}>Kilos <HelpTooltip title="Ajuste de Stock" content="Hacé clic sobre los números de stock para editarlos y hacer un ajuste manual directo." /></th>
-                                                        <th style={{ textAlign: 'right', width: isMobile ? '55px' : '120px' }}>Un.</th>
-                                                        <th style={{ textAlign: 'center', width: '50px' }}></th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {group.entries.map((entry: any) => {
-                                                        const isOldest = entry.batch.lotNumber === group.minLotNumber;
-                                                        const isDeleting = deletingKeys.includes(getEntryKey(entry));
-                                                        return (
-                                                            <tr 
-                                                                key={entry.id} 
-                                                                className="hoverable-row"
-                                                                style={{
-                                                                    opacity: isDeleting ? 0.5 : 1,
-                                                                    pointerEvents: isDeleting ? 'none' : 'auto'
-                                                                }}
-                                                            >
-                                                                <td 
-                                                                    style={{ color: '#6366f1', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}
-                                                                    onClick={(e) => { 
-                                                                        e.stopPropagation(); 
-                                                                        navigate('/movimientos', { state: { depositoId: entry.depositoId || depotId, posicionId: entry.posicionId, itemId: entry.batch?.item?.id } });
+                                    {isExpanded && (
+                                        <div style={{ background: 'rgba(255,255,255,0.02)', borderTop: '1px solid #2a2d3e' }}>
+                                            <div className="custom-scrollbar">
+                                                <table className="positions-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th style={{ width: isMobile ? '60px' : '150px' }}>Ubic.</th>
+                                                            <th>Lote <HelpTooltip title="Editar Lote" content="Hacé clic sobre el lote para renombrarlo o fusionarlo con otra partida." /></th>
+                                                            <th style={{ textAlign: 'right', width: isMobile ? '70px' : '120px' }}>Kilos <HelpTooltip title="Ajuste de Stock" content="Hacé clic sobre los números de stock para editarlos y hacer un ajuste manual directo." /></th>
+                                                            <th style={{ textAlign: 'right', width: isMobile ? '55px' : '120px' }}>Un.</th>
+                                                            <th style={{ textAlign: 'center', width: '50px' }}></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {group.entries.map((entry: any) => {
+                                                            const isOldest = entry.batch.lotNumber === group.minLotNumber;
+                                                            const isDeleting = deletingKeys.includes(getEntryKey(entry));
+                                                            return (
+                                                                <tr 
+                                                                    key={entry.id} 
+                                                                    className="hoverable-row"
+                                                                    style={{
+                                                                        opacity: isDeleting ? 0.5 : 1,
+                                                                        pointerEvents: isDeleting ? 'none' : 'auto'
                                                                     }}
                                                                 >
-                                                                    {entry.posicion?.codigo || 'S/P'}
-                                                                </td>
-                                                                <td onClick={(e) => e.stopPropagation()}>
-                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                                        <EditableCell value={entry.batch?.lotNumber || ''} onSave={(val: any) => handleReassignBatch(entry, val)} style={isOldest ? { color: '#fbbf24', fontWeight: 700 } : undefined} />
-                                                                        {entry.batch?.observaciones && (
-                                                                            <span 
-                                                                                onClick={() => {
-                                                                                    alert(`Observación: ${entry.batch.observaciones}`);
-                                                                                }}
-                                                                                style={{ color: '#ef4444', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' }}
-                                                                                title="Ver observación"
+                                                                    <td 
+                                                                        style={{ color: '#6366f1', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}
+                                                                        onClick={(e) => { 
+                                                                            e.stopPropagation(); 
+                                                                            navigate('/movimientos', { state: { depositoId: entry.depositoId || depotId, posicionId: entry.posicionId, itemId: entry.batch?.item?.id } });
+                                                                        }}
+                                                                    >
+                                                                        {entry.posicion?.codigo || 'S/P'}
+                                                                    </td>
+                                                                    <td onClick={(e) => e.stopPropagation()}>
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                            <EditableCell value={entry.batch?.lotNumber || ''} onSave={(val: any) => handleReassignBatch(entry, val)} style={isOldest ? { color: '#fbbf24', fontWeight: 700 } : undefined} />
+                                                                            {entry.batch?.observaciones && (
+                                                                                <span 
+                                                                                    onClick={() => {
+                                                                                        alert(`Observación: ${entry.batch.observaciones}`);
+                                                                                    }}
+                                                                                    style={{ color: '#ef4444', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' }}
+                                                                                    title="Ver observación"
+                                                                                >
+                                                                                    ✔️
+                                                                                </span>
+                                                                            )}
+                                                                            <button 
+                                                                                onClick={() => setObsModal({ open: true, batchId: entry.batch?.id, text: entry.batch?.observaciones || '' })}
+                                                                                style={{ background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', fontSize: '10px', padding: '2px' }}
+                                                                                title="Editar observación"
                                                                             >
-                                                                                ✔️
-                                                                            </span>
-                                                                        )}
-                                                                        <button 
-                                                                            onClick={() => setObsModal({ open: true, batchId: entry.batch?.id, text: entry.batch?.observaciones || '' })}
-                                                                            style={{ background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', fontSize: '10px', padding: '2px' }}
-                                                                            title="Editar observación"
-                                                                        >
-                                                                            📝
-                                                                        </button>
-                                                                    </div>
-                                                                </td>
-                                                                <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
-                                                                    <EditableCell numeric value={Number(entry.qtyPrincipal).toFixed(1)} onSave={(val: any) => handleAdjustQty(entry, val, 'principal')} />
-                                                                    {!isMobile && <small style={{opacity:0.6, marginLeft: '2px'}}>{group.item.unidadPrincipal}</small>}
-                                                                </td>
-                                                                <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
-                                                                    <EditableCell numeric value={Number(entry.qtySecundaria || 0).toFixed(0)} onSave={(val: any) => handleAdjustQty(entry, val, 'secundaria')} />
-                                                                    {!isMobile && <small style={{opacity:0.6, marginLeft: '2px'}}>{group.item.unidadSecundaria}</small>}
-                                                                </td>
-                                                                <td style={{ textAlign: 'center' }}>
-                                                                    <div style={{ display: 'flex', gap: '2px', justifyContent: 'center' }}>
-                                                                        <button 
-                                                                            onClick={(e) => { e.stopPropagation(); openDespacho(entry); }} 
-                                                                            style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '14px', padding: '4px' }}
-                                                                            title="Despachar (agregar a remito de salida)"
-                                                                            disabled={isDeleting}
-                                                                        >📦</button>
-                                                                        {isAdmin && (
-                                                                            isDeleting ? (
-                                                                                <span className="mini-spinner" style={{
-                                                                                    width: '12px',
-                                                                                    height: '12px',
-                                                                                    border: '2px solid rgba(239, 68, 68, 0.1)',
-                                                                                    borderTop: '2px solid #ef4444',
-                                                                                    borderRadius: '50%',
-                                                                                    display: 'inline-block',
-                                                                                    animation: 'spin 0.8s linear infinite',
-                                                                                    margin: '4px'
-                                                                                }}></span>
-                                                                            ) : (
-                                                                                <button 
-                                                                                    onClick={(e) => { 
-                                                                                        e.stopPropagation(); 
-                                                                                        setDeletingKeys(prev => [...prev, getEntryKey(entry)]);
-                                                                                        handleDeleteLine(entry); 
-                                                                                    }} 
-                                                                                    style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', padding: '4px' }}
-                                                                                    title="Eliminar esta línea"
-                                                                                >🗑️</button>
-                                                                            )
-                                                                        )}
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                        );
-                                                    })}
-                                                </tbody>
-                                            </table>
+                                                                                📝
+                                                                            </button>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
+                                                                        <EditableCell numeric value={Number(entry.qtyPrincipal).toFixed(1)} onSave={(val: any) => handleAdjustQty(entry, val, 'principal')} />
+                                                                        {!isMobile && <small style={{opacity:0.6, marginLeft: '2px'}}>{group.item.unidadPrincipal}</small>}
+                                                                    </td>
+                                                                    <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
+                                                                        <EditableCell numeric value={Number(entry.qtySecundaria || 0).toFixed(0)} onSave={(val: any) => handleAdjustQty(entry, val, 'secundaria')} />
+                                                                        {!isMobile && <small style={{opacity:0.6, marginLeft: '2px'}}>{group.item.unidadSecundaria}</small>}
+                                                                    </td>
+                                                                    <td style={{ textAlign: 'center' }}>
+                                                                        <div style={{ display: 'flex', gap: '2px', justifyContent: 'center' }}>
+                                                                            <button 
+                                                                                onClick={(e) => { e.stopPropagation(); openDespacho(entry); }} 
+                                                                                style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '14px', padding: '4px' }}
+                                                                                title="Despachar (agregar a remito de salida)"
+                                                                                disabled={isDeleting}
+                                                                            >📦</button>
+                                                                            {isAdmin && (
+                                                                                isDeleting ? (
+                                                                                    <span className="mini-spinner" style={{
+                                                                                        width: '12px',
+                                                                                        height: '12px',
+                                                                                        border: '2px solid rgba(239, 68, 68, 0.1)',
+                                                                                        borderTop: '2px solid #ef4444',
+                                                                                        borderRadius: '50%',
+                                                                                        display: 'inline-block',
+                                                                                        animation: 'spin 0.8s linear infinite',
+                                                                                        margin: '4px'
+                                                                                    }}></span>
+                                                                                ) : (
+                                                                                    <button 
+                                                                                        onClick={(e) => { 
+                                                                                            e.stopPropagation(); 
+                                                                                            setDeletingKeys(prev => [...prev, getEntryKey(entry)]);
+                                                                                            handleDeleteLine(entry); 
+                                                                                        }} 
+                                                                                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', padding: '4px' }}
+                                                                                        title="Eliminar esta línea"
+                                                                                    >🗑️</button>
+                                                                                )
+                                                                            )}
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            );
+                                                        })}
+                                                    </tbody>
+                                                </table>
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <Card style={{ padding: '0', marginTop: '12px' }}>
+                        <Table 
+                            cols={['Material / Descripción', 'Proveedor', 'Stock Total', 'Unidades', 'Ubicaciones', 'Acciones']}
+                            rows={groupedData.map((group) => {
+                                const categoryName = group.item.category?.nombre || group.item.categoria || '';
+                                const titleText = `${categoryName ? `${categoryName} - ` : ''}${group.item.descripcion}`;
+                                const locationCodes = Array.from(new Set(group.entries.map((e: any) => e.posicion?.codigo || 'S/P'))).join(', ');
+                                return [
+                                    <strong key="t" onClick={() => setDetailGroupId(group.item.id)} style={{ cursor: 'pointer', color: '#6366f1' }}>
+                                        {titleText.charAt(0).toUpperCase() + titleText.slice(1)}
+                                    </strong>,
+                                    group.supplier?.name || 'Sin proveedor',
+                                    `${group.metrics.kilos.toLocaleString('es-AR', { minimumFractionDigits: 1 })} ${group.item.unidadPrincipal || 'kg'}`,
+                                    group.metrics.units > 0 ? `${group.metrics.units.toLocaleString('es-AR')} ${group.item.unidadSecundaria || 'un'}` : '-',
+                                    <span key="loc" style={{ color: '#94a3b8', fontSize: '12px' }}>{locationCodes}</span>,
+                                    <Btn key="b" small variant="secondary" onClick={() => setDetailGroupId(group.item.id)}>
+                                        🔍 Ver Lotes
+                                    </Btn>
+                                ];
+                            })}
+                        />
+                    </Card>
+                )
             )}
 
             {quickAddModal && (
@@ -749,6 +757,134 @@ export default function StockPage() {
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                             <Btn variant="secondary" onClick={() => setObsModal({ open: false, batchId: '', text: '' })}>Cancelar</Btn>
                             <Btn onClick={handleUpdateObs} disabled={obsSaving}>{obsSaving ? 'Guardando...' : 'Guardar Observación'}</Btn>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
+            {detailGroup && (
+                <Modal 
+                    title={`Detalle de Stock: ${detailGroup.item.descripcion}`} 
+                    onClose={() => setDetailGroupId(null)}
+                >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #2a2d3e', paddingBottom: '12px' }}>
+                            <span style={{ fontSize: '13px', color: '#9ca3af' }}>
+                                Proveedor: <strong style={{ color: '#f3f4f6' }}>{detailGroup.supplier?.name || 'Sin proveedor'}</strong>
+                            </span>
+                            <span style={{ fontSize: '13px', color: '#9ca3af' }}>
+                                Categoria: <strong style={{ color: '#f3f4f6' }}>{detailGroup.item.category?.nombre || detailGroup.item.categoria || 'General'}</strong>
+                            </span>
+                        </div>
+                        
+                        <div className="custom-scrollbar" style={{ overflowX: 'auto', maxHeight: '400px' }}>
+                            <table className="positions-table" style={{ width: '100%' }}>
+                                <thead>
+                                    <tr>
+                                        <th style={{ width: isMobile ? '60px' : '150px' }}>Ubic.</th>
+                                        <th>Lote <HelpTooltip title="Editar Lote" content="Hacé clic sobre el lote para renombrarlo o fusionarlo con otra partida." /></th>
+                                        <th style={{ textAlign: 'right', width: isMobile ? '70px' : '120px' }}>Kilos <HelpTooltip title="Ajuste de Stock" content="Hacé clic sobre los números de stock para editarlos y hacer un ajuste manual directo." /></th>
+                                        <th style={{ textAlign: 'right', width: isMobile ? '55px' : '120px' }}>Un.</th>
+                                        <th style={{ textAlign: 'center', width: '50px' }}></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {detailGroup.entries.map((entry: any) => {
+                                        const isOldest = entry.batch.lotNumber === detailGroup.minLotNumber;
+                                        const isDeleting = deletingKeys.includes(getEntryKey(entry));
+                                        return (
+                                            <tr 
+                                                key={entry.id} 
+                                                className="hoverable-row"
+                                                style={{
+                                                    opacity: isDeleting ? 0.5 : 1,
+                                                    pointerEvents: isDeleting ? 'none' : 'auto'
+                                                }}
+                                            >
+                                                <td 
+                                                    style={{ color: '#6366f1', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}
+                                                    onClick={(e) => { 
+                                                        e.stopPropagation(); 
+                                                        setDetailGroupId(null);
+                                                        navigate('/movimientos', { state: { depositoId: entry.depositoId || depotId, posicionId: entry.posicionId, itemId: entry.batch?.item?.id } });
+                                                    }}
+                                                >
+                                                    {entry.posicion?.codigo || 'S/P'}
+                                                </td>
+                                                <td onClick={(e) => e.stopPropagation()}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        <EditableCell value={entry.batch?.lotNumber || ''} onSave={(val: any) => handleReassignBatch(entry, val)} style={isOldest ? { color: '#fbbf24', fontWeight: 700 } : undefined} />
+                                                        {entry.batch?.observaciones && (
+                                                            <span 
+                                                                onClick={() => {
+                                                                    alert(`Observación: ${entry.batch.observaciones}`);
+                                                                }}
+                                                                style={{ color: '#ef4444', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' }}
+                                                                title="Ver observación"
+                                                            >
+                                                                ✔️
+                                                            </span>
+                                                        )}
+                                                        <button 
+                                                            onClick={() => setObsModal({ open: true, batchId: entry.batch?.id, text: entry.batch?.observaciones || '' })}
+                                                            style={{ background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', fontSize: '10px', padding: '2px' }}
+                                                            title="Editar observación"
+                                                        >
+                                                            📝
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                                <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
+                                                    <EditableCell numeric value={Number(entry.qtyPrincipal).toFixed(1)} onSave={(val: any) => handleAdjustQty(entry, val, 'principal')} />
+                                                    {!isMobile && <small style={{opacity:0.6, marginLeft: '2px'}}>{detailGroup.item.unidadPrincipal}</small>}
+                                                </td>
+                                                <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
+                                                    <EditableCell numeric value={Number(entry.qtySecundaria || 0).toFixed(0)} onSave={(val: any) => handleAdjustQty(entry, val, 'secundaria')} />
+                                                    {!isMobile && <small style={{opacity:0.6, marginLeft: '2px'}}>{detailGroup.item.unidadSecundaria}</small>}
+                                                </td>
+                                                <td style={{ textAlign: 'center' }}>
+                                                    <div style={{ display: 'flex', gap: '2px', justifyContent: 'center' }}>
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); openDespacho(entry); }} 
+                                                            style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '14px', padding: '4px' }}
+                                                            title="Despachar (agregar a remito de salida)"
+                                                            disabled={isDeleting}
+                                                        >📦</button>
+                                                        {isAdmin && (
+                                                            isDeleting ? (
+                                                                <span className="mini-spinner" style={{
+                                                                    width: '12px',
+                                                                    height: '12px',
+                                                                    border: '2px solid rgba(239, 68, 68, 0.1)',
+                                                                    borderTop: '2px solid #ef4444',
+                                                                    borderRadius: '50%',
+                                                                    display: 'inline-block',
+                                                                    animation: 'spin 0.8s linear infinite',
+                                                                    margin: '4px'
+                                                                }}></span>
+                                                            ) : (
+                                                                <button 
+                                                                    onClick={(e) => { 
+                                                                        e.stopPropagation(); 
+                                                                        setDeletingKeys(prev => [...prev, getEntryKey(entry)]);
+                                                                        handleDeleteLine(entry); 
+                                                                    }} 
+                                                                    style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', padding: '4px' }}
+                                                                    title="Eliminar esta línea"
+                                                                >🗑️</button>
+                                                            )
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #2a2d3e', paddingTop: '12px' }}>
+                            <Btn onClick={() => setDetailGroupId(null)}>Cerrar</Btn>
                         </div>
                     </div>
                 </Modal>
