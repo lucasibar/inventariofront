@@ -309,10 +309,7 @@ export default function Stock1Page() {
 
     const qaSelectedItem = useMemo(() => items.find((i: any) => i.id === qaItem), [items, qaItem]);
 
-    const qaPositions = useMemo(() => {
-        if (!qaDepot) return [];
-        return (depots.find((d: any) => d.id === qaDepot)?.positions || []).filter((p: any) => p.activo);
-    }, [qaDepot, depots]);
+
 
     const handleQuickAddSubmit = async () => {
         if (isQuickAdding) return;
@@ -522,19 +519,16 @@ export default function Stock1Page() {
                         sx={{ flex: '2 1 300px', '& .MuiInputLabel-root': { color: colors.textDim }, '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }}
                     />
 
-                    <TextField
-                        select
-                        label="Posición"
-                        value={positionId}
-                        onChange={(e) => setPositionId(e.target.value)}
+                    <Autocomplete
+                        options={(depotId && depots.find((d: any) => d.id === depotId)?.positions || []).filter((p: any) => p.activo)}
+                        getOptionLabel={(option: any) => option.codigo || ''}
+                        value={(depotId && depots.find((d: any) => d.id === depotId)?.positions || []).find((p: any) => p.id === positionId) || null}
+                        onChange={(_e, val: any) => setPositionId(val?.id || '')}
+                        disabled={!depotId}
                         size="small"
                         sx={{ flex: '1 1 200px', '& .MuiInputLabel-root': { color: colors.textDim }, '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }}
-                    >
-                        <MenuItem value="">Todos los racks</MenuItem>
-                        {depotId && (depots.find((d: any) => d.id === depotId)?.positions || []).filter((p: any) => p.activo).map((p: any) => (
-                            <MenuItem key={p.id} value={p.id}>{p.codigo}</MenuItem>
-                        ))}
-                    </TextField>
+                        renderInput={(params) => <TextField {...params} label="Posición" />}
+                    />
 
                     {/* View Switcher */}
                     <Box sx={{ display: 'flex', bgcolor: colors.inputBg, borderRadius: 2, p: 0.5, border: `1px solid ${colors.border}` }}>
@@ -772,15 +766,19 @@ export default function Stock1Page() {
                             {depots.map((d: any) => <MenuItem key={d.id} value={d.id}>{d.nombre}</MenuItem>)}
                         </TextField>
 
-                        <Autocomplete
-                            options={qaPositions}
-                            getOptionLabel={(option: any) => option.codigo || ''}
-                            value={qaPositions.find((p: any) => p.id === qaPosition) || null}
-                            disabled={!qaDepot}
-                            fullWidth
-                            onChange={(_e, val: any) => setQaPosition(val?.id || '')}
-                            renderInput={(params) => <TextField {...params} label="Posición" InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ ...params.InputProps, sx: { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }} />}
-                        />
+                        <TextField 
+                            select 
+                            label="Posición" 
+                            fullWidth 
+                            value={qaPosition} 
+                            disabled={!qaDepot} 
+                            onChange={(e) => setQaPosition(e.target.value)} 
+                            InputLabelProps={{ sx: { color: colors.textDim } }} 
+                            InputProps={{ sx: { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }}
+                        >
+                            <MenuItem value=""><em>Seleccionar...</em></MenuItem>
+                            {(depots.find((d: any) => d.id === qaDepot)?.positions || []).filter((p: any) => p.activo).map((p: any) => <MenuItem key={p.id} value={p.id}>{p.codigo}</MenuItem>)}
+                        </TextField>
                     </Box>
 
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
