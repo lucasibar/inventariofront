@@ -309,6 +309,11 @@ export default function Stock1Page() {
 
     const qaSelectedItem = useMemo(() => items.find((i: any) => i.id === qaItem), [items, qaItem]);
 
+    const qaPositions = useMemo(() => {
+        if (!qaDepot) return [];
+        return (depots.find((d: any) => d.id === qaDepot)?.positions || []).filter((p: any) => p.activo);
+    }, [qaDepot, depots]);
+
     const handleQuickAddSubmit = async () => {
         if (isQuickAdding) return;
         if (!qaDepot || !qaPosition || !qaItem || !qaSupplier || !qaLot || !qaPrincipal) {
@@ -767,19 +772,15 @@ export default function Stock1Page() {
                             {depots.map((d: any) => <MenuItem key={d.id} value={d.id}>{d.nombre}</MenuItem>)}
                         </TextField>
 
-                        <TextField 
-                            select 
-                            label="Posición" 
-                            fullWidth 
-                            value={qaPosition} 
-                            disabled={!qaDepot} 
-                            onChange={(e) => setQaPosition(e.target.value)} 
-                            InputLabelProps={{ sx: { color: colors.textDim } }} 
-                            InputProps={{ sx: { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }}
-                        >
-                            <MenuItem value=""><em>Seleccionar...</em></MenuItem>
-                            {(depots.find((d: any) => d.id === qaDepot)?.positions || []).filter((p: any) => p.activo).map((p: any) => <MenuItem key={p.id} value={p.id}>{p.codigo}</MenuItem>)}
-                        </TextField>
+                        <Autocomplete
+                            options={qaPositions}
+                            getOptionLabel={(option: any) => option.codigo || ''}
+                            value={qaPositions.find((p: any) => p.id === qaPosition) || null}
+                            disabled={!qaDepot}
+                            fullWidth
+                            onChange={(_e, val: any) => setQaPosition(val?.id || '')}
+                            renderInput={(params) => <TextField {...params} label="Posición" InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ ...params.InputProps, sx: { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }} />}
+                        />
                     </Box>
 
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
