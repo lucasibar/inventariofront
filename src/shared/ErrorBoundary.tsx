@@ -20,16 +20,78 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
+  private isChunkError(error: Error | null): boolean {
+    if (!error) return false;
+    const errorMsg = error.message || '';
+    const errorName = error.name || '';
+    return errorMsg.includes('Failed to fetch') ||
+           errorMsg.includes('Load chunk') ||
+           errorMsg.includes('loading chunk') ||
+           errorMsg.includes('dynamically imported') ||
+           errorMsg.includes('Unexpected token') ||
+           errorName === 'ChunkLoadError';
+  }
+
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+
+    if (this.isChunkError(error)) {
+      const reloadKey = 'chunk-error-reload-timestamp';
+      const now = Date.now();
+      const lastReload = sessionStorage.getItem(reloadKey);
+
+      // If we haven't reloaded in the last 15 seconds, reload automatically to get the fresh build
+      if (!lastReload || now - parseInt(lastReload, 10) > 15000) {
+        sessionStorage.setItem(reloadKey, now.toString());
+        window.location.reload();
+      }
+    }
   }
 
   public render() {
     if (this.state.hasError) {
-      const isChunkLoadFailed = this.state.error?.message?.includes('Failed to fetch') ||
-                               this.state.error?.message?.includes('Load chunk') ||
-                               this.state.error?.message?.includes('loading chunk') ||
-                               this.state.error?.name === 'ChunkLoadError';
+      const isChunkLoadFailed = this.isChunkError(this.state.error);
+
+      if (isChunkLoadFailed) {
+        const reloadKey = 'chunk-error-reload-timestamp';
+        const now = Date.now();
+        const lastReload = sessionStorage.getItem(reloadKey);
+
+        // If we can reload automatically (haven't reloaded recently), show a clean spinner/updater message
+        if (!lastReload || now - parseInt(lastReload, 10) > 15000) {
+          return (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '80vh',
+              color: '#f3f4f6',
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+              textAlign: 'center'
+            }}>
+              <div style={{
+                border: '3px solid rgba(99, 102, 241, 0.1)',
+                borderTop: '3px solid #6366f1',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                animation: 'spin 1s linear infinite',
+                marginBottom: '16px'
+              }} />
+              <style>{`
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+              `}</style>
+              <div style={{ fontSize: '14px', color: '#9ca3af', letterSpacing: '0.5px' }}>
+                Actualizando aplicación...
+              </div>
+            </div>
+          );
+        }
+      }
 
       return (
         <div style={{
