@@ -381,12 +381,12 @@ export function Modal({ title, children, onClose, wide }: { title: string; child
     );
 }
 
-export function Spinner() {
+export function Spinner({ size = '24px', padding = '20px', color = '#6366f1' }: { size?: string; padding?: string; color?: string } = {}) {
     return (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding }}>
             <div className="spinner" style={{
-                width: '24px', height: '24px', border: '3px solid rgba(99, 102, 241, 0.1)',
-                borderTop: '3px solid #6366f1', borderRadius: '50%',
+                width: size, height: size, border: '3px solid rgba(99, 102, 241, 0.1)',
+                borderTop: `3px solid ${color}`, borderRadius: '50%',
                 animation: 'spin 0.8s linear infinite'
             }}></div>
             <style>{`
@@ -396,48 +396,21 @@ export function Spinner() {
     );
 }
 
-export function PageLoader() {
+export function PageLoader({ text = 'Cargando...', minHeight = '350px' }: { text?: string; minHeight?: string } = {}) {
     return (
         <div style={{
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
             alignItems: 'center',
-            minHeight: '350px',
+            minHeight,
             height: '100%',
             width: '100%',
             background: 'transparent',
             color: '#e6e1e5',
             fontFamily: 'Roboto, system-ui, sans-serif'
         }}>
-            <div style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '20px',
-                width: '60px',
-                height: '60px'
-            }}>
-                <div style={{
-                    position: 'absolute',
-                    width: '48px',
-                    height: '48px',
-                    border: '3px solid rgba(208, 188, 255, 0.08)',
-                    borderTop: '3px solid #D0BCFF',
-                    borderRadius: '50%',
-                    animation: 'spin-page-loader 1s cubic-bezier(0.4, 0, 0.2, 1) infinite'
-                }}></div>
-                <div style={{
-                    position: 'absolute',
-                    width: '28px',
-                    height: '28px',
-                    border: '3px solid rgba(204, 194, 220, 0.08)',
-                    borderBottom: '3px solid #CCC2DC',
-                    borderRadius: '50%',
-                    animation: 'spin-page-loader-reverse 1.5s linear infinite'
-                }}></div>
-            </div>
+            <Spinner size="40px" padding="0" />
             <div style={{
                 fontSize: '12px',
                 color: '#CAC4D0',
@@ -445,13 +418,14 @@ export function PageLoader() {
                 textTransform: 'uppercase',
                 fontWeight: 700,
                 opacity: 0.8,
-                animation: 'pulse-page-loader 1.5s ease-in-out infinite'
+                marginTop: '20px',
+                animation: 'pulse-page-loader 1.5s ease-in-out infinite',
+                textAlign: 'center',
+                padding: '0 20px'
             }}>
-                Cargando...
+                {text}
             </div>
             <style>{`
-                @keyframes spin-page-loader { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-                @keyframes spin-page-loader-reverse { 0% { transform: rotate(360deg); } 100% { transform: rotate(0deg); } }
                 @keyframes pulse-page-loader { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
             `}</style>
         </div>

@@ -6,6 +6,7 @@ import Layout from '../../shared/Layout';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '../../entities/auth/model/authSlice';
 import { UserRole } from '../../shared/types/roles';
+import { PageLoader } from '../../shared/ui';
 
 // Sector: Config
 const MaterialesPage = lazy(() => import('../../pages/warehouse/MaterialesPage'));
@@ -59,7 +60,7 @@ const HelpPage = lazy(() => import('../../pages/help/HelpPage'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0f1117' }}>
-    <div style={{ color: '#6b7280', fontSize: '14px', letterSpacing: '1px', textTransform: 'uppercase' }}>Cargando...</div>
+    <PageLoader text="Cargando sección..." />
   </div>
 );
 

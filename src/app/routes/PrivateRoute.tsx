@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { selectIsAuthenticated, logout, selectCurrentUser } from '../../entities/auth/model/authSlice';
 import { useVerifySessionQuery } from '../../entities/auth/api/authApi';
 import { api } from '../../shared/api';
-import { Spinner } from '../../shared/ui';
+import { PageLoader } from '../../shared/ui';
 
 export const PrivateRoute = () => {
     const dispatch = useDispatch();
@@ -52,10 +52,7 @@ export const PrivateRoute = () => {
                 color: '#f3f4f6',
                 fontFamily: 'Inter, system-ui, sans-serif'
             }}>
-                <div style={{ marginBottom: '20px' }}><Spinner /></div>
-                <div style={{ fontSize: '14px', color: '#6b7280', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                    Verificando sesión...
-                </div>
+                <PageLoader text="Verificando sesión..." minHeight="180px" />
                 <div style={{ fontSize: '12px', color: '#4b5563', marginTop: '12px', maxWidth: '320px', textAlign: 'center', lineHeight: '1.4' }}>
                     Si es la primera visita en un rato, el servidor gratuito de Render puede tardar hasta 1 minuto en "despertar".
                 </div>

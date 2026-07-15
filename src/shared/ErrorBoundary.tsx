@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
+import { Spinner } from './ui';
 
 interface Props {
   children: ReactNode;
@@ -70,21 +71,9 @@ export class ErrorBoundary extends Component<Props, State> {
               fontFamily: 'system-ui, -apple-system, sans-serif',
               textAlign: 'center'
             }}>
-              <div style={{
-                border: '3px solid rgba(99, 102, 241, 0.1)',
-                borderTop: '3px solid #6366f1',
-                borderRadius: '50%',
-                width: '32px',
-                height: '32px',
-                animation: 'spin 1s linear infinite',
-                marginBottom: '16px'
-              }} />
-              <style>{`
-                @keyframes spin {
-                  0% { transform: rotate(0deg); }
-                  100% { transform: rotate(360deg); }
-                }
-              `}</style>
+              <div style={{ marginBottom: '16px' }}>
+                <Spinner size="32px" padding="0" />
+              </div>
               <div style={{ fontSize: '14px', color: '#9ca3af', letterSpacing: '0.5px' }}>
                 Actualizando aplicación...
               </div>
