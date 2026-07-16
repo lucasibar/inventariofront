@@ -62,103 +62,47 @@ function EditableCell({ value, onSave, label, type = 'text', options }: { value:
     );
 }
 
-/* ─── Restriction Manager ─── */
-function RestrictionManager({ restrictions, itemCategories, allItems, onUpdate, onClose }: { 
-    restrictions: { type: string; value: string }[], 
+/* ─── Category Manager ─── */
+function CategoryManager({ categoriaPrincipal, categoriaSecundaria, itemCategories, onUpdate, onClose }: { 
+    categoriaPrincipal: string | null, 
+    categoriaSecundaria: string | null,
     itemCategories: string[], 
-    allItems: any[],
-    onUpdate: (r: { type: string; value: string }[]) => Promise<void>,
+    onUpdate: (catP: string | null, catS: string | null) => Promise<void>,
     onClose: () => void 
 }) {
-    const [materialSearch, setMaterialSearch] = useState('');
-    
-    const searchResults = useMemo(() => {
-        if (materialSearch.length < 2) return [];
-        const q = materialSearch.toLowerCase();
-        return allItems.filter(it => 
-            it.codigoInterno.toLowerCase().includes(q) || 
-            it.descripcion.toLowerCase().includes(q)
-        ).slice(0, 10);
-    }, [allItems, materialSearch]);
-
-    const addRestriction = (type: string, value: string) => {
-        const current = Array.isArray(restrictions) ? restrictions : [];
-        if (current.find(r => r.type === type && r.value === value)) return;
-        onUpdate([...current, { type, value }]);
-    };
-
-    const removeRestriction = (index: number) => {
-        const next = [...(Array.isArray(restrictions) ? restrictions : [])];
-        next.splice(index, 1);
-        onUpdate(next);
-    };
-
-    const currentRestrictions = Array.isArray(restrictions) ? restrictions : [];
-
     return (
         <div style={{ 
-            display: 'flex', flexDirection: 'column', gap: '8px', background: '#0f1117', 
-            padding: '12px', borderRadius: '12px', border: '1px solid #1e2133', minWidth: '320px',
-            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)', position: 'relative', zIndex: 100
+            display: 'flex', flexDirection: 'column', gap: '12px', background: '#0f1117', 
+            padding: '16px', borderRadius: '12px', border: '1px solid #1e2133', minWidth: '250px',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)', position: 'relative', zIndex: 100
         }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Restricciones de Posición</span>
-                <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer' }}>✕</button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1e2133', paddingBottom: '8px' }}>
+                <span style={{ fontSize: '11px', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Filtros de Material</span>
+                <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '14px' }}>✕</button>
             </div>
 
-            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', minHeight: '24px' }}>
-                {currentRestrictions.length === 0 && <span style={{ fontSize: '12px', color: '#4b5563', fontStyle: 'italic' }}>Sin restricciones (Libre)</span>}
-                {currentRestrictions.map((r, i) => (
-                    <div key={i} style={{ 
-                        background: r.type === 'MATERIAL' ? 'rgba(168, 85, 247, 0.15)' : 'rgba(99, 102, 241, 0.15)',
-                        border: `1px solid ${r.type === 'MATERIAL' ? '#a855f7' : '#6366f1'}`,
-                        color: r.type === 'MATERIAL' ? '#d8b4fe' : '#a5b4fc',
-                        padding: '2px 8px', borderRadius: '4px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px'
-                    }}>
-                        <span>{r.type === 'MATERIAL' ? `📦 ${r.value?.split('-')[0]}` : r.value}</span>
-                        <span onClick={() => removeRestriction(i)} style={{ cursor: 'pointer', opacity: 0.6 }}>✕</span>
-                    </div>
-                ))}
-            </div>
-
-            <div style={{ marginTop: '4px' }}>
+            <div>
+                <label style={{ display: 'block', color: '#9ca3af', fontSize: '11px', marginBottom: '4px' }}>Categoría Principal</label>
                 <select 
-                    onChange={e => { if(e.target.value) { addRestriction('CATEGORY', e.target.value); e.target.value = ''; } }}
+                    value={categoriaPrincipal || ''}
+                    onChange={e => onUpdate(e.target.value || null, categoriaSecundaria)}
                     style={{ width: '100%', background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: '6px', padding: '6px', color: '#f3f4f6', fontSize: '12px', outline: 'none' }}
                 >
-                    <option value="">+ Añadir Categoría...</option>
+                    <option value="">— Libre —</option>
                     {itemCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                 </select>
             </div>
 
-            <div style={{ position: 'relative' }}>
-                <input 
-                    placeholder="+ Añadir Material específico..."
-                    value={materialSearch}
-                    onChange={e => setMaterialSearch(e.target.value)}
-                    style={{ width: '100%', background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: '6px', padding: '6px', color: '#f3f4f6', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
-                />
-                {materialSearch.length >= 2 && searchResults && Array.isArray(searchResults) && searchResults.length > 0 && (
-                    <div style={{ 
-                        position: 'absolute', top: '100%', left: 0, right: 0, background: '#1a1d2e', 
-                        border: '1px solid #2a2d3e', borderRadius: '6px', marginTop: '4px', 
-                        maxHeight: '150px', overflowY: 'auto', zIndex: 101, boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
-                    }}>
-                        {searchResults.map((item: any) => (
-                            <div 
-                                key={item.id} 
-                                onClick={() => { addRestriction('MATERIAL', `${item.codigoInterno} - ${item.descripcion}`); setMaterialSearch(''); }}
-                                style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid #2a2d3e', transition: 'background 0.2s' }}
-                                onMouseEnter={e => e.currentTarget.style.background = '#2a2d3e'}
-                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                            >
-                                <div style={{ fontSize: '12px', color: '#f3f4f6', fontWeight: 600 }}>{item.codigoInterno}</div>
-                                <div style={{ fontSize: '10px', color: '#9ca3af' }}>{item.descripcion}</div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+            <div>
+                <label style={{ display: 'block', color: '#9ca3af', fontSize: '11px', marginBottom: '4px' }}>Categoría Secundaria</label>
+                <select 
+                    value={categoriaSecundaria || ''}
+                    onChange={e => onUpdate(categoriaPrincipal, e.target.value || null)}
+                    style={{ width: '100%', background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: '6px', padding: '6px', color: '#f3f4f6', fontSize: '12px', outline: 'none' }}
+                >
+                    <option value="">— Libre —</option>
+                    {itemCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                </select>
         </div>
     );
 }
@@ -228,7 +172,7 @@ export default function DepositoPage() {
         return (selectedDepot.positions || []).filter((p: any) => {
             const matchSearch = p.codigo?.toLowerCase().includes(search) || false;
             const matchCat = !posFilterCat || p.categoria === posFilterCat;
-            const matchItem = !posFilterItem || (p.restrictions || []).some((r: any) => r.type === 'CATEGORY' && r.value === posFilterItem);
+            const matchItem = !posFilterItem || p.categoriaPrincipal === posFilterItem || p.categoriaSecundaria === posFilterItem;
             return matchSearch && matchCat && matchItem;
         });
     }, [selectedDepot, deferredPosSearch, posFilterCat, posFilterItem]);
@@ -278,7 +222,10 @@ export default function DepositoPage() {
             await createPosition({ 
                 depotId: showNewPosition, 
                 data: { 
-                    ...newPosForm, 
+                    codigo: newPosForm.codigo,
+                    categoria: newPosForm.categoria,
+                    categoriaPrincipal: newPosForm.categoria_item_primario || null,
+                    categoriaSecundaria: newPosForm.categoria_item_secundario || null,
                     metrosCubicos: newPosForm.metrosCubicos ? parseFloat(newPosForm.metrosCubicos) : undefined 
                 } 
             }).unwrap();
@@ -524,18 +471,20 @@ export default function DepositoPage() {
                                                                 </select>
                                                             </td>
                                                             <td style={{ padding: '8px 16px' }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
                                                                     {expandedPosId === p.id ? (
-                                                                        <RestrictionManager 
-                                                                            restrictions={p.restrictions || []}
-                                                                            itemCategories={itemCategories}
-                                                                            allItems={items}
-                                                                            onUpdate={async (newRestrictions) => {
-                                                                                await updatePosition({ id: p.id, data: { restrictions: newRestrictions } }).unwrap();
-                                                                                refetch();
-                                                                            }}
-                                                                            onClose={() => setExpandedPosId(null)}
-                                                                        />
+                                                                        <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '4px', zIndex: 100 }}>
+                                                                            <CategoryManager 
+                                                                                categoriaPrincipal={p.categoriaPrincipal}
+                                                                                categoriaSecundaria={p.categoriaSecundaria}
+                                                                                itemCategories={itemCategories}
+                                                                                onUpdate={async (catP, catS) => {
+                                                                                    await updatePosition({ id: p.id, data: { categoriaPrincipal: catP, categoriaSecundaria: catS } }).unwrap();
+                                                                                    refetch();
+                                                                                }}
+                                                                                onClose={() => setExpandedPosId(null)}
+                                                                            />
+                                                                        </div>
                                                                     ) : (
                                                                         <button 
                                                                             onClick={(e) => { e.stopPropagation(); setExpandedPosId(p.id); }}
@@ -546,17 +495,21 @@ export default function DepositoPage() {
                                                                             }}
                                                                         >
                                                                             <span style={{ fontSize: '14px' }}>🏷️</span>
-                                                                            {p.restrictions && p.restrictions.length > 0 ? (
+                                                                            {p.categoriaPrincipal || p.categoriaSecundaria ? (
                                                                                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                                                                                    {p.restrictions.slice(0, 2).map((r: any, idx: number) => (
-                                                                                        <span key={idx} style={{ background: r.type === 'MATERIAL' ? 'rgba(168, 85, 247, 0.2)' : 'rgba(99, 102, 241, 0.2)', padding: '1px 6px', borderRadius: '3px', fontSize: '10px' }}>
-                                                                                            {r.type === 'MATERIAL' ? '📦 Material' : r.value}
+                                                                                    {p.categoriaPrincipal && (
+                                                                                        <span style={{ background: 'rgba(99, 102, 241, 0.2)', padding: '1px 6px', borderRadius: '3px', fontSize: '10px' }}>
+                                                                                            {p.categoriaPrincipal}
                                                                                         </span>
-                                                                                    ))}
-                                                                                    {p.restrictions.length > 2 && <span style={{ opacity: 0.6 }}>+{p.restrictions.length - 2}</span>}
+                                                                                    )}
+                                                                                    {p.categoriaSecundaria && (
+                                                                                        <span style={{ background: 'rgba(168, 85, 247, 0.2)', padding: '1px 6px', borderRadius: '3px', fontSize: '10px' }}>
+                                                                                            {p.categoriaSecundaria}
+                                                                                        </span>
+                                                                                    )}
                                                                                 </div>
                                                                             ) : (
-                                                                                <span style={{ opacity: 0.6 }}>Sin restricciones</span>
+                                                                                <span style={{ opacity: 0.6 }}>Libre / Todo</span>
                                                                             )}
                                                                         </button>
                                                                     )}
@@ -676,7 +629,7 @@ export default function DepositoPage() {
                             <Input label="Código de Posición" value={newPosForm.codigo} onChange={v => setNewPosForm(p => ({...p, codigo: v}))} placeholder="Ej: A-01-01" />
                             <Input label="m³" type="number" value={newPosForm.metrosCubicos} onChange={v => setNewPosForm(p => ({...p, metrosCubicos: v}))} placeholder="0.0" />
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                             <div>
                                 <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>Tipo / Categoría</label>
                                 <select 
@@ -693,10 +646,21 @@ export default function DepositoPage() {
                                 </select>
                             </div>
                             <div>
-                                <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>Cat. Inicial (Opcional)</label>
+                                <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>Cat. Principal (Opcional)</label>
                                 <select 
                                     value={newPosForm.categoria_item_primario} 
                                     onChange={e => setNewPosForm(p => ({...p, categoria_item_primario: e.target.value}))}
+                                    style={{ width: '100%', background: '#0f1117', border: '1px solid #374151', borderRadius: '8px', padding: '8px 10px', color: '#f3f4f6', fontSize: '13px', outline: 'none' }}
+                                >
+                                    <option value="">— Ninguna —</option>
+                                    {itemCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>Cat. Secundaria (Opcional)</label>
+                                <select 
+                                    value={newPosForm.categoria_item_secundario} 
+                                    onChange={e => setNewPosForm(p => ({...p, categoria_item_secundario: e.target.value}))}
                                     style={{ width: '100%', background: '#0f1117', border: '1px solid #374151', borderRadius: '8px', padding: '8px 10px', color: '#f3f4f6', fontSize: '13px', outline: 'none' }}
                                 >
                                     <option value="">— Ninguna —</option>

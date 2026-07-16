@@ -44,11 +44,11 @@ export const depotsApi = api.injectEndpoints({
             query: (id) => ({ url: `depots/${id}/restore`, method: 'PATCH' }),
             invalidatesTags: (_result, _error, id) => [{ type: 'Depots', id }, { type: 'Depots', id: 'LIST' }],
         }),
-        createPosition: builder.mutation<any, { depotId: string; data: { codigo: string; categoria: string; restrictions?: { type: string; value: string }[]; metrosCubicos?: number } }>({
+        createPosition: builder.mutation<any, { depotId: string; data: { codigo: string; categoria: string; categoriaPrincipal?: string | null; categoriaSecundaria?: string | null; metrosCubicos?: number } }>({
             query: ({ depotId, data }) => ({ url: `depots/${depotId}/positions`, method: 'POST', body: data }),
             invalidatesTags: [{ type: 'Depots', id: 'LIST' }],
         }),
-        updatePosition: builder.mutation<any, { id: string; data: Partial<{ codigo: string; categoria: string; restrictions: { type: string; value: string }[]; metrosCubicos: number; activo: boolean }> }>({
+        updatePosition: builder.mutation<any, { id: string; data: Partial<{ codigo: string; categoria: string; categoriaPrincipal: string | null; categoriaSecundaria: string | null; metrosCubicos: number; activo: boolean }> }>({
             query: ({ id, data }) => ({ url: `positions/${id}`, method: 'PUT', body: data }),
             invalidatesTags: [{ type: 'Depots', id: 'LIST' }],
             async onQueryStarted({ id, data }, { dispatch, queryFulfilled }) {
