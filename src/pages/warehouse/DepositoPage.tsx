@@ -208,7 +208,7 @@ export default function DepositoPage() {
     const [showNewCategory, setShowNewCategory] = useState(false);
     const [newCategoryForm, setNewCategoryForm] = useState({ nombre: '', minimo: '', maximo: '' });
     const [showNewPosition, setShowNewPosition] = useState<string | null>(null);
-    const [newDepotForm, setNewDepotForm] = useState({ nombre: '', planta: '', tipo: 'STORAGE' });
+    const [newDepotForm, setNewDepotForm] = useState({ nombre: '', planta: '' });
     const [newPosForm, setNewPosForm] = useState({ codigo: '', categoria: 'STOCK', categoria_item_primario: '', categoria_item_secundario: '', metrosCubicos: '' });
 
     const [posSearch, setPosSearch] = useState('');
@@ -264,7 +264,7 @@ export default function DepositoPage() {
         try {
             const result = await createDepot(newDepotForm).unwrap();
             setShowNewDepot(false);
-            setNewDepotForm({ nombre: '', planta: '', tipo: 'STORAGE' });
+            setNewDepotForm({ nombre: '', planta: '' });
             setSelectedDepotId(result.id);
             refetch();
         } catch (e) { console.error(e); }
