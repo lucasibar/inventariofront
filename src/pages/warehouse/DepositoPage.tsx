@@ -103,6 +103,7 @@ function CategoryManager({ categoriaPrincipal, categoriaSecundaria, itemCategori
                     <option value="">— Libre —</option>
                     {itemCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                 </select>
+            </div>
         </div>
     );
 }
