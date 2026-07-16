@@ -112,6 +112,14 @@ const navGroups: NavGroup[] = [
         items: [
             { to: '/dashboard', label: '📊 Comando Compras' },
             { to: '/pedidos-compra', label: '📝 Pedidos de Compra' },
+            {
+                id: 'compras-informes',
+                label: '📊 Informes',
+                isSubGroup: true,
+                items: [
+                    { to: '/compras/grafico-sierra', label: '📈 Gráfico de Sierra' },
+                ]
+            },
             { to: '/compras/conciliacion', label: '🔗 Conciliación' },
             { to: '/compras/materiales-criticos', label: '🧵 Materiales Críticos' },
             { to: '/compras/alertas-stock', label: '⚠️ Alertas de Stock' },
@@ -232,7 +240,8 @@ export default function Layout() {
                 '/deposito/dashboard', '/dashboard', '/compras/materiales-criticos',
                 '/compras/alertas-stock', '/compras/conciliacion', '/pedidos-compra',
                 '/remitos-entrada', '/reporte-consumo-detallado', '/items',
-                '/dashboard/capacity', '/dashboard/volumes', '/items/box-types', '/socios'
+                '/dashboard/capacity', '/dashboard/volumes', '/items/box-types', '/socios',
+                '/compras/grafico-sierra'
             ].includes(to);
         }
         return false;

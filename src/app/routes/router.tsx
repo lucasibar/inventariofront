@@ -33,6 +33,7 @@ const AlertaStockPage = lazy(() => import('../../pages/purchasing/AlertaStockPag
 const CapacityDashboardPage = lazy(() => import('../../pages/purchasing/CapacityDashboardPage'));
 const VolumenesDashboardPage = lazy(() => import('../../pages/purchasing/VolumenesDashboardPage'));
 const PedidosCompraPage = lazy(() => import('../../pages/purchasing/PedidosCompraPage'));
+const GraficoSierraPage = lazy(() => import('../../pages/purchasing/GraficoSierraPage'));
 
 // Sector: Maintenance
 const DashboardMantenimientoPage = lazy(() => import('../../pages/maintenance/DashboardMantenimientoPage'));
@@ -56,7 +57,6 @@ const RRHHDashboardPage = lazy(() => import('../../pages/hr/RRHHDashboardPage'))
 // Other
 const AdminMovementsPage = lazy(() => import('../../pages/warehouse/AdminMovementsPage'));
 const NotificationsPage = lazy(() => import('../../pages/config/NotificationsPage'));
-const PedidosPage = lazy(() => import('../../pages/sales/PedidosPage'));
 const HelpPage = lazy(() => import('../../pages/help/HelpPage'));
 
 const FallbackLoader = () => (
@@ -109,12 +109,12 @@ export const router = createBrowserRouter([
               { path: "compras/materiales-criticos", element: <LazyRoute element={MaterialesCriticosPage} /> },
               { path: "compras/alertas-stock", element: <LazyRoute element={AlertaStockPage} /> },
               { path: "compras/conciliacion", element: <LazyRoute element={ConciliacionPage} /> },
+              { path: "compras/grafico-sierra", element: <LazyRoute element={GraficoSierraPage} /> },
               { path: "dashboard/capacity", element: <LazyRoute element={CapacityDashboardPage} /> },
               { path: "dashboard/volumes", element: <LazyRoute element={VolumenesDashboardPage} /> },
               { path: "items", element: <LazyRoute element={MaterialesPage} /> },
               { path: "items/box-types", element: <LazyRoute element={BoxTypesPage} /> },
               { path: "socios", element: <LazyRoute element={SociosPage} /> },
-              { path: "pedidos", element: <LazyRoute element={PedidosPage} /> },
               { path: "pedidos-compra", element: <LazyRoute element={PedidosCompraPage} /> },
             ]
           },

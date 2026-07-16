@@ -10,14 +10,12 @@ import {
 } from '../../features/warehouse/remitosSalida/api/remitos-salida.api';
 import { RemitoDetailModal } from '../../features/warehouse/remitos/ui/RemitoDetailModal';
 import { CreatePartnerDialog } from '../../features/config/CreatePartnerDialog';
-import { useGetOrdersQuery } from '../../entities/sales/api/orders.api';
 import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
 import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.api';
 import { PageHeader, Card, Btn, Input, Select, SearchSelect, Modal, Table, Badge, HelpTooltip } from '../../shared/ui';
 
 export default function RemitosSalidaPage() {
     const { data: remitos = [], isLoading } = useGetRemitosSalidaQuery();
-    const { data: orders = [] } = useGetOrdersQuery();
     const { data: clients = [] } = useGetPartnersQuery({ type: 'CLIENT' });
     const { data: items = [] } = useGetItemsQuery({});
 
@@ -26,7 +24,6 @@ export default function RemitosSalidaPage() {
     const [deleteRemito] = useDeleteRemitoSalidaMutation();
 
     const [step, setStep] = useState<'form' | 'preview' | null>(null);
-    const [orderId, setOrderId] = useState('');
     const [numero, setNumero] = useState('');
     const user = useSelector(selectCurrentUser);
     const isAdmin = (user as any)?.role?.toUpperCase() === 'ADMIN';
@@ -54,12 +51,7 @@ export default function RemitosSalidaPage() {
         }
     };
 
-    const loadFromOrder = () => {
-        const selectedOrder = orders.find((o: any) => o.id === orderId);
-        if (!selectedOrder) return;
-        setLines((selectedOrder.lines ?? []).map((l: any) => ({ itemId: l.itemId, qtyPrincipal: String(l.qtyPrincipal || l.kilosPedidos), qtySecundaria: '' })));
-        if (selectedOrder.client) { setClientId(selectedOrder.client.id); }
-    };
+
 
     const goPreview = async () => {
         setError('');
@@ -76,7 +68,6 @@ export default function RemitosSalidaPage() {
             const dto: any = {
                 fecha, observaciones: observaciones || undefined,
                 numero: numero || undefined,
-                orderId: orderId || undefined,
                 lines: lines.filter(l => l.itemId).map(l => ({ itemId: l.itemId, qtyPrincipal: Number(l.qtyPrincipal), qtySecundaria: l.qtySecundaria ? Number(l.qtySecundaria) : undefined })),
             };
             dto.clientId = clientId;
@@ -97,12 +88,11 @@ export default function RemitosSalidaPage() {
                 <Table
                     loading={isLoading}
                     onRowClick={(i) => handleRowClick(remitos[i])}
-                    cols={['Número', 'Fecha', 'Cliente', 'Pedido asociado', 'Líneas', '']}
+                    cols={['Número', 'Fecha', 'Cliente', 'Líneas', '']}
                     rows={remitos.map((r: any) => [
                         <span key="num" style={{ color: '#a5b4fc', fontWeight: 600 }}>{r.numero}</span>,
                         new Date(r.fecha).toLocaleDateString('es-AR'),
                         (r.partner?.name || r.client?.name) ?? '—',
-                        r.order?.numero ?? '—',
                         <Badge key="badge">{r.lines?.length ?? 0} ítems</Badge>,
                         <Btn key="del" small variant="danger" onClick={(e: any) => { e.stopPropagation(); if (window.confirm('¿Anular este remito de salida?')) deleteRemito(r.id); }}>🗑</Btn>,
                     ])}
@@ -111,13 +101,7 @@ export default function RemitosSalidaPage() {
 
             {step === 'form' && (
                 <Modal title="Nuevo Remito de Salida" onClose={() => setStep(null)} wide>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                        <div>
-                            <label style={{ color: '#9ca3af', fontSize: '12px' }}>Pedido (opcional)</label>
-                            <Select value={orderId} onChange={v => { setOrderId(v); if (v) setTimeout(loadFromOrder, 100); }}
-                                options={[{ value: '', label: 'Sin pedido asociado' }, ...orders.map((o: any) => ({ value: o.id, label: `${o.numero} — ${o.client?.name ?? 'S/C'}` }))]}
-                                style={{ marginTop: '6px' }} />
-                        </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                         <Input label="Número (opcional)" placeholder="Auto-generar si vacío" value={numero} onChange={setNumero} />
                         <Input label="Fecha" type="date" value={fecha} onChange={setFecha} />
                     </div>
