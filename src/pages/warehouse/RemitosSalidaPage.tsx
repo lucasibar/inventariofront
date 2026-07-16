@@ -12,7 +12,7 @@ import { RemitoDetailModal } from '../../features/warehouse/remitos/ui/RemitoDet
 import { CreatePartnerDialog } from '../../features/config/CreatePartnerDialog';
 import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
 import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.api';
-import { PageHeader, Card, Btn, Input, Select, SearchSelect, Modal, Table, Badge, HelpTooltip } from '../../shared/ui';
+import { PageHeader, Card, Btn, Input, SearchSelect, Modal, Table, Badge, HelpTooltip } from '../../shared/ui';
 
 export default function RemitosSalidaPage() {
     const { data: remitos = [], isLoading } = useGetRemitosSalidaQuery();
