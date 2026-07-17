@@ -12,12 +12,14 @@ import { RemitoDetailModal } from '../../features/warehouse/remitos/ui/RemitoDet
 import { CreatePartnerDialog } from '../../features/config/CreatePartnerDialog';
 import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
 import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.api';
+import { useGetStockQuery } from '../../features/warehouse/stock/api/stock.api';
 import { PageHeader, Card, Btn, Input, SearchSelect, Modal, Table, Badge, HelpTooltip } from '../../shared/ui';
 
 export default function RemitosSalidaPage() {
     const { data: remitos = [], isLoading } = useGetRemitosSalidaQuery();
     const { data: clients = [] } = useGetPartnersQuery({ type: 'CLIENT' });
     const { data: items = [] } = useGetItemsQuery({});
+    const { data: stock = [] } = useGetStockQuery({});
 
     const [previewRemito] = usePreviewRemitoSalidaMutation();
     const [createRemito] = useCreateRemitoSalidaMutation();
@@ -29,7 +31,7 @@ export default function RemitosSalidaPage() {
     const isAdmin = (user as any)?.role?.toUpperCase() === 'ADMIN';
     const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
     const [observaciones, setObservaciones] = useState('');
-    const [lines, setLines] = useState<{ itemId: string; qtyPrincipal: string; qtySecundaria: string }[]>([{ itemId: '', qtyPrincipal: '', qtySecundaria: '' }]);
+    const [lines, setLines] = useState<{ itemId: string; lotId: string; posicionId: string; qtyPrincipal: string; qtySecundaria: string }[]>([{ itemId: '', lotId: '', posicionId: '', qtyPrincipal: '', qtySecundaria: '' }]);
     const [previewData, setPreviewData] = useState<any>(null);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
@@ -56,7 +58,15 @@ export default function RemitosSalidaPage() {
     const goPreview = async () => {
         setError('');
         try {
-            const result = await previewRemito({ lines: lines.filter(l => l.itemId).map(l => ({ itemId: l.itemId, qtyPrincipal: Number(l.qtyPrincipal), qtySecundaria: l.qtySecundaria ? Number(l.qtySecundaria) : undefined })) }).unwrap();
+            const result = await previewRemito({ 
+                lines: lines.filter(l => l.itemId).map(l => ({ 
+                    itemId: l.itemId, 
+                    lotId: l.lotId || undefined, 
+                    posicionId: l.posicionId || undefined, 
+                    qtyPrincipal: Number(l.qtyPrincipal), 
+                    qtySecundaria: l.qtySecundaria ? Number(l.qtySecundaria) : undefined 
+                })) 
+            }).unwrap();
             setPreviewData(result);
             setStep('preview');
         } catch (e: any) { setError(e?.data?.message ?? 'Error al generar preview'); }
@@ -68,11 +78,17 @@ export default function RemitosSalidaPage() {
             const dto: any = {
                 fecha, observaciones: observaciones || undefined,
                 numero: numero || undefined,
-                lines: lines.filter(l => l.itemId).map(l => ({ itemId: l.itemId, qtyPrincipal: Number(l.qtyPrincipal), qtySecundaria: l.qtySecundaria ? Number(l.qtySecundaria) : undefined })),
+                lines: lines.filter(l => l.itemId).map(l => ({ 
+                    itemId: l.itemId, 
+                    lotId: l.lotId || undefined, 
+                    posicionId: l.posicionId || undefined, 
+                    qtyPrincipal: Number(l.qtyPrincipal), 
+                    qtySecundaria: l.qtySecundaria ? Number(l.qtySecundaria) : undefined 
+                })),
             };
             dto.clientId = clientId;
             await createRemito(dto).unwrap();
-            setStep(null); setLines([{ itemId: '', qtyPrincipal: '', qtySecundaria: '' }]); setPreviewData(null);
+            setStep(null); setLines([{ itemId: '', lotId: '', posicionId: '', qtyPrincipal: '', qtySecundaria: '' }]); setPreviewData(null);
         } catch (e: any) { setError(e?.data?.message ?? 'Error al confirmar'); }
         setSaving(false);
     };
@@ -129,17 +145,52 @@ export default function RemitosSalidaPage() {
                     <div style={{ marginBottom: '16px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                             <label style={{ color: '#9ca3af', fontSize: '12px' }}>Materiales a despachar</label>
-                            <Btn small onClick={() => setLines(p => [...p, { itemId: '', qtyPrincipal: '', qtySecundaria: '' }])}>+ Línea</Btn>
+                            <Btn small onClick={() => setLines(p => [...p, { itemId: '', lotId: '', posicionId: '', qtyPrincipal: '', qtySecundaria: '' }])}>+ Línea</Btn>
                         </div>
-                        {lines.map((l: any, i: number) => (
-                            <div key={i} style={{ display: 'grid', gridTemplateColumns: '3fr 1fr 1fr auto', gap: '8px', marginBottom: '8px', alignItems: 'end' }}>
-                                <SearchSelect label="Material" value={l.itemId} onChange={v => setLines(p => p.map((x: any, j: number) => j === i ? { ...x, itemId: v } : x))}
-                                    options={[{ value: '', label: 'Seleccionar...' }, ...items.map((it: any) => ({ value: it.id, label: `${it.codigoInterno} — ${it.descripcion}` }))]} placeholder="Buscar material..." />
-                                <Input label="Cant. Principal" type="number" value={l.qtyPrincipal} onChange={v => setLines(p => p.map((x: any, j: number) => j === i ? { ...x, qtyPrincipal: v } : x))} />
-                                <Input label="Secundaria" type="number" value={l.qtySecundaria} onChange={v => setLines(p => p.map((x: any, j: number) => j === i ? { ...x, qtySecundaria: v } : x))} />
-                                <Btn small variant="danger" onClick={() => setLines(p => p.filter((_: any, j: number) => j !== i))} style={{ alignSelf: 'flex-end' }}>✕</Btn>
-                            </div>
-                        ))}
+                        {lines.map((l: any, i: number) => {
+                            const availableLots = l.itemId
+                                ? Array.from(
+                                    stock
+                                        .filter((s: any) => s.itemId === l.itemId && Number(s.qtyPrincipal) > 0)
+                                        .reduce((map: Map<string, string>, s: any) => {
+                                            map.set(s.lotId, s.batch?.lotNumber || s.lotId);
+                                            return map;
+                                        }, new Map())
+                                        .entries()
+                                  ).map(([value, label]) => ({ value, label }))
+                                : [];
+
+                            const availablePositions = l.itemId
+                                ? Array.from(
+                                    stock
+                                        .filter((s: any) => s.itemId === l.itemId && (!l.lotId || s.lotId === l.lotId) && Number(s.qtyPrincipal) > 0)
+                                        .reduce((map: Map<string, string>, s: any) => {
+                                            if (s.posicion) {
+                                                map.set(s.posicionId, `${s.posicion.codigo} (Disp: ${Number(s.qtyPrincipal).toFixed(1)})`);
+                                            }
+                                            return map;
+                                        }, new Map())
+                                        .entries()
+                                  ).map(([value, label]) => ({ value, label }))
+                                : [];
+
+                            return (
+                                <div key={i} style={{ display: 'grid', gridTemplateColumns: '2.5fr 2fr 2fr 1.2fr 1.2fr auto', gap: '8px', marginBottom: '8px', alignItems: 'end' }}>
+                                    <SearchSelect label="Material" value={l.itemId} onChange={v => setLines(p => p.map((x: any, j: number) => j === i ? { ...x, itemId: v, lotId: '', posicionId: '' } : x))}
+                                        options={[{ value: '', label: 'Seleccionar...' }, ...items.map((it: any) => ({ value: it.id, label: `${it.codigoInterno} — ${it.descripcion}` }))]} placeholder="Buscar material..." />
+                                    
+                                    <SearchSelect label="Lote / Partida" value={l.lotId} onChange={v => setLines(p => p.map((x: any, j: number) => j === i ? { ...x, lotId: v, posicionId: '' } : x))}
+                                        options={[{ value: '', label: 'Cualquiera (FIFO)' }, ...availableLots]} placeholder="Lote (Opcional)..." disabled={!l.itemId} />
+                                    
+                                    <SearchSelect label="Posición" value={l.posicionId} onChange={v => setLines(p => p.map((x: any, j: number) => j === i ? { ...x, posicionId: v } : x))}
+                                        options={[{ value: '', label: 'Cualquiera (FIFO)' }, ...availablePositions]} placeholder="Posición (Opcional)..." disabled={!l.itemId} />
+
+                                    <Input label="Cant. Princ." type="number" value={l.qtyPrincipal} onChange={v => setLines(p => p.map((x: any, j: number) => j === i ? { ...x, qtyPrincipal: v } : x))} />
+                                    <Input label="Secundaria" type="number" value={l.qtySecundaria} onChange={v => setLines(p => p.map((x: any, j: number) => j === i ? { ...x, qtySecundaria: v } : x))} />
+                                    <Btn small variant="danger" onClick={() => setLines(p => p.filter((_: any, j: number) => j !== i))} style={{ alignSelf: 'flex-end' }}>✕</Btn>
+                                </div>
+                            );
+                        })}
                     </div>
                     {error && <p style={{ color: '#f87171' }}>{error}</p>}
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
