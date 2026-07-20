@@ -102,15 +102,31 @@ export default function MaterialesCriticosPage() {
 
     const exportToExcel = () => {
         if (allStock.length === 0) return;
-        const headers = ['Material', 'Código', 'Categoría', 'Proveedor', 'Partida', 'Stock', 'Unidad'];
+        const headers = [
+            'Material',
+            'Código',
+            'Categoría',
+            'Proveedor',
+            'Depósito',
+            'Posición',
+            'Partida',
+            'Cantidad Primaria',
+            'Unidad Primaria',
+            'Cantidad Secundaria',
+            'Unidad Secundaria'
+        ];
         const rows = allStock.map((row: any) => [
             row.batch?.item?.descripcion || '',
             row.batch?.item?.codigoInterno || '',
             row.batch?.item?.category?.nombre || '',
             row.batch?.supplier?.name || '',
+            row.posicion?.depot?.nombre || '',
+            row.posicion?.codigo || '',
             row.batch?.lotNumber || '',
             Number(row.qtyPrincipal || 0).toFixed(2),
             row.batch?.item?.unidadPrincipal || '',
+            row.qtySecundaria !== null && row.qtySecundaria !== undefined ? Number(row.qtySecundaria).toFixed(2) : '',
+            row.batch?.item?.unidadSecundaria || '',
         ]);
         
         // UTF-8 BOM to make sure Excel opens it correctly with accents and columns
