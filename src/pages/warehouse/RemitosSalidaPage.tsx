@@ -149,19 +149,19 @@ export default function RemitosSalidaPage() {
                         </div>
                         {lines.map((l: any, i: number) => {
                             const availableLots = l.itemId
-                                ? Array.from(
+                                ? (Array.from(
                                     stock
                                         .filter((s: any) => s.itemId === l.itemId && Number(s.qtyPrincipal) > 0)
                                         .reduce((map: Map<string, string>, s: any) => {
                                             map.set(s.lotId, s.batch?.lotNumber || s.lotId);
                                             return map;
-                                        }, new Map())
+                                        }, new Map<string, string>())
                                         .entries()
-                                  ).map(([value, label]) => ({ value, label }))
+                                  ) as [string, string][]).map(([value, label]) => ({ value, label }))
                                 : [];
 
                             const availablePositions = l.itemId
-                                ? Array.from(
+                                ? (Array.from(
                                     stock
                                         .filter((s: any) => s.itemId === l.itemId && (!l.lotId || s.lotId === l.lotId) && Number(s.qtyPrincipal) > 0)
                                         .reduce((map: Map<string, string>, s: any) => {
@@ -169,9 +169,9 @@ export default function RemitosSalidaPage() {
                                                 map.set(s.posicionId, `${s.posicion.codigo} (Disp: ${Number(s.qtyPrincipal).toFixed(1)})`);
                                             }
                                             return map;
-                                        }, new Map())
+                                        }, new Map<string, string>())
                                         .entries()
-                                  ).map(([value, label]) => ({ value, label }))
+                                  ) as [string, string][]).map(([value, label]) => ({ value, label }))
                                 : [];
 
                             return (
