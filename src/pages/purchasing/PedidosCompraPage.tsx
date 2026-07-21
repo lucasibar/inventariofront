@@ -50,7 +50,6 @@ export default function PedidosCompraPage() {
     const [updateOrder] = useUpdatePurchaseOrderMutation();
     const [deleteOrder] = useDeletePurchaseOrderMutation();
     const [updateStatus] = useUpdatePurchaseOrderStatusMutation();
-    const [generateRemitoFromPO] = useGenerateRemitoFromPOMutation();
 
     const [showForm, setShowForm] = useState(false);
     const [editOrderId, setEditOrderId] = useState<string | null>(null);
