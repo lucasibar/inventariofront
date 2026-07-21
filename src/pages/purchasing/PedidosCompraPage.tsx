@@ -5,7 +5,8 @@ import {
     useUpdatePurchaseOrderMutation,
     useDeletePurchaseOrderMutation,
     useUpdatePurchaseOrderStatusMutation,
-    useGetNextNumberQuery
+    useGetNextNumberQuery,
+    useGenerateRemitoFromPOMutation
 } from '../../features/purchasing/purchase-orders/api/purchase-orders.api';
 import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
 import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.api';
@@ -49,11 +50,14 @@ export default function PedidosCompraPage() {
     const [updateOrder] = useUpdatePurchaseOrderMutation();
     const [deleteOrder] = useDeletePurchaseOrderMutation();
     const [updateStatus] = useUpdatePurchaseOrderStatusMutation();
+    const [generateRemitoFromPO] = useGenerateRemitoFromPOMutation();
 
     const [showForm, setShowForm] = useState(false);
     const [editOrderId, setEditOrderId] = useState<string | null>(null);
     const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
     const [selectedFulfillmentOrderId, setSelectedFulfillmentOrderId] = useState<string | null>(null);
+    
+    const [generateRemitoOrder, setGenerateRemitoOrder] = useState<any | null>(null);
     
     const [supplierId, setSupplierId] = useState('');
     const [depositoId, setDepositoId] = useState(depotId || '');
@@ -204,6 +208,11 @@ export default function PedidosCompraPage() {
                                     }>{o.estado}</Badge>
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    {o.estado !== 'COMPLETADO' && o.estado !== 'CANCELADO' && (
+                                        <Btn small variant="secondary" onClick={e => { e.stopPropagation(); setGenerateRemitoOrder(o); }}>
+                                            📦 Ingresar Stock
+                                        </Btn>
+                                    )}
                                     <Btn small onClick={e => { e.stopPropagation(); setSelectedFulfillmentOrderId(o.id); }}>
                                         🔍 Trazabilidad
                                     </Btn>
@@ -219,10 +228,13 @@ export default function PedidosCompraPage() {
                             {selectedOrderId === o.id && (
                                 <div style={{ borderTop: '1px solid #2a2d3e', padding: '16px' }}>
                                     
-                                    <div style={{ marginBottom: '16px', display: 'flex', gap: '8px' }}>
+                                    <div style={{ marginBottom: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                        {o.estado !== 'COMPLETADO' && o.estado !== 'CANCELADO' && (
+                                            <Btn small onClick={() => setGenerateRemitoOrder(o)}>📦 Generar Remito de Entrada</Btn>
+                                        )}
                                         <Btn small variant="secondary" onClick={() => updateStatus({ id: o.id, status: 'PENDIENTE' })}>Marcar Pendiente</Btn>
                                         <Btn small variant="secondary" onClick={() => updateStatus({ id: o.id, status: 'RECIBIDO_PARCIAL' })}>Marcar Parcial</Btn>
-                                        <Btn small onClick={() => updateStatus({ id: o.id, status: 'COMPLETADO' })}>Marcar Completado</Btn>
+                                        <Btn small variant="secondary" onClick={() => updateStatus({ id: o.id, status: 'COMPLETADO' })}>Marcar Completado</Btn>
                                         <Btn small variant="danger" onClick={() => updateStatus({ id: o.id, status: 'CANCELADO' })}>Anular Orden</Btn>
                                     </div>
 
@@ -330,6 +342,119 @@ export default function PedidosCompraPage() {
                     onClose={() => setSelectedFulfillmentOrderId(null)} 
                 />
             )}
+
+            {/* Modal para Generar Remito de Entrada de Stock desde OC */}
+            {generateRemitoOrder && (
+                <GenerateRemitoModal 
+                    order={generateRemitoOrder}
+                    depots={depots}
+                    onClose={() => setGenerateRemitoOrder(null)}
+                    onSuccess={() => setGenerateRemitoOrder(null)}
+                />
+            )}
         </div>
+    );
+}
+
+function GenerateRemitoModal({ order, depots, onClose, onSuccess }: any) {
+    const [generateRemito, { isLoading }] = useGenerateRemitoFromPOMutation();
+    const [depositoId, setDepositoId] = useState(order.depositoId || depots[0]?.id || '');
+    const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
+    const [observaciones, setObservaciones] = useState('');
+    const [lines, setLines] = useState(() => (order.lines || []).map((l: any) => {
+        const pending = Math.max(0, Number(l.qtyPedido) - Number(l.qtyRecibida));
+        const pendingSec = l.qtySecundaria ? Math.max(0, Number(l.qtySecundaria) - Number(l.qtyRecibidaSecundaria || 0)) : 0;
+        return {
+            lineId: l.id,
+            itemDesc: l.item?.descripcion || l.itemId,
+            itemCode: l.item?.codigoInterno || '',
+            pending,
+            qtyPrincipal: String(pending),
+            qtySecundaria: pendingSec > 0 ? String(pendingSec) : '',
+            lotNumber: `LOTE-${order.numero.replace(/^OC-/, '')}`,
+        };
+    }));
+    const [error, setError] = useState('');
+
+    const handleConfirm = async () => {
+        setError('');
+        if (!depositoId) {
+            setError('Debe seleccionar el depósito de destino.');
+            return;
+        }
+
+        const validLines = lines
+            .filter(l => Number(l.qtyPrincipal) > 0)
+            .map(l => ({
+                lineId: l.lineId,
+                lotNumber: l.lotNumber.trim() || `LOTE-${order.numero}`,
+                qtyPrincipal: Number(l.qtyPrincipal),
+                qtySecundaria: l.qtySecundaria ? Number(l.qtySecundaria) : undefined,
+            }));
+
+        if (validLines.length === 0) {
+            setError('Debe ingresar al menos una línea con cantidad mayor a 0.');
+            return;
+        }
+
+        try {
+            await generateRemito({
+                id: order.id,
+                body: {
+                    depositoId,
+                    fecha,
+                    observaciones,
+                    lines: validLines
+                }
+            }).unwrap();
+            alert('¡Remito de Entrada y stock generados exitosamente!');
+            onSuccess();
+        } catch (e: any) {
+            setError(e?.data?.message || 'Error al generar remito de entrada');
+        }
+    };
+
+    return (
+        <Modal title={`📦 Generar Ingreso de Stock — ${order.numero}`} onClose={onClose} wide>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                    <div>
+                        <label style={{ color: '#9ca3af', fontSize: '12px' }}>Depósito Destino (Recepción)</label>
+                        <Select value={depositoId} onChange={setDepositoId}
+                            options={[{ value: '', label: 'Seleccionar depósito...' }, ...depots.map((d: any) => ({ value: d.id, label: d.nombre }))]} />
+                    </div>
+                    <Input label="Fecha de Recepción" type="date" value={fecha} onChange={setFecha} />
+                    <Input label="Observaciones del Remito" placeholder="Ej: Factura A-1234" value={observaciones} onChange={setObservaciones} />
+                </div>
+
+                <div style={{ background: '#111827', padding: '12px', borderRadius: '8px', border: '1px solid #1e2133' }}>
+                    <div style={{ color: '#a5b4fc', fontSize: '13px', fontWeight: 700, marginBottom: '8px' }}>
+                        Detalle de Ingreso (Lotes y Cantidades)
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '250px', overflowY: 'auto' }}>
+                        {lines.map((l: any, idx: number) => (
+                            <div key={l.lineId} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1.2fr 1fr', gap: '8px', alignItems: 'center', background: '#1f2937', padding: '8px 12px', borderRadius: '6px' }}>
+                                <div>
+                                    <div style={{ color: '#f3f4f6', fontWeight: 600, fontSize: '13px' }}>{l.itemDesc}</div>
+                                    <small style={{ color: '#9ca3af', fontSize: '11px' }}>{l.itemCode} &middot; Pendiente: {l.pending.toFixed(1)} kg</small>
+                                </div>
+                                <Input label="N° de Partida / Lote" value={l.lotNumber} onChange={v => setLines((prev: any[]) => prev.map((x, i) => i === idx ? { ...x, lotNumber: v } : x))} />
+                                <Input label="Cant. Princ. (Kg)" type="number" value={l.qtyPrincipal} onChange={v => setLines((prev: any[]) => prev.map((x, i) => i === idx ? { ...x, qtyPrincipal: v } : x))} />
+                                <Input label="Cant. Sec. (Un)" type="number" placeholder="Opcional" value={l.qtySecundaria} onChange={v => setLines((prev: any[]) => prev.map((x, i) => i === idx ? { ...x, qtySecundaria: v } : x))} />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {error && <p style={{ color: '#f87171', fontSize: '13px', margin: 0 }}>⚠️ {error}</p>}
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
+                    <Btn variant="secondary" onClick={onClose} disabled={isLoading}>Cancelar</Btn>
+                    <Btn onClick={handleConfirm} disabled={isLoading || !depositoId}>
+                        {isLoading ? 'Generando...' : 'Confirmar Ingreso a Stock'}
+                    </Btn>
+                </div>
+            </div>
+        </Modal>
     );
 }

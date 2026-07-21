@@ -102,6 +102,14 @@ export const purchaseOrdersApi = api.injectEndpoints({
             }),
             invalidatesTags: ['PurchaseOrders', 'Stock', 'Dashboard'],
         }),
+        generateRemitoFromPO: builder.mutation<any, { id: string; body: { depositoId?: string; fecha?: string; lines?: any[]; observaciones?: string } }>({
+            query: ({ id, body }) => ({
+                url: `/purchase-orders/${id}/generate-remito`,
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['PurchaseOrders', 'Stock', 'Dashboard'],
+        }),
     }),
     overrideExisting: false,
 });
@@ -127,4 +135,5 @@ export const {
     useLinkMovementReceiptMutation,
     useCloseAdjustmentMutation,
     useUnlinkReceiptMutation,
+    useGenerateRemitoFromPOMutation,
 } = purchaseOrdersApi;
