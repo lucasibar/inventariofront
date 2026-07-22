@@ -34,7 +34,7 @@ export default function UsersPage() {
         }
         try {
             let role = newUserForm.roleComposite;
-            let sector = null;
+            let sector: string | null = null;
             if (role.includes('_')) {
                 const parts = role.split('_');
                 role = parts[0];
@@ -56,7 +56,7 @@ export default function UsersPage() {
 
     const handleUpdateRole = async (user: User, compositeVal: string) => {
         let newRole = compositeVal;
-        let newSector = null;
+        let newSector: string | null = null;
         if (compositeVal.includes('_')) {
             const parts = compositeVal.split('_');
             newRole = parts[0];

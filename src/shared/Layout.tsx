@@ -177,7 +177,6 @@ export default function Layout() {
     const sector = user?.sector?.toUpperCase() || '';
     const isAdmin = role === 'ADMIN';
     const isSupervisor = role === 'SUPERVISOR';
-    const isOperario = role === 'OPERARIO';
 
     const navigation = useNavigation();
     const isNavigating = navigation.state === 'loading';

@@ -5,7 +5,7 @@ import { LoginPage } from '../../pages/login/LoginPage';
 import Layout from '../../shared/Layout';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '../../entities/auth/model/authSlice';
-import { UserRole } from '../../shared/types/roles';
+
 import { PageLoader } from '../../shared/ui';
 
 // Sector: Config
