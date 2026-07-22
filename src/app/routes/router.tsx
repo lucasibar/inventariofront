@@ -71,17 +71,23 @@ const LazyRoute = ({ element: Element }: { element: any }) => (
   </Suspense>
 );
 
-const getHome = (role?: string) => {
+const getHome = (role?: string, sector?: string) => {
     const r = role?.toUpperCase();
-    if (r === UserRole.COMPRAS) return '/dashboard';
-    if (r === UserRole.ADMIN) return '/mantenimiento/dashboard';
-    if (r === UserRole.OPERATOR || r === UserRole.SUPERVISOR) return '/deposito/dashboard';
+    const s = sector?.toUpperCase();
+    if (r === 'ADMIN') return '/admin/dashboard';
+    if (s === 'COMPRAS') return '/dashboard';
+    if (s === 'DEPOSITO') return '/deposito/dashboard';
+    if (s === 'MANTENIMIENTO') return '/mantenimiento/dashboard';
+    if (s === 'PRODUCCION') return '/produccion/dashboard';
+    if (s === 'VENTAS') return '/ventas/dashboard';
+    if (s === 'FINANZAS') return '/finanzas/dashboard';
+    if (s === 'RRHH') return '/rrhh/dashboard';
     return '/deposito/dashboard';
 };
 
 const RootRedirect = () => {
   const user = useSelector(selectCurrentUser);
-  return <Navigate to={getHome(user?.role)} replace />;
+  return <Navigate to={getHome(user?.role, user?.sector)} replace />;
 };
 
 export const router = createBrowserRouter([
@@ -102,7 +108,7 @@ export const router = createBrowserRouter([
           },
           // Compras / Config
           {
-            element: <RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.COMPRAS]} />,
+            element: <RoleGuard allowedRoles={['ADMIN', 'SUPERVISOR', 'OPERARIO']} />,
             children: [
               { path: "remitos-entrada", element: <LazyRoute element={RemitosEntradaPage} /> },
               { path: "dashboard", element: <LazyRoute element={DashboardComprasPage} /> },
@@ -120,16 +126,22 @@ export const router = createBrowserRouter([
           },
           // ADMIN
           {
-            element: <RoleGuard allowedRoles={[UserRole.ADMIN]} />,
+            element: <RoleGuard allowedRoles={['ADMIN']} />,
             children: [
-              { path: "admin/dashboard", element: <LazyRoute element={AdminDashboardPage} /> },
               { path: "users", element: <LazyRoute element={UsersPage} /> },
+              { path: "admin/dashboard", element: <LazyRoute element={AdminDashboardPage} /> },
+            ]
+          },
+          // SUPERVISOR + ADMIN
+          {
+            element: <RoleGuard allowedRoles={['ADMIN', 'SUPERVISOR']} />,
+            children: [
               { path: "admin/movements", element: <LazyRoute element={AdminMovementsPage} /> },
             ]
           },
           // Operario / Produccion / Deposito
           {
-            element: <RoleGuard allowedRoles={[UserRole.ADMIN, UserRole.OPERATOR, UserRole.COMPRAS, UserRole.SUPERVISOR]} />,
+            element: <RoleGuard allowedRoles={['ADMIN', 'SUPERVISOR', 'OPERARIO']} />,
             children: [
               { path: "deposito/dashboard", element: <LazyRoute element={DashboardDepositoPage} /> },
               { path: "remitos-salida", element: <LazyRoute element={RemitosSalidaPage} /> },

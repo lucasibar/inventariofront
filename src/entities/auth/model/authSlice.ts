@@ -69,3 +69,4 @@ export const selectAllowedDepots = (state: any) => {
     if (user?.role?.toUpperCase() === 'ADMIN') return null; // Admins have no restrictions
     return user?.allowedDepotIds || [];
 };
+export const selectUserSector = (state: any) => state.auth.user?.sector;

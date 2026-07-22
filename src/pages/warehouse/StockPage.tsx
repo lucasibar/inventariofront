@@ -17,7 +17,7 @@ import { PageHeader, Select, SearchSelect, Spinner, Btn, Modal, Input, EditableC
 import { CreateItemDialog } from '../../features/warehouse/materiales/components/CreateItemDialog';
 import { CreatePartnerDialog } from '../../features/config/CreatePartnerDialog';
 import { useSelector } from 'react-redux';
-import { selectCurrentUser, selectAllowedDepots } from '../../entities/auth/model/authSlice';
+import { selectCurrentUser, selectAllowedDepots, selectUserSector } from '../../entities/auth/model/authSlice';
 
 interface DebouncedSearchInputProps {
     value: string;
@@ -52,8 +52,13 @@ function DebouncedSearchInput({ value, onChange, delay = 300, ...props }: Deboun
 
 export default function StockPage() {
     const user = useSelector(selectCurrentUser);
+    const sector = useSelector(selectUserSector);
     const allowedDepots = useSelector(selectAllowedDepots);
-    const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+    const roleStr = user?.role?.toUpperCase() || '';
+    const sectorStr = sector?.toUpperCase() || '';
+    const isAdmin = roleStr === 'ADMIN';
+    const isSupervisor = roleStr === 'SUPERVISOR';
+    const canAdjust = isAdmin || (isSupervisor && sectorStr === 'DEPOSITO');
     const isMobile = useIsMobile();
     const navigate = useNavigate();
 
@@ -430,7 +435,7 @@ export default function StockPage() {
                             placeholder="Buscar posición..."
                         />
                     </div>
-                    {!isMobile && (
+                    {!isMobile && canAdjust && (
                         <Btn 
                             onClick={() => setQuickAddModal(true)} 
                             style={{ height: '38px', width: '38px', padding: 0, minWidth: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}
@@ -538,7 +543,11 @@ export default function StockPage() {
                                                                     </td>
                                                                     <td onClick={(e) => e.stopPropagation()}>
                                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                                            <EditableCell value={entry.batch?.lotNumber || ''} onSave={(val: any) => handleReassignBatch(entry, val)} style={isOldest ? { color: '#fbbf24', fontWeight: 700 } : undefined} />
+                                                                            {canAdjust ? (
+                                                                                <EditableCell value={entry.batch?.lotNumber || ''} onSave={(val: any) => handleReassignBatch(entry, val)} style={isOldest ? { color: '#fbbf24', fontWeight: 700 } : undefined} />
+                                                                            ) : (
+                                                                                <span style={isOldest ? { color: '#fbbf24', fontWeight: 700 } : undefined}>{entry.batch?.lotNumber || ''}</span>
+                                                                            )}
                                                                             {entry.batch?.observaciones && (
                                                                                 <span 
                                                                                     onClick={() => {
@@ -560,11 +569,19 @@ export default function StockPage() {
                                                                         </div>
                                                                     </td>
                                                                     <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
-                                                                        <EditableCell numeric value={Number(entry.qtyPrincipal).toFixed(1)} onSave={(val: any) => handleAdjustQty(entry, val, 'principal')} />
+                                                                        {canAdjust ? (
+                                                                            <EditableCell numeric value={Number(entry.qtyPrincipal).toFixed(1)} onSave={(val: any) => handleAdjustQty(entry, val, 'principal')} />
+                                                                        ) : (
+                                                                            <span>{Number(entry.qtyPrincipal).toFixed(1)}</span>
+                                                                        )}
                                                                         {!isMobile && <small style={{opacity:0.6, marginLeft: '2px'}}>{group.item.unidadPrincipal}</small>}
                                                                     </td>
                                                                     <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
-                                                                        <EditableCell numeric value={Number(entry.qtySecundaria || 0).toFixed(0)} onSave={(val: any) => handleAdjustQty(entry, val, 'secundaria')} />
+                                                                        {canAdjust ? (
+                                                                            <EditableCell numeric value={Number(entry.qtySecundaria || 0).toFixed(0)} onSave={(val: any) => handleAdjustQty(entry, val, 'secundaria')} />
+                                                                        ) : (
+                                                                            <span>{Number(entry.qtySecundaria || 0).toFixed(0)}</span>
+                                                                        )}
                                                                         {!isMobile && <small style={{opacity:0.6, marginLeft: '2px'}}>{group.item.unidadSecundaria}</small>}
                                                                     </td>
                                                                     <td style={{ textAlign: 'center' }}>
@@ -575,7 +592,7 @@ export default function StockPage() {
                                                                                 title="Despachar (agregar a remito de salida)"
                                                                                 disabled={isDeleting}
                                                                             >📦</button>
-                                                                            {isAdmin && (
+                                                                            {canAdjust && (
                                                                                 isDeleting ? (
                                                                                     <span className="mini-spinner" style={{
                                                                                         width: '12px',

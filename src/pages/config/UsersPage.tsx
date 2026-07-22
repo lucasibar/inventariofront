@@ -19,7 +19,7 @@ export default function UsersPage() {
     const [newUserForm, setNewUserForm] = useState({ 
         username: '', 
         password: '', 
-        role: 'OPERATOR',
+        roleComposite: 'OPERARIO_DEPOSITO',
         allowedDepotIds: [] as string[]
     });
 
@@ -33,17 +33,37 @@ export default function UsersPage() {
             return;
         }
         try {
-            await createUser(newUserForm).unwrap();
+            let role = newUserForm.roleComposite;
+            let sector = null;
+            if (role.includes('_')) {
+                const parts = role.split('_');
+                role = parts[0];
+                sector = parts[1];
+            }
+            await createUser({
+                username: newUserForm.username,
+                password: newUserForm.password,
+                role,
+                sector,
+                allowedDepotIds: newUserForm.allowedDepotIds
+            }).unwrap();
             setShowNewUserModal(false);
-            setNewUserForm({ username: '', password: '', role: 'OPERATOR', allowedDepotIds: [] });
+            setNewUserForm({ username: '', password: '', roleComposite: 'OPERARIO_DEPOSITO', allowedDepotIds: [] });
         } catch (e: any) {
             alert(e?.data?.message || 'Error al crear usuario');
         }
     };
 
-    const handleUpdateRole = async (user: User, newRole: string) => {
+    const handleUpdateRole = async (user: User, compositeVal: string) => {
+        let newRole = compositeVal;
+        let newSector = null;
+        if (compositeVal.includes('_')) {
+            const parts = compositeVal.split('_');
+            newRole = parts[0];
+            newSector = parts[1];
+        }
         try {
-            await updateUser({ id: user.id, data: { role: newRole } }).unwrap();
+            await updateUser({ id: user.id, data: { role: newRole, sector: newSector } }).unwrap();
         } catch (e: any) {
             alert(e?.data?.message || 'Error al actualizar rol');
         }
@@ -75,7 +95,7 @@ export default function UsersPage() {
             />
         </div>,
         <select 
-            value={u.role} 
+            value={u.role + (u.sector ? '_' + u.sector : '')} 
             onChange={(e) => handleUpdateRole(u, e.target.value)}
             style={{ 
                 background: '#1a1d2e', border: '1px solid #2a2d3e', color: '#f3f4f6', 
@@ -83,9 +103,10 @@ export default function UsersPage() {
             }}
         >
             <option value="ADMIN">ADMIN</option>
-            <option value="SUPERVISOR">SUPERVISOR</option>
-            <option value="OPERATOR">OPERATOR</option>
-            <option value="COMPRAS">COMPRAS</option>
+            <option value="SUPERVISOR_DEPOSITO">SUPERVISOR (Depósito)</option>
+            <option value="OPERARIO_DEPOSITO">OPERARIO (Depósito)</option>
+            <option value="SUPERVISOR_COMPRAS">SUPERVISOR (Compras)</option>
+            <option value="OPERARIO_COMPRAS">OPERARIO (Compras)</option>
         </select>,
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', maxWidth: '300px' }}>
             {u.role === 'ADMIN' ? (
@@ -156,13 +177,14 @@ export default function UsersPage() {
                         <div>
                             <label style={{ display: 'block', color: '#9ca3af', fontSize: '13px', marginBottom: '8px' }}>Rol</label>
                             <select 
-                                value={newUserForm.role}
-                                onChange={e => setNewUserForm(p => ({...p, role: e.target.value}))}
+                                value={newUserForm.roleComposite}
+                                onChange={e => setNewUserForm(p => ({...p, roleComposite: e.target.value}))}
                                 style={{ width: '100%', background: '#0f1117', border: '1px solid #2a2d3e', color: '#f3f4f6', borderRadius: '8px', padding: '10px' }}
                             >
-                                <option value="OPERATOR">OPERATOR</option>
-                                <option value="SUPERVISOR">SUPERVISOR</option>
-                                <option value="COMPRAS">COMPRAS</option>
+                                <option value="OPERARIO_DEPOSITO">OPERARIO (Depósito)</option>
+                                <option value="SUPERVISOR_DEPOSITO">SUPERVISOR (Depósito)</option>
+                                <option value="OPERARIO_COMPRAS">OPERARIO (Compras)</option>
+                                <option value="SUPERVISOR_COMPRAS">SUPERVISOR (Compras)</option>
                                 <option value="ADMIN">ADMIN</option>
                             </select>
                         </div>

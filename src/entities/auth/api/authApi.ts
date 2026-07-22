@@ -4,6 +4,7 @@ export interface User {
     id: string;
     username: string;
     role: string;
+    sector: string | null;
     isActive: boolean;
     allowedDepotIds: string[];
 }

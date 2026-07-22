@@ -10,13 +10,18 @@ import { CreateItemDialog } from '../../features/warehouse/materiales/components
 import { CreatePartnerDialog } from '../../features/config/CreatePartnerDialog';
 
 import { useSelector } from 'react-redux';
-import { selectCurrentUser, selectAllowedDepots } from '../../entities/auth/model/authSlice';
+import { selectCurrentUser, selectAllowedDepots, selectUserSector } from '../../entities/auth/model/authSlice';
 
 export default function MovimientosPage() {
     const isMobile = useIsMobile();
     const user = useSelector(selectCurrentUser);
+    const sector = useSelector(selectUserSector);
     const allowedDepots = useSelector(selectAllowedDepots);
-    const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+    const roleStr = user?.role?.toUpperCase() || '';
+    const sectorStr = sector?.toUpperCase() || '';
+    const isAdmin = roleStr === 'ADMIN';
+    const isSupervisor = roleStr === 'SUPERVISOR';
+    const canAdjust = isAdmin || (isSupervisor && sectorStr === 'DEPOSITO');
 
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
@@ -377,13 +382,19 @@ export default function MovimientosPage() {
                 </div>
                 {!isMobile && <code style={{ fontSize: '10px', opacity: 0.8 }}>{entry.batch.item.codigoInterno}</code>}
             </div>,
-            <EditableCell value={entry.batch.lotNumber} onSave={(val) => handleUpdateBatch(entry, val)} inputStyle={isMobile ? { minWidth: '40px' } : undefined} />,
+            canAdjust ? (
+                <EditableCell value={entry.batch.lotNumber} onSave={(val) => handleUpdateBatch(entry, val)} inputStyle={isMobile ? { minWidth: '40px' } : undefined} />
+            ) : <span>{entry.batch.lotNumber}</span>,
             <div style={{ textAlign: 'right', fontWeight: 700 }}>
-                <EditableCell numeric value={Number(entry.qtyPrincipal).toFixed(1)} onSave={(val) => handleAdjustQty(entry, val, 'principal')} inputStyle={isMobile ? { minWidth: '40px' } : undefined} />
+                {canAdjust ? (
+                    <EditableCell numeric value={Number(entry.qtyPrincipal).toFixed(1)} onSave={(val) => handleAdjustQty(entry, val, 'principal')} inputStyle={isMobile ? { minWidth: '40px' } : undefined} />
+                ) : <span>{Number(entry.qtyPrincipal).toFixed(1)}</span>}
                 {!isMobile && <span style={{fontSize: '9px', opacity: 0.6, marginLeft: '4px'}}>{entry.batch.item.unidadPrincipal}</span>}
             </div>,
             <div style={{ textAlign: 'right', fontWeight: 700 }}>
-                <EditableCell numeric value={Number(entry.qtySecundaria || 0).toFixed(0)} onSave={(val) => handleAdjustQty(entry, val, 'secundaria')} inputStyle={isMobile ? { minWidth: '40px' } : undefined} />
+                {canAdjust ? (
+                    <EditableCell numeric value={Number(entry.qtySecundaria || 0).toFixed(0)} onSave={(val) => handleAdjustQty(entry, val, 'secundaria')} inputStyle={isMobile ? { minWidth: '40px' } : undefined} />
+                ) : <span>{Number(entry.qtySecundaria || 0).toFixed(0)}</span>}
                 {!isMobile && <span style={{fontSize: '9px', opacity: 0.6, marginLeft: '4px'}}>{entry.batch.item.unidadSecundaria}</span>}
             </div>,
             <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
@@ -392,7 +403,7 @@ export default function MovimientosPage() {
                     style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '14px', padding: '4px' }}
                     title="Despachar (remito de salida)"
                 >📦</button>
-                {isAdmin && (
+                {canAdjust && (
                     <button 
                         onClick={(e) => { e.stopPropagation(); handleDeleteLine(entry); }} 
                         style={{ 
@@ -510,7 +521,7 @@ export default function MovimientosPage() {
                 subtitle="Transferencias entre posiciones y edición rápida"
                 hideTitleOnMobile
             >
-                {!isMobile && <Btn onClick={() => setQuickAddModal(true)}>+ Adición Rápida</Btn>}
+                {!isMobile && canAdjust && <Btn onClick={() => setQuickAddModal(true)}>+ Adición Rápida</Btn>}
             </PageHeader>
 
             <div className="movimientos-grid">

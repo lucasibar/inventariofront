@@ -174,10 +174,10 @@ export default function Layout() {
     const isMobile = useIsMobile();
     const user = useSelector(selectCurrentUser);
     const role = user?.role?.toUpperCase() || '';
+    const sector = user?.sector?.toUpperCase() || '';
     const isAdmin = role === 'ADMIN';
-    const isCompras = role === 'COMPRAS';
-    const isOperario = role === 'OPERATOR';
     const isSupervisor = role === 'SUPERVISOR';
+    const isOperario = role === 'OPERARIO';
 
     const navigation = useNavigation();
     const isNavigating = navigation.state === 'loading';
@@ -227,24 +227,58 @@ export default function Layout() {
 
     const isAllowed = (to: string) => {
         if (isAdmin) return true;
-        if (isOperario || isSupervisor) {
-            return [
-                '/deposito/dashboard', '/movimientos', '/stock', '/items', '/items/box-types',
-                '/remitos-salida', '/reporte-consumo-detallado', '/tasks', '/deposito',
-                '/mantenimiento/dashboard', '/mantenimiento/monitoreo', '/mantenimiento/registro',
-                '/mantenimiento/historial', '/mantenimiento/buscador', '/produccion/cargar', '/produccion/dashboard'
-            ].includes(to);
+
+        // Definir rutas por sector
+        const sectorRoutes: Record<string, string[]> = {
+            DEPOSITO: [
+                '/deposito/dashboard', '/stock', '/movimientos',
+                '/remitos-entrada', '/remitos-salida',
+                '/reporte-consumo-detallado', '/tasks',
+            ],
+            COMPRAS: [
+                '/dashboard', '/pedidos-compra', '/compras/materiales-criticos',
+                '/compras/alertas-stock', '/compras/conciliacion', '/compras/grafico-sierra',
+                '/dashboard/capacity', '/dashboard/volumes', '/reporte-consumo-detallado',
+            ],
+            MANTENIMIENTO: [
+                '/mantenimiento/dashboard', '/mantenimiento/monitoreo',
+                '/mantenimiento/registro', '/mantenimiento/historial',
+                '/mantenimiento/buscador', '/mantenimiento/pendientes',
+                '/mantenimiento/informe-turnos',
+            ],
+            PRODUCCION: ['/produccion/dashboard', '/produccion/cargar'],
+            VENTAS: ['/ventas/dashboard'],
+            FINANZAS: ['/finanzas/dashboard'],
+            RRHH: ['/rrhh/dashboard'],
+        };
+
+        // Config routes — solo supervisores de su sector + compras
+        const configRoutes = ['/items', '/items/box-types', '/deposito', '/socios'];
+        // Auditoría — solo supervisores
+        const auditRoutes = ['/admin/movements'];
+
+        // Rutas del sector del usuario
+        const myRoutes = sectorRoutes[sector] || [];
+
+        // Supervisores ven auditoría
+        if (isSupervisor && auditRoutes.includes(to)) return true;
+
+        // Supervisor de COMPRAS también ve stock en lectura
+        if (isSupervisor && sector === 'COMPRAS') {
+            const depositoViewRoutes = [
+                '/deposito/dashboard', '/stock', '/movimientos',
+                '/remitos-entrada', '/reporte-consumo-detallado',
+            ];
+            if ([...myRoutes, ...depositoViewRoutes, ...configRoutes].includes(to)) return true;
         }
-        if (isCompras) {
-            return [
-                '/deposito/dashboard', '/dashboard', '/compras/materiales-criticos',
-                '/compras/alertas-stock', '/compras/conciliacion', '/pedidos-compra',
-                '/remitos-entrada', '/reporte-consumo-detallado', '/items',
-                '/dashboard/capacity', '/dashboard/volumes', '/items/box-types', '/socios',
-                '/compras/grafico-sierra'
-            ].includes(to);
+
+        // Supervisor de DEPOSITO no ve config
+        if (isSupervisor && sector === 'DEPOSITO') {
+            return myRoutes.includes(to);
         }
-        return false;
+
+        // Operarios solo ven rutas de su sector
+        return myRoutes.includes(to);
     };
 
     const filteredGroups = navGroups.map(group => {
@@ -389,7 +423,7 @@ export default function Layout() {
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {(location.pathname === '/stock' || location.pathname === '/movimientos') && (
+                        {(location.pathname === '/stock' || location.pathname === '/movimientos') && (isAdmin || (isSupervisor && sector === 'DEPOSITO')) && (
                             <button
                                 onClick={() => {
                                     const sep = location.search ? '&' : '?';
