@@ -9,7 +9,6 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import BarChartIcon from '@mui/icons-material/BarChart';
 import { PageHeader, Spinner, Select } from '../../shared/ui';
 import {
     useGetPlantsQuery,

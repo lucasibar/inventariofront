@@ -115,23 +115,31 @@ export default function MaterialesCriticosPage() {
             'Cantidad Secundaria',
             'Unidad Secundaria'
         ];
+
+        // Helper: wrap text fields in quotes, leave numeric fields unquoted
+        const escapeText = (val: string) => `"${String(val).replace(/"/g, '""')}"`;
+        const formatNumber = (val: number | null | undefined, fallback = '') => {
+            if (val === null || val === undefined) return fallback;
+            // Use comma as decimal separator for Spanish Excel locale
+            return Number(val).toFixed(2).replace('.', ',');
+        };
+
         const rows = allStock.map((row: any) => [
-            row.batch?.item?.descripcion || '',
-            row.batch?.item?.codigoInterno || '',
-            row.batch?.item?.category?.nombre || '',
-            row.batch?.supplier?.name || '',
-            row.posicion?.depot?.nombre || '',
-            row.posicion?.codigo || '',
-            row.batch?.lotNumber || '',
-            Number(row.qtyPrincipal || 0).toFixed(2),
-            row.batch?.item?.unidadPrincipal || '',
-            row.qtySecundaria !== null && row.qtySecundaria !== undefined ? Number(row.qtySecundaria).toFixed(2) : '',
-            row.batch?.item?.unidadSecundaria || '',
+            escapeText(row.batch?.item?.descripcion || ''),
+            escapeText(row.batch?.item?.codigoInterno || ''),
+            escapeText(row.batch?.item?.category?.nombre || ''),
+            escapeText(row.batch?.supplier?.name || ''),
+            escapeText(row.posicion?.depot?.nombre || ''),
+            escapeText(row.posicion?.codigo || ''),
+            escapeText(row.batch?.lotNumber || ''),
+            formatNumber(row.qtyPrincipal, '0'),
+            escapeText(row.batch?.item?.unidadPrincipal || ''),
+            formatNumber(row.qtySecundaria),
+            escapeText(row.batch?.item?.unidadSecundaria || ''),
         ]);
         
         // UTF-8 BOM to make sure Excel opens it correctly with accents and columns
-        const csvContent = "\uFEFF" + [headers, ...rows]
-            .map(r => r.map(val => `"${String(val).replace(/"/g, '""')}"`).join(';'))
+        const csvContent = "\uFEFF" + [headers.map(h => escapeText(h)).join(';'), ...rows.map(r => r.join(';'))]
             .join('\n');
             
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
