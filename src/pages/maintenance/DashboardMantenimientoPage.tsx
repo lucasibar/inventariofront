@@ -15,6 +15,7 @@ import MapIcon from '@mui/icons-material/Map';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import TimerIcon from '@mui/icons-material/Timer';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Spinner, Select } from '../../shared/ui';
 import { 
@@ -626,7 +627,21 @@ export default function DashboardMantenimientoPage() {
                                             '&:hover': { color: '#fff', bgcolor: 'rgba(96,165,250,0.1)' }
                                         }}
                                     >
-                                        Cambios Artículo
+                                        Cargar Cambios
+                                    </Button>
+                                    <Button 
+                                        size="small"
+                                        startIcon={<BarChartIcon />}
+                                        onClick={() => navigate('/mantenimiento/informe-cambios')}
+                                        sx={{ 
+                                            color: '#10b981', 
+                                            fontWeight: 800, 
+                                            fontSize: '0.65rem',
+                                            textTransform: 'uppercase',
+                                            '&:hover': { color: '#fff', bgcolor: 'rgba(16,185,129,0.1)' }
+                                        }}
+                                    >
+                                        Informe Cambios
                                     </Button>
                                     <Button 
                                         size="small"

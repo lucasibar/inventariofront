@@ -5,9 +5,7 @@ import {
     ListItemText, ListItemSecondaryAction, Chip,
     FormGroup, FormControlLabel, Checkbox, Grid
 } from '@mui/material';
-import { useSelector } from 'react-redux';
 import { PageHeader, Spinner, Select } from '../../shared/ui';
-import { selectCurrentUser } from '../../entities/auth/model/authSlice';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SendIcon from '@mui/icons-material/Send';
@@ -34,7 +32,6 @@ interface PendingChange {
 }
 
 export default function CambioArticuloPage() {
-    const user = useSelector(selectCurrentUser);
     const machineSearchRef = useRef<HTMLInputElement>(null);
 
     // Selectors
@@ -53,7 +50,7 @@ export default function CambioArticuloPage() {
     const [endHour, setEndHour] = useState(String(new Date().getHours()).padStart(2, '0'));
     const [endMinute, setEndMinute] = useState('00');
     const [observation, setObservation] = useState('');
-    const [generatedBy, setGeneratedBy] = useState((user as any)?.name || (user as any)?.username || '');
+    const [generatedBy, setGeneratedBy] = useState('');
 
     // Queries
     const { data: plants = [], isLoading: loadingPlants } = useGetPlantsQuery();
@@ -95,9 +92,6 @@ export default function CambioArticuloPage() {
     const machineOptions = useMemo(() => machines.map((m: any) => ({
         value: m.id, label: `Máquina ${m.number}`, number: m.number
     })), [machines]);
-
-    const hours = useMemo(() => Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')), []);
-    const minutes = useMemo(() => Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0')), []);
 
     const toggleChangeType = (value: string) => {
         setSelectedChangeTypes(prev =>
@@ -264,14 +258,22 @@ export default function CambioArticuloPage() {
                                     <Box sx={{ display: 'flex', gap: 1 }}>
                                         <TextField type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
                                             size="small" sx={{ flex: 2 }} />
-                                        <TextField select value={startHour} onChange={e => setStartHour(e.target.value)}
-                                            size="small" sx={{ flex: 1 }} label="Hora">
-                                            {hours.map(h => <option key={h} value={h}>{h}</option>)}
-                                        </TextField>
-                                        <TextField select value={startMinute} onChange={e => setStartMinute(e.target.value)}
-                                            size="small" sx={{ flex: 1 }} label="Min">
-                                            {minutes.map(m => <option key={m} value={m}>{m}</option>)}
-                                        </TextField>
+                                        <TextField 
+                                            value={startHour} 
+                                            onChange={e => setStartHour(e.target.value)}
+                                            size="small" 
+                                            sx={{ flex: 1 }} 
+                                            label="Hora"
+                                            inputProps={{ maxLength: 2, inputMode: 'numeric' }}
+                                        />
+                                        <TextField 
+                                            value={startMinute} 
+                                            onChange={e => setStartMinute(e.target.value)}
+                                            size="small" 
+                                            sx={{ flex: 1 }} 
+                                            label="Min"
+                                            inputProps={{ maxLength: 2, inputMode: 'numeric' }}
+                                        />
                                     </Box>
                                 </Box>
 
@@ -281,14 +283,22 @@ export default function CambioArticuloPage() {
                                     <Box sx={{ display: 'flex', gap: 1 }}>
                                         <TextField type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
                                             size="small" sx={{ flex: 2 }} />
-                                        <TextField select value={endHour} onChange={e => setEndHour(e.target.value)}
-                                            size="small" sx={{ flex: 1 }} label="Hora">
-                                            {hours.map(h => <option key={h} value={h}>{h}</option>)}
-                                        </TextField>
-                                        <TextField select value={endMinute} onChange={e => setEndMinute(e.target.value)}
-                                            size="small" sx={{ flex: 1 }} label="Min">
-                                            {minutes.map(m => <option key={m} value={m}>{m}</option>)}
-                                        </TextField>
+                                        <TextField 
+                                            value={endHour} 
+                                            onChange={e => setEndHour(e.target.value)}
+                                            size="small" 
+                                            sx={{ flex: 1 }} 
+                                            label="Hora"
+                                            inputProps={{ maxLength: 2, inputMode: 'numeric' }}
+                                        />
+                                        <TextField 
+                                            value={endMinute} 
+                                            onChange={e => setEndMinute(e.target.value)}
+                                            size="small" 
+                                            sx={{ flex: 1 }} 
+                                            label="Min"
+                                            inputProps={{ maxLength: 2, inputMode: 'numeric' }}
+                                        />
                                     </Box>
                                 </Box>
 
@@ -301,11 +311,12 @@ export default function CambioArticuloPage() {
                                     variant="outlined" fullWidth
                                 />
 
-                                {/* Generated By */}
+                                {/* Generated By (Responsable) */}
                                 <TextField
-                                    label="Registrado por"
+                                    label="Realizado / Registrado por (opcional)"
                                     value={generatedBy}
                                     onChange={e => setGeneratedBy(e.target.value)}
+                                    placeholder="Ej: Gastón, Rubén..."
                                     variant="outlined" fullWidth size="small"
                                 />
 

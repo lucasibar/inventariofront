@@ -89,11 +89,20 @@ const navGroups: NavGroup[] = [
         items: [
             { to: '/mantenimiento/dashboard', label: '📊 Dashboard Mant' },
             { to: '/mantenimiento/monitoreo', label: '📺 Monitoreo en Vivo' },
-            { to: '/mantenimiento/registro', label: '📋 Registrar' },
+            { to: '/mantenimiento/registro', label: '📋 Registrar Novedades' },
+            { to: '/mantenimiento/cambios', label: '🔄 Registrar Cambios' },
             { to: '/mantenimiento/historial', label: '📜 Historial' },
             { to: '/mantenimiento/buscador', label: '🔍 Detalle' },
             { to: '/mantenimiento/pendientes', label: '📑 Pendientes' },
-            { to: '/mantenimiento/informe-turnos', label: '📊 Informe Turnos' },
+            {
+                id: 'mantenimiento-informes',
+                label: '📊 Informes',
+                isSubGroup: true,
+                items: [
+                    { to: '/mantenimiento/informe-turnos', label: '⏱️ Informe Turnos' },
+                    { to: '/mantenimiento/informe-cambios', label: '📈 Informe Cambios' },
+                ]
+            },
         ]
     },
     {
@@ -241,9 +250,9 @@ export default function Layout() {
             ],
             MANTENIMIENTO: [
                 '/mantenimiento/dashboard', '/mantenimiento/monitoreo',
-                '/mantenimiento/registro', '/mantenimiento/historial',
+                '/mantenimiento/registro', '/mantenimiento/cambios', '/mantenimiento/historial',
                 '/mantenimiento/buscador', '/mantenimiento/pendientes',
-                '/mantenimiento/informe-turnos',
+                '/mantenimiento/informe-turnos', '/mantenimiento/informe-cambios',
             ],
             PRODUCCION: ['/produccion/dashboard', '/produccion/cargar'],
             VENTAS: ['/ventas/dashboard'],
