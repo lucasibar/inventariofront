@@ -43,6 +43,8 @@ const HistorialRegistrosPage = lazy(() => import('../../pages/maintenance/Histor
 const BuscadorMaquinaPage = lazy(() => import('../../pages/maintenance/BuscadorMaquinaPage'));
 const PendientesPage = lazy(() => import('../../pages/maintenance/PendientesPage'));
 const InformeTurnosPage = lazy(() => import('../../pages/maintenance/InformeTurnosPage'));
+const CambioArticuloPage = lazy(() => import('../../pages/maintenance/CambioArticuloPage'));
+const InformeCambiosPage = lazy(() => import('../../pages/maintenance/InformeCambiosPage'));
 
 // Sector: Production
 const CargarProduccionPage = lazy(() => import('../../pages/production/CargarProduccionPage'));
@@ -158,6 +160,8 @@ export const router = createBrowserRouter([
               { path: "mantenimiento/buscador", element: <LazyRoute element={BuscadorMaquinaPage} /> },
               { path: "mantenimiento/pendientes", element: <LazyRoute element={PendientesPage} /> },
               { path: "mantenimiento/informe-turnos", element: <LazyRoute element={InformeTurnosPage} /> },
+              { path: "mantenimiento/cambios", element: <LazyRoute element={CambioArticuloPage} /> },
+              { path: "mantenimiento/informe-cambios", element: <LazyRoute element={InformeCambiosPage} /> },
 
               { path: "produccion/cargar", element: <LazyRoute element={CargarProduccionPage} /> },
               { path: "produccion/dashboard", element: <LazyRoute element={ProduccionNewDashboardPage} /> },

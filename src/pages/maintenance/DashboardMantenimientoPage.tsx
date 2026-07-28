@@ -14,6 +14,7 @@ import CodeIcon from '@mui/icons-material/Code';
 import MapIcon from '@mui/icons-material/Map';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import TimerIcon from '@mui/icons-material/Timer';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Spinner, Select } from '../../shared/ui';
 import { 
@@ -612,20 +613,36 @@ export default function DashboardMantenimientoPage() {
                                     <Chip label={filteredMachines.length} size="small" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 800, bgcolor: 'rgba(255,255,255,0.05)' }} />
                                 </Typography>
                                 
-                                <Button 
-                                    size="small"
-                                    startIcon={<MapIcon />}
-                                    onClick={() => navigate('/mantenimiento/monitoreo')}
-                                    sx={{ 
-                                        color: '#6b7280', 
-                                        fontWeight: 800, 
-                                        fontSize: '0.65rem',
-                                        textTransform: 'uppercase',
-                                        '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.05)' }
-                                    }}
-                                >
-                                    Volver al Mapa
-                                </Button>
+                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                    <Button 
+                                        size="small"
+                                        startIcon={<SwapHorizIcon />}
+                                        onClick={() => navigate('/mantenimiento/cambios')}
+                                        sx={{ 
+                                            color: '#60a5fa', 
+                                            fontWeight: 800, 
+                                            fontSize: '0.65rem',
+                                            textTransform: 'uppercase',
+                                            '&:hover': { color: '#fff', bgcolor: 'rgba(96,165,250,0.1)' }
+                                        }}
+                                    >
+                                        Cambios Artículo
+                                    </Button>
+                                    <Button 
+                                        size="small"
+                                        startIcon={<MapIcon />}
+                                        onClick={() => navigate('/mantenimiento/monitoreo')}
+                                        sx={{ 
+                                            color: '#6b7280', 
+                                            fontWeight: 800, 
+                                            fontSize: '0.65rem',
+                                            textTransform: 'uppercase',
+                                            '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.05)' }
+                                        }}
+                                    >
+                                        Volver al Mapa
+                                    </Button>
+                                </Box>
                             </Box>
 
                             <List disablePadding sx={{ width: '100%' }}>

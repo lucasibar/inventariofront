@@ -76,6 +76,54 @@ export interface MachineKPI {
 }
 
 
+export interface MachineChange {
+    id: string;
+    machineId: string;
+    changeTypes: string[];
+    startTime: string;
+    endTime: string;
+    observation?: string;
+    generatedBy: string;
+    createdAt: string;
+    durationMs?: number;
+    durationFormatted?: string;
+    machine?: {
+        number: number;
+        codigoInterno: string;
+        nombre: string;
+        plant?: { name: string };
+    };
+}
+
+export interface MachineChangeReport {
+    totalChanges: number;
+    report: {
+        combination: string[];
+        combinationLabel: string;
+        count: number;
+        percentage: number;
+        avgDurationMs: number;
+        avgDurationFormatted: string;
+        minDurationMs: number;
+        minDurationFormatted: string;
+        maxDurationMs: number;
+        maxDurationFormatted: string;
+        details: {
+            id: string;
+            machineNumber: number;
+            machineName: string;
+            plantName: string;
+            startTime: string;
+            endTime: string;
+            durationMs: number;
+            durationFormatted: string;
+            observation: string | null;
+            generatedBy: string;
+            changeTypes: string[];
+        }[];
+    }[];
+}
+
 export const maintenanceApi = api.injectEndpoints({
     endpoints: (builder) => ({
         getPlants: builder.query<any[], void>({
@@ -254,6 +302,44 @@ export const maintenanceApi = api.injectEndpoints({
             }),
             providesTags: ['Maintenance'],
         }),
+        // Machine Changes
+        createMachineChange: builder.mutation<MachineChange, any>({
+            query: (body) => ({
+                url: 'maintenance/machine-changes',
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['MachineChange'],
+        }),
+        getMachineChanges: builder.query<MachineChange[], any>({
+            query: (params) => ({
+                url: 'maintenance/machine-changes',
+                params,
+            }),
+            providesTags: ['MachineChange'],
+        }),
+        getMachineChangeReport: builder.query<MachineChangeReport, any>({
+            query: (params) => ({
+                url: 'maintenance/machine-changes/report',
+                params,
+            }),
+            providesTags: ['MachineChange'],
+        }),
+        updateMachineChange: builder.mutation<MachineChange, any>({
+            query: ({ id, ...body }) => ({
+                url: `maintenance/machine-changes/${id}`,
+                method: 'PATCH',
+                body,
+            }),
+            invalidatesTags: ['MachineChange'],
+        }),
+        deleteMachineChange: builder.mutation<void, string>({
+            query: (id) => ({
+                url: `maintenance/machine-changes/${id}`,
+                method: 'DELETE',
+            }),
+            invalidatesTags: ['MachineChange'],
+        }),
     }),
 });
 
@@ -271,4 +357,9 @@ export const {
     useDeleteLogMutation,
     useUpdateMachineStatusMutation,
     useGetMaintenanceStatsQuery,
+    useCreateMachineChangeMutation,
+    useGetMachineChangesQuery,
+    useGetMachineChangeReportQuery,
+    useUpdateMachineChangeMutation,
+    useDeleteMachineChangeMutation,
 } = maintenanceApi;

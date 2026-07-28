@@ -33,3 +33,21 @@ export const FAILURE_TYPES = [
 export const RESPONSABLES = [
     'Sin Asignar', 'Gaston', 'Ruben', 'Daniel', 'Alexis', 'Violeta', 'Leandro', 'Gaspar', 'Ramón', 'Tejedor'
 ];
+
+export const CHANGE_TYPES = [
+    { value: 'COLOR', label: 'Color' },
+    { value: 'TALLE', label: 'Talle' },
+    { value: 'ARTICULO', label: 'Artículo' },
+    { value: 'ECONOMIA', label: 'Economía' },
+    { value: 'PUENTE', label: 'Puente' },
+    { value: 'PLATINERO', label: 'Platinero' },
+];
+
+export const CHANGE_TYPE_COLORS: Record<string, string> = {
+    COLOR: '#e91e63',
+    TALLE: '#9c27b0',
+    ARTICULO: '#2196f3',
+    ECONOMIA: '#ff9800',
+    PUENTE: '#4caf50',
+    PLATINERO: '#00bcd4',
+};
