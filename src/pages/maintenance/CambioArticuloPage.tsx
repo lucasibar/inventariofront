@@ -14,7 +14,7 @@ import {
     useGetPlantsQuery,
     useGetMachineTypesQuery,
     useGetMachinesQuery,
-    useCreateMachineChangeMutation,
+    useCreateMachineChangesBulkMutation,
     useGetMachineChangesQuery,
     useDeleteMachineChangeMutation,
 } from '../../entities/maintenance/api/maintenance.api';
@@ -59,7 +59,7 @@ export default function CambioArticuloPage() {
         { plantId: selectedPlantId || '', typeId: tejTypeId || '' },
         { skip: !selectedPlantId || !tejTypeId }
     );
-    const [createChange, { isLoading: isCreating }] = useCreateMachineChangeMutation();
+    const [createChangesBulk, { isLoading: isCreating }] = useCreateMachineChangesBulkMutation();
     const [deleteChange] = useDeleteMachineChangeMutation();
 
     // Load recent changes for the historial
@@ -104,10 +104,31 @@ export default function CambioArticuloPage() {
         if (selectedChangeTypes.length === 0) return alert('Seleccioná al menos un tipo de cambio.');
 
         const matchedMachine = machineOptions.find((m: any) => m.value === selectedMachineId);
-        const startTimeISO = new Date(`${startDate}T${startHour}:${startMinute}:00`).toISOString();
-        const endTimeISO = new Date(`${endDate}T${endHour}:${endMinute}:00`).toISOString();
 
-        if (new Date(endTimeISO) <= new Date(startTimeISO)) {
+        // Validate and pad hour/minute inputs
+        const sH = parseInt(startHour, 10);
+        const sM = parseInt(startMinute, 10);
+        const eH = parseInt(endHour, 10);
+        const eM = parseInt(endMinute, 10);
+
+        if (isNaN(sH) || sH < 0 || sH > 23 || isNaN(sM) || sM < 0 || sM > 59) {
+            return alert('La hora de inicio no es válida. Usá valores entre 00-23 para hora y 00-59 para minutos.');
+        }
+        if (isNaN(eH) || eH < 0 || eH > 23 || isNaN(eM) || eM < 0 || eM > 59) {
+            return alert('La hora de fin no es válida. Usá valores entre 00-23 para hora y 00-59 para minutos.');
+        }
+
+        const startStr = `${startDate}T${String(sH).padStart(2, '0')}:${String(sM).padStart(2, '0')}:00`;
+        const endStr = `${endDate}T${String(eH).padStart(2, '0')}:${String(eM).padStart(2, '0')}:00`;
+
+        const startDt = new Date(startStr);
+        const endDt = new Date(endStr);
+
+        if (isNaN(startDt.getTime()) || isNaN(endDt.getTime())) {
+            return alert('Las fechas ingresadas no son válidas. Revisá la fecha y hora.');
+        }
+
+        if (endDt <= startDt) {
             return alert('La hora de fin debe ser posterior a la hora de inicio.');
         }
 
@@ -116,8 +137,8 @@ export default function CambioArticuloPage() {
             machineId: selectedMachineId,
             machineLabel: matchedMachine?.label || `ID: ${selectedMachineId}`,
             changeTypes: [...selectedChangeTypes],
-            startTime: startTimeISO,
-            endTime: endTimeISO,
+            startTime: startDt.toISOString(),
+            endTime: endDt.toISOString(),
             observation,
             generatedBy,
         };
@@ -137,16 +158,16 @@ export default function CambioArticuloPage() {
     const submitAll = async () => {
         if (pendingChanges.length === 0) return;
         try {
-            for (const pc of pendingChanges) {
-                await createChange({
+            await createChangesBulk({
+                items: pendingChanges.map(pc => ({
                     machineId: pc.machineId,
                     changeTypes: pc.changeTypes,
                     startTime: pc.startTime,
                     endTime: pc.endTime,
                     observation: pc.observation || undefined,
                     generatedBy: pc.generatedBy,
-                }).unwrap();
-            }
+                })),
+            }).unwrap();
             alert(`Se registraron ${pendingChanges.length} cambios correctamente.`);
             setPendingChanges([]);
             setSelectedMachineId(null);
@@ -154,7 +175,7 @@ export default function CambioArticuloPage() {
             setObservation('');
         } catch (error) {
             console.error('Error submitting changes:', error);
-            alert('Error al procesar algunos cambios.');
+            alert('Error al procesar los cambios.');
         }
     };
 

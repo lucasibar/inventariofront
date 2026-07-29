@@ -1,6 +1,8 @@
 import { useForm, FormProvider, Controller, type SubmitHandler } from 'react-hook-form';
 import { Box, Button, TextField, Typography, MenuItem, Divider, IconButton, Tooltip, Autocomplete } from '@mui/material';
-import { useCreateRemitoMutation, useGetDepotsQuery, useLazySearchPartnersQuery } from '../api/remito.api';
+import { useCreateRemitoMutation } from '../api/remito.api';
+import { useGetDepotsQuery } from '../../deposito/api/deposito.api';
+import { useLazyGetPartnersQuery } from '../../../config/partners/api/partners.api';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { ItemsField } from './ItemsField';
 import { CreatePartnerDialog } from '../../../config/CreatePartnerDialog';
@@ -16,13 +18,13 @@ export const CreateRemitoForm = () => {
 
     const [createRemito, { isLoading }] = useCreateRemitoMutation();
     const { data: allDepots = [] } = useGetDepotsQuery();
-    const [triggerSearch, { data: partners = [], isFetching }] = useLazySearchPartnersQuery();
+    const [triggerSearch, { data: partners = [], isFetching }] = useLazyGetPartnersQuery();
 
     const [selectedPlanta, setSelectedPlanta] = useState<string>('');
     const [isPartnerDialogOpen, setIsPartnerDialogOpen] = useState(false);
 
     useEffect(() => {
-        triggerSearch('');
+        triggerSearch({});
     }, [triggerSearch]);
 
     const plants = useMemo(() => {
@@ -196,7 +198,7 @@ export const CreateRemitoForm = () => {
                                         value={partners.find((p: any) => p.id === value) || null}
                                         isOptionEqualToValue={(option, val) => option.id === val?.id}
                                         loading={isFetching}
-                                        onInputChange={(_, newInputValue) => triggerSearch(newInputValue)}
+                                        onInputChange={(_, newInputValue) => triggerSearch({ q: newInputValue })}
                                         filterOptions={(options, params) => {
                                             const filtered = options.filter((option: any) =>
                                                 option.name.toLowerCase().includes(params.inputValue.toLowerCase()) ||
@@ -248,7 +250,7 @@ export const CreateRemitoForm = () => {
                             methods.setValue('supplierId', partner.id);
                             methods.setValue('supplierName', partner.name);
                             methods.setValue('taxId', partner.taxId || '');
-                            triggerSearch(''); // Update the local partners list
+                            triggerSearch({}); // Update the local partners list
                         }}
                     />
 

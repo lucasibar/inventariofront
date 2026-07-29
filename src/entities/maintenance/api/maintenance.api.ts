@@ -311,6 +311,21 @@ export const maintenanceApi = api.injectEndpoints({
             }),
             invalidatesTags: ['MachineChange'],
         }),
+        createMachineChangesBulk: builder.mutation<MachineChange[], { items: Array<{
+            machineId: string;
+            changeTypes: string[];
+            startTime: string;
+            endTime: string;
+            observation?: string;
+            generatedBy: string;
+        }> }>({
+            query: (body) => ({
+                url: 'maintenance/machine-changes/bulk',
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['MachineChange'],
+        }),
         getMachineChanges: builder.query<MachineChange[], any>({
             query: (params) => ({
                 url: 'maintenance/machine-changes',
@@ -358,6 +373,7 @@ export const {
     useUpdateMachineStatusMutation,
     useGetMaintenanceStatsQuery,
     useCreateMachineChangeMutation,
+    useCreateMachineChangesBulkMutation,
     useGetMachineChangesQuery,
     useGetMachineChangeReportQuery,
     useUpdateMachineChangeMutation,
