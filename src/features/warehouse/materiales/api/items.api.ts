@@ -15,11 +15,11 @@ export const itemsApi = api.injectEndpoints({
         }),
         createItem: builder.mutation<any, any>({
             query: (body) => ({ url: 'items', method: 'POST', body }),
-            invalidatesTags: ['Items'],
+            invalidatesTags: ['Items', 'Stock'],
         }),
         updateItem: builder.mutation<any, { id: string; data: any }>({
             query: ({ id, data }) => ({ url: `items/${id}`, method: 'PUT', body: data }),
-            invalidatesTags: ['Items'],
+            invalidatesTags: ['Items', 'Stock'],
         }),
         bulkAssignBoxType: builder.mutation<number, { boxTypeId: string; supplierId?: string; categoryId?: string; itemId?: string }>({
             query: (body) => ({ url: 'items/bulk-box-type', method: 'POST', body }),

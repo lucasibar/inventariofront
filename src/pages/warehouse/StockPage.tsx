@@ -140,6 +140,7 @@ export default function StockPage() {
     const [qaSecundaria, setQaSecundaria] = useState('');
 
     const [createItemModal, setCreateItemModal] = useState(false);
+    const [editItemTarget, setEditItemTarget] = useState<any>(null);
     const [createPartnerModal, setCreatePartnerModal] = useState(false);
 
     const [adjustStock] = useAdjustStockMutation();
@@ -488,7 +489,17 @@ export default function StockPage() {
                                                     transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' 
                                                 }}>▸</span>
                                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                    <div style={{ fontWeight: 700, fontSize: '15px', color: '#f3f4f6', lineHeight: 1.2 }}>
+                                                    <div 
+                                                        style={{ fontWeight: 700, fontSize: '15px', color: '#f3f4f6', lineHeight: 1.2, cursor: 'pointer' }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setEditItemTarget(group.item);
+                                                            setCreateItemModal(true);
+                                                        }}
+                                                        title="Hacé clic para editar este material"
+                                                        onMouseEnter={(e) => (e.currentTarget.style.color = '#818cf8')}
+                                                        onMouseLeave={(e) => (e.currentTarget.style.color = '#f3f4f6')}
+                                                    >
                                                         {titleText.charAt(0).toUpperCase() + titleText.slice(1)}
                                                     </div>
                                                     <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
@@ -639,7 +650,15 @@ export default function StockPage() {
                                 const titleText = `${categoryName ? `${categoryName} - ` : ''}${group.item.descripcion}`;
                                 const locationCodes = Array.from(new Set(group.entries.map((e: any) => e.posicion?.codigo || 'S/P'))).join(', ');
                                 return [
-                                    <strong key="t" onClick={() => setDetailGroupId(group.item.id)} style={{ cursor: 'pointer', color: '#6366f1' }}>
+                                    <strong 
+                                        key="t" 
+                                        onClick={() => {
+                                            setEditItemTarget(group.item);
+                                            setCreateItemModal(true);
+                                        }} 
+                                        style={{ cursor: 'pointer', color: '#6366f1' }}
+                                        title="Hacé clic para editar este material"
+                                    >
                                         {titleText.charAt(0).toUpperCase() + titleText.slice(1)}
                                     </strong>,
                                     group.supplier?.name || 'Sin proveedor',
@@ -695,9 +714,10 @@ export default function StockPage() {
 
             <CreateItemDialog 
                 open={createItemModal} 
-                onClose={() => setCreateItemModal(false)} 
+                onClose={() => { setCreateItemModal(false); setEditItemTarget(null); }} 
                 depositoId={qaDepot}
-                onSuccess={(newItem: any) => { setQaItem(newItem.id); }} 
+                editTarget={editItemTarget}
+                onSuccess={(newItem: any) => { setQaItem(newItem.id); setEditItemTarget(null); }} 
             />
             <CreatePartnerDialog open={createPartnerModal} onClose={() => setCreatePartnerModal(false)} onSuccess={(newPartner: any) => { setQaSupplier(newPartner.id); }} />
 
