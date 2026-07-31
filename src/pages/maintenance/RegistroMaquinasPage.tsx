@@ -31,6 +31,7 @@ const targetStatuses = [
     { value: 'REVISAR', label: 'Revisar', color: statusColors.REVISAR },
     { value: 'VELOCIDAD_REDUCIDA', label: 'Velocidad Reducida', color: statusColors.VELOCIDAD_REDUCIDA },
     { value: 'FALTA_COSTURA', label: 'Falta Costura', color: statusColors.FALTA_COSTURA },
+    { value: 'MUESTRAS', label: 'Muestras', color: statusColors.MUESTRAS },
     { value: 'PARADA', label: 'Parada', color: statusColors.PARADA },
     { value: 'ELECTRONIC', label: 'Electronic', color: statusColors.ELECTRONIC },
     { value: 'FALTA_PROGRAMA', label: 'Falta Programa', color: statusColors.FALTA_PROGRAMA },

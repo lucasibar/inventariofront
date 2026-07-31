@@ -28,6 +28,7 @@ const responsables = ['Gaston', 'Ruben', 'Daniel', 'Alexis', 'Violeta', 'Leandro
 const targetStatuses = [
     { value: 'REVISAR', label: 'Revisar (Amarillo)' },
     { value: 'VELOCIDAD_REDUCIDA', label: 'Velocidad Reducida (Rosa)' },
+    { value: 'MUESTRAS', label: 'Muestras (Púrpura)' },
     { value: 'PARADA', label: 'Parada (Rojo)' },
     { value: 'ELECTRONIC', label: 'Electronic (Azul)' },
     { value: 'FALTA_COSTURA', label: 'Falta Costura (Violeta)' },

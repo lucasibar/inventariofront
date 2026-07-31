@@ -177,7 +177,7 @@ export default function MonitoreoVivoPage() {
     }, [machines]);
 
     const statusCounts = useMemo(() => {
-        const counts: any = { ACTIVA: 0, REVISAR: 0, VELOCIDAD_REDUCIDA: 0, PARADA: 0, ELECTRONIC: 0, FALTA_COSTURA: 0, FALTA_PROGRAMA: 0, REPUESTOS: 0, OTRO: 0, SIN_DATOS: 0 };
+        const counts: any = { ACTIVA: 0, REVISAR: 0, VELOCIDAD_REDUCIDA: 0, MUESTRAS: 0, PARADA: 0, ELECTRONIC: 0, FALTA_COSTURA: 0, FALTA_PROGRAMA: 0, REPUESTOS: 0, OTRO: 0, SIN_DATOS: 0 };
         if (metrics?.byStatus) {
             metrics.byStatus.forEach((s: any) => { counts[s.status] = parseInt(s.count); });
         }
@@ -185,7 +185,7 @@ export default function MonitoreoVivoPage() {
     }, [metrics]);
 
     const totalMachines = metrics?.total || 190;
-    const totalActivas = statusCounts.ACTIVA + statusCounts.REVISAR + statusCounts.VELOCIDAD_REDUCIDA + statusCounts.FALTA_COSTURA;
+    const totalActivas = statusCounts.ACTIVA + statusCounts.REVISAR + statusCounts.VELOCIDAD_REDUCIDA + statusCounts.FALTA_COSTURA + statusCounts.MUESTRAS;
 
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapContentRef = useRef<HTMLDivElement>(null);
@@ -246,6 +246,7 @@ export default function MonitoreoVivoPage() {
         { label: 'En Revisión', value: statusCounts.REVISAR, color: STATUS_COLORS_WITH_FALLBACK.REVISAR },
         { label: 'Vel. Reducida', value: statusCounts.VELOCIDAD_REDUCIDA, color: STATUS_COLORS_WITH_FALLBACK.VELOCIDAD_REDUCIDA },
         { label: 'Costura', value: statusCounts.FALTA_COSTURA, color: STATUS_COLORS_WITH_FALLBACK.FALTA_COSTURA },
+        { label: 'Muestras', value: statusCounts.MUESTRAS, color: STATUS_COLORS_WITH_FALLBACK.MUESTRAS },
     ];
 
     const paradasBreakdown = [

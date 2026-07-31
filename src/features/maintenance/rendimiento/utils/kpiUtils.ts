@@ -4,6 +4,8 @@ import type { MaintenanceLog, MachineKPI as MachineKPIs, Machine } from '../../.
 
 type MachineStatus = Machine['status'];
 
+const isActiveStatus = (status: string) => ['ACTIVA', 'REVISAR', 'VELOCIDAD_REDUCIDA', 'FALTA_COSTURA', 'MUESTRAS'].includes(status);
+
 export const calculateKPIs = (logs: MaintenanceLog[], startDate: Date, endDate: Date, machineCreatedAt: string): MachineKPIs => {
 
     let uptimeMs = 0;
@@ -47,12 +49,12 @@ export const calculateKPIs = (logs: MaintenanceLog[], startDate: Date, endDate: 
         if (logTime > effectiveEnd.getTime()) break;
 
         const duration = logTime - lastTime;
-        if (currentStatus === 'ACTIVA') {
+        if (isActiveStatus(currentStatus)) {
             uptimeMs += duration;
-            if (log.toStatus !== 'ACTIVA') nFailures++;
+            if (!isActiveStatus(log.toStatus)) nFailures++;
         } else {
             downtimeMs += duration;
-            if (log.toStatus === 'ACTIVA') {
+            if (isActiveStatus(log.toStatus)) {
                 nRepairs++;
                 totalTimeToRepairMs += duration;
             }
@@ -64,7 +66,7 @@ export const calculateKPIs = (logs: MaintenanceLog[], startDate: Date, endDate: 
 
     // 3. Final gap to end of period
     const finalDuration = effectiveEnd.getTime() - lastTime;
-    if (currentStatus === 'ACTIVA') {
+    if (isActiveStatus(currentStatus)) {
         uptimeMs += finalDuration;
     } else {
         downtimeMs += finalDuration;
@@ -133,17 +135,17 @@ export const calculatePlantKPIs = (logs: MaintenanceLog[], totalMachines: number
             if (time > endDate.getTime()) break;
             
             const duration = time - lastTime;
-            if (currentStatus === 'ACTIVA') mUptime += duration;
+            if (isActiveStatus(currentStatus)) mUptime += duration;
             else {
                 mDowntime += duration;
-                if (log.toStatus === 'ACTIVA') { mRepairs++; mRepairTime += duration; }
+                if (isActiveStatus(log.toStatus)) { mRepairs++; mRepairTime += duration; }
             }
-            if (currentStatus === 'ACTIVA' && log.toStatus !== 'ACTIVA') mFailures++;
+            if (isActiveStatus(currentStatus) && !isActiveStatus(log.toStatus)) mFailures++;
             currentStatus = log.toStatus;
             lastTime = time;
         }
         const finalGap = endDate.getTime() - lastTime;
-        if (currentStatus === 'ACTIVA') mUptime += finalGap;
+        if (isActiveStatus(currentStatus)) mUptime += finalGap;
         else mDowntime += finalGap;
         // --- End re-calculation ---
 

@@ -11,6 +11,7 @@ import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import MemoryIcon from '@mui/icons-material/Memory';
 import ContentCutIcon from '@mui/icons-material/ContentCut';
 import CodeIcon from '@mui/icons-material/Code';
+import ScienceIcon from '@mui/icons-material/Science';
 import MapIcon from '@mui/icons-material/Map';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import TimerIcon from '@mui/icons-material/Timer';
@@ -39,6 +40,7 @@ const statusIcons: Record<string, React.ReactNode> = {
     PARADA: <CancelIcon sx={{ fontSize: '0.8rem' }} />,
     REVISAR: <VisibilityIcon sx={{ fontSize: '0.8rem' }} />,
     VELOCIDAD_REDUCIDA: <TrendingDownIcon sx={{ fontSize: '0.8rem' }} />,
+    MUESTRAS: <ScienceIcon sx={{ fontSize: '0.8rem' }} />,
     ELECTRONIC: <MemoryIcon sx={{ fontSize: '0.8rem' }} />,
     FALTA_COSTURA: <ContentCutIcon sx={{ fontSize: '0.8rem' }} />,
     FALTA_PROGRAMA: <CodeIcon sx={{ fontSize: '0.8rem' }} />,
@@ -48,6 +50,7 @@ const statusIcons: Record<string, React.ReactNode> = {
 
 const formatStatus = (status: string) => {
     if (status === 'VELOCIDAD_REDUCIDA') return 'Vel. Reducida';
+    if (status === 'MUESTRAS') return 'Muestras';
     return status.replace('_', ' ');
 };
 

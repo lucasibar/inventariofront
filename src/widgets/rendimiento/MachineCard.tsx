@@ -13,6 +13,7 @@ const getStatusColor = (status: string) => {
         case 'ACTIVA': return '#10b981'; // Green
         case 'REVISAR': return '#eab308'; // Yellow/Amber
         case 'VELOCIDAD_REDUCIDA': return '#f472b6'; // Pink
+        case 'MUESTRAS': return '#a855f7'; // Purple
         case 'PARADA': return '#ef4444'; // Red
         case 'ELECTRONIC': return '#3b82f6'; // Blue
         default: return '#6b7280'; // Gray
@@ -24,6 +25,7 @@ const getStatusLabel = (status: string) => {
         case 'ACTIVA': return 'Activa';
         case 'REVISAR': return 'Revisar';
         case 'VELOCIDAD_REDUCIDA': return 'V. Reducida';
+        case 'MUESTRAS': return 'Muestras';
         case 'PARADA': return 'Parada';
         case 'ELECTRONIC': return 'Electrónica';
         default: return status;

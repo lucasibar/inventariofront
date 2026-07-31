@@ -53,6 +53,7 @@ export const MachineDetailModal: React.FC<MachineDetailModalProps> = ({
             case 'ACTIVA': return '#10b981';
             case 'REVISAR': return '#eab308';
             case 'VELOCIDAD_REDUCIDA': return '#f472b6';
+            case 'MUESTRAS': return '#a855f7';
             case 'PARADA': return '#ef4444';
             case 'ELECTRONIC': return '#3b82f6';
             default: return '#6366f1';

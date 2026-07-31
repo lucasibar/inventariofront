@@ -9,7 +9,7 @@ import { useGetLogsQuery, useGetPlantsQuery } from '../../entities/maintenance/a
 
 
 // ─── Helpers ────────────────────────────────────────────────────────
-const ACTIVE_STATUSES = ['ACTIVA', 'REVISAR', 'VELOCIDAD_REDUCIDA', 'FALTA_COSTURA'];
+const ACTIVE_STATUSES = ['ACTIVA', 'REVISAR', 'VELOCIDAD_REDUCIDA', 'FALTA_COSTURA', 'MUESTRAS'];
 const isActive = (s: string) => ACTIVE_STATUSES.includes(s);
 
 function isInShift(timestamp: string, shiftStart: string, shiftEnd: string): boolean {
