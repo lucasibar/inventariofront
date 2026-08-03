@@ -60,6 +60,7 @@ const navGroups: NavGroup[] = [
             { to: '/stock', label: '📋 Stock' },
             { to: '/movimientos', label: '🔄 Movimientos' },
             { to: '/tasks', label: '📝 Tareas' },
+            { to: '/chequeo-inventario', label: '🔍 Chequeo Inventario' },
             {
                 id: 'remitos',
                 label: '📄 Remitos',
