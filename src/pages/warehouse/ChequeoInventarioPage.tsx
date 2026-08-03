@@ -528,11 +528,9 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
         : expanded === 'POSICION_INCORRECTA' ? OBSERVACIONES_INCORRECTA : [];
 
     return (
-        <Card
-            ref={cardRef as any}
-            style={{ padding: '0', overflow: 'hidden' }}
-        >
+        <Card style={{ padding: '0', overflow: 'hidden' }}>
             <div
+                ref={cardRef}
                 onTouchStart={handleSwipeStart}
                 onTouchEnd={handleSwipeEnd}
             >
