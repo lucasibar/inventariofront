@@ -37,7 +37,7 @@ export default function ReporteChequeoPage() {
     const activeCheckId = activeCheck?.id;
 
     // Fetch report data with polling as well
-    const { data: report, isFetching } = useGetCheckReportQuery(activeCheckId!, {
+    const { data: report } = useGetCheckReportQuery(activeCheckId!, {
         skip: !activeCheckId,
         pollingInterval: 3000,
     });
