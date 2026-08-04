@@ -602,41 +602,56 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
                                     boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
                                 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ color: '#ffffff', fontSize: isMobile ? '17px' : '19px', fontWeight: 800, lineHeight: 1.3, marginBottom: '6px' }}>
-                                                {s.itemName || s.itemCodigo || 'Material sin nombre'}
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{
+                                                color: '#ffffff', fontSize: isMobile ? '16px' : '18px', fontWeight: 800,
+                                                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                                                marginBottom: '4px'
+                                            }} title={s.itemName}>
+                                                {s.itemName || 'Material sin nombre'}
                                             </div>
                                             
-                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
-                                                {s.itemCodigo && (
-                                                    <span style={{ background: '#1e293b', color: '#cbd5e1', fontSize: '12px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', border: '1px solid #475569' }}>
-                                                        Cód: {s.itemCodigo}
-                                                    </span>
-                                                )}
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                                 {s.lotNumber && (
-                                                    <span style={{ background: 'rgba(99,102,241,0.2)', color: '#a5b4fc', fontSize: '12px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(99,102,241,0.4)' }}>
-                                                        🏷️ Lote: {s.lotNumber}
-                                                    </span>
+                                                    <div style={{ color: '#a5b4fc', fontSize: '13px', fontWeight: 600 }}>
+                                                        Lote: <span style={{ color: '#d1d5db', fontWeight: 700 }}>{s.lotNumber}</span>
+                                                    </div>
                                                 )}
                                                 {s.supplierName && (
-                                                    <span style={{ background: 'rgba(52,211,153,0.15)', color: '#6ee7b7', fontSize: '12px', fontWeight: 600, padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(52,211,153,0.3)' }}>
-                                                        🏭 {s.supplierName}
-                                                    </span>
+                                                    <div style={{ color: '#6ee7b7', fontSize: '13px', fontWeight: 600 }}>
+                                                        Prov: <span style={{ color: '#d1d5db', fontWeight: 700 }}>{s.supplierName}</span>
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
 
-                                        <div style={{ textAlign: 'right', minWidth: '100px' }}>
-                                            <div style={{ color: '#60a5fa', fontSize: isMobile ? '22px' : '26px', fontWeight: 900, lineHeight: 1 }}>
-                                                {Number(s.qtyPrincipal).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-                                            </div>
-                                            <div style={{ color: '#94a3b8', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginTop: '2px' }}>
-                                                Unidades / kg
-                                            </div>
-                                            {s.qtySecundaria != null && Number(s.qtySecundaria) > 0 && (
-                                                <div style={{ color: '#fbbf24', fontSize: '12px', fontWeight: 700, marginTop: '4px' }}>
-                                                    ({Number(s.qtySecundaria).toLocaleString('es-AR')} sec.)
-                                                </div>
+                                        <div style={{ textAlign: 'right', minWidth: '120px' }}>
+                                            {s.qtySecundaria != null && Number(s.qtySecundaria) > 0 ? (
+                                                <>
+                                                    <div style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: 900, lineHeight: 1 }}>
+                                                        <span style={{ color: '#fbbf24' }}>
+                                                            {Number(s.qtySecundaria).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                                                        </span>
+                                                        <span style={{ color: '#4b5563', margin: '0 4px' }}>/</span>
+                                                        <span style={{ color: '#60a5fa' }}>
+                                                            {Number(s.qtyPrincipal).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                                                        </span>
+                                                    </div>
+                                                    <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginTop: '3px' }}>
+                                                        <span style={{ color: '#fbbf24' }}>{s.unidadSecundaria || 'unid.'}</span>
+                                                        <span style={{ color: '#4b5563', margin: '0 4px' }}>/</span>
+                                                        <span style={{ color: '#60a5fa' }}>{s.unidadPrincipal || 'kg'}</span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <div style={{ color: '#60a5fa', fontSize: isMobile ? '22px' : '26px', fontWeight: 900, lineHeight: 1 }}>
+                                                        {Number(s.qtyPrincipal).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                                                    </div>
+                                                    <div style={{ color: '#60a5fa', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginTop: '3px' }}>
+                                                        {s.unidadPrincipal || 'kg'}
+                                                    </div>
+                                                </>
                                             )}
                                         </div>
                                     </div>
@@ -808,6 +823,13 @@ function ReportPhase({ isMobile, report, onReturnToCheck, onNewCheck }: {
 }) {
     const [selectedTagFilter, setSelectedTagFilter] = useState<'ALL' | Tag>('ALL');
 
+    const allItems: any[] = report?.items || [];
+
+    const filteredReportItems = useMemo(() => {
+        if (selectedTagFilter === 'ALL') return allItems;
+        return allItems.filter((i: any) => i.tag === selectedTagFilter);
+    }, [allItems, selectedTagFilter]);
+
     if (!report) {
         return (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
@@ -817,12 +839,6 @@ function ReportPhase({ isMobile, report, onReturnToCheck, onNewCheck }: {
     }
 
     const stats = report.summary || {};
-    const allItems: any[] = report.items || [];
-
-    const filteredReportItems = useMemo(() => {
-        if (selectedTagFilter === 'ALL') return allItems;
-        return allItems.filter((i: any) => i.tag === selectedTagFilter);
-    }, [allItems, selectedTagFilter]);
 
     const statCards: { label: string; tagKey: 'ALL' | Tag; value: number; color: string; icon: string }[] = [
         { label: 'Todas', tagKey: 'ALL', value: stats.total || 0, color: '#a5b4fc', icon: '📊' },

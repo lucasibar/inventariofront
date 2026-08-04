@@ -262,7 +262,7 @@ export default function ReporteChequeoPage() {
                                         {item.stockSnapshot && item.stockSnapshot.length > 0 ? (
                                             <div style={{ marginTop: '6px', fontSize: '12px', color: '#9ca3af', background: '#0f1117', padding: '6px 10px', borderRadius: '6px' }}>
                                                 <strong>Stock registrado:</strong> {item.stockSnapshot.map((s: any) =>
-                                                    `${s.itemName || s.itemCodigo || 'Material'}${s.lotNumber ? ` (Lote: ${s.lotNumber})` : ''} - ${Number(s.qtyPrincipal).toLocaleString('es-AR')} kg/un.`
+                                                    `${s.itemName || s.itemCodigo || 'Material'}${s.lotNumber ? ` (Lote: ${s.lotNumber})` : ''} - ${Number(s.qtyPrincipal).toLocaleString('es-AR')} ${s.unidadPrincipal || 'kg'}${s.qtySecundaria ? ` (${Number(s.qtySecundaria).toLocaleString('es-AR')} ${s.unidadSecundaria || 'unid.'})` : ''}`
                                                 ).join(' | ')}
                                             </div>
                                         ) : (
