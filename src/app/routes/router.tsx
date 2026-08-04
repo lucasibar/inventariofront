@@ -25,6 +25,7 @@ const WorkspaceTasksPage = lazy(() => import('../../pages/warehouse/WorkspaceTas
 const ReporteConsumoDetalladoPage = lazy(() => import('../../pages/warehouse/ReporteConsumoDetalladoPage'));
 const DashboardDepositoPage = lazy(() => import('../../pages/warehouse/DashboardDepositoPage'));
 const ChequeoInventarioPage = lazy(() => import('../../pages/warehouse/ChequeoInventarioPage'));
+const ReporteChequeoPage = lazy(() => import('../../pages/warehouse/ReporteChequeoPage'));
 
 // Sector: Purchasing
 const DashboardComprasPage = lazy(() => import('../../pages/purchasing/DashboardComprasPage'));
@@ -141,6 +142,7 @@ export const router = createBrowserRouter([
             children: [
               { path: "admin/movements", element: <LazyRoute element={AdminMovementsPage} /> },
               { path: "chequeo-inventario", element: <LazyRoute element={ChequeoInventarioPage} /> },
+              { path: "reporte-chequeo", element: <LazyRoute element={ReporteChequeoPage} /> },
             ]
           },
           // Operario / Produccion / Deposito
