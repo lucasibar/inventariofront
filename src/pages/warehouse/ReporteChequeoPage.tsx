@@ -104,23 +104,14 @@ export default function ReporteChequeoPage() {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
                     <div>
                         <h1 style={{ color: '#f3f4f6', fontSize: '18px', fontWeight: 800, margin: 0 }}>
-                            📊 Monitoreo de Reporte en Vivo
+                            📋 Reporte de Chequeo
                         </h1>
                         <p style={{ color: '#6b7280', fontSize: '12px', margin: '2px 0 0' }}>
-                            Supervisión en tiempo real de chequeos de depósito
+                            Estado y detalle del chequeo por depósito
                         </p>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{
-                            display: 'inline-flex', alignItems: 'center', gap: '6px',
-                            background: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)',
-                            padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 600
-                        }}>
-                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#34d399', boxShadow: '0 0 8px #34d399' }} />
-                            En vivo {isFetching && '(actualizando...)'}
-                        </span>
-
                         {report && (
                             <Btn small onClick={handleDownloadCSV} style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff' }}>
                                 📥 Descargar Excel (CSV)

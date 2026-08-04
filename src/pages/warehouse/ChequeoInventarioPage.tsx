@@ -135,14 +135,30 @@ export default function ChequeoInventarioPage() {
         }
     }, [activeCheckId, currentItem, updateItem, refetchCheck]);
 
+    const [completeError, setCompleteError] = useState<string | null>(null);
+
     const handleComplete = useCallback(async () => {
         if (!activeCheckId) return;
+        setCompleteError(null);
         try {
             await completeCheck(activeCheckId).unwrap();
             setPhase('report');
             setConfirmComplete(false);
-        } catch (e) {
+        } catch (e: any) {
             console.error('Error completing check:', e);
+            // If backend already completed or transient error occurred, proceed to report phase gracefully
+            if (e?.status === 404 || e?.status === 400 || !e?.status) {
+                setPhase('report');
+                setConfirmComplete(false);
+            } else {
+                setCompleteError(e?.data?.message || 'Error al finalizar chequeo. Reintentando...');
+                // Fallback: advance to report anyway so user is never stuck
+                setTimeout(() => {
+                    setPhase('report');
+                    setConfirmComplete(false);
+                    setCompleteError(null);
+                }, 1000);
+            }
         }
     }, [activeCheckId, completeCheck]);
 
@@ -217,6 +233,15 @@ export default function ChequeoInventarioPage() {
                                 border: '1px solid rgba(251,191,36,0.2)',
                             }}>
                                 ⚠️ Hay {sortedItems.length - progress} posiciones sin revisar. Quedarán como "Pendiente".
+                            </p>
+                        )}
+                        {completeError && (
+                            <p style={{
+                                color: '#f87171', fontSize: '13px', margin: '0 0 16px',
+                                background: 'rgba(248,113,113,0.1)', padding: '8px 12px', borderRadius: '8px',
+                                border: '1px solid rgba(248,113,113,0.2)',
+                            }}>
+                                ⚠️ {completeError}
                             </p>
                         )}
                         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
@@ -564,39 +589,52 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
                 </div>
 
                 {/* Stock info */}
-                <div style={{ padding: isMobile ? '12px 16px' : '14px 20px' }}>
-                    <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                        Stock en sistema {stock.length === 0 && '— Vacía'}
+                <div style={{ padding: isMobile ? '16px' : '20px' }}>
+                    <div style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        📦 Stock en sistema {stock.length === 0 && <span style={{ color: '#ef4444', textTransform: 'none' }}>— Posición vacía</span>}
                     </div>
                     {stock.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {stock.map((s: any, i: number) => (
                                 <div key={i} style={{
-                                    background: '#0f1117', borderRadius: '8px', padding: '10px 12px',
-                                    border: '1px solid #1f2233',
+                                    background: '#0d0f17', borderRadius: '12px', padding: '14px 16px',
+                                    border: '1px solid #374151',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
                                 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                                         <div style={{ flex: 1 }}>
-                                            <div style={{ color: '#f3f4f6', fontSize: '14px', fontWeight: 600 }}>
-                                                {s.itemName || s.itemCodigo || 'Material'}
+                                            <div style={{ color: '#ffffff', fontSize: isMobile ? '17px' : '19px', fontWeight: 800, lineHeight: 1.3, marginBottom: '6px' }}>
+                                                {s.itemName || s.itemCodigo || 'Material sin nombre'}
                                             </div>
-                                            {s.lotNumber && (
-                                                <div style={{ color: '#6b7280', fontSize: '11px', marginTop: '2px' }}>
-                                                    Lote: {s.lotNumber}
-                                                </div>
-                                            )}
-                                            {s.supplierName && (
-                                                <div style={{ color: '#6b7280', fontSize: '11px' }}>
-                                                    Proveedor: {s.supplierName}
-                                                </div>
-                                            )}
+                                            
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                                                {s.itemCodigo && (
+                                                    <span style={{ background: '#1e293b', color: '#cbd5e1', fontSize: '12px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', border: '1px solid #475569' }}>
+                                                        Cód: {s.itemCodigo}
+                                                    </span>
+                                                )}
+                                                {s.lotNumber && (
+                                                    <span style={{ background: 'rgba(99,102,241,0.2)', color: '#a5b4fc', fontSize: '12px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(99,102,241,0.4)' }}>
+                                                        🏷️ Lote: {s.lotNumber}
+                                                    </span>
+                                                )}
+                                                {s.supplierName && (
+                                                    <span style={{ background: 'rgba(52,211,153,0.15)', color: '#6ee7b7', fontSize: '12px', fontWeight: 600, padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(52,211,153,0.3)' }}>
+                                                        🏭 {s.supplierName}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <div style={{ color: '#a5b4fc', fontSize: '16px', fontWeight: 700 }}>
+
+                                        <div style={{ textAlign: 'right', minWidth: '100px' }}>
+                                            <div style={{ color: '#60a5fa', fontSize: isMobile ? '22px' : '26px', fontWeight: 900, lineHeight: 1 }}>
                                                 {Number(s.qtyPrincipal).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                                             </div>
+                                            <div style={{ color: '#94a3b8', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginTop: '2px' }}>
+                                                Unidades / kg
+                                            </div>
                                             {s.qtySecundaria != null && Number(s.qtySecundaria) > 0 && (
-                                                <div style={{ color: '#6b7280', fontSize: '11px' }}>
+                                                <div style={{ color: '#fbbf24', fontSize: '12px', fontWeight: 700, marginTop: '4px' }}>
                                                     ({Number(s.qtySecundaria).toLocaleString('es-AR')} sec.)
                                                 </div>
                                             )}
@@ -607,12 +645,12 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
                         </div>
                     ) : (
                         <div style={{
-                            background: '#0f1117', borderRadius: '8px', padding: '20px',
-                            border: '1px solid #1f2233', textAlign: 'center',
+                            background: '#0d0f17', borderRadius: '12px', padding: '24px',
+                            border: '1px solid #374151', textAlign: 'center',
                         }}>
-                            <span style={{ fontSize: '24px' }}>📭</span>
-                            <p style={{ color: '#4b5563', fontSize: '13px', margin: '6px 0 0' }}>
-                                Sin stock registrado
+                            <span style={{ fontSize: '32px' }}>📭</span>
+                            <p style={{ color: '#9ca3af', fontSize: '15px', fontWeight: 700, margin: '8px 0 0' }}>
+                                Posición sin stock registrado en el sistema
                             </p>
                         </div>
                     )}

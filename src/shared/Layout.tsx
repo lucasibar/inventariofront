@@ -61,7 +61,15 @@ const navGroups: NavGroup[] = [
             { to: '/movimientos', label: '🔄 Movimientos' },
             { to: '/tasks', label: '📝 Tareas' },
             { to: '/chequeo-inventario', label: '🔍 Chequeo Inventario' },
-            { to: '/reporte-chequeo', label: '📊 Reporte Chequeo (En vivo)' },
+            { to: '/reporte-chequeo', label: '📊 Reporte Chequeo' },
+            {
+                id: 'informes',
+                label: '📊 Informes',
+                isSubGroup: true,
+                items: [
+                    { to: '/deposito/informes', label: '📈 Informe Inventariados' },
+                ]
+            },
             {
                 id: 'remitos',
                 label: '📄 Remitos',

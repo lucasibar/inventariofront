@@ -39,6 +39,10 @@ export const inventoryCheckApi = api.injectEndpoints({
             query: (id) => `inventory-checks/${id}/report`,
             providesTags: (_result, _error, id) => [{ type: 'InventoryChecks', id }],
         }),
+        getInventoryCheckAnalytics: builder.query<any, void>({
+            query: () => 'inventory-checks/analytics',
+            providesTags: ['InventoryChecks'],
+        }),
     }),
 });
 
@@ -49,4 +53,5 @@ export const {
     useUpdateCheckItemMutation,
     useCompleteCheckMutation,
     useGetCheckReportQuery,
+    useGetInventoryCheckAnalyticsQuery,
 } = inventoryCheckApi;
