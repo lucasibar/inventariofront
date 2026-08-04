@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
     useGetRemitosEntradaQuery,
     useDeleteRemitoEntradaMutation,
@@ -6,7 +6,7 @@ import {
 } from '../../features/warehouse/remitosEntrada/api/remitos-entrada.api';
 import { CreateRemitoForm } from '../../features/warehouse/remitos/ui/CreateRemitoForm';
 import { RemitoDetailModal } from '../../features/warehouse/remitos/ui/RemitoDetailModal';
-import { PageHeader, Card, Btn, Table, Badge } from '../../shared/ui';
+import { PageHeader, Card, Btn, Table, Badge, SearchBar } from '../../shared/ui';
 
 export default function RemitosEntradaPage() {
     const { data: remitos = [], isLoading, isError } = useGetRemitosEntradaQuery();
@@ -15,6 +15,31 @@ export default function RemitosEntradaPage() {
     const [selectedRemito, setSelectedRemito] = useState<any>(null);
     const [showDetail, setShowDetail] = useState(false);
     const [triggerGetDetail] = useLazyGetRemitoEntradaQuery();
+    const [search, setSearch] = useState('');
+
+    const filteredRemitos = useMemo(() => {
+        const query = search.toLowerCase().trim();
+        if (!query) return remitos;
+        const tokens = query.split(/\s+/).filter(Boolean);
+
+        return remitos.filter((r: any) => {
+            const linesContent = (r.lines || []).map((l: any) => 
+                `${l.codigoInterno || l.item?.codigoInterno || ''} ${l.descripcion || l.item?.descripcion || ''} ${l.categoria || l.item?.categoria || ''} ${l.lotNumber || l.batch?.lote || l.batch?.lotNumber || ''}`
+            ).join(' ');
+
+            const searchableContent = [
+                r.numero || '',
+                r.documentId || '',
+                r.id || '',
+                r.partner?.name || r.supplier?.name || r.partnerName || '',
+                r.partner?.taxId || r.supplierTaxId || '',
+                r.observaciones || '',
+                linesContent
+            ].join(' ').toLowerCase();
+
+            return tokens.every(token => searchableContent.includes(token));
+        });
+    }, [remitos, search]);
 
     const handleRowClick = async (remito: any) => {
         try {
@@ -47,6 +72,14 @@ export default function RemitosEntradaPage() {
                 <Btn onClick={() => setShowForm(true)}>+ Nuevo Ingreso</Btn>
             </PageHeader>
 
+            <div style={{ marginBottom: '16px' }}>
+                <SearchBar
+                    value={search}
+                    onChange={setSearch}
+                    placeholder="Buscar por n° remito, proveedor, código, descripción o partida..."
+                />
+            </div>
+
             {isError ? (
                 <div style={{ textAlign: 'center', padding: '40px', color: '#ef4444' }}>
                     Error al cargar los remitos. Intente nuevamente.
@@ -56,13 +89,17 @@ export default function RemitosEntradaPage() {
                     <h3 style={{ color: '#f3f4f6', marginBottom: '8px' }}>Todavía no hay ningún remito cargado</h3>
                     <p style={{ color: '#9ca3af' }}>Inicie una nueva recepción de materiales presionando el botón "+ Nuevo Ingreso".</p>
                 </Card>
+            ) : filteredRemitos.length === 0 && search.trim() ? (
+                <Card style={{ textAlign: 'center', padding: '40px' }}>
+                    <p style={{ color: '#9ca3af' }}>No se encontraron remitos que coincidan con "{search}".</p>
+                </Card>
             ) : (
                 <Card>
                     <Table
                         loading={isLoading}
-                        onRowClick={(i) => handleRowClick(remitos[i])}
+                        onRowClick={(i) => handleRowClick(filteredRemitos[i])}
                         cols={['Número', 'Fecha', 'Proveedor', 'Líneas', '']}
-                        rows={remitos.map((r: any) => [
+                        rows={filteredRemitos.map((r: any) => [
                             <span key="num" style={{ color: '#a5b4fc', fontWeight: 600 }}>{r.numero || r.documentId}</span>,
                             new Date(r.fecha || r.date).toLocaleDateString('es-AR'),
                             r.partner?.name || r.supplier?.name || '—',
