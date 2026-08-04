@@ -611,16 +611,19 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
                                                 {s.itemName || 'Material sin nombre'}
                                             </div>
                                             
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', fontSize: '13px' }}>
                                                 {s.lotNumber && (
-                                                    <div style={{ color: '#a5b4fc', fontSize: '13px', fontWeight: 600 }}>
-                                                        Lote: <span style={{ color: '#d1d5db', fontWeight: 700 }}>{s.lotNumber}</span>
-                                                    </div>
+                                                    <span style={{ color: '#a5b4fc', fontWeight: 600 }}>
+                                                        Lote: <strong style={{ color: '#d1d5db', fontWeight: 700 }}>{s.lotNumber}</strong>
+                                                    </span>
+                                                )}
+                                                {s.lotNumber && s.supplierName && (
+                                                    <span style={{ color: '#4b5563' }}>•</span>
                                                 )}
                                                 {s.supplierName && (
-                                                    <div style={{ color: '#6ee7b7', fontSize: '13px', fontWeight: 600 }}>
-                                                        Prov: <span style={{ color: '#d1d5db', fontWeight: 700 }}>{s.supplierName}</span>
-                                                    </div>
+                                                    <span style={{ color: '#6ee7b7', fontWeight: 600 }}>
+                                                        Prov: <strong style={{ color: '#d1d5db', fontWeight: 700 }}>{s.supplierName}</strong>
+                                                    </span>
                                                 )}
                                             </div>
                                         </div>

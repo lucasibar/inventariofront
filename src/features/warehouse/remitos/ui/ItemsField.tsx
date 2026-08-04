@@ -32,7 +32,7 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
     const availableItems = useMemo(() => {
         const base = !supplierId
             ? allItems
-            : allItems.filter((it: any) => !it.supplierId || it.supplierId === supplierId);
+            : allItems.filter((it: any) => it.supplierId === supplierId || it.supplier?.id === supplierId);
         return [...base, CREATE_OPTION];
     }, [allItems, supplierId]);
 
@@ -76,32 +76,41 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                 const poLinks = watch(`lines.${index}.purchaseOrderLinks`) || [];
                 const totalLinked = poLinks.reduce((sum: number, l: any) => sum + l.qtyAplicada, 0);
 
+                const selectedItem = allItems.find((it: any) => it.id === itemId);
+                const labelPrincipal = selectedItem?.unidadPrincipal 
+                    ? `Cantidad Principal (${selectedItem.unidadPrincipal})` 
+                    : 'Cantidad Principal';
+                const labelSecundaria = selectedItem?.unidadSecundaria 
+                    ? `Cantidad Secundaria (${selectedItem.unidadSecundaria})` 
+                    : 'Cantidad Secundaria';
+
                 return (
                     <Box key={field.id} sx={{ mb: 3, p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', position: 'relative' }}>
                         <Box sx={{
                             display: 'grid',
-                            gridTemplateColumns: { xs: '1fr', sm: '2.5fr 3.5fr 1fr 1fr 2fr auto' },
+                            gridTemplateColumns: { xs: '1fr', sm: '3.5fr 1fr 1fr 1.5fr auto' },
                             gap: 1.5,
                             alignItems: 'flex-start'
                         }}>
                             <Box>
                                 <Autocomplete
                                     options={availableItems}
+                                    value={availableItems.find((it: any) => it.id === itemId) || null}
+                                    isOptionEqualToValue={(option, val) => option.id === val?.id}
                                     getOptionLabel={(option: any) => {
+                                        if (typeof option === 'string') return option;
                                         if (option.__isCreateOption) return option.descripcion;
-                                        const cat = option.categoria ? `[${option.categoria}] ` : '';
-                                        return `${cat}${option.codigoInterno} - ${option.descripcion}`;
+                                        return option.descripcion ? `${option.descripcion} (${option.codigoInterno})` : option.codigoInterno;
                                     }}
                                     filterOptions={(options, { inputValue }) => {
-                                        const search = inputValue.toLowerCase();
-                                        const filtered = options.filter((option: any) => {
+                                        const rawSearch = inputValue.toLowerCase().trim();
+                                        if (!rawSearch) return options;
+                                        const tokens = rawSearch.split(/\s+/).filter(Boolean);
+                                        return options.filter((option: any) => {
                                             if (option.__isCreateOption) return true;
-                                            return (
-                                                option.codigoInterno.toLowerCase().includes(search) ||
-                                                option.descripcion.toLowerCase().includes(search)
-                                            );
+                                            const itemText = `${option.descripcion || ''} ${option.codigoInterno || ''} ${option.categoria || ''}`.toLowerCase();
+                                            return tokens.every(token => itemText.includes(token));
                                         });
-                                        return filtered;
                                     }}
                                     renderOption={(props, option: any) => {
                                         if (option.__isCreateOption) {
@@ -122,70 +131,79 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                             );
                                         }
                                         return (
-                                            <ListItem {...props} key={option.id}>
-                                                <ListItemText
-                                                    primary={option.codigoInterno}
-                                                    secondary={`${option.categoria ? `[${option.categoria}] ` : ''}${option.descripcion}`}
-                                                />
+                                            <ListItem {...props} key={option.id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 0.8 }}>
+                                                <Box sx={{ pr: 1, overflow: 'hidden' }}>
+                                                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', lineHeight: 1.2 }}>
+                                                        {option.descripcion}
+                                                    </Typography>
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.2 }}>
+                                                        Cód: {option.codigoInterno}
+                                                    </Typography>
+                                                </Box>
+                                                {option.categoria && (
+                                                    <Chip
+                                                        label={option.categoria}
+                                                        size="small"
+                                                        variant="outlined"
+                                                        sx={{ height: 20, fontSize: '0.7rem', flexShrink: 0 }}
+                                                    />
+                                                )}
                                             </ListItem>
                                         );
                                     }}
                                     onChange={(_, newValue: any) => {
-                                        if (!newValue) return;
+                                        if (!newValue) {
+                                            setValue(`lines.${index}.itemId`, '');
+                                            setValue(`lines.${index}.codigoInterno`, '');
+                                            setValue(`lines.${index}.descripcion`, '');
+                                            setValue(`lines.${index}.categoria`, '');
+                                            setValue(`lines.${index}.unidadPrincipal`, '');
+                                            setValue(`lines.${index}.unidadSecundaria`, '');
+                                            return;
+                                        }
                                         if (newValue.__isCreateOption) {
                                             setActiveItemIndex(index);
                                             setIsDialogOpen(true);
                                             return;
                                         }
+                                        setValue(`lines.${index}.itemId`, newValue.id);
                                         setValue(`lines.${index}.codigoInterno`, newValue.codigoInterno);
                                         setValue(`lines.${index}.descripcion`, newValue.descripcion);
                                         setValue(`lines.${index}.categoria`, newValue.categoria);
-                                        setValue(`lines.${index}.itemId`, newValue.id);
-                                        setValue(`lines.${index}.purchaseOrderLinks`, []); // clear links on item change
+                                        setValue(`lines.${index}.unidadPrincipal`, newValue.unidadPrincipal);
+                                        setValue(`lines.${index}.unidadSecundaria`, newValue.unidadSecundaria);
+                                        setValue(`lines.${index}.purchaseOrderLinks`, []);
                                     }}
                                     renderInput={(params) => (
                                         <TextField
                                             {...params}
-                                            label="Material"
-                                            variant="filled"
+                                            label="Material / Descripción"
                                             size="small"
-                                            placeholder="Buscar o agregar..."
+                                            placeholder="Buscar por nombre o palabras (ej: caño redondo)..."
                                             InputLabelProps={{ shrink: true }}
-                                            {...register(`lines.${index}.codigoInterno` as const, { required: true })}
                                         />
                                     )}
                                 />
                             </Box>
                             <Box>
                                 <TextField
-                                    label="Descripción"
-                                    fullWidth
-                                    variant="filled"
-                                    size="small"
-                                    InputProps={{ readOnly: true }}
-                                    InputLabelProps={{ shrink: true }}
-                                    {...register(`lines.${index}.descripcion` as const)}
-                                />
-                            </Box>
-                            <Box>
-                                <TextField
                                     type="number"
-                                    label="Cantidad Principal (Kg)"
+                                    label={labelPrincipal}
                                     fullWidth
-                                    variant="filled"
                                     size="small"
                                     inputProps={{ step: 'any' }}
+                                    InputLabelProps={{ shrink: true }}
                                     {...register(`lines.${index}.qtyPrincipal` as const, { required: true, min: 0.01 })}
                                 />
                             </Box>
                             <Box>
                                 <TextField
                                     type="number"
-                                    label="Secundaria (Unid)"
+                                    label={labelSecundaria}
                                     fullWidth
-                                    variant="filled"
                                     size="small"
                                     inputProps={{ step: 'any' }}
+                                    InputLabelProps={{ shrink: true }}
                                     {...register(`lines.${index}.qtySecundaria` as const, { min: 0 })}
                                 />
                             </Box>
@@ -193,9 +211,9 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                 <TextField
                                     label="Partida"
                                     fullWidth
-                                    variant="filled"
                                     size="small"
-                                    placeholder="Requerido"
+                                    placeholder="N° Lote"
+                                    InputLabelProps={{ shrink: true }}
                                     error={!!(control as any)._formState.errors?.lines?.[index]?.lotNumber}
                                     {...register(`lines.${index}.lotNumber` as const, { required: true })}
                                 />

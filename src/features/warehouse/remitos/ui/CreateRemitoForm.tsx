@@ -1,5 +1,5 @@
 import { useForm, FormProvider, Controller, type SubmitHandler } from 'react-hook-form';
-import { Box, Button, TextField, Typography, MenuItem, Divider, IconButton, Tooltip, Autocomplete } from '@mui/material';
+import { Box, Button, TextField, Typography, MenuItem, IconButton, Tooltip, Autocomplete, Paper } from '@mui/material';
 import { useCreateRemitoMutation } from '../api/remito.api';
 import { useGetDepotsQuery } from '../../deposito/api/deposito.api';
 import { useLazyGetPartnersQuery } from '../../../config/partners/api/partners.api';
@@ -8,6 +8,7 @@ import { ItemsField } from './ItemsField';
 import { CreatePartnerDialog } from '../../../config/CreatePartnerDialog';
 import type { CreateRemitoDto } from '../model/create-remito.dto';
 import { useState, useMemo, useEffect } from 'react';
+
 export const CreateRemitoForm = () => {
     const methods = useForm<CreateRemitoDto>({
         defaultValues: {
@@ -51,13 +52,8 @@ export const CreateRemitoForm = () => {
                 return;
             }
 
-            // Comprobar si hay errores de validación (ej: partidas faltantes)
-            // Aunque handleSubmit evita llegar aquí si hay errores, esto es una capa extra de seguridad.
-
-            // Simplified payload: the backend now resolves "ENTRADA" position automatically via depotId
             const payload: any = {
                 ...data,
-                // Ensure numbers are sent as numbers
                 lines: data.lines.map(line => ({
                     ...line,
                     qtyPrincipal: Number(line.qtyPrincipal),
@@ -65,7 +61,6 @@ export const CreateRemitoForm = () => {
                 }))
             };
 
-            // Leaner payload: don't send name/taxId if we have the ID
             if (payload.supplierId) {
                 delete payload.supplierName;
                 delete payload.taxId;
@@ -88,123 +83,110 @@ export const CreateRemitoForm = () => {
     };
 
     return (
-        <Box sx={{ maxWidth: 900, mx: 'auto' }}>
-            <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, letterSpacing: '-1px', color: 'text.primary' }}>
-                Registrar Remito
-            </Typography>
-            <Typography variant="body1" sx={{ mb: 4, color: 'text.secondary', fontWeight: 500 }}>
-                Ingrese los datos del documento y los materiales recibidos.
-            </Typography>
-
+        <Box sx={{ maxWidth: 960, mx: 'auto', p: { xs: 1, sm: 2 } }}>
+            <Box sx={{ mb: 4 }}>
+                <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.5px', color: 'text.primary' }}>
+                    Registrar Remito de Entrada
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                    Complete la información del comprobante y detalle los materiales recibidos.
+                </Typography>
+            </Box>
 
             <FormProvider {...methods}>
                 <Box component="form" onSubmit={methods.handleSubmit(onSubmit)}>
-                    {/* Section: Datos Generales */}
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: 'primary.main' }}>
-                        Datos Generales
-                    </Typography>
-                    <Box sx={{
-                        display: 'grid',
-                        gridTemplateColumns: { xs: '1fr', sm: '1.2fr 1fr 1fr 1fr' },
-                        gap: 2,
-                        mb: 4
-                    }}>
-                        <TextField
-                            label="Número de Remito"
-                            fullWidth
-                            required
-                            variant="filled"
-                            {...methods.register('numero', { required: true })}
-                        />
-                        <TextField
-                            type="date"
-                            label="Fecha de Emisión"
-                            fullWidth
-                            required
-                            variant="filled"
-                            InputLabelProps={{ shrink: true }}
-                            {...methods.register('fecha', { required: true })}
-                        />
+                    {/* Seccion 1: Datos del Comprobante */}
+                    <Paper variant="outlined" sx={{ p: 3, mb: 4, borderRadius: 3, backgroundColor: 'background.paper' }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2.5, color: 'primary.main', textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: '0.75rem' }}>
+                            1. Datos Generales
+                        </Typography>
 
-                        <TextField
-                            select
-                            label="Planta"
-                            fullWidth
-                            required
-                            variant="filled"
-                            value={selectedPlanta}
-                            onChange={(e) => {
-                                setSelectedPlanta(e.target.value);
-                                methods.setValue('depotId', '');
-                            }}
-                        >
-                            <MenuItem disabled value=""><em>Seleccione Planta...</em></MenuItem>
-                            {plants.map((p: any) => (
-                                <MenuItem key={p} value={p}>{p}</MenuItem>
-                            ))}
-                        </TextField>
+                        <Box sx={{
+                            display: 'grid',
+                            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr 1fr' },
+                            gap: 2,
+                            mb: 3
+                        }}>
+                            <TextField
+                                label="Número de Remito"
+                                fullWidth
+                                required
+                                size="small"
+                                placeholder="0001-00000000"
+                                {...methods.register('numero', { required: true })}
+                            />
+                            <TextField
+                                type="date"
+                                label="Fecha de Emisión"
+                                fullWidth
+                                required
+                                size="small"
+                                InputLabelProps={{ shrink: true }}
+                                {...methods.register('fecha', { required: true })}
+                            />
 
-                        <TextField
-                            select
-                            label="Depósito Destino"
-                            fullWidth
-                            required
-                            disabled={!selectedPlanta}
-                            variant="filled"
-                            {...methods.register('depotId', { required: true })}
-                            value={methods.watch('depotId') || ''}
-                            onChange={(e) => methods.setValue('depotId', e.target.value)}
-                        >
-                            <MenuItem disabled value=""><em>{selectedPlanta ? 'Seleccione Depósito...' : 'Primero seleccione planta'}</em></MenuItem>
-                            {filteredDepots.map((d: any) => (
-                                <MenuItem key={d.id} value={d.id}>
-                                    {d.nombre}
-                                </MenuItem>
-                            ))}
-                        </TextField>
-                    </Box>
+                            <TextField
+                                select
+                                label="Planta"
+                                fullWidth
+                                required
+                                size="small"
+                                value={selectedPlanta}
+                                onChange={(e) => {
+                                    setSelectedPlanta(e.target.value);
+                                    methods.setValue('depotId', '');
+                                }}
+                            >
+                                <MenuItem disabled value=""><em>Seleccione Planta...</em></MenuItem>
+                                {plants.map((p: any) => (
+                                    <MenuItem key={p} value={p}>{p}</MenuItem>
+                                ))}
+                            </TextField>
 
-                    <TextField
-                        label="Observaciones (Opcional)"
-                        fullWidth
-                        multiline
-                        rows={2}
-                        variant="filled"
-                        sx={{ mb: 4 }}
-                        {...methods.register('observaciones')}
-                    />
-
-                    {/* Section: Proveedor Integrada */}
-                    <Box sx={{ mb: 4 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main', mb: 0 }}>
-                                Proveedor
-                            </Typography>
-                            <Tooltip title="Nuevo Proveedor">
-                                <IconButton size="small" color="primary" onClick={() => setIsPartnerDialogOpen(true)}>
-                                    <AddCircleOutlineIcon fontSize="small" />
-                                </IconButton>
-                            </Tooltip>
+                            <TextField
+                                select
+                                label="Depósito Destino"
+                                fullWidth
+                                required
+                                disabled={!selectedPlanta}
+                                size="small"
+                                value={methods.watch('depotId') || ''}
+                                onChange={(e) => methods.setValue('depotId', e.target.value)}
+                            >
+                                <MenuItem disabled value=""><em>{selectedPlanta ? 'Seleccione Depósito...' : 'Primero seleccione planta'}</em></MenuItem>
+                                {filteredDepots.map((d: any) => (
+                                    <MenuItem key={d.id} value={d.id}>
+                                        {d.nombre}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
                         </Box>
 
-                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '2fr 1fr' }, gap: 2 }}>
+                        {/* Proveedor */}
+                        <Box sx={{ mb: 3 }}>
                             <Controller
                                 name="supplierId"
                                 control={methods.control}
                                 render={({ field: { onChange, value } }) => (
                                     <Autocomplete
                                         options={partners}
-                                        getOptionLabel={(option: any) => `${option.name} ${option.taxId ? `(${option.taxId})` : ''}`}
+                                        getOptionLabel={(option: any) => typeof option === 'string' ? option : option.name}
                                         value={partners.find((p: any) => p.id === value) || null}
                                         isOptionEqualToValue={(option, val) => option.id === val?.id}
                                         loading={isFetching}
-                                        onInputChange={(_, newInputValue) => triggerSearch({ q: newInputValue })}
+                                        onInputChange={(_, newInputValue, reason) => {
+                                            if (reason === 'input') {
+                                                triggerSearch({ q: newInputValue });
+                                            } else if (reason === 'clear') {
+                                                triggerSearch({});
+                                            }
+                                        }}
                                         filterOptions={(options, params) => {
-                                            const filtered = options.filter((option: any) =>
-                                                option.name.toLowerCase().includes(params.inputValue.toLowerCase()) ||
-                                                (option.taxId && option.taxId.includes(params.inputValue))
+                                            const search = params.inputValue.toLowerCase().trim();
+                                            if (!search) return options;
+                                            return options.filter((option: any) =>
+                                                option.name?.toLowerCase().includes(search)
                                             );
-                                            return filtered;
                                         }}
                                         onChange={(_, newValue) => {
                                             if (newValue) {
@@ -220,28 +202,57 @@ export const CreateRemitoForm = () => {
                                         renderInput={(params) => (
                                             <TextField
                                                 {...params}
-                                                label="Buscar Proveedor"
-                                                placeholder="Escriba para filtrar..."
-                                                variant="filled"
+                                                label="Proveedor"
+                                                placeholder="Buscar proveedor por nombre..."
+                                                size="small"
                                                 fullWidth
+                                                InputProps={{
+                                                    ...params.InputProps,
+                                                    endAdornment: (
+                                                        <>
+                                                            {params.InputProps.endAdornment}
+                                                            <Tooltip title="Crear nuevo proveedor">
+                                                                <IconButton
+                                                                    size="small"
+                                                                    color="primary"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setIsPartnerDialogOpen(true);
+                                                                    }}
+                                                                    sx={{ ml: 0.5 }}
+                                                                >
+                                                                    <AddCircleOutlineIcon fontSize="small" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        </>
+                                                    )
+                                                }}
                                             />
                                         )}
                                     />
                                 )}
                             />
-                            <TextField
-                                label="CUIT / Identificación"
-                                fullWidth
-                                variant="filled"
-                                {...methods.register('taxId')}
-                                InputProps={{ readOnly: true }}
-                            />
                         </Box>
-                    </Box>
 
-                    <Divider sx={{ mb: 4 }} />
+                        <TextField
+                            label="Observaciones (Opcional)"
+                            fullWidth
+                            multiline
+                            rows={2}
+                            size="small"
+                            placeholder="Notas o referencias adicionales..."
+                            {...methods.register('observaciones')}
+                        />
+                    </Paper>
 
-                    <ItemsField supplierId={selectedSupplierId} />
+                    {/* Seccion 2: Items / Materiales */}
+                    <Paper variant="outlined" sx={{ p: 3, mb: 4, borderRadius: 3, backgroundColor: 'background.paper' }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: 'primary.main', textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: '0.75rem' }}>
+                            2. Detalle de Materiales
+                        </Typography>
+
+                        <ItemsField supplierId={selectedSupplierId} />
+                    </Paper>
 
                     <CreatePartnerDialog
                         open={isPartnerDialogOpen}
@@ -250,14 +261,15 @@ export const CreateRemitoForm = () => {
                             methods.setValue('supplierId', partner.id);
                             methods.setValue('supplierName', partner.name);
                             methods.setValue('taxId', partner.taxId || '');
-                            triggerSearch({}); // Update the local partners list
+                            triggerSearch({});
                         }}
                     />
 
-                    <Box sx={{ mt: 6, display: 'flex', justifyContent: 'flex-end' }}>
+                    {/* Boton de Submit */}
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 4 }}>
                         <Button
                             type="submit"
-                            variant="text"
+                            variant="contained"
                             size="large"
                             disabled={isLoading}
                             onClick={() => {
@@ -268,13 +280,16 @@ export const CreateRemitoForm = () => {
                                 }
                             }}
                             sx={{
-                                fontWeight: 800,
+                                fontWeight: 700,
                                 px: 4,
-                                color: 'primary.main',
-                                '&:hover': { background: 'rgba(0,0,0,0.04)' }
+                                py: 1.2,
+                                borderRadius: 2,
+                                textTransform: 'none',
+                                fontSize: '0.95rem',
+                                boxShadow: 2
                             }}
                         >
-                            {isLoading ? 'PROCESANDO...' : 'REGISTRAR INGRESO'}
+                            {isLoading ? 'Guardando...' : 'Registrar Ingreso de Remito'}
                         </Button>
                     </Box>
                 </Box>
