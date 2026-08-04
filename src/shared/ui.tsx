@@ -54,8 +54,8 @@ export function PageHeader({ title, subtitle, children, hideTitleOnMobile }: { t
         }}>
             {!shouldHideTitle && (
                 <div style={{ minWidth: isMobile ? 'auto' : '200px', flex: 1 }}>
-                    <h1 style={{ color: '#f3f4f6', fontSize: isMobile ? '18px' : '22px', fontWeight: 800, margin: 0 }}>{title}</h1>
-                    {subtitle && <p style={{ color: '#6b7280', fontSize: '12px', margin: '4px 0 0' }}>{subtitle}</p>}
+                    <h1 style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: isMobile ? '18px' : '22px', fontWeight: 800, margin: 0 }}>{title}</h1>
+                    {subtitle && <p style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '12px', margin: '4px 0 0' }}>{subtitle}</p>}
                 </div>
             )}
             <div style={{ 
@@ -82,7 +82,7 @@ export function Card({ children, style, className, onClick }: {
         <div 
             className={className}
             onClick={onClick}
-            style={{ background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: '12px', overflow: 'hidden', ...style }}
+            style={{ background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-color, #2a2d3e)', borderRadius: '12px', overflow: 'hidden', ...style }}
         >
             {children}
         </div>
@@ -98,13 +98,13 @@ export function Btn({ children, onClick, variant = 'primary', small, disabled, s
         secondary: 'transparent',
         danger: 'rgba(239,68,68,0.15)',
     };
-    const textColor = { primary: '#fff', secondary: '#9ca3af', danger: '#f87171' };
+    const textColor = { primary: '#fff', secondary: 'var(--text-muted, #9ca3af)', danger: '#f87171' };
     return (
         <button
             onClick={onClick} disabled={disabled} title={title}
             style={{
                 background: colors[variant], color: textColor[variant],
-                border: variant === 'secondary' ? '1px solid #374151' : variant === 'danger' ? '1px solid rgba(239,68,68,0.3)' : 'none',
+                border: variant === 'secondary' ? '1px solid var(--border-strong, #374151)' : variant === 'danger' ? '1px solid rgba(239,68,68,0.3)' : 'none',
                 borderRadius: '8px', padding: small ? '6px 10px' : '10px 18px',
                 fontSize: small ? '11px' : '14px', fontWeight: 600, cursor: disabled ? 'not-allowed' : 'pointer',
                 opacity: disabled ? 0.5 : 1, transition: 'all 0.15s', 
@@ -125,13 +125,13 @@ export function Input({ label, value, onChange, type = 'text', placeholder, styl
 
     return (
         <div style={style}>
-            {label && <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>{label}</label>}
+            {label && <label style={{ display: 'block', color: 'var(--text-muted, #9ca3af)', fontSize: '12px', marginBottom: '4px' }}>{label}</label>}
             <div style={{ position: 'relative' }}>
                 <input
                     type={currentType} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
                     style={{
-                        width: '100%', background: '#0f1117', border: '1px solid #374151', borderRadius: '8px',
-                        padding: '8px 10px', paddingRight: isPassword ? '35px' : '10px', color: '#f3f4f6', fontSize: '13px', outline: 'none', boxSizing: 'border-box',
+                        width: '100%', background: 'var(--bg-primary, #0f1117)', border: '1px solid var(--border-strong, #374151)', borderRadius: '8px',
+                        padding: '8px 10px', paddingRight: isPassword ? '35px' : '10px', color: 'var(--text-primary, #f3f4f6)', fontSize: '13px', outline: 'none', boxSizing: 'border-box',
                     }}
                 />
                 {isPassword && (
@@ -159,14 +159,14 @@ export function Select({ label, value, onChange, options, style, disabled }: {
 }) {
     return (
         <div style={style}>
-            {label && <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>{label}</label>}
+            {label && <label style={{ display: 'block', color: 'var(--text-muted, #9ca3af)', fontSize: '12px', marginBottom: '4px' }}>{label}</label>}
             <select
                 value={value} onChange={e => onChange(e.target.value)}
                 disabled={disabled}
                 style={{
-                    width: '100%', background: '#0f1117', border: '1px solid #374151', borderRadius: '8px',
-                    padding: '8px 10px', color: '#f3f4f6', fontSize: '13px', outline: 'none', boxSizing: 'border-box',
-                    colorScheme: 'dark',
+                    width: '100%', background: 'var(--bg-primary, #0f1117)', border: '1px solid var(--border-strong, #374151)', borderRadius: '8px',
+                    padding: '8px 10px', color: 'var(--text-primary, #f3f4f6)', fontSize: '13px', outline: 'none', boxSizing: 'border-box',
+                    colorScheme: 'inherit',
                     opacity: disabled ? 0.6 : 1,
                     cursor: disabled ? 'not-allowed' : 'default'
                 }}
@@ -268,12 +268,12 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
 
     return (
         <div style={{ position: 'relative', ...style }} ref={ref}>
-            {label && <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>{label}</label>}
+            {label && <label style={{ display: 'block', color: 'var(--text-muted, #9ca3af)', fontSize: '12px', marginBottom: '4px' }}>{label}</label>}
             <div
                 onClick={() => { if (!disabled) { setOpen(true); setTimeout(() => inputRef.current?.focus(), 50); } }}
                 style={{
-                    width: '100%', background: '#0f1117', border: `1px solid ${open ? '#6366f1' : '#374151'}`, borderRadius: '8px',
-                    padding: '0', color: '#f3f4f6', fontSize: '13px', boxSizing: 'border-box',
+                    width: '100%', background: 'var(--bg-primary, #0f1117)', border: `1px solid ${open ? '#6366f1' : 'var(--border-strong, #374151)'}`, borderRadius: '8px',
+                    padding: '0', color: 'var(--text-primary, #f3f4f6)', fontSize: '13px', boxSizing: 'border-box',
                     opacity: disabled ? 0.6 : 1, cursor: disabled ? 'not-allowed' : 'pointer',
                     display: 'flex', alignItems: 'center', position: 'relative', transition: 'border-color 0.2s',
                 }}
@@ -288,7 +288,7 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
                     disabled={disabled}
                     style={{
                         flex: 1, background: 'transparent', border: 'none', outline: 'none',
-                        color: '#f3f4f6', fontSize: '13px', padding: '8px 10px', boxSizing: 'border-box',
+                        color: 'var(--text-primary, #f3f4f6)', fontSize: '13px', padding: '8px 10px', boxSizing: 'border-box',
                         cursor: disabled ? 'not-allowed' : 'text',
                     }}
                 />
@@ -303,8 +303,8 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
             {open && (
                 <div ref={listRef} style={{
                     position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '4px',
-                    background: '#1a1d2e', border: '1px solid #374151', borderRadius: '8px',
-                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)', zIndex: 200,
+                    background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-strong, #374151)', borderRadius: '8px',
+                    boxShadow: 'var(--shadow-dropdown, 0 10px 25px -5px rgba(0, 0, 0, 0.5))', zIndex: 200,
                     maxHeight: '200px', overflowY: 'auto',
                 }}>
                     {filtered.length === 0 && (
@@ -319,9 +319,9 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
                                 onClick={() => handleSelect(o.value)}
                                 style={{
                                     padding: '8px 12px', fontSize: '13px', cursor: 'pointer',
-                                    color: isSelected ? '#a5b4fc' : '#d1d5db',
+                                    color: isSelected ? '#a5b4fc' : 'var(--text-secondary, #d1d5db)',
                                     background: isHighlighted ? 'rgba(99, 102, 241, 0.2)' : (isSelected ? 'rgba(99, 102, 241, 0.1)' : 'transparent'),
-                                    borderBottom: i === filtered.length - 1 ? 'none' : '1px solid #1e2133',
+                                    borderBottom: i === filtered.length - 1 ? 'none' : '1px solid var(--border-subtle, #1e2133)',
                                     transition: 'background 0.1s',
                                 }}
                                 onMouseEnter={() => setHighlightedIndex(i)}
@@ -343,13 +343,13 @@ export function GroupedSelect({ label, value, onChange, groups, style }: {
 }) {
     return (
         <div style={style}>
-            {label && <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>{label}</label>}
+            {label && <label style={{ display: 'block', color: 'var(--text-muted, #9ca3af)', fontSize: '12px', marginBottom: '4px' }}>{label}</label>}
             <select
                 value={value} onChange={e => onChange(e.target.value)}
                 style={{
-                    width: '100%', background: '#0f1117', border: '1px solid #374151', borderRadius: '8px',
-                    padding: '8px 10px', color: '#f3f4f6', fontSize: '13px', outline: 'none', boxSizing: 'border-box',
-                    colorScheme: 'dark'
+                    width: '100%', background: 'var(--bg-primary, #0f1117)', border: '1px solid var(--border-strong, #374151)', borderRadius: '8px',
+                    padding: '8px 10px', color: 'var(--text-primary, #f3f4f6)', fontSize: '13px', outline: 'none', boxSizing: 'border-box',
+                    colorScheme: 'inherit'
                 }}
             >
                 <option value="">— Sin posición —</option>
@@ -367,12 +367,12 @@ export function Modal({ title, children, onClose, wide }: { title: string; child
     return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
             <div style={{
-                background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: '16px',
+                background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-color, #2a2d3e)', borderRadius: '16px',
                 width: wide ? 'min(960px, 95vw)' : 'min(520px, 95vw)',
                 maxHeight: '90vh', overflow: 'auto', padding: '24px',
             }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <h2 style={{ color: '#f3f4f6', fontSize: '17px', fontWeight: 700, margin: 0 }}>{title}</h2>
+                    <h2 style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: '17px', fontWeight: 700, margin: 0 }}>{title}</h2>
                     <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '20px' }}>✕</button>
                 </div>
                 {children}
@@ -407,13 +407,13 @@ export function PageLoader({ text = 'Cargando...', minHeight = '350px' }: { text
             height: '100%',
             width: '100%',
             background: 'transparent',
-            color: '#e6e1e5',
+            color: 'var(--text-primary, #e6e1e5)',
             fontFamily: 'Roboto, system-ui, sans-serif'
         }}>
             <Spinner size="40px" padding="0" />
             <div style={{
                 fontSize: '12px',
-                color: '#CAC4D0',
+                color: 'var(--text-muted, #CAC4D0)',
                 letterSpacing: '2px',
                 textTransform: 'uppercase',
                 fontWeight: 700,
@@ -443,15 +443,15 @@ export function Table({ cols, rows, loading, minWidth = '100%', onRowClick }: {
         <div style={{ width: '100%', overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth }}>
                 <thead>
-                    <tr style={{ borderBottom: '1px solid #2a2d3e' }}>
+                    <tr style={{ borderBottom: '1px solid var(--border-color, #2a2d3e)' }}>
                         {cols.map((c, i) => (
-                            <th key={i} style={{ padding: '8px 10px', color: '#6b7280', fontSize: '11px', fontWeight: 600, textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{c}</th>
+                            <th key={i} style={{ padding: '8px 10px', color: 'var(--text-subtle, #6b7280)', fontSize: '11px', fontWeight: 600, textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{c}</th>
                         ))}
                     </tr>
                 </thead>
                 <tbody>
                     {rows.length === 0 && !loading && (
-                        <tr><td colSpan={cols.length} style={{ padding: '48px', textAlign: 'center', color: '#4b5563', fontSize: '14px' }}>No hay datos disponibles</td></tr>
+                        <tr><td colSpan={cols.length} style={{ padding: '48px', textAlign: 'center', color: 'var(--text-dimmed, #4b5563)', fontSize: '14px' }}>No hay datos disponibles</td></tr>
                     )}
                     {loading && (
                         <tr><td colSpan={cols.length}><Spinner /></td></tr>
@@ -461,7 +461,7 @@ export function Table({ cols, rows, loading, minWidth = '100%', onRowClick }: {
                             key={i} 
                             onClick={() => onRowClick && onRowClick(i)}
                             style={{ 
-                                borderBottom: '1px solid #1e2133', 
+                                borderBottom: '1px solid var(--border-subtle, #1e2133)', 
                                 background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
                                 cursor: onRowClick ? 'pointer' : 'default',
                                 transition: 'background 0.2s'
@@ -470,7 +470,7 @@ export function Table({ cols, rows, loading, minWidth = '100%', onRowClick }: {
                             onMouseLeave={e => { if (onRowClick) e.currentTarget.style.background = i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)'; }}
                         >
                             {row.map((cell, j) => (
-                                <td key={j} style={{ padding: '8px 10px', color: '#d1d5db', fontSize: '13px' }}>{cell}</td>
+                                <td key={j} style={{ padding: '8px 10px', color: 'var(--text-secondary, #d1d5db)', fontSize: '13px' }}>{cell}</td>
                             ))}
                         </tr>
                     ))}
@@ -496,14 +496,14 @@ export function ActionMenu({ options }: { options: { label: string; onClick: () 
         <div ref={menuRef} style={{ position: 'relative' }}>
             <button 
                 onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
-                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid #2a2d3e', borderRadius: '4px', cursor: 'pointer', padding: '4px 8px', color: '#9ca3af' }}
+                style={{ background: 'var(--bg-action-trigger, rgba(255,255,255,0.05))', border: '1px solid var(--border-color, #2a2d3e)', borderRadius: '4px', cursor: 'pointer', padding: '4px 8px', color: 'var(--text-muted, #9ca3af)' }}
             >
                 •••
             </button>
             {open && (
                 <div style={{
                     position: 'absolute', right: 0, top: '100%', marginTop: '4px',
-                    background: '#1a1d2e', border: '1px solid #374151', borderRadius: '8px',
+                    background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-strong, #374151)', borderRadius: '8px',
                     boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.4)', zIndex: 100, minWidth: '160px',
                     overflow: 'hidden'
                 }}>
@@ -513,7 +513,7 @@ export function ActionMenu({ options }: { options: { label: string; onClick: () 
                             onClick={(e) => { e.stopPropagation(); opt.onClick(); setOpen(false); }}
                             style={{ 
                                 padding: '10px 16px', fontSize: '13px', color: opt.color || '#d1d5db', 
-                                cursor: 'pointer', borderBottom: i === options.length - 1 ? 'none' : '1px solid #2a2d3e',
+                                cursor: 'pointer', borderBottom: i === options.length - 1 ? 'none' : '1px solid var(--border-color, #2a2d3e)',
                                 display: 'flex', alignItems: 'center', gap: '8px'
                             }}
                             className="hoverable-option"
@@ -545,7 +545,7 @@ export function ResponsiveTable({
     const isMobile = useIsMobile();
     
     if (loading) return <Spinner />;
-    if (data.length === 0) return <div style={{ padding: '60px', textAlign: 'center', color: '#4b5563', border: '2px dashed #1e2133', borderRadius: '16px' }}>No hay registros para mostrar</div>;
+    if (data.length === 0) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-dimmed, #4b5563)', border: '2px dashed var(--border-subtle, #1e2133)', borderRadius: '16px' }}>No hay registros para mostrar</div>;
 
     if (isMobile) {
         return (
@@ -582,8 +582,8 @@ export function SearchBar({ value, onChange, placeholder }: { value: string; onC
             <input
                 value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder ?? 'Buscar...'}
                 style={{
-                    background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: '8px',
-                    padding: '8px 12px 8px 34px', color: '#f3f4f6', fontSize: '13px', outline: 'none', width: '240px',
+                    background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-color, #2a2d3e)', borderRadius: '8px',
+                    padding: '8px 12px 8px 34px', color: 'var(--text-primary, #f3f4f6)', fontSize: '13px', outline: 'none', width: '240px',
                 }}
             />
         </div>
@@ -596,8 +596,8 @@ export function InfoTooltip({ text }: { text: string }) {
             title={text} 
             style={{ 
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                width: '14px', height: '14px', borderRadius: '50%', background: '#374151',
-                color: '#9ca3af', fontSize: '10px', cursor: 'help', marginLeft: '6px'
+                width: '14px', height: '14px', borderRadius: '50%', background: 'var(--border-strong, #374151)',
+                color: 'var(--text-muted, #9ca3af)', fontSize: '10px', cursor: 'help', marginLeft: '6px'
             }}
         >?</span>
     );
@@ -716,8 +716,8 @@ export function EditableCell({ value, onSave, numeric, style, inputStyle }: { va
                 onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false); }}
                 disabled={saving}
                 style={{
-                    width: '100%', minWidth: '60px', background: '#0f1117', border: '1px solid #6366f1',
-                    borderRadius: '6px', padding: '3px 8px', color: '#f3f4f6',
+                    width: '100%', minWidth: '60px', background: 'var(--bg-primary, #0f1117)', border: '1px solid #6366f1',
+                    borderRadius: '6px', padding: '3px 8px', color: 'var(--text-primary, #f3f4f6)',
                     fontSize: '13px', outline: 'none',
                     paddingRight: saving ? '24px' : '8px',
                     ...inputStyle
@@ -794,8 +794,8 @@ export function HelpTooltip({ title, content, style }: { title?: string; content
                 slotProps={{
                     paper: {
                         style: {
-                            background: '#1a1d2e',
-                            border: '1px solid #374151',
+                            background: 'var(--bg-secondary, #1a1d2e)',
+                            border: '1px solid var(--border-strong, #374151)',
                             borderRadius: '8px',
                             padding: '12px',
                             maxWidth: '280px',
@@ -805,11 +805,11 @@ export function HelpTooltip({ title, content, style }: { title?: string; content
                 }}
             >
                 {title && (
-                    <MuiTypography style={{ color: '#f3f4f6', fontWeight: 700, fontSize: '13px', marginBottom: '4px', fontFamily: 'inherit' }}>
+                    <MuiTypography style={{ color: 'var(--text-primary, #f3f4f6)', fontWeight: 700, fontSize: '13px', marginBottom: '4px', fontFamily: 'inherit' }}>
                         {title}
                     </MuiTypography>
                 )}
-                <MuiTypography style={{ color: '#9ca3af', fontSize: '12px', lineHeight: '1.4', margin: 0, fontFamily: 'inherit' }}>
+                <MuiTypography style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px', lineHeight: '1.4', margin: 0, fontFamily: 'inherit' }}>
                     {content}
                 </MuiTypography>
             </MuiPopover>

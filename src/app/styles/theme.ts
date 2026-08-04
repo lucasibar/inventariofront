@@ -1,10 +1,39 @@
 import { createTheme } from '@mui/material/styles';
 
-export const theme = createTheme({
+const sharedComponents = {
+    MuiButton: {
+        styleOverrides: {
+            root: {
+                borderRadius: '20px',
+                textTransform: 'none' as const,
+            },
+        },
+    },
+    MuiPaper: {
+        defaultProps: {
+            elevation: 0,
+            variant: 'outlined' as const,
+        },
+        styleOverrides: {
+            root: {
+                borderRadius: '12px',
+            },
+        },
+    },
+};
+
+const sharedTypography = {
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    h1: { fontSize: '2.5rem', fontWeight: 500 },
+    h2: { fontSize: '2rem', fontWeight: 500 },
+    body1: { fontSize: '1rem', lineHeight: 1.5 },
+};
+
+export const darkTheme = createTheme({
     palette: {
         mode: 'dark',
         primary: {
-            main: '#D0BCFF', // MD3 Light Purple for Dark Theme
+            main: '#D0BCFF',
             light: '#EADDFF',
             dark: '#381E72',
             contrastText: '#381E72',
@@ -22,33 +51,39 @@ export const theme = createTheme({
         text: {
             primary: '#E6E1E5',
             secondary: '#CAC4D0',
-        }
-    },
-    typography: {
-        fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-        h1: { fontSize: '2.5rem', fontWeight: 500 },
-        h2: { fontSize: '2rem', fontWeight: 500 },
-        body1: { fontSize: '1rem', lineHeight: 1.5 },
-    },
-    components: {
-        MuiButton: {
-            styleOverrides: {
-                root: {
-                    borderRadius: '20px', // Rounder buttons for MD3 feel
-                    textTransform: 'none',
-                },
-            },
-        },
-        MuiPaper: {
-            defaultProps: {
-                elevation: 0,
-                variant: 'outlined',
-            },
-            styleOverrides: {
-                root: {
-                    borderRadius: '12px',
-                },
-            },
         },
     },
+    typography: sharedTypography,
+    components: sharedComponents,
 });
+
+export const lightTheme = createTheme({
+    palette: {
+        mode: 'light',
+        primary: {
+            main: '#6366f1',
+            light: '#818cf8',
+            dark: '#4f46e5',
+            contrastText: '#ffffff',
+        },
+        secondary: {
+            main: '#7c3aed',
+            light: '#a78bfa',
+            dark: '#5b21b6',
+            contrastText: '#ffffff',
+        },
+        background: {
+            default: '#f0f2f5',
+            paper: '#ffffff',
+        },
+        text: {
+            primary: '#1e293b',
+            secondary: '#64748b',
+        },
+    },
+    typography: sharedTypography,
+    components: sharedComponents,
+});
+
+// Keep backward compatibility
+export const theme = darkTheme;

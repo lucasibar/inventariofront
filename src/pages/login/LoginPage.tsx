@@ -17,6 +17,9 @@ const LoginPage: React.FC = () => {
     const user = useSelector((state: any) => state.auth.user);
     const [login, { isLoading }] = useLoginMutation();
 
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const isLight = currentTheme === 'light';
+
     const getLandingPage = (role?: string) => {
         const r = role?.toUpperCase();
         if (r === 'COMPRAS') return '/dashboard';
@@ -59,7 +62,7 @@ const LoginPage: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'radial-gradient(circle at top right, #1e1b4b 0%, #0f1117 100%)',
+            background: isLight ? 'radial-gradient(circle at top right, #e0e7ff 0%, #f0f2f5 100%)' : 'radial-gradient(circle at top right, #1e1b4b 0%, #0f1117 100%)',
             padding: '20px'
         }}>
             <div style={{ width: '100%', maxWidth: '400px', animation: 'fadeIn 0.6s ease-out' }}>
@@ -75,11 +78,11 @@ const LoginPage: React.FC = () => {
                     }}>
                         WMS
                     </div>
-                    <h1 style={{ color: '#f3f4f6', fontSize: '24px', margin: 0, fontWeight: 700 }}>Inventario Pro</h1>
-                    <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '8px' }}>Ingresa tus credenciales para continuar</p>
+                    <h1 style={{ color: isLight ? '#1e293b' : '#f3f4f6', fontSize: '24px', margin: 0, fontWeight: 700 }}>Inventario Pro</h1>
+                    <p style={{ color: isLight ? '#64748b' : '#6b7280', fontSize: '14px', marginTop: '8px' }}>Ingresa tus credenciales para continuar</p>
                 </div>
 
-                <Card style={{ padding: '32px', border: '1px solid rgba(99, 102, 241, 0.2)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)' }}>
+                <Card style={{ padding: '32px', border: isLight ? '1px solid #e2e8f0' : '1px solid rgba(99, 102, 241, 0.2)', boxShadow: isLight ? '0 20px 25px -5px rgba(0, 0, 0, 0.08)' : '0 20px 25px -5px rgba(0, 0, 0, 0.5)' }}>
                     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
                         {errorMsg && (
@@ -121,14 +124,14 @@ const LoginPage: React.FC = () => {
                         </Btn>
 
                         {isLoading && (
-                            <div style={{ color: '#9ca3af', fontSize: '12px', textAlign: 'center', marginTop: '4px', lineHeight: '1.4' }}>
+                            <div style={{ color: isLight ? '#64748b' : '#9ca3af', fontSize: '12px', textAlign: 'center', marginTop: '4px', lineHeight: '1.4' }}>
                                 ℹ️ El servidor gratuito de Render tarda aproximadamente 50 segundos en despertar tras un periodo de inactividad. Por favor, aguarda un instante...
                             </div>
                         )}
                     </form>
                 </Card>
 
-                <div style={{ textAlign: 'center', marginTop: '24px', color: '#4b5563', fontSize: '12px' }}>
+                <div style={{ textAlign: 'center', marginTop: '24px', color: isLight ? '#94a3b8' : '#4b5563', fontSize: '12px' }}>
                     &copy; El mejor sistema de gestión de inventarios. Todos los derechos reservados.
                 </div>
             </div>

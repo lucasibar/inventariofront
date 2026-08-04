@@ -7,9 +7,30 @@
   --bg-primary: #0f1117;
   --bg-secondary: #1a1d2e;
   --bg-tertiary: #141622;
+  --bg-accordion: #131625;
   --border-color: #2a2d3e;
+  --border-secondary: #374151;
+  --border-table: #1e2133;
   --text-primary: #f3f4f6;
+  --text-secondary: #d1d5db;
   --text-muted: #9ca3af;
+  --text-subtle: #6b7280;
+  --text-dimmed: #4b5563;
+  --text-mui-primary: #e6e1e5;
+  --text-mui-secondary: #CAC4D0;
+  --text-accent: #a5b4fc;
+
+  --border-strong: #374151;
+  --border-subtle: #1e2133;
+  --bg-action-trigger: rgba(255,255,255,0.05);
+  --shadow-dropdown: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+
+  --bg-alt-row: rgba(255,255,255,0.01);
+  --bg-hover-row: rgba(255,255,255,0.03);
+  --bg-action-btn: rgba(255,255,255,0.05);
+  --bg-btn-default: #1a1a1a;
+
+  --shadow-default: rgba(0,0,0,0.4);
 
   color: var(--text-primary);
   background-color: var(--bg-primary);
@@ -22,12 +43,33 @@
 
 [data-theme='light'] {
   color-scheme: light;
-  --bg-primary: #f8fafc;
+  --bg-primary: #f0f2f5;
   --bg-secondary: #ffffff;
-  --bg-tertiary: #f1f5f9;
+  --bg-tertiary: #f8f9fb;
+  --bg-accordion: #f8f9fb;
   --border-color: #e2e8f0;
-  --text-primary: #0f172a;
+  --border-secondary: #cbd5e1;
+  --border-table: #f1f5f9;
+  --text-primary: #1e293b;
+  --text-secondary: #334155;
   --text-muted: #64748b;
+  --text-subtle: #94a3b8;
+  --text-dimmed: #94a3b8;
+  --text-mui-primary: #1e293b;
+  --text-mui-secondary: #475569;
+  --text-accent: #6366f1;
+
+  --border-strong: #cbd5e1;
+  --border-subtle: #f1f5f9;
+  --bg-action-trigger: rgba(0,0,0,0.05);
+  --shadow-dropdown: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+
+  --bg-alt-row: rgba(0,0,0,0.02);
+  --bg-hover-row: rgba(0,0,0,0.04);
+  --bg-action-btn: rgba(0,0,0,0.05);
+  --bg-btn-default: #e2e8f0;
+
+  --shadow-default: rgba(0,0,0,0.08);
 
   color: var(--text-primary);
   background-color: var(--bg-primary);
@@ -64,7 +106,7 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--bg-btn-default);
   cursor: pointer;
   transition: border-color 0.25s;
 }
@@ -78,4 +120,76 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-/* Dark mode forced — no light mode override */
+/* Global element overrides for light mode */
+[data-theme='light'] body {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme='light'] input,
+[data-theme='light'] select,
+[data-theme='light'] textarea {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-secondary) !important;
+  color: var(--text-primary) !important;
+  color-scheme: light !important;
+}
+
+/* Table overrides */
+[data-theme='light'] th,
+[data-theme='light'] td {
+  border-color: var(--border-table) !important;
+}
+
+[data-theme='light'] td {
+  color: var(--text-secondary);
+}
+
+[data-theme='light'] th {
+  color: var(--text-primary);
+}
+
+[data-theme='light'] tr {
+  border-color: var(--border-table) !important;
+}
+
+/* Scrollbar overrides */
+[data-theme='light'] ::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1 !important;
+}
+
+[data-theme='light'] ::-webkit-scrollbar-track {
+  background-color: transparent !important;
+}
+
+/* Transition overrides */
+[data-theme='light'] div,
+[data-theme='light'] aside,
+[data-theme='light'] header,
+[data-theme='light'] main,
+[data-theme='light'] nav,
+[data-theme='light'] section,
+[data-theme='light'] article,
+[data-theme='light'] footer,
+[data-theme='light'] table,
+[data-theme='light'] thead,
+[data-theme='light'] tbody,
+[data-theme='light'] tr,
+[data-theme='light'] td,
+[data-theme='light'] th,
+[data-theme='light'] input,
+[data-theme='light'] select,
+[data-theme='light'] textarea,
+[data-theme='light'] button,
+[data-theme='light'] span,
+[data-theme='light'] p,
+[data-theme='light'] h1,
+[data-theme='light'] h2,
+[data-theme='light'] h3,
+[data-theme='light'] h4,
+[data-theme='light'] h5,
+[data-theme='light'] h6,
+[data-theme='light'] label,
+[data-theme='light'] a {
+  transition: background-color 0.2s ease, color 0.15s ease, border-color 0.2s ease;
+}

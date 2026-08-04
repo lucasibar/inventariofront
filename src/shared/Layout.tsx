@@ -532,14 +532,14 @@ export default function Layout() {
             }}>
                 <div style={{ padding: '16px 12px', borderBottom: '1px solid var(--border-color, #2a2d3e)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        {(!collapsed || isMobile) && <span style={{ color: '#a5b4fc', fontWeight: 700, fontSize: '15px', whiteSpace: 'nowrap' }}>📦 WMS INVENTARIO</span>}
-                        {(!collapsed || isMobile) && <span style={{ color: '#6b7280', fontSize: '10px', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '1px' }}>{role}</span>}
+                        {(!collapsed || isMobile) && <span style={{ color: theme === 'light' ? '#6366f1' : '#a5b4fc', fontWeight: 700, fontSize: '15px', whiteSpace: 'nowrap' }}>📦 WMS INVENTARIO</span>}
+                        {(!collapsed || isMobile) && <span style={{ color: theme === 'light' ? '#94a3b8' : '#6b7280', fontSize: '10px', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '1px' }}>{role}</span>}
                     </div>
                     {!isMobile && (
                         <button
                             type="button"
                             onClick={() => setCollapsed(!collapsed)}
-                            style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '18px', padding: '2px 6px' }}
+                            style={{ background: 'none', border: 'none', color: theme === 'light' ? '#94a3b8' : '#6b7280', cursor: 'pointer', fontSize: '18px', padding: '2px 6px' }}
                         >
                             {collapsed ? '›' : '‹'}
                         </button>
@@ -562,7 +562,7 @@ export default function Layout() {
                                             display: 'flex', alignItems: 'center', gap: '8px',
                                             width: '100%', padding: '8px 14px',
                                             background: 'transparent', border: 'none',
-                                            color: isExpanded || hasActiveChild ? '#a5b4fc' : '#6b7280',
+                                            color: isExpanded || hasActiveChild ? (theme === 'light' ? '#6366f1' : '#a5b4fc') : (theme === 'light' ? '#64748b' : '#6b7280'),
                                             fontSize: '11px', fontWeight: 700,
                                             textTransform: 'uppercase', letterSpacing: '1px',
                                             cursor: 'pointer', transition: 'all 0.15s'
@@ -579,8 +579,8 @@ export default function Layout() {
                                 {collapsed && !isMobile && (
                                     <div style={{
                                         display: 'flex', justifyContent: 'center',
-                                        padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.05)',
-                                        color: hasActiveChild ? '#a5b4fc' : '#4b5563'
+                                        padding: '12px 0', borderBottom: theme === 'light' ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(255,255,255,0.05)',
+                                        color: hasActiveChild ? (theme === 'light' ? '#6366f1' : '#a5b4fc') : (theme === 'light' ? '#94a3b8' : '#4b5563')
                                     }}>
                                         <span style={{ fontSize: '20px' }}>{group.icon}</span>
                                     </div>
@@ -625,7 +625,7 @@ export default function Layout() {
                                                                     paddingRight: isMobile ? '20px' : '14px',
                                                                     paddingLeft: '32px',
                                                                     background: 'transparent', border: 'none',
-                                                                    color: isSubExpanded || hasActiveSubChild ? '#a5b4fc' : '#9ca3af',
+                                                                    color: isSubExpanded || hasActiveSubChild ? (theme === 'light' ? '#6366f1' : '#a5b4fc') : (theme === 'light' ? '#4b5563' : '#9ca3af'),
                                                                     fontSize: isMobile ? '15px' : '13px',
                                                                     cursor: 'pointer', transition: 'all 0.15s',
                                                                     width: '100%', textAlign: 'left'
@@ -686,7 +686,7 @@ export default function Layout() {
                         style={({ isActive }) => ({
                             ...navStyle(isActive, isMobile, theme === 'light'),
                             marginTop: '12px',
-                            borderTop: '1px solid #2a2d3e',
+                            borderTop: '1px solid var(--border-color, #2a2d3e)',
                             paddingTop: isMobile ? '16px' : '12px',
                         })}
                     >
@@ -696,7 +696,7 @@ export default function Layout() {
                                 <span style={{
                                     position: 'absolute', top: '-2px', right: '-4px',
                                     width: '9px', height: '9px', borderRadius: '50%',
-                                    background: '#ef4444', border: '2px solid #1a1d2e',
+                                    background: '#ef4444', border: theme === 'light' ? '2px solid #ffffff' : '2px solid #1a1d2e',
                                     animation: 'pulse-dot 2s ease-in-out infinite',
                                 }} />
                             )}
