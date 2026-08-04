@@ -173,15 +173,15 @@ const navGroups: NavGroup[] = [
     }
 ];
 
-const navStyle = (isActive: boolean, isMobile: boolean): React.CSSProperties => ({
+const navStyle = (isActive: boolean, isMobile: boolean, isLight: boolean = false): React.CSSProperties => ({
     display: 'flex', alignItems: 'center', gap: '12px',
     paddingTop: isMobile ? '14px' : '10px',
     paddingBottom: isMobile ? '14px' : '10px',
     paddingRight: isMobile ? '20px' : '14px',
     paddingLeft: isMobile ? '20px' : '14px',
     textDecoration: 'none',
-    color: isActive ? '#a5b4fc' : '#9ca3af',
-    background: isActive ? 'rgba(165,180,252,0.08)' : 'transparent',
+    color: isActive ? '#6366f1' : (isLight ? '#4b5563' : '#9ca3af'),
+    background: isActive ? (isLight ? 'rgba(99,102,241,0.12)' : 'rgba(165,180,252,0.08)') : 'transparent',
     borderLeft: isActive ? '3px solid #6366f1' : '3px solid transparent',
     fontSize: isMobile ? '15px' : '13px', whiteSpace: 'nowrap',
     transition: 'all 0.15s',
@@ -205,6 +205,20 @@ export default function Layout() {
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [newPasswordVal, setNewPasswordVal] = useState('');
     const [changePassword] = useChangeMyPasswordMutation();
+    const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+        return (localStorage.getItem('app-theme') as 'dark' | 'light') || 'dark';
+    });
+
+    const toggleTheme = () => {
+        const nextTheme = theme === 'dark' ? 'light' : 'dark';
+        setTheme(nextTheme);
+        localStorage.setItem('app-theme', nextTheme);
+        document.documentElement.setAttribute('data-theme', nextTheme);
+    };
+
+    useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+    }, [theme]);
 
     const { data: alerts = EMPTY_ALERTS } = useGetAlertsQuery(undefined, { pollingInterval: 120000 });
     const hasUnread = useSelector(selectHasUnreadNotifications);
@@ -362,7 +376,14 @@ export default function Layout() {
 
 
     return (
-        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', height: '100vh', background: '#0f1117', color: '#f3f4f6' }}>
+        <div style={{
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            height: '100vh',
+            background: 'var(--bg-primary, #0f1117)',
+            color: 'var(--text-primary, #f3f4f6)',
+            transition: 'background 0.3s ease, color 0.3s ease'
+        }}>
             {isNavigating && (
                 <div style={{
                     position: 'fixed',
@@ -386,7 +407,7 @@ export default function Layout() {
             )}
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: #2a2d3e; borderRadius: 10px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border-color, #2a2d3e); borderRadius: 10px; }
                 .nav-overlay {
                     position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 998;
                     opacity: ${mobileMenuOpen ? 1 : 0}; visibility: ${mobileMenuOpen ? 'visible' : 'hidden'};
@@ -401,7 +422,7 @@ export default function Layout() {
             {/* Mobile Header */}
             {isMobile && !['/mantenimiento/dashboard', '/deposito/dashboard'].includes(location.pathname) && (
                 <header style={{
-                    height: '56px', background: '#1a1d2e', borderBottom: '1px solid #2a2d3e',
+                    height: '56px', background: 'var(--bg-secondary, #1a1d2e)', borderBottom: '1px solid var(--border-color, #2a2d3e)',
                     display: 'flex', alignItems: 'center', padding: '0 12px', zIndex: 997,
                     justifyContent: 'space-between', flexShrink: 0
                 }}>
@@ -409,7 +430,7 @@ export default function Layout() {
                         <button
                             onClick={() => setMobileMenuOpen(true)}
                             style={{
-                                background: 'transparent', border: 'none', color: '#f3f4f6',
+                                background: 'transparent', border: 'none', color: 'var(--text-primary, #f3f4f6)',
                                 fontSize: '24px', cursor: 'pointer', padding: '4px',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 position: 'relative',
@@ -427,7 +448,7 @@ export default function Layout() {
                         </button>
                         <span style={{
                             fontWeight: 800,
-                            color: '#a5b4fc',
+                            color: '#6366f1',
                             fontSize: '15px',
                             letterSpacing: '0.2px',
                             whiteSpace: 'nowrap',
@@ -502,14 +523,14 @@ export default function Layout() {
                 left: (isMobile || location.pathname === '/mantenimiento/monitoreo') && !mobileMenuOpen ? '-280px' : '0',
                 top: 0, bottom: 0,
                 width: isMobile || location.pathname === '/mantenimiento/monitoreo' ? '280px' : (collapsed ? '60px' : '220px'),
-                background: 'linear-gradient(180deg, #1a1d2e 0%, #141622 100%)',
-                borderRight: '1px solid #2a2d3e',
+                background: theme === 'light' ? 'linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%)' : 'linear-gradient(180deg, #1a1d2e 0%, #141622 100%)',
+                borderRight: '1px solid var(--border-color, #2a2d3e)',
                 display: 'flex', flexDirection: 'column',
                 transition: 'all 0.3s ease',
                 zIndex: 999,
                 flexShrink: 0,
             }}>
-                <div style={{ padding: '16px 12px', borderBottom: '1px solid #2a2d3e', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ padding: '16px 12px', borderBottom: '1px solid var(--border-color, #2a2d3e)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         {(!collapsed || isMobile) && <span style={{ color: '#a5b4fc', fontWeight: 700, fontSize: '15px', whiteSpace: 'nowrap' }}>📦 WMS INVENTARIO</span>}
                         {(!collapsed || isMobile) && <span style={{ color: '#6b7280', fontSize: '10px', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '1px' }}>{role}</span>}
@@ -573,7 +594,7 @@ export default function Layout() {
                                                     key={to}
                                                     to={to}
                                                     style={({ isActive }) => ({
-                                                        ...navStyle(isActive, isMobile),
+                                                        ...navStyle(isActive, isMobile, theme === 'light'),
                                                         paddingLeft: '14px',
                                                         opacity: !hasActiveChild ? 0.6 : 1
                                                     })}
@@ -623,7 +644,7 @@ export default function Layout() {
                                                                             key={to}
                                                                             to={to}
                                                                             style={({ isActive }) => ({
-                                                                                ...navStyle(isActive, isMobile),
+                                                                                ...navStyle(isActive, isMobile, theme === 'light'),
                                                                                 paddingLeft: '48px',
                                                                             })}
                                                                         >
@@ -642,7 +663,7 @@ export default function Layout() {
                                                             key={std.to}
                                                             to={std.to}
                                                             style={({ isActive }) => ({
-                                                                ...navStyle(isActive, isMobile),
+                                                                ...navStyle(isActive, isMobile, theme === 'light'),
                                                                 paddingLeft: '32px',
                                                             })}
                                                         >
@@ -663,7 +684,7 @@ export default function Layout() {
                     <NavLink
                         to="/notificaciones"
                         style={({ isActive }) => ({
-                            ...navStyle(isActive, isMobile),
+                            ...navStyle(isActive, isMobile, theme === 'light'),
                             marginTop: '12px',
                             borderTop: '1px solid #2a2d3e',
                             paddingTop: isMobile ? '16px' : '12px',
@@ -705,7 +726,7 @@ export default function Layout() {
                     <NavLink
                         to="/ayuda"
                         style={({ isActive }) => ({
-                            ...navStyle(isActive, isMobile),
+                            ...navStyle(isActive, isMobile, theme === 'light'),
                             marginTop: '4px',
                             borderTop: 'none',
                             paddingTop: isMobile ? '12px' : '10px',
@@ -723,7 +744,21 @@ export default function Layout() {
 
 
                 {/* Bottom Actions */}
-                <div style={{ borderTop: '1px solid #2a2d3e', padding: '8px 0' }}>
+                <div style={{ borderTop: '1px solid var(--border-color, #2a2d3e)', padding: '8px 0' }}>
+                    <button
+                        type="button"
+                        onClick={toggleTheme}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: '12px',
+                            padding: isMobile ? '16px 20px' : '10px 14px', width: '100%',
+                            background: 'transparent', border: 'none',
+                            color: theme === 'light' ? '#374151' : '#9ca3af', fontSize: isMobile ? '15px' : '13px',
+                            cursor: 'pointer', transition: 'all 0.15s',
+                        }}
+                    >
+                        <span style={{ fontSize: isMobile ? '20px' : '16px', minWidth: '24px' }}>{theme === 'dark' ? '☀️' : '🌙'}</span>
+                        {(!collapsed || isMobile) && <span>Modo {theme === 'dark' ? 'Claro' : 'Oscuro'}</span>}
+                    </button>
                     <button
                         type="button"
                         onClick={() => setShowPasswordModal(true)}
@@ -731,12 +766,12 @@ export default function Layout() {
                             display: 'flex', alignItems: 'center', gap: '12px',
                             padding: isMobile ? '16px 20px' : '10px 14px', width: '100%',
                             background: 'transparent', border: 'none',
-                            color: '#9ca3af', fontSize: isMobile ? '15px' : '13px',
+                            color: theme === 'light' ? '#374151' : '#9ca3af', fontSize: isMobile ? '15px' : '13px',
                             cursor: 'pointer', transition: 'all 0.15s',
                         }}
                     >
                         <span style={{ fontSize: isMobile ? '20px' : '16px', minWidth: '24px' }}>🔑</span>
-                        {(!collapsed || isMobile) && <span>Cambiar Clave</span>}
+                        {(!collapsed || isMobile) && <span>Cambiar Contraseña</span>}
                     </button>
                     <button
                         type="button"
@@ -745,8 +780,9 @@ export default function Layout() {
                             display: 'flex', alignItems: 'center', gap: '12px',
                             padding: isMobile ? '16px 20px' : '10px 14px', width: '100%',
                             background: 'transparent', border: 'none',
-                            color: '#9ca3af', fontSize: isMobile ? '15px' : '13px',
+                            color: '#ef4444', fontSize: isMobile ? '15px' : '13px',
                             cursor: 'pointer', transition: 'all 0.15s',
+                            fontWeight: 600,
                         }}
                     >
                         <span style={{ fontSize: isMobile ? '20px' : '16px', minWidth: '24px' }}>🚪</span>
