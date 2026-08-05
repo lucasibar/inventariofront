@@ -34,8 +34,8 @@ export default function WorkspaceTasksPage() {
                                 </div>
                                 <h4 style={{ margin: '0 0 4px', color: 'var(--text-primary, #f3f4f6)' }}>{task.item?.descripcion}</h4>
                                 <div style={{ fontSize: '13px', color: 'var(--text-muted, #9ca3af)' }}>
-                                    Cantidad: <span style={{ color: '#fff', fontWeight: 600 }}>{task.qty}</span> | 
-                                    Lote: <span style={{ color: '#fff' }}>{task.batch?.lotNumber || 'Sin Lote'}</span>
+                                    Cantidad: <span style={{ color: 'var(--text-white-dynamic, #fff)', fontWeight: 600 }}>{task.qty}</span> | 
+                                    Lote: <span style={{ color: 'var(--text-white-dynamic, #fff)' }}>{task.batch?.lotNumber || 'Sin Lote'}</span>
                                 </div>
                                 
                                 <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--bg-primary, #0f1117)', padding: '12px', borderRadius: '8px' }}>

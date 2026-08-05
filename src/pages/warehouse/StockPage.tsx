@@ -398,7 +398,7 @@ export default function StockPage() {
                 .material-header { padding: 14px 16px; background: var(--bg-alt-row, rgba(255,255,255,0.01)); }
                 .material-title-line { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
                 .positions-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-                .positions-table th { text-align: left; padding: 10px 8px; color: #9ca3af; font-weight: 700; border-bottom: 1px solid var(--border-color, #2a2d3e); background: var(--bg-alt-row, rgba(0,0,0,0.2)); text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; }
+                .positions-table th { text-align: left; padding: 10px 8px; color: var(--text-muted, #9ca3af); font-weight: 700; border-bottom: 1px solid var(--border-color, #2a2d3e); background: var(--bg-alt-row, rgba(0,0,0,0.2)); text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; }
                 .positions-table td { padding: 8px; border-bottom: 1px solid var(--border-color, #23263a); }
                 .metrics-banner { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 12px; background: rgba(99, 102, 241, 0.05); border: 1px solid var(--border-color, #2a2d3e); border-radius: 12px; margin-bottom: 12px; }
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -664,7 +664,7 @@ export default function StockPage() {
                                     group.supplier?.name || 'Sin proveedor',
                                     `${group.metrics.kilos.toLocaleString('es-AR', { minimumFractionDigits: 1 })} ${group.item.unidadPrincipal || 'kg'}`,
                                     group.metrics.units > 0 ? `${group.metrics.units.toLocaleString('es-AR')} ${group.item.unidadSecundaria || 'un'}` : '-',
-                                    <span key="loc" style={{ color: '#94a3b8', fontSize: '12px' }}>{locationCodes}</span>,
+                                    <span key="loc" style={{ color: 'var(--text-subtle, #94a3b8)', fontSize: '12px' }}>{locationCodes}</span>,
                                     <Btn key="b" small variant="secondary" onClick={() => setDetailGroupId(group.item.id)}>
                                         🔍 Ver Lotes
                                     </Btn>

@@ -121,7 +121,7 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                     <Typography 
                         variant="h5" 
                         onClick={() => navigate('/mantenimiento/buscador', { state: { machine, plantId: machine.plantId } })}
-                        sx={{ fontWeight: 900, color: '#fff', lineHeight: 1, cursor: 'pointer', '&:hover': { color: '#3b82f6' } }}
+                        sx={{ fontWeight: 900, color: 'var(--text-white-dynamic, #fff)', lineHeight: 1, cursor: 'pointer', '&:hover': { color: '#3b82f6' } }}
                     >
                         {machine.number}
                     </Typography>
@@ -138,7 +138,7 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                         anchorEl={anchorElMechanic}
                         open={Boolean(anchorElMechanic)}
                         onClose={() => setAnchorElMechanic(null)}
-                        PaperProps={{ sx: { bgcolor: '#1a1d24', color: 'white', border: '1px solid var(--border-strong, #374151)', maxHeight: 300 } }}
+                        PaperProps={{ sx: { bgcolor: '#1a1d24', color: 'var(--text-white-dynamic, white)', border: '1px solid var(--border-strong, #374151)', maxHeight: 300 } }}
                     >
                         {responsables.map(r => (
                             <MenuItem 
@@ -187,7 +187,7 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                                     anchorEl={anchorElStatus}
                                     open={Boolean(anchorElStatus)}
                                     onClose={() => setAnchorElStatus(null)}
-                                    PaperProps={{ sx: { bgcolor: '#1a1d24', color: 'white', border: '1px solid var(--border-strong, #374151)' } }}
+                                    PaperProps={{ sx: { bgcolor: '#1a1d24', color: 'var(--text-white-dynamic, white)', border: '1px solid var(--border-strong, #374151)' } }}
                                 >
                                     {Object.keys(statusColors).map(s => (
                                         <MenuItem 
@@ -213,7 +213,7 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                                     anchorEl={anchorElFailure}
                                     open={Boolean(anchorElFailure)}
                                     onClose={() => setAnchorElFailure(null)}
-                                    PaperProps={{ sx: { bgcolor: '#1a1d24', color: 'white', border: '1px solid var(--border-strong, #374151)', maxHeight: 300 } }}
+                                    PaperProps={{ sx: { bgcolor: '#1a1d24', color: 'var(--text-white-dynamic, white)', border: '1px solid var(--border-strong, #374151)', maxHeight: 300 } }}
                                 >
                                     {failureTypes.map(f => (
                                         <MenuItem 
@@ -235,7 +235,7 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                                 sx={{ 
                                     p: 0, 
                                     color: machine.lastObservation ? '#3b82f6' : 'var(--text-dimmed, #4b5563)', 
-                                    '&:hover': { color: '#fff' } 
+                                    '&:hover': { color: 'var(--text-white-dynamic, #fff)' } 
                                 }}
                             >
                                 <VisibilityIcon sx={{ fontSize: 14 }} />
@@ -255,7 +255,7 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                                         setCustomMinute(m);
                                     }
                                 }}
-                                sx={{ color: 'var(--text-dimmed, #4b5563)', fontWeight: 800, fontSize: '0.6rem', cursor: 'pointer', '&:hover': { color: '#fff' } }}
+                                sx={{ color: 'var(--text-dimmed, #4b5563)', fontWeight: 800, fontSize: '0.6rem', cursor: 'pointer', '&:hover': { color: 'var(--text-white-dynamic, #fff)' } }}
                             >
                                 Hace {timeAgo}
                             </Typography>
@@ -264,7 +264,7 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                                 anchorEl={anchorElTime}
                                 open={Boolean(anchorElTime)}
                                 onClose={() => setAnchorElTime(null)}
-                                PaperProps={{ sx: { bgcolor: '#1a1d24', color: 'white', border: '1px solid var(--border-strong, #374151)', p: 1.5 } }}
+                                PaperProps={{ sx: { bgcolor: '#1a1d24', color: 'var(--text-white-dynamic, white)', border: '1px solid var(--border-strong, #374151)', p: 1.5 } }}
                             >
                                 <Typography variant="caption" sx={{ color: 'var(--text-muted, #9ca3af)', display: 'block', mb: 1, fontWeight: 700 }}>
                                     Fecha/Hora del Registro
@@ -276,7 +276,7 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                                         value={customDate}
                                         onChange={(e) => setCustomDate(e.target.value)}
                                         InputLabelProps={{ shrink: true }}
-                                        sx={{ input: { color: 'white', fontSize: '0.75rem' }, bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 1 }}
+                                        sx={{ input: { color: 'var(--text-white-dynamic, white)', fontSize: '0.75rem' }, bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 1 }}
                                     />
                                     <Box sx={{ display: 'flex', gap: 1 }}>
                                         <TextField
@@ -286,7 +286,7 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                                             value={customHour}
                                             onChange={(e) => setCustomHour(e.target.value)}
                                             InputLabelProps={{ shrink: true }}
-                                            sx={{ flex: 1, '& .MuiOutlinedInput-root': { color: 'white', fontSize: '0.75rem' }, bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 1 }}
+                                            sx={{ flex: 1, '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)', fontSize: '0.75rem' }, bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 1 }}
                                         >
                                             {Array.from({ length: 24 }).map((_, h) => {
                                                 const hStr = String(h).padStart(2, '0');
@@ -300,7 +300,7 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                                             value={customMinute}
                                             onChange={(e) => setCustomMinute(e.target.value)}
                                             InputLabelProps={{ shrink: true }}
-                                            sx={{ flex: 1, '& .MuiOutlinedInput-root': { color: 'white', fontSize: '0.75rem' }, bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 1 }}
+                                            sx={{ flex: 1, '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)', fontSize: '0.75rem' }, bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 1 }}
                                         >
                                             {Array.from({ length: 60 }).map((_, m) => {
                                                 const mStr = String(m).padStart(2, '0');
@@ -341,7 +341,7 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                         variant="standard"
                         InputProps={{
                             disableUnderline: true,
-                            sx: { color: 'white', fontSize: '0.8rem', fontStyle: 'italic' }
+                            sx: { color: 'var(--text-white-dynamic, white)', fontSize: '0.8rem', fontStyle: 'italic' }
                         }}
                     />
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
@@ -381,11 +381,11 @@ const StatusButton = ({ status, count, active, onClick }: { status: string, coun
             <Box sx={{ color: color, mb: 0.3, opacity: active ? 1 : 0.6, display: 'flex' }}>
                 {statusIcons[status]}
             </Box>
-            <Typography sx={{ color: active ? '#fff' : color, fontWeight: 900, mb: 0.1, lineHeight: 1, fontSize: '1.2rem' }}>
+            <Typography sx={{ color: active ? 'var(--text-white-dynamic, #fff)' : color, fontWeight: 900, mb: 0.1, lineHeight: 1, fontSize: '1.2rem' }}>
                 {count}
             </Typography>
             <Typography variant="caption" sx={{ 
-                color: active ? '#fff' : 'var(--text-subtle, #6b7280)', 
+                color: active ? 'var(--text-white-dynamic, #fff)' : 'var(--text-subtle, #6b7280)', 
                 fontSize: '0.45rem', 
                 fontWeight: 800, 
                 textAlign: 'center',
@@ -513,7 +513,7 @@ export default function DashboardMantenimientoPage() {
     if (loadingPlants || loadingTypes) return <Spinner />;
 
     return (
-        <Box sx={{ p: 0, maxWidth: '1400px', margin: '0 auto', color: 'white', pb: 10 }}>
+        <Box sx={{ p: 0, maxWidth: '1400px', margin: '0 auto', color: 'var(--text-white-dynamic, white)', pb: 10 }}>
             
             <Box sx={{ 
                 display: 'flex', 
@@ -536,9 +536,9 @@ export default function DashboardMantenimientoPage() {
                         }}
                     >
                         <Typography sx={{ color: sortMode === 'mtbf' ? '#10b981' : 'var(--text-dimmed, #4b5563)', fontWeight: 900, fontSize: '1.4rem', textTransform: 'uppercase' }}>MTBF</Typography>
-                        <Typography sx={{ color: sortMode === 'mtbf' ? '#10b981' : '#fff', fontWeight: 950, fontSize: '1.6rem', letterSpacing: '-0.03em' }}>{kpis?.mtbf?.split(' ')[0] || '0d'}</Typography>
+                        <Typography sx={{ color: sortMode === 'mtbf' ? '#10b981' : 'var(--text-white-dynamic, #fff)', fontWeight: 950, fontSize: '1.6rem', letterSpacing: '-0.03em' }}>{kpis?.mtbf?.split(' ')[0] || '0d'}</Typography>
                     </Box>
-                    <Box sx={{ width: '1px', height: '24px', bgcolor: 'rgba(255,255,255,0.1)', mx: 0.5 }} />
+                    <Box sx={{ width: '1px', height: '24px', bgcolor: 'var(--border-dynamic-transparent, rgba(255,255,255,0.1))', mx: 0.5 }} />
                     <Box 
                         onClick={() => handleSortToggle('mttr')}
                         sx={{ 
@@ -548,7 +548,7 @@ export default function DashboardMantenimientoPage() {
                         }}
                     >
                         <Typography sx={{ color: sortMode === 'mttr' ? '#f87171' : 'var(--text-dimmed, #4b5563)', fontWeight: 900, fontSize: '1.4rem', textTransform: 'uppercase' }}>MTTR</Typography>
-                        <Typography sx={{ color: sortMode === 'mttr' ? '#f87171' : '#fff', fontWeight: 950, fontSize: '1.6rem', letterSpacing: '-0.03em' }}>{kpis?.mttr?.split(' ')[0] || '0h'}</Typography>
+                        <Typography sx={{ color: sortMode === 'mttr' ? '#f87171' : 'var(--text-white-dynamic, #fff)', fontWeight: 950, fontSize: '1.6rem', letterSpacing: '-0.03em' }}>{kpis?.mttr?.split(' ')[0] || '0h'}</Typography>
                     </Box>
                 </Box>
                 
@@ -571,7 +571,7 @@ export default function DashboardMantenimientoPage() {
                                     <SearchIcon sx={{ color: 'var(--text-dimmed, #4b5563)', fontSize: '1.1rem' }} />
                                 </Box>
                             ),
-                            sx: { bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 2, color: 'white', fontSize: '0.85rem' }
+                            sx: { bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 2, color: 'var(--text-white-dynamic, white)', fontSize: '0.85rem' }
                         }}
                         sx={{ mb: 1.5 }}
                     />
@@ -627,7 +627,7 @@ export default function DashboardMantenimientoPage() {
                                             fontWeight: 800, 
                                             fontSize: '0.65rem',
                                             textTransform: 'uppercase',
-                                            '&:hover': { color: '#fff', bgcolor: 'rgba(96,165,250,0.1)' }
+                                            '&:hover': { color: 'var(--text-white-dynamic, #fff)', bgcolor: 'rgba(96,165,250,0.1)' }
                                         }}
                                     >
                                         Cargar Cambios
@@ -641,7 +641,7 @@ export default function DashboardMantenimientoPage() {
                                             fontWeight: 800, 
                                             fontSize: '0.65rem',
                                             textTransform: 'uppercase',
-                                            '&:hover': { color: '#fff', bgcolor: 'rgba(16,185,129,0.1)' }
+                                            '&:hover': { color: 'var(--text-white-dynamic, #fff)', bgcolor: 'rgba(16,185,129,0.1)' }
                                         }}
                                     >
                                         Informe Cambios
@@ -655,7 +655,7 @@ export default function DashboardMantenimientoPage() {
                                             fontWeight: 800, 
                                             fontSize: '0.65rem',
                                             textTransform: 'uppercase',
-                                            '&:hover': { color: '#fff', bgcolor: 'var(--bg-action-btn, rgba(255,255,255,0.05))' }
+                                            '&:hover': { color: 'var(--text-white-dynamic, #fff)', bgcolor: 'var(--bg-action-btn, rgba(255,255,255,0.05))' }
                                         }}
                                     >
                                         Volver al Mapa

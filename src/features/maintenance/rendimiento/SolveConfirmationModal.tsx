@@ -55,7 +55,7 @@ export const SolveConfirmationModal: React.FC<SolveConfirmationModalProps> = ({ 
             <form onSubmit={handleSubmit(onSubmit)}>
                 <DialogContent sx={{ bgcolor: '#1a1a1a', pt: 3 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        <Alert severity="info" sx={{ bgcolor: 'rgba(2, 136, 209, 0.1)', color: '#fff' }}>
+                        <Alert severity="info" sx={{ bgcolor: 'rgba(2, 136, 209, 0.1)', color: 'var(--text-white-dynamic, #fff)' }}>
                             ¿Estás seguro de poner la máquina en estado 'Activa'?
                         </Alert>
 

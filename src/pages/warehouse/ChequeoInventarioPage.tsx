@@ -215,7 +215,7 @@ export default function ChequeoInventarioPage() {
             {/* Confirm Complete Modal */}
             {confirmComplete && (
                 <div style={{
-                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000,
+                    position: 'fixed', inset: 0, background: 'var(--bg-overlay-heavy, rgba(0, 0, 0, 0.7))', zIndex: 1000,
                     display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
                 }}>
                     <Card style={{ padding: '24px', maxWidth: '400px', width: '100%' }}>
@@ -604,7 +604,7 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <div style={{
-                                                color: '#ffffff', fontSize: isMobile ? '16px' : '18px', fontWeight: 800,
+                                                color: 'var(--text-white-dynamic, #ffffff)', fontSize: isMobile ? '16px' : '18px', fontWeight: 800,
                                                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                                                 marginBottom: '4px'
                                             }} title={s.itemName}>
@@ -802,7 +802,7 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
                             background: hasNext ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
                             border: hasNext ? 'none' : '1px solid transparent',
                             borderRadius: '8px', padding: '10px 20px',
-                            color: hasNext ? '#fff' : 'var(--border-strong, #374151)',
+                            color: hasNext ? 'var(--text-white-dynamic, #fff)' : 'var(--border-strong, #374151)',
                             fontSize: '14px', cursor: hasNext ? 'pointer' : 'default',
                             fontWeight: 600,
                         }}
@@ -893,7 +893,7 @@ function ReportPhase({ isMobile, report, onReturnToCheck, onNewCheck }: {
                         link.click();
                         document.body.removeChild(link);
                     }}
-                    style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff' }}
+                    style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'var(--text-white-dynamic, #fff)' }}
                 >
                     📥 Descargar Excel (CSV)
                 </Btn>

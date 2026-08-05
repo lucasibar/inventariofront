@@ -27,11 +27,11 @@ const BoxPreview = ({ l, w, h }: { l: number, w: number, h: number }) => {
                 width: `${sL}px`, height: `${sH}px`, position: 'relative', transformStyle: 'preserve-3d',
                 transform: 'rotateX(-25deg) rotateY(45deg)', transition: 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)'
             }}>
-                <div style={{ position: 'absolute', inset: 0, background: '#6366f1', border: '1px solid #ffffff40', transform: `translateZ(${sW/2}px)`, boxShadow: 'inset 0 0 20px var(--bg-alt-row, rgba(0,0,0,0.2))' }} />
-                <div style={{ position: 'absolute', inset: 0, background: '#4338ca', border: '1px solid #ffffff20', transform: `translateZ(${-sW/2}px) rotateY(180deg)` }} />
-                <div style={{ position: 'absolute', inset: 0, width: `${sW}px`, left: `calc(50% - ${sW/2}px)`, background: '#4f46e5', border: '1px solid #ffffff30', transform: `rotateY(90deg) translateZ(${sL/2}px)` }} />
-                <div style={{ position: 'absolute', inset: 0, width: `${sW}px`, left: `calc(50% - ${sW/2}px)`, background: '#3730a3', border: '1px solid #ffffff20', transform: `rotateY(-90deg) translateZ(${sL/2}px)` }} />
-                <div style={{ position: 'absolute', inset: 0, height: `${sW}px`, top: `calc(50% - ${sW/2}px)`, background: '#818cf8', border: '1px solid #ffffff50', transform: `rotateX(90deg) translateZ(${sH/2}px)` }} />
+                <div style={{ position: 'absolute', inset: 0, background: '#6366f1', border: '1px solid var(--text-white-dynamic, #ffffff)40', transform: `translateZ(${sW/2}px)`, boxShadow: 'inset 0 0 20px var(--bg-alt-row, rgba(0,0,0,0.2))' }} />
+                <div style={{ position: 'absolute', inset: 0, background: '#4338ca', border: '1px solid var(--text-white-dynamic, #ffffff)20', transform: `translateZ(${-sW/2}px) rotateY(180deg)` }} />
+                <div style={{ position: 'absolute', inset: 0, width: `${sW}px`, left: `calc(50% - ${sW/2}px)`, background: '#4f46e5', border: '1px solid var(--text-white-dynamic, #ffffff)30', transform: `rotateY(90deg) translateZ(${sL/2}px)` }} />
+                <div style={{ position: 'absolute', inset: 0, width: `${sW}px`, left: `calc(50% - ${sW/2}px)`, background: '#3730a3', border: '1px solid var(--text-white-dynamic, #ffffff)20', transform: `rotateY(-90deg) translateZ(${sL/2}px)` }} />
+                <div style={{ position: 'absolute', inset: 0, height: `${sW}px`, top: `calc(50% - ${sW/2}px)`, background: '#818cf8', border: '1px solid var(--text-white-dynamic, #ffffff)50', transform: `rotateX(90deg) translateZ(${sH/2}px)` }} />
                 <div style={{ position: 'absolute', inset: 0, height: `${sW}px`, top: `calc(50% - ${sW/2}px)`, background: '#312e81', border: '1px solid #00000040', transform: `rotateX(-90deg) translateZ(${sH/2}px)` }} />
             </div>
         </div>

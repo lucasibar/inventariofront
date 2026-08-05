@@ -420,7 +420,7 @@ export default function MovimientosPage() {
                             fontSize: '12px',
                             transition: 'all 0.2s'
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.background = '#ef4444'; e.currentTarget.style.color = 'white'; }}
+                        onMouseEnter={e => { e.currentTarget.style.background = '#ef4444'; e.currentTarget.style.color = 'var(--text-white-dynamic, white)'; }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.color = '#ef4444'; }}
                         title="Eliminar Registro"
                     >
@@ -464,7 +464,7 @@ export default function MovimientosPage() {
                 .move-btn {
                     background: rgba(99, 102, 241, 0.9); 
                     backdrop-filter: blur(8px);
-                    border: 1px solid rgba(255,255,255,0.1); 
+                    border: 1px solid var(--border-dynamic-transparent, rgba(255,255,255,0.1)); 
                     border-radius: 12px; 
                     width: 42px; 
                     height: 42px;
@@ -479,7 +479,7 @@ export default function MovimientosPage() {
                 }
                 .move-btn:disabled { 
                     background: var(--border-subtle, #1e2133); 
-                    color: #4b5563; 
+                    color: var(--text-dimmed, #4b5563); 
                     cursor: not-allowed; 
                     box-shadow: none;
                 }
@@ -699,7 +699,7 @@ export default function MovimientosPage() {
                     </div>
 
                     <div style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
-                        <Btn style={{ flex: 1, background: '#1f2937' }} onClick={() => setPartialMoveModal(false)} disabled={isBulkMoving}>Cancelar</Btn>
+                        <Btn style={{ flex: 1, background: 'var(--border-dynamic, #1f2937)' }} onClick={() => setPartialMoveModal(false)} disabled={isBulkMoving}>Cancelar</Btn>
                         <Btn style={{ flex: 1 }} onClick={handleConfirmPartialMove} disabled={isBulkMoving}>
                             {isBulkMoving ? 'Procesando...' : 'Confirmar Movimiento'}
                         </Btn>

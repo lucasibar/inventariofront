@@ -89,7 +89,7 @@ const RRHHDashboardPage: React.FC = () => {
                                 <Typography variant="h4" sx={{ fontWeight: 800 }}>$14.2k</Typography>
                                 <Typography variant="caption" sx={{ color: 'var(--text-muted, #9ca3af)' }}>Costo Total Hoy</Typography>
                             </Box>
-                            <Box sx={{ height: 60, width: 2, bgcolor: 'rgba(255,255,255,0.1)' }} />
+                            <Box sx={{ height: 60, width: 2, bgcolor: 'var(--border-dynamic-transparent, rgba(255,255,255,0.1))' }} />
                             <Box sx={{ textAlign: 'center' }}>
                                 <Typography variant="h4" sx={{ fontWeight: 800, color: '#10b981' }}>$3.34</Typography>
                                 <Typography variant="caption" sx={{ color: 'var(--text-muted, #9ca3af)' }}>Costo por Unidad</Typography>

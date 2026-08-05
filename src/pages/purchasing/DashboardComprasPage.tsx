@@ -65,7 +65,7 @@ import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.
 // Design System Colors - Purchasing Theme (Indigo/Purple)
 const colors = {
     primary: '#818cf8', // Indigo
-    secondary: '#475569', // Slate
+    secondary: 'var(--text-mui-secondary, #475569)', // Slate
     bg: 'var(--bg-primary, #0f1117)',
     cardBg: 'var(--bg-hover-row, rgba(255,255,255,0.03))',
     border: 'rgba(255, 255, 255, 0.08)',
@@ -88,8 +88,8 @@ const KPIButton = ({ label, value, icon: Icon, color, active, onClick }: any) =>
         }}
     >
         <Box sx={{ color: color, mb: 0.5, opacity: active ? 1 : 0.6 }}><Icon sx={{ fontSize: '1.1rem' }} /></Box>
-        <Typography sx={{ color: active ? '#fff' : color, fontWeight: 900, mb: 0.1, lineHeight: 1, fontSize: '1.1rem' }}>{value}</Typography>
-        <Typography variant="caption" sx={{ color: active ? '#fff' : colors.textDim, fontSize: '0.5rem', fontWeight: 800, textAlign: 'center', lineHeight: 1, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</Typography>
+        <Typography sx={{ color: active ? 'var(--text-white-dynamic, #fff)' : color, fontWeight: 900, mb: 0.1, lineHeight: 1, fontSize: '1.1rem' }}>{value}</Typography>
+        <Typography variant="caption" sx={{ color: active ? 'var(--text-white-dynamic, #fff)' : colors.textDim, fontSize: '0.5rem', fontWeight: 800, textAlign: 'center', lineHeight: 1, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</Typography>
         {active && (<Box sx={{ position: 'absolute', bottom: 0, left: '20%', right: '20%', height: 3, bgcolor: color, borderRadius: '2px 2px 0 0' }} />)}
     </Box>
 );
@@ -124,7 +124,7 @@ const ComboCard = ({ combo, onBuy }: any) => {
                     <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.5rem', fontWeight: 700 }}>PEDIDO ({combo.unitLabel})</Typography>
                 </Box>
                 <Box sx={{ flex: 1, bgcolor: 'var(--bg-hover-row, rgba(255,255,255,0.03))', p: 1, borderRadius: 2, textAlign: 'center' }}>
-                    <Typography sx={{ fontWeight: 800, color: '#94a3b8', fontSize: '0.95rem' }}>{Number(combo.totalConsumed30Days || 0).toLocaleString()}</Typography>
+                    <Typography sx={{ fontWeight: 800, color: 'var(--text-subtle, #94a3b8)', fontSize: '0.95rem' }}>{Number(combo.totalConsumed30Days || 0).toLocaleString()}</Typography>
                     <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.5rem', fontWeight: 700 }}>SALIDA 30D</Typography>
                 </Box>
             </Box>
@@ -248,7 +248,7 @@ export default function DashboardComprasPage() {
                     disabled={!isAdmin && depots.length === 1}
                     sx={{ 
                         flex: { xs: '1 1 100%', sm: '0 0 200px' },
-                        '& .MuiSelect-select': { color: 'white' },
+                        '& .MuiSelect-select': { color: 'var(--text-white-dynamic, white)' },
                         '& .MuiInputLabel-root': { color: colors.textDim },
                         '& .MuiOutlinedInput-root': {
                             bgcolor: colors.inputBg,
@@ -283,7 +283,7 @@ export default function DashboardComprasPage() {
                                 {listening ? <MicIcon /> : <MicOffIcon sx={{ opacity: 0.5 }} />}
                             </IconButton>
                         ), 
-                        sx: { bgcolor: colors.inputBg, borderRadius: 2, color: 'white', border: `1px solid ${colors.border}` } 
+                        sx: { bgcolor: colors.inputBg, borderRadius: 2, color: 'var(--text-white-dynamic, white)', border: `1px solid ${colors.border}` } 
                     }} 
                 />
             </Box>
@@ -341,7 +341,7 @@ export default function DashboardComprasPage() {
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                     <Chip label={o.numero} size="small" sx={{ bgcolor: `${colors.danger}20`, color: colors.danger, fontWeight: 900, height: 20, fontSize: '0.65rem' }} />
-                                                    <Chip label={`${daysLate}d atraso`} size="small" sx={{ bgcolor: `${colors.danger}30`, color: '#fff', fontWeight: 900, height: 18, fontSize: '0.55rem' }} />
+                                                    <Chip label={`${daysLate}d atraso`} size="small" sx={{ bgcolor: `${colors.danger}30`, color: 'var(--text-white-dynamic, #fff)', fontWeight: 900, height: 18, fontSize: '0.55rem' }} />
                                                 </Box>
                                                 <Chip label={o.estado} size="small" sx={{ bgcolor: `${colors.warning}20`, color: colors.warning, fontWeight: 900, height: 18, fontSize: '0.55rem' }} />
                                             </Box>
@@ -440,7 +440,7 @@ const UnlinkedMovementCard = ({ movement, onLinkRequest }: any) => (
         <Typography variant="subtitle2" sx={{ fontWeight: 800, color: colors.text }}>{movement.item?.descripcion}</Typography>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
             <Box><Typography variant="caption" sx={{ color: colors.textDim, display: 'block' }}>PROVEEDOR: {movement.supplier?.name || 'S/P'}</Typography><Typography variant="caption" sx={{ color: colors.textDim }}>DOC: {movement.documentoNumero || 'S/N'}</Typography></Box>
-            <Box sx={{ textAlign: 'right' }}><Typography variant="subtitle1" sx={{ fontWeight: 900, color: colors.success }}>{movement.qtyPrincipal} kg</Typography><Button size="small" variant="contained" startIcon={<LinkIcon />} sx={{ mt: 0.5, bgcolor: colors.info, color: '#fff', fontWeight: 900, textTransform: 'none', borderRadius: 2, fontSize: '0.65rem' }} onClick={() => onLinkRequest(movement)}>Vincular</Button></Box>
+            <Box sx={{ textAlign: 'right' }}><Typography variant="subtitle1" sx={{ fontWeight: 900, color: colors.success }}>{movement.qtyPrincipal} kg</Typography><Button size="small" variant="contained" startIcon={<LinkIcon />} sx={{ mt: 0.5, bgcolor: colors.info, color: 'var(--text-white-dynamic, #fff)', fontWeight: 900, textTransform: 'none', borderRadius: 2, fontSize: '0.65rem' }} onClick={() => onLinkRequest(movement)}>Vincular</Button></Box>
         </Box>
     </ListItem>
 );
@@ -499,7 +499,7 @@ const NewOrderDrawer = ({ open, onClose, suppliers, items, depots, defaultDepotI
                     onChange={(e) => setForm({ ...form, depositoId: e.target.value })}
                     fullWidth
                     sx={{ 
-                        '& .MuiSelect-select': { color: 'white' },
+                        '& .MuiSelect-select': { color: 'var(--text-white-dynamic, white)' },
                         '& .MuiInputLabel-root': { color: colors.textDim },
                         '& .MuiOutlinedInput-root': {
                             bgcolor: colors.inputBg,
@@ -555,7 +555,7 @@ const ConciliationDrawer = ({ open, onClose, movement, purchaseOrders }: { open:
                 {suggestedLines.length === 0 ? <Typography variant="body2" sx={{ color: colors.danger, textAlign: 'center', p: 4, fontWeight: 700 }}>No hay OCs abiertas para este proveedor y material.</Typography> : suggestedLines.map((line: any) => (
                     <ListItem key={line.id} sx={{ bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', borderRadius: 2, mb: 1, p: 2, border: `1px solid ${colors.border}`, display: 'flex', justifyContent: 'space-between' }}>
                         <Box><Typography variant="body2" sx={{ fontWeight: 800, color: colors.primary }}>OC: {line.orderNumero}</Typography><Typography variant="caption" sx={{ color: colors.textDim, display: 'block' }}>Pedido: {line.qtyOrdered} kg | Recibido: {line.qtyReceived} kg</Typography><Typography variant="caption" sx={{ color: colors.warning }}>Pendiente: {line.qtyOrdered - line.qtyReceived} kg</Typography></Box>
-                        <Button variant="contained" size="small" disabled={linking} sx={{ bgcolor: colors.info, color: '#fff', fontWeight: 900, borderRadius: 2, textTransform: 'none' }} onClick={() => handleLink(line.id)}>{linking ? '...' : 'Vincular'}</Button>
+                        <Button variant="contained" size="small" disabled={linking} sx={{ bgcolor: colors.info, color: 'var(--text-white-dynamic, #fff)', fontWeight: 900, borderRadius: 2, textTransform: 'none' }} onClick={() => handleLink(line.id)}>{linking ? '...' : 'Vincular'}</Button>
                     </ListItem>
                 ))}
             </List>

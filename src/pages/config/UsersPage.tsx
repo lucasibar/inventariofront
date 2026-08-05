@@ -115,7 +115,7 @@ export default function UsersPage() {
                 <>
                     {u.allowedDepotIds?.map(id => {
                         const d = depots.find(depo => depo.id === id);
-                        return <Badge key={id} color="#4b5563">{d?.nombre || id}</Badge>;
+                        return <Badge key={id} color="var(--text-dimmed, #4b5563)">{d?.nombre || id}</Badge>;
                     })}
                     {u.allowedDepotIds?.length === 0 && <span style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '12px', fontStyle: 'italic' }}>Ninguno (Sin acceso)</span>}
                     <button 

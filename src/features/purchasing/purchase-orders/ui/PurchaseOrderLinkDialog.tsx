@@ -96,7 +96,7 @@ export default function PurchaseOrderLinkDialog({
         <Modal title="Vincular a Orden de Compra" onClose={onClose} wide>
             <div style={{ marginBottom: '16px', background: 'rgba(99, 102, 241, 0.05)', border: '1px solid rgba(99, 102, 241, 0.2)', padding: '16px', borderRadius: '8px' }}>
                 <div style={{ fontSize: '13px', color: '#a5b4fc', textTransform: 'uppercase', fontWeight: 700 }}>Material en Remito</div>
-                <div style={{ color: 'white', fontWeight: 700, fontSize: '15px', marginTop: '4px' }}>{itemName}</div>
+                <div style={{ color: 'var(--text-white-dynamic, white)', fontWeight: 700, fontSize: '15px', marginTop: '4px' }}>{itemName}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '12px' }}>
                     <div>Cantidad en remito: <strong>{qtyAvailable.toFixed(2)} kg</strong></div>
                     <div style={{ color: remainingToAllocate < -0.01 ? '#ef4444' : remainingToAllocate > 0.01 ? '#f59e0b' : '#10b981' }}>
@@ -120,10 +120,10 @@ export default function PurchaseOrderLinkDialog({
                         const assigned = Number(allocations[pl.id]) || 0;
                         
                         return (
-                            <Card key={pl.id} style={{ padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: assigned > 0 ? 'rgba(16, 185, 129, 0.03)' : '#111827', border: assigned > 0 ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid #2a2d3e' }}>
+                            <Card key={pl.id} style={{ padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: assigned > 0 ? 'rgba(16, 185, 129, 0.03)' : 'var(--bg-secondary, #111827)', border: assigned > 0 ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid var(--border-color, #2a2d3e)' }}>
                                 <div style={{ flex: 1, marginRight: '16px' }}>
                                     <div style={{ color: '#a5b4fc', fontWeight: 700, fontSize: '13px' }}>{pl.order?.numero}</div>
-                                    <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>
+                                    <div style={{ fontSize: '11px', color: 'var(--text-subtle, #6b7280)', marginTop: '2px' }}>
                                         Pedido: {Number(pl.qtyPedido).toFixed(1)} kg • 
                                         Recibido: <span style={{ color: '#10b981' }}>{Number(pl.qtyRecibida).toFixed(1)} kg</span>
                                     </div>

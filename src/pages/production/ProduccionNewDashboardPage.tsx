@@ -5,7 +5,7 @@ const ProduccionNewDashboardPage: React.FC = () => {
     // Mock Data
     const metrics = [
         { label: 'Producción del día', value: '4,250', unit: 'uds', color: '#6366f1' },
-        { label: 'Producción planificada', value: '5,000', unit: 'uds', color: '#94a3b8' },
+        { label: 'Producción planificada', value: '5,000', unit: 'uds', color: 'var(--text-subtle, #94a3b8)' },
         { label: 'Cumplimiento del plan', value: 85, unit: '%', color: '#10b981' },
         { label: 'Scrap / Segunda', value: '120', unit: 'uds', color: '#ef4444' },
         { label: 'Eficiencia (OEE)', value: 78, unit: '%', color: '#f59e0b' },

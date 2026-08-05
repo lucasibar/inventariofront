@@ -7,8 +7,8 @@ export const MAINTENANCE_STATUS_COLORS: Record<string, string> = {
     ELECTRONIC: '#0818aa',
     FALTA_COSTURA: '#a4f190',
     FALTA_PROGRAMA: '#00ffdd',
-    REPUESTOS: '#94a3b8',
-    OTRO: '#6b7280',
+    REPUESTOS: 'var(--text-subtle, #94a3b8)',
+    OTRO: 'var(--text-subtle, #6b7280)',
 };
 
 export const MAINTENANCE_STATUS_LABELS: Record<string, string> = {

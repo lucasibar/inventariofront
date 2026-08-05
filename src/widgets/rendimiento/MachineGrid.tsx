@@ -50,10 +50,10 @@ export const MachineGrid: React.FC<MachineGridProps> = ({ machines, isLoading, o
                 width: '8px',
             },
             '&::-webkit-scrollbar-track': {
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                backgroundColor: 'var(--bg-hover-dynamic, rgba(255,255,255,0.05))',
             },
             '&::-webkit-scrollbar-thumb': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                backgroundColor: 'var(--border-dynamic-transparent, rgba(255,255,255,0.1))',
                 borderRadius: '10px',
             },
         }}>

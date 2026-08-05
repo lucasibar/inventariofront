@@ -16,7 +16,7 @@ const getStatusColor = (status: string) => {
         case 'MUESTRAS': return '#a855f7'; // Purple
         case 'PARADA': return '#ef4444'; // Red
         case 'ELECTRONIC': return '#3b82f6'; // Blue
-        default: return '#6b7280'; // Gray
+        default: return 'var(--text-subtle, #6b7280)'; // Gray
     }
 };
 
@@ -110,7 +110,7 @@ export const MachineCard: React.FC<MachineCardProps> = ({ machine, onClick }) =>
                     <Typography 
                         variant="h6" 
                         sx={{ 
-                            color: isFailed ? '#fff' : color, 
+                            color: isFailed ? 'var(--text-white-dynamic, #fff)' : color, 
                             fontWeight: 800,
                             fontSize: '1.4rem',
                             lineHeight: 1
@@ -137,7 +137,7 @@ export const MachineCard: React.FC<MachineCardProps> = ({ machine, onClick }) =>
                             py: 0.2,
                             textAlign: 'center'
                         }}>
-                            <Typography sx={{ fontSize: '7px', color: '#fff', fontWeight: 900, textTransform: 'uppercase' }}>
+                            <Typography sx={{ fontSize: '7px', color: 'var(--text-white-dynamic, #fff)', fontWeight: 900, textTransform: 'uppercase' }}>
                                 {getStatusLabel(machine.status)}
                             </Typography>
                         </Box>

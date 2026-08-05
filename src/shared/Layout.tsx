@@ -56,7 +56,7 @@ const navGroups: NavGroup[] = [
         label: 'Inventariado',
         icon: '🏭',
         items: [
-            { to: '/deposito/dashboard', label: '📊 Dashboard Dep' },
+            { to: '/deposito/dashboard', label: '📊 Dashboard Depo' },
             { to: '/stock', label: '📋 Stock' },
             { to: '/movimientos', label: '🔄 Movimientos' },
             { to: '/tasks', label: '📝 Tareas' },
@@ -180,7 +180,7 @@ const navStyle = (isActive: boolean, isMobile: boolean, isLight: boolean = false
     paddingRight: isMobile ? '20px' : '14px',
     paddingLeft: isMobile ? '20px' : '14px',
     textDecoration: 'none',
-    color: isActive ? '#6366f1' : (isLight ? '#4b5563' : '#9ca3af'),
+    color: isActive ? '#6366f1' : (isLight ? 'var(--text-dimmed, #4b5563)' : 'var(--text-muted, #9ca3af)'),
     background: isActive ? (isLight ? 'rgba(99,102,241,0.12)' : 'rgba(165,180,252,0.08)') : 'transparent',
     borderLeft: isActive ? '3px solid #6366f1' : '3px solid transparent',
     fontSize: isMobile ? '15px' : '13px', whiteSpace: 'nowrap',
@@ -409,7 +409,7 @@ export default function Layout() {
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border-color, #2a2d3e); borderRadius: 10px; }
                 .nav-overlay {
-                    position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 998;
+                    position: fixed; inset: 0; background: var(--bg-overlay-heavy, rgba(0, 0, 0, 0.7)); z-index: 998;
                     opacity: ${mobileMenuOpen ? 1 : 0}; visibility: ${mobileMenuOpen ? 'visible' : 'hidden'};
                     transition: all 0.3s ease;
                 }
@@ -441,7 +441,7 @@ export default function Layout() {
                                 <span style={{
                                     position: 'absolute', top: '2px', right: '0px',
                                     width: '10px', height: '10px', borderRadius: '50%',
-                                    background: '#ef4444', border: '2px solid #1a1d2e',
+                                    background: '#ef4444', border: '2px solid var(--bg-secondary, #1a1d2e)',
                                     animation: 'pulse-dot 2s ease-in-out infinite',
                                 }} />
                             )}
@@ -471,7 +471,7 @@ export default function Layout() {
                                 style={{
                                     background: '#6366f1',
                                     border: 'none',
-                                    color: 'white',
+                                    color: '#ffffff',
                                     width: '32px',
                                     height: '32px',
                                     borderRadius: '8px',
@@ -492,7 +492,7 @@ export default function Layout() {
                                 style={{
                                     background: 'transparent',
                                     border: 'none',
-                                    color: '#9ca3af',
+                                    color: 'var(--text-muted, #9ca3af)',
                                     cursor: 'pointer',
                                     padding: '6px',
                                     display: 'flex',
@@ -502,11 +502,11 @@ export default function Layout() {
                             >
                                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <line x1="4" y1="6" x2="20" y2="6" />
-                                    <circle cx="9" cy="6" r="2.5" fill="#0f1117" />
+                                    <circle cx="9" cy="6" r="2.5" fill="var(--bg-primary, #0f1117)" />
                                     <line x1="4" y1="12" x2="20" y2="12" />
-                                    <circle cx="15" cy="12" r="2.5" fill="#0f1117" />
+                                    <circle cx="15" cy="12" r="2.5" fill="var(--bg-primary, #0f1117)" />
                                     <line x1="4" y1="18" x2="20" y2="18" />
-                                    <circle cx="9" cy="18" r="2.5" fill="#0f1117" />
+                                    <circle cx="9" cy="18" r="2.5" fill="var(--bg-primary, #0f1117)" />
                                 </svg>
                             </button>
                         )}
@@ -523,7 +523,7 @@ export default function Layout() {
                 left: (isMobile || location.pathname === '/mantenimiento/monitoreo') && !mobileMenuOpen ? '-280px' : '0',
                 top: 0, bottom: 0,
                 width: isMobile || location.pathname === '/mantenimiento/monitoreo' ? '280px' : (collapsed ? '60px' : '220px'),
-                background: theme === 'light' ? 'linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%)' : 'linear-gradient(180deg, #1a1d2e 0%, #141622 100%)',
+                background: theme === 'light' ? 'linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%)' : 'linear-gradient(180deg, var(--bg-secondary, #1a1d2e) 0%, #141622 100%)',
                 borderRight: '1px solid var(--border-color, #2a2d3e)',
                 display: 'flex', flexDirection: 'column',
                 transition: 'all 0.3s ease',
@@ -533,13 +533,13 @@ export default function Layout() {
                 <div style={{ padding: '16px 12px', borderBottom: '1px solid var(--border-color, #2a2d3e)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         {(!collapsed || isMobile) && <span style={{ color: theme === 'light' ? '#6366f1' : '#a5b4fc', fontWeight: 700, fontSize: '15px', whiteSpace: 'nowrap' }}>📦 WMS INVENTARIO</span>}
-                        {(!collapsed || isMobile) && <span style={{ color: theme === 'light' ? '#94a3b8' : '#6b7280', fontSize: '10px', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '1px' }}>{role}</span>}
+                        {(!collapsed || isMobile) && <span style={{ color: theme === 'light' ? 'var(--text-subtle, #94a3b8)' : 'var(--text-subtle, #6b7280)', fontSize: '10px', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '1px' }}>{role}</span>}
                     </div>
                     {!isMobile && (
                         <button
                             type="button"
                             onClick={() => setCollapsed(!collapsed)}
-                            style={{ background: 'none', border: 'none', color: theme === 'light' ? '#94a3b8' : '#6b7280', cursor: 'pointer', fontSize: '18px', padding: '2px 6px' }}
+                            style={{ background: 'none', border: 'none', color: theme === 'light' ? 'var(--text-subtle, #94a3b8)' : 'var(--text-subtle, #6b7280)', cursor: 'pointer', fontSize: '18px', padding: '2px 6px' }}
                         >
                             {collapsed ? '›' : '‹'}
                         </button>
@@ -562,7 +562,7 @@ export default function Layout() {
                                             display: 'flex', alignItems: 'center', gap: '8px',
                                             width: '100%', padding: '8px 14px',
                                             background: 'transparent', border: 'none',
-                                            color: isExpanded || hasActiveChild ? (theme === 'light' ? '#6366f1' : '#a5b4fc') : (theme === 'light' ? '#64748b' : '#6b7280'),
+                                            color: isExpanded || hasActiveChild ? (theme === 'light' ? '#6366f1' : '#a5b4fc') : (theme === 'light' ? 'var(--text-muted, #64748b)' : 'var(--text-subtle, #6b7280)'),
                                             fontSize: '11px', fontWeight: 700,
                                             textTransform: 'uppercase', letterSpacing: '1px',
                                             cursor: 'pointer', transition: 'all 0.15s'
@@ -579,8 +579,8 @@ export default function Layout() {
                                 {collapsed && !isMobile && (
                                     <div style={{
                                         display: 'flex', justifyContent: 'center',
-                                        padding: '12px 0', borderBottom: theme === 'light' ? '1px solid rgba(0,0,0,0.06)' : '1px solid rgba(255,255,255,0.05)',
-                                        color: hasActiveChild ? (theme === 'light' ? '#6366f1' : '#a5b4fc') : (theme === 'light' ? '#94a3b8' : '#4b5563')
+                                        padding: '12px 0', borderBottom: theme === 'light' ? '1px solid rgba(0,0,0,0.06)' : '1px solid var(--bg-hover-dynamic, rgba(255,255,255,0.05))',
+                                        color: hasActiveChild ? (theme === 'light' ? '#6366f1' : '#a5b4fc') : (theme === 'light' ? 'var(--text-subtle, #94a3b8)' : 'var(--text-dimmed, #4b5563)')
                                     }}>
                                         <span style={{ fontSize: '20px' }}>{group.icon}</span>
                                     </div>
@@ -625,7 +625,7 @@ export default function Layout() {
                                                                     paddingRight: isMobile ? '20px' : '14px',
                                                                     paddingLeft: '32px',
                                                                     background: 'transparent', border: 'none',
-                                                                    color: isSubExpanded || hasActiveSubChild ? (theme === 'light' ? '#6366f1' : '#a5b4fc') : (theme === 'light' ? '#4b5563' : '#9ca3af'),
+                                                                    color: isSubExpanded || hasActiveSubChild ? (theme === 'light' ? '#6366f1' : '#a5b4fc') : (theme === 'light' ? 'var(--text-dimmed, #4b5563)' : 'var(--text-muted, #9ca3af)'),
                                                                     fontSize: isMobile ? '15px' : '13px',
                                                                     cursor: 'pointer', transition: 'all 0.15s',
                                                                     width: '100%', textAlign: 'left'
@@ -696,7 +696,7 @@ export default function Layout() {
                                 <span style={{
                                     position: 'absolute', top: '-2px', right: '-4px',
                                     width: '9px', height: '9px', borderRadius: '50%',
-                                    background: '#ef4444', border: theme === 'light' ? '2px solid #ffffff' : '2px solid #1a1d2e',
+                                    background: '#ef4444', border: theme === 'light' ? '2px solid #ffffff' : '2px solid var(--bg-secondary, #1a1d2e)',
                                     animation: 'pulse-dot 2s ease-in-out infinite',
                                 }} />
                             )}
@@ -707,7 +707,7 @@ export default function Layout() {
                                 {hasUnread && alerts.length > 0 && (
                                     <span style={{
                                         background: '#ef4444',
-                                        color: 'white',
+                                        color: '#ffffff',
                                         fontSize: '10px',
                                         fontWeight: 800,
                                         padding: '1px 7px',
@@ -752,7 +752,7 @@ export default function Layout() {
                             display: 'flex', alignItems: 'center', gap: '12px',
                             padding: isMobile ? '16px 20px' : '10px 14px', width: '100%',
                             background: 'transparent', border: 'none',
-                            color: theme === 'light' ? '#374151' : '#9ca3af', fontSize: isMobile ? '15px' : '13px',
+                            color: theme === 'light' ? 'var(--border-strong, #374151)' : 'var(--text-muted, #9ca3af)', fontSize: isMobile ? '15px' : '13px',
                             cursor: 'pointer', transition: 'all 0.15s',
                         }}
                     >
@@ -766,7 +766,7 @@ export default function Layout() {
                             display: 'flex', alignItems: 'center', gap: '12px',
                             padding: isMobile ? '16px 20px' : '10px 14px', width: '100%',
                             background: 'transparent', border: 'none',
-                            color: theme === 'light' ? '#374151' : '#9ca3af', fontSize: isMobile ? '15px' : '13px',
+                            color: theme === 'light' ? 'var(--border-strong, #374151)' : 'var(--text-muted, #9ca3af)', fontSize: isMobile ? '15px' : '13px',
                             cursor: 'pointer', transition: 'all 0.15s',
                         }}
                     >
@@ -807,7 +807,7 @@ export default function Layout() {
                     <div style={{
                         position: 'absolute',
                         inset: 0,
-                        background: 'rgba(15, 17, 23, 0.65)',
+                        background: 'var(--bg-overlay, rgba(15, 17, 23, 0.65))',
                         backdropFilter: 'blur(3px)',
                         zIndex: 999,
                         display: 'flex',

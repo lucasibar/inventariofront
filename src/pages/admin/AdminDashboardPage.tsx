@@ -57,7 +57,7 @@ const AdminDashboardPage: React.FC = () => {
                         height: '100%',
                         background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.7) 100%)',
                         backdropFilter: 'blur(20px)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        border: '1px solid var(--border-dynamic-transparent, rgba(255,255,255,0.1))',
                         borderRadius: '24px'
                     }}>
                         <Typography variant="h6" sx={{ mb: 4, fontWeight: 700 }}>Métricas Globales de Operación</Typography>

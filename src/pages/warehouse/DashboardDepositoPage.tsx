@@ -3,67 +3,61 @@ import {
     Box, 
     Typography, 
     IconButton, 
-    List, 
-    ListItem, 
-    Fade, 
-    Chip, 
     TextField, 
-    Collapse,
     Button,
-    Fab,
     Drawer,
     MenuItem,
     CircularProgress,
     Autocomplete,
-    Divider,
     Paper,
     Modal,
-    Checkbox
+    Tooltip,
+    TableContainer,
+    Table as MuiTable,
+    TableHead,
+    TableRow,
+    TableCell,
+    TableBody
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
-import FilterListIcon from '@mui/icons-material/FilterList';
 import AddIcon from '@mui/icons-material/Add';
-import InventoryIcon from '@mui/icons-material/Inventory';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import CategoryIcon from '@mui/icons-material/Category';
 import CloseIcon from '@mui/icons-material/Close';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 import SaveIcon from '@mui/icons-material/Save';
-import MicIcon from '@mui/icons-material/Mic';
-import MicOffIcon from '@mui/icons-material/MicOff';
-import PushPinIcon from '@mui/icons-material/PushPin';
-import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import DeleteIcon from '@mui/icons-material/Delete';
+import GridViewIcon from '@mui/icons-material/GridView';
+import ViewListIcon from '@mui/icons-material/ViewList';
+import EditIcon from '@mui/icons-material/Edit';
+import InfoIcon from '@mui/icons-material/Info';
 
-// Voice Search
-// import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
-
-// API Hooks
 import { 
     useGetStockQuery, 
-    useQuickAddStockMutation,
-    useMoveStockMutation
+    useQuickAddStockMutation, 
+    useDeleteStockMutation,
+    useAdjustStockMutation,
+    useReassignBatchMutation,
+    useLazyCheckBatchQuery,
+    useUpdateBatchObservationsMutation,
 } from '../../features/warehouse/stock/api/stock.api';
-import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
-import { useGetItemsQuery, useUpdateItemMutation } from '../../features/warehouse/materiales/api/items.api';
-import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
-import { useCreateRemitoEntradaMutation } from '../../features/warehouse/remitosEntrada/api/remitos-entrada.api';
 import { useDespachoDirectoMutation } from '../../features/warehouse/remitosSalida/api/remitos-salida.api';
-import { useGetPlantsQuery } from '../../entities/maintenance/api/maintenance.api';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
+import { useGetItemsQuery, useGetItemCategoriesQuery } from '../../features/warehouse/materiales/api/items.api';
+import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
+import { CreateItemDialog } from '../../features/warehouse/materiales/components/CreateItemDialog';
+import { CreatePartnerDialog } from '../../features/config/CreatePartnerDialog';
 import { useSelector } from 'react-redux';
-import { selectAllowedDepots } from '../../entities/auth/model/authSlice';
+import { selectCurrentUser, selectAllowedDepots } from '../../entities/auth/model/authSlice';
 import { useIsMobile } from '../../shared/ui';
 
 // Design System Colors
 const colors = {
     primary: '#f59e0b', // Amber
-    secondary: '#475569', // Slate
+    secondary: 'var(--text-mui-secondary, #475569)', // Slate
     bg: 'var(--bg-primary, #0f1117)',
     cardBg: 'var(--bg-hover-row, rgba(255,255,255,0.03))',
     border: 'rgba(255, 255, 255, 0.08)',
@@ -75,662 +69,1056 @@ const colors = {
     inputBg: 'var(--bg-action-btn, rgba(255,255,255,0.05))'
 };
 
-const KPIButton = ({ label, value, unit, icon: Icon, color, active, onClick }: any) => (
-    <Box 
-        onClick={onClick}
-        sx={{ 
-            flex: '1 1 0', minWidth: 100, height: 80, p: 1.5, borderRadius: 3, 
-            bgcolor: active ? `${color}25` : colors.cardBg, border: '1px solid', borderColor: active ? color : colors.border,
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s ease', position: 'relative', boxShadow: active ? `0 4px 20px ${color}15` : 'none'
-        }}
-    >
-        <Box sx={{ color: color, mb: 0.5, opacity: active ? 1 : 0.6 }}><Icon sx={{ fontSize: '1.2rem' }} /></Box>
-        <Typography sx={{ color: active ? '#fff' : color, fontWeight: 900, mb: 0.1, lineHeight: 1, fontSize: '1.4rem' }}>{value}</Typography>
-        <Typography variant="caption" sx={{ color: active ? '#fff' : colors.textDim, fontSize: '0.6rem', fontWeight: 800, textAlign: 'center', lineHeight: 1, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label} ({unit})</Typography>
-        {active && (<Box sx={{ position: 'absolute', bottom: 0, left: '20%', right: '20%', height: 3, bgcolor: color, borderRadius: '2px 2px 0 0' }} />)}
-    </Box>
-);
+interface DebouncedSearchInputProps {
+    value: string;
+    onChange: (val: string) => void;
+    delay?: number;
+    label?: string;
+    placeholder?: string;
+    size?: 'small' | 'medium';
+    sx?: any;
+    InputProps?: any;
+}
 
-const PositionContentModal = ({ open, onClose, depositoId, posicionId, positionName }: any) => {
-    const { data: stock = [], isLoading } = useGetStockQuery({ depotId: depositoId, positionId: posicionId }, { skip: !open || !posicionId });
+function DebouncedSearchInput({ value, onChange, delay = 300, ...props }: DebouncedSearchInputProps) {
+    const [localVal, setLocalVal] = useState(value);
     
+    useEffect(() => {
+        setLocalVal(value);
+    }, [value]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            onChange(localVal);
+        }, delay);
+        return () => clearTimeout(timer);
+    }, [localVal, delay, onChange]);
+
     return (
-        <Modal open={open} onClose={onClose} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000 }}>
-            <Paper sx={{ width: '90%', maxWidth: 500, bgcolor: colors.bg, border: `1px solid ${colors.info}`, borderRadius: 4, p: 3, outline: 'none', boxShadow: '0 0 40px rgba(0,0,0,0.5)' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 900, color: colors.info }}>CONTENIDO EN {positionName}</Typography>
-                    <IconButton onClick={onClose} sx={{ color: colors.textDim }}><CloseIcon /></IconButton>
-                </Box>
-                {isLoading ? <Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress size={30} sx={{ color: colors.info }} /></Box> : (
-                    <List sx={{ maxHeight: 400, overflow: 'auto' }}>
-                        {stock.length === 0 ? <Typography sx={{ color: colors.textDim, textAlign: 'center', py: 4 }}>Esta posición está vacía</Typography> : stock.map((s: any, idx: number) => (
-                            <ListItem key={idx} sx={{ bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', mb: 1, borderRadius: 2, border: `1px solid ${colors.border}`, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', p: 1.5 }}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: colors.text }}>{s.batch.item.descripcion}</Typography>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', mt: 0.5 }}>
-                                    <Typography variant="caption" sx={{ color: colors.textDim }}>Lote: {s.batch.lotNumber}</Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 800, color: colors.primary }}>{s.qtyPrincipal} {s.batch.item.unidadPrincipal}</Typography>
-                                </Box>
-                            </ListItem>
-                        ))}
-                    </List>
-                )}
-                <Button fullWidth onClick={onClose} sx={{ mt: 2, color: colors.textDim }}>CERRAR</Button>
-            </Paper>
-        </Modal>
+        <TextField
+            {...props}
+            value={localVal}
+            onChange={(e) => setLocalVal(e.target.value)}
+        />
     );
-};
+}
 
-const MoveStockDrawer = ({ open, onClose, entry }: { open: boolean, onClose: () => void, entry: any }) => {
-    const { data: rawDepots = [] } = useGetDepotsQuery();
-    const [moveStock] = useMoveStockMutation();
-    const [form, setForm] = useState({ depositoId: '', posicionIdDestino: '', qtyPrincipal: '', qtySecundaria: '' });
-    const [isSaving, setIsSaving] = useState(false);
-    const [viewerOpen, setViewerOpen] = useState(false);
+export default function DashboardDepositoPage() {
+    const user = useSelector(selectCurrentUser);
+    const allowedDepots = useSelector(selectAllowedDepots);
+    const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+    const isMobile = useIsMobile();
+    const navigate = useNavigate();
 
-    useEffect(() => { 
-        if (entry) { 
-            setForm(prev => ({ 
-                ...prev,
-                depositoId: entry.depositoId, 
-                qtyPrincipal: String(entry.qtyPrincipal), 
-                qtySecundaria: String(entry.qtySecundaria || '') 
-            })); 
-        } 
-    }, [entry]);
+    // View switcher (grid / list)
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+        return (sessionStorage.getItem('stockViewMode') as 'grid' | 'list') || (isMobile ? 'list' : 'grid');
+    });
 
-    const selectedDepot = useMemo(() => rawDepots.find((d: any) => d.id === form.depositoId), [rawDepots, form.depositoId]);
-    const selectedPosition = useMemo(() => selectedDepot?.positions?.find((p: any) => p.id === form.posicionIdDestino), [selectedDepot, form.posicionIdDestino]);
+    useEffect(() => {
+        sessionStorage.setItem('stockViewMode', viewMode);
+    }, [viewMode]);
 
-    const handleMove = async () => { 
-        if (!form.posicionIdDestino || !form.qtyPrincipal) { alert('Completá destino y cantidad.'); return; } 
-        setIsSaving(true); 
-        try { 
-            await moveStock({ 
-                depositoId: form.depositoId, 
-                posicionIdOrigen: entry.posicionId, 
-                posicionIdDestino: form.posicionIdDestino, 
-                itemId: entry.batch.item.id, 
-                lotId: entry.batch.id, 
-                qtyPrincipal: Number(String(form.qtyPrincipal).replace(',', '.')), 
-                qtySecundaria: form.qtySecundaria ? Number(String(form.qtySecundaria).replace(',', '.')) : undefined, 
-                fecha: new Date().toISOString() 
-            }).unwrap(); 
-            alert('✅ Movimiento realizado con éxito. El formulario sigue abierto para verificación.'); 
-        } catch (e: any) { 
-            alert(e?.data?.message || 'Error al mover'); 
-        } finally { 
-            setIsSaving(false); 
-        } 
+    const [depotId, setDepotId] = useState<string>(() => sessionStorage.getItem('selectedDepotId') || '');
+    const [positionId, setPositionId] = useState<string>('');
+    const [searchTerm, setSearchTerm] = useState<string>('');
+    const [expandedMaterials, setExpandedMaterials] = useState<string[]>([]);
+    const [deletingKeys, setDeletingKeys] = useState<string[]>([]);
+    const [detailGroupId, setDetailGroupId] = useState<string | null>(null);
+    const [emptyPositionsModal, setEmptyPositionsModal] = useState<boolean>(false);
+
+    const [searchParams, setSearchParams] = useSearchParams();
+    
+    useEffect(() => {
+        if (depotId) sessionStorage.setItem('selectedDepotId', depotId);
+    }, [depotId]);
+
+    useEffect(() => {
+        setPositionId('');
+    }, [depotId]);
+
+    // Search query from URL
+    useEffect(() => {
+        const q = searchParams.get('q');
+        if (q) setSearchTerm(q);
+    }, [searchParams]);
+
+    // Quick Add trigger from URL
+    useEffect(() => {
+        if (searchParams.get('qa') === '1') {
+            setQuickAddModal(true);
+            const newParams = new URLSearchParams(searchParams);
+            newParams.delete('qa');
+            setSearchParams(newParams, { replace: true });
+        }
+    }, [searchParams]);
+
+    const toggleMaterial = (id: string, e?: React.MouseEvent) => {
+        if(e) e.stopPropagation();
+        setExpandedMaterials(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
     };
 
-    if (!entry) return null;
+    const { data: rawDepots = [] } = useGetDepotsQuery();
+    const depots = useMemo(() => {
+        if (!allowedDepots) return rawDepots;
+        return rawDepots.filter((d: any) => allowedDepots.includes(d.id));
+    }, [rawDepots, allowedDepots]);
 
-    return (
-        <Drawer anchor="bottom" open={open} onClose={onClose} PaperProps={{ sx: { bgcolor: colors.bg, color: colors.text, borderTop: `1px solid ${colors.info}`, borderTopLeftRadius: 24, borderTopRightRadius: 24, p: 3, pb: 6 } }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}><Typography variant="h5" sx={{ fontWeight: 900, color: colors.info }}>MOVER MERCADERÍA</Typography><IconButton onClick={onClose} sx={{ color: colors.textDim }}><CloseIcon /></IconButton></Box>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Box sx={{ bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', p: 2, borderRadius: 2, border: `1px solid ${colors.border}` }}><Typography variant="caption" sx={{ color: colors.textDim }}>Origen:</Typography><Typography variant="subtitle1" sx={{ fontWeight: 800 }}>{entry.batch.item.descripcion}</Typography><Typography variant="body2" sx={{ color: colors.primary, fontWeight: 700 }}>Posición: {entry.posicion?.codigo} | Lote: {entry.batch.lotNumber}</Typography><Typography variant="caption" sx={{ color: colors.textDim }}>Disponible en origen: {entry.qtyPrincipal} {entry.batch.item.unidadPrincipal}</Typography></Box>
-                <TextField select label="Depósito Destino" fullWidth value={form.depositoId} onChange={(e) => setForm({...form, depositoId: e.target.value, posicionIdDestino: ''})} InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }}>{rawDepots.map((d: any) => <MenuItem key={d.id} value={d.id}>{d.nombre}</MenuItem>)}</TextField>
-                
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                    <TextField select label="Posición Destino" sx={{ flex: 1 }} value={form.posicionIdDestino} disabled={!form.depositoId} onChange={(e) => setForm({...form, posicionIdDestino: e.target.value})} InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }}>
-                        {selectedDepot?.positions?.filter((p: any) => p.id !== entry.posicionId).map((p: any) => <MenuItem key={p.id} value={p.id}>{p.codigo}</MenuItem>)}
-                    </TextField>
-                    <IconButton 
-                        disabled={!form.posicionIdDestino} 
-                        onClick={() => setViewerOpen(true)}
-                        sx={{ bgcolor: form.posicionIdDestino ? `${colors.info}20` : 'transparent', color: form.posicionIdDestino ? colors.info : colors.textDim, '&.Mui-disabled': { color: 'var(--bg-action-btn, rgba(255,255,255,0.05))' } }}
-                    >
-                        <VisibilityIcon />
-                    </IconButton>
-                </Box>
+    useEffect(() => {
+        if (!depotId && depots.length === 1) {
+            setDepotId(depots[0].id);
+        }
+    }, [depots, depotId]);
 
-                <Box sx={{ display: 'flex', gap: 2 }}><TextField label={`Mover (${entry.batch.item.unidadPrincipal})`} type="number" fullWidth value={form.qtyPrincipal} onChange={(e) => setForm({...form, qtyPrincipal: e.target.value})} InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} /><TextField label={`Mover (${entry.batch.item.unidadSecundaria || 'Un'})`} type="number" fullWidth value={form.qtySecundaria} onChange={(e) => setForm({...form, qtySecundaria: e.target.value})} InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} /></Box>
-                <Button fullWidth variant="contained" size="large" disabled={isSaving} startIcon={isSaving ? <CircularProgress size={20} /> : <SwapHorizIcon />} sx={{ mt: 2, bgcolor: colors.info, color: '#fff', fontWeight: 900, borderRadius: 3, py: 1.5 }} onClick={handleMove}>{isSaving ? 'MOVIENDO...' : 'CONFIRMAR MOVIMIENTO'}</Button>
-            </Box>
-
-            <PositionContentModal 
-                open={viewerOpen} 
-                onClose={() => setViewerOpen(false)} 
-                depositoId={form.depositoId} 
-                posicionId={form.posicionIdDestino} 
-                positionName={selectedPosition?.codigo}
-            />
-        </Drawer>
-    );
-};
-
-const DespachoDirectoDrawer = ({ open, onClose, entry }: { open: boolean, onClose: () => void, entry: any }) => {
+    const { data: items = [] } = useGetItemsQuery({});
     const { data: partners = [] } = useGetPartnersQuery({});
+    useGetItemCategoriesQuery(depotId || '', { skip: !depotId });
+    const [quickAddStock, { isLoading: isQuickAdding }] = useQuickAddStockMutation();
+    const [deleteStock] = useDeleteStockMutation();
+
+    // Dialog state
+    const [quickAddModal, setQuickAddModal] = useState(false);
+    const [qaDepot, setQaDepot] = useState('');
+    const [qaPosition, setQaPosition] = useState('');
+    const [qaItem, setQaItem] = useState('');
+    const [qaSupplier, setQaSupplier] = useState('');
+    const [qaLot, setQaLot] = useState('');
+    const [qaPrincipal, setQaPrincipal] = useState('');
+    const [qaSecundaria, setQaSecundaria] = useState('');
+
+    const [createItemModal, setCreateItemModal] = useState(false);
+    const [createPartnerModal, setCreatePartnerModal] = useState(false);
+
+    const [adjustStock] = useAdjustStockMutation();
+    const [reassignBatch] = useReassignBatchMutation();
+    const [checkBatch] = useLazyCheckBatchQuery();
+    const [updateBatchObservations] = useUpdateBatchObservationsMutation();
     const [despachoDirecto] = useDespachoDirectoMutation();
-    const [form, setForm] = useState({ clientId: '', clientName: '', fecha: new Date().toISOString().split('T')[0], qtyPrincipal: '', qtySecundaria: '' });
-    const [isSaving, setIsSaving] = useState(false);
-    const [newClient, setNewClient] = useState(false);
 
-    useEffect(() => { if (entry) { setForm(f => ({ ...f, qtyPrincipal: String(entry.qtyPrincipal), qtySecundaria: String(entry.qtySecundaria || '') })); } }, [entry]);
+    const [obsModal, setObsModal] = useState({ open: false, batchId: '', text: '' });
+    const [obsSaving, setObsSaving] = useState(false);
 
-    const clients = useMemo(() => partners.filter((p: any) => p.type === 'CLIENT' || p.type === 'BOTH'), [partners]);
+    // Despacho Directo state
+    const [despachoModal, setDespachoModal] = useState(false);
+    const [despachoEntry, setDespachoEntry] = useState<any>(null);
+    const [despachoQty, setDespachoQty] = useState('');
+    const [despachoQtySec, setDespachoQtySec] = useState('');
+    const [despachoClient, setDespachoClient] = useState('');
+    const [despachoClientName, setDespachoClientName] = useState('');
+    const [despachoNewClient, setDespachoNewClient] = useState(false);
+    const [despachoFecha, setDespachoFecha] = useState(new Date().toISOString().split('T')[0]);
+    const [despachoSaving, setDespachoSaving] = useState(false);
 
-    const handleDespacho = async () => {
-        if ((!form.clientId && !form.clientName) || !form.qtyPrincipal) { alert('Completá cliente y cantidad.'); return; }
-        setIsSaving(true);
+    const clientOptions = useMemo(() => [
+        { value: '', label: 'Seleccionar cliente...' },
+        ...(isAdmin ? [{ value: '__new__', label: '+ Nuevo cliente' }] : []),
+        ...partners.filter((p: any) => p.type === 'CLIENT' || p.type === 'BOTH').map((p: any) => ({ value: p.id, label: p.name }))
+    ], [partners, isAdmin]);
+
+    const openDespacho = (entry: any) => {
+        setDespachoEntry(entry);
+        setDespachoQty('');
+        setDespachoQtySec('');
+        setDespachoClient('');
+        setDespachoClientName('');
+        setDespachoNewClient(false);
+        setDespachoFecha(new Date().toISOString().split('T')[0]);
+        setDespachoModal(true);
+    };
+
+    const handleDespachoSubmit = async () => {
+        if (!despachoEntry || !despachoQty) return;
+        if (!despachoClient && !despachoClientName) { alert('Seleccioná un cliente'); return; }
+        setDespachoSaving(true);
         try {
             const result = await despachoDirecto({
-                fecha: form.fecha,
-                clientId: newClient ? undefined : form.clientId,
-                clientName: newClient ? form.clientName : undefined,
-                depositoId: entry.depositoId,
-                posicionId: entry.posicionId,
-                itemId: entry.batch.item.id,
-                lotId: entry.batch.id,
-                qtyPrincipal: Number(String(form.qtyPrincipal).replace(',', '.')),
-                qtySecundaria: form.qtySecundaria ? Number(String(form.qtySecundaria).replace(',', '.')) : undefined,
+                fecha: despachoFecha,
+                clientId: despachoNewClient ? undefined : despachoClient,
+                clientName: despachoNewClient ? despachoClientName : undefined,
+                depositoId: despachoEntry.depositoId || depotId,
+                posicionId: despachoEntry.posicionId,
+                itemId: despachoEntry.batch.item.id,
+                lotId: despachoEntry.lotId,
+                qtyPrincipal: Number(despachoQty),
+                qtySecundaria: despachoQtySec ? Number(despachoQtySec) : undefined,
             }).unwrap();
-            alert(`✅ Despachado. Remito: ${result.numero}`);
-            onClose();
+            alert(`✅ Despachado con éxito. Remito: ${result.numero}`);
+            setDespachoModal(false);
         } catch (e: any) {
             alert(e?.data?.message || 'Error al despachar');
         } finally {
-            setIsSaving(false);
+            setDespachoSaving(false);
         }
     };
 
-    if (!entry) return null;
+    const handleAdjustQty = async (entry: any, newValue: string, field: 'principal' | 'secundaria') => {
+        const newQty = Number(newValue);
+        if (isNaN(newQty) || newQty < 0) { alert('Valor inválido'); return; }
+        const currentQty = field === 'principal' ? Number(entry.qtyPrincipal) : Number(entry.qtySecundaria || 0);
+        const diff = newQty - currentQty;
+        if (diff === 0) return;
+        try {
+            await adjustStock({
+                depositoId: entry.depositoId || depotId,
+                posicionId: entry.posicionId,
+                itemId: entry.batch.item.id,
+                lotId: entry.lotId,
+                qtyPrincipal: field === 'principal' ? diff : 0,
+                qtySecundaria: field === 'secundaria' ? diff : null,
+                fecha: new Date().toISOString(),
+                observaciones: `Ajuste manual: ${currentQty} → ${newQty} (${field === 'principal' ? entry.batch.item.unidadPrincipal : entry.batch.item.unidadSecundaria})`,
+            }).unwrap();
+        } catch (e: any) { alert(e?.data?.message || 'Error al ajustar'); }
+    };
 
-    return (
-        <Drawer anchor="bottom" open={open} onClose={onClose} PaperProps={{ sx: { bgcolor: colors.bg, color: colors.text, borderTop: `1px solid ${colors.danger}`, borderTopLeftRadius: 24, borderTopRightRadius: 24, p: 3, pb: 6 } }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}><Typography variant="h5" sx={{ fontWeight: 900, color: colors.danger }}>SALIDA DE MERCADERÍA</Typography><IconButton onClick={onClose} sx={{ color: colors.textDim }}><CloseIcon /></IconButton></Box>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Box sx={{ bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', p: 2, borderRadius: 2, border: `1px solid ${colors.border}` }}>
-                    <Typography variant="caption" sx={{ color: colors.textDim }}>Material:</Typography>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>{entry.batch.item.descripcion}</Typography>
-                    <Typography variant="body2" sx={{ color: colors.danger, fontWeight: 700 }}>📍 Posición: {entry.posicion?.codigo} | Lote: {entry.batch.lotNumber}</Typography>
-                </Box>
-                
-                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                    <Autocomplete 
-                        sx={{ flex: 2 }}
-                        options={clients} 
-                        getOptionLabel={(option: any) => option.name} 
-                        value={newClient ? null : (clients.find(c => c.id === form.clientId) || null)}
-                        disabled={newClient}
-                        renderInput={(params) => <TextField {...params} label="Seleccionar Cliente" InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ ...params.InputProps, sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} />} 
-                        onChange={(_e, val: any) => setForm({...form, clientId: val?.id || ''})} 
-                    />
-                    <Box sx={{ display: 'flex', alignItems: 'center', color: colors.textDim }}>
-                        <Typography variant="caption" sx={{ fontSize: '0.6rem', fontWeight: 800 }}>NUEVO</Typography>
-                        <Checkbox size="small" checked={newClient} onChange={(e) => setNewClient(e.target.checked)} sx={{ color: colors.textDim }} />
-                    </Box>
-                </Box>
-
-                {newClient && <TextField label="Nombre del Nuevo Cliente" fullWidth value={form.clientName} onChange={(e) => setForm({...form, clientName: e.target.value})} InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} />}
-
-                <TextField type="date" label="Fecha" fullWidth value={form.fecha} onChange={(e) => setForm({...form, fecha: e.target.value})} InputLabelProps={{ shrink: true, sx: { color: colors.textDim } }} InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} />
-
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                    <TextField label={`Cantidad (${entry.batch.item.unidadPrincipal})`} type="number" fullWidth value={form.qtyPrincipal} onChange={(e) => setForm({...form, qtyPrincipal: e.target.value})} InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} />
-                    <TextField 
-                        label={`Secundaria (${entry.batch.item.unidadSecundaria || 'Un'})`} 
-                        type="number" 
-                        fullWidth 
-                        value={form.qtySecundaria} 
-                        onChange={(e) => {
-                            const val = e.target.value;
-                            // Calculate factor ONLY from the current entry ratio (kilos / boxes)
-                            const factor = (entry.qtySecundaria > 0) ? (entry.qtyPrincipal / entry.qtySecundaria) : null;
-                            const newQtyPrincipal = val && factor ? (Number(val) * factor).toFixed(2) : form.qtyPrincipal;
-                            setForm({ ...form, qtySecundaria: val, qtyPrincipal: String(newQtyPrincipal) });
-                        }} 
-                        InputLabelProps={{ sx: { color: colors.textDim } }} 
-                        InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} 
-                    />
-                </Box>
-
-                <Button fullWidth variant="contained" size="large" disabled={isSaving} startIcon={isSaving ? <CircularProgress size={20} /> : <TrendingUpIcon />} sx={{ mt: 2, bgcolor: colors.danger, color: '#fff', fontWeight: 900, borderRadius: 3, py: 1.5 }} onClick={handleDespacho}>{isSaving ? 'DESPACHANDO...' : 'CONFIRMAR SALIDA'}</Button>
-            </Box>
-        </Drawer>
-    );
-};
-
-const MaterialCard = ({ group, isPinned, onTogglePin, isExpanded, onToggleExpand, onMoveRequest, onSalidaRequest, onEditLimits }: any) => {
-    const navigate = useNavigate();
-    const { item, metrics, entries } = group;
-    const isCritical = metrics.kilos < (item.minStock || 50);
-    const statusColor = isCritical ? colors.danger : colors.success;
-    return (
-        <Box sx={{ bgcolor: isPinned ? `${colors.primary}05` : colors.cardBg, mb: 1, borderRadius: 2, border: `1px solid ${isPinned ? colors.primary : colors.border}`, overflow: 'hidden', transition: 'all 0.2s ease' }}>
-            <ListItem sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5, width: '100%' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
-                    <Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="caption" sx={{ color: colors.primary, fontWeight: 800, fontSize: '0.65rem' }}>{item.codigoInterno}</Typography>
-                            {isPinned && <Chip label="ANCLADO" size="small" sx={{ height: 16, fontSize: '0.55rem', bgcolor: colors.primary, color: '#000', fontWeight: 900 }} />}
-                        </Box>
-                        <Typography 
-                            variant="h6" 
-                            onClick={(e) => { e.stopPropagation(); navigate(`/materiales?q=${encodeURIComponent(item.descripcion)}`); }}
-                            sx={{ fontWeight: 800, color: colors.text, lineHeight: 1.2, cursor: 'pointer', '&:hover': { color: colors.primary } }}
-                        >
-                            {item.descripcion}
-                        </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', gap: 0.5 }}><IconButton size="small" onClick={onTogglePin} sx={{ color: isPinned ? colors.primary : colors.textDim }}>{isPinned ? <PushPinIcon sx={{ fontSize: 18 }} /> : <PushPinOutlinedIcon sx={{ fontSize: 18 }} />}</IconButton><IconButton size="small" onClick={onToggleExpand} sx={{ color: colors.textDim }}>{isExpanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}</IconButton></Box>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                    <Box 
-                        sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, cursor: 'pointer', '&:hover': { opacity: 0.7 } }}
-                        onClick={(e) => { e.stopPropagation(); onEditLimits(item); }}
-                    >
-                        <Typography variant="h4" sx={{ fontWeight: 900, color: statusColor }}>{metrics.kilos.toFixed(1)}</Typography>
-                        <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 700 }}>{item.unidadPrincipal}</Typography>
-                    </Box>
-                    <Box sx={{ textAlign: 'right' }}><Typography variant="caption" sx={{ color: colors.textDim, display: 'flex', alignItems: 'center', gap: 0.5, fontWeight: 600 }}><CategoryIcon sx={{ fontSize: 12 }} /> {item.category?.nombre || 'General'}</Typography><Typography variant="caption" sx={{ color: colors.textDim, display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5, fontWeight: 600 }}><SwapHorizIcon sx={{ fontSize: 12 }} /> {entries.length} registros</Typography></Box>
-                </Box>
-            </ListItem>
-            <Collapse in={isExpanded}><Divider sx={{ borderColor: colors.border }} /><Box sx={{ p: 2, bgcolor: 'var(--bg-alt-row, rgba(0,0,0,0.2))' }}><Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 900, mb: 1, display: 'block', textTransform: 'uppercase', fontSize: '0.6rem' }}>Desglose por Posición y Lote</Typography><List disablePadding>{entries.map((entry: any, idx: number) => (<Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: idx === entries.length - 1 ? 'none' : `1px solid ${colors.border}` }}><Box><Typography variant="body2" sx={{ fontWeight: 700 }}>{entry.posicion?.codigo || 'S/P'}</Typography><Typography variant="caption" sx={{ color: colors.textDim }}>Lote: {entry.batch?.lotNumber} | Proveedor: {entry.batch?.supplier?.name || 'S/D'}</Typography></Box><Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}><Box sx={{ textAlign: 'right' }}><Typography variant="body2" sx={{ fontWeight: 800, color: colors.primary }}>{entry.qtyPrincipal} {item.unidadPrincipal}</Typography><Typography variant="caption" sx={{ color: colors.textDim }}>{entry.qtySecundaria || 0} {item.unidadSecundaria || 'Un'}</Typography></Box><div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}><Button size="small" variant="outlined" startIcon={<SwapHorizIcon />} sx={{ borderColor: colors.info, color: colors.info, textTransform: 'none', fontWeight: 800, fontSize: '0.65rem', borderRadius: 1.5 }} onClick={() => onMoveRequest(entry)}>Mover</Button><Button size="small" variant="outlined" startIcon={<TrendingUpIcon />} sx={{ borderColor: colors.danger, color: colors.danger, textTransform: 'none', fontWeight: 800, fontSize: '0.65rem', borderRadius: 1.5 }} onClick={() => onSalidaRequest(entry)}>Salida</Button></div></Box></Box>))}</List></Box></Collapse>
-        </Box>
-    );
-};
-
-const PositionCard = ({ group, isPinned, onTogglePin, isExpanded, onToggleExpand, onMoveRequest, onSalidaRequest }: any) => {
-    const { posicion, metrics, entries } = group;
-    const statusColor = colors.info;
-
-    const distinctItemsCount = useMemo(() => {
-        const itemIds = new Set(entries.map((e: any) => e.batch?.item?.id));
-        return itemIds.size;
-    }, [entries]);
-
-    return (
-        <Box sx={{ bgcolor: isPinned ? `${colors.primary}05` : colors.cardBg, mb: 1, borderRadius: 2, border: `1px solid ${isPinned ? colors.primary : colors.border}`, overflow: 'hidden', transition: 'all 0.2s ease' }}>
-            <ListItem sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5, width: '100%' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
-                    <Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="caption" sx={{ color: colors.primary, fontWeight: 800, fontSize: '0.65rem' }}>POSICIÓN</Typography>
-                            {isPinned && <Chip label="ANCLADA" size="small" sx={{ height: 16, fontSize: '0.55rem', bgcolor: colors.primary, color: '#000', fontWeight: 900 }} />}
-                        </Box>
-                        <Typography 
-                            variant="h6" 
-                            sx={{ fontWeight: 950, color: colors.text, lineHeight: 1.2, fontSize: '1.25rem' }}
-                        >
-                            {posicion.codigo || 'S/P'}
-                        </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
-                        <IconButton size="small" onClick={onTogglePin} sx={{ color: isPinned ? colors.primary : colors.textDim }}>
-                            {isPinned ? <PushPinIcon sx={{ fontSize: 18 }} /> : <PushPinOutlinedIcon sx={{ fontSize: 18 }} />}
-                        </IconButton>
-                        <IconButton size="small" onClick={onToggleExpand} sx={{ color: colors.textDim }}>
-                            {isExpanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-                        </IconButton>
-                    </Box>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
-                        <Typography variant="h4" sx={{ fontWeight: 900, color: statusColor }}>{metrics.kilos.toFixed(1)}</Typography>
-                        <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 700 }}>kg</Typography>
-                    </Box>
-                    <Box sx={{ textAlign: 'right' }}>
-                        <Typography variant="caption" sx={{ color: colors.textDim, display: 'flex', alignItems: 'center', gap: 0.5, fontWeight: 600 }}>
-                            <CategoryIcon sx={{ fontSize: 12 }} /> {distinctItemsCount} {distinctItemsCount === 1 ? 'material' : 'materiales'}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: colors.textDim, display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5, fontWeight: 600 }}>
-                            <SwapHorizIcon sx={{ fontSize: 12 }} /> {entries.length} {entries.length === 1 ? 'partida' : 'partidas'}
-                        </Typography>
-                    </Box>
-                </Box>
-            </ListItem>
-            <Collapse in={isExpanded}>
-                <Divider sx={{ borderColor: colors.border }} />
-                <Box sx={{ p: 2, bgcolor: 'var(--bg-alt-row, rgba(0,0,0,0.2))' }}>
-                    <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 900, mb: 1, display: 'block', textTransform: 'uppercase', fontSize: '0.6rem' }}>
-                        Detalle de Materiales y Partidas en esta Posición
-                    </Typography>
-                    <List disablePadding>
-                        {entries.map((entry: any, idx: number) => {
-                            const item = entry.batch?.item;
-                            return (
-                                <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1.2, borderBottom: idx === entries.length - 1 ? 'none' : `1px solid ${colors.border}` }}>
-                                    <Box sx={{ maxWidth: '65%' }}>
-                                        <Typography variant="body2" sx={{ fontWeight: 800, color: colors.text }}>
-                                            {item?.descripcion || 'Material sin descripción'}
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ color: colors.textDim, display: 'block', mt: 0.2 }}>
-                                            Código: {item?.codigoInterno} | Lote: {entry.batch?.lotNumber}
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ color: colors.textDim }}>
-                                            Proveedor: {entry.batch?.supplier?.name || 'S/D'}
-                                        </Typography>
-                                    </Box>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                        <Box sx={{ textAlign: 'right', minWidth: 70 }}>
-                                            <Typography variant="body2" sx={{ fontWeight: 800, color: colors.primary }}>
-                                                {entry.qtyPrincipal} {item?.unidadPrincipal || 'kg'}
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.7rem' }}>
-                                                {entry.qtySecundaria || 0} {item?.unidadSecundaria || 'Un'}
-                                            </Typography>
-                                        </Box>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                            <Button 
-                                                size="small" 
-                                                variant="outlined" 
-                                                startIcon={<SwapHorizIcon />}
-                                                sx={{ borderColor: colors.info, color: colors.info, textTransform: 'none', fontWeight: 800, fontSize: '0.65rem', borderRadius: 1.5 }}
-                                                onClick={() => onMoveRequest(entry)}
-                                            >
-                                                Mover
-                                            </Button>
-                                            <Button 
-                                                size="small" 
-                                                variant="outlined" 
-                                                startIcon={<TrendingUpIcon />}
-                                                sx={{ borderColor: colors.danger, color: colors.danger, textTransform: 'none', fontWeight: 800, fontSize: '0.65rem', borderRadius: 1.5 }}
-                                                onClick={() => onSalidaRequest(entry)}
-                                            >
-                                                Salida
-                                            </Button>
-                                        </div>
-                                    </Box>
-                                </Box>
-                            );
-                        })}
-                    </List>
-                </Box>
-            </Collapse>
-        </Box>
-    );
-};
-
-const QuickAddDrawer = ({ open, onClose }: { open: boolean, onClose: () => void }) => {
-    const { data: depots = [] } = useGetDepotsQuery();
-    const { data: items = [] } = useGetItemsQuery({});
-    const { data: partners = [] } = useGetPartnersQuery({});
-    const [quickAddStock] = useQuickAddStockMutation();
-    const [createRemitoEntrada] = useCreateRemitoEntradaMutation();
-    const [form, setForm] = useState(() => { const saved = localStorage.getItem('quick_add_form'); const initial = { depositoId: '', posicionId: '', itemId: '', supplierId: '', lotNumber: '', qtyPrincipal: '', qtySecundaria: '', remito: '', fecha: new Date().toISOString().split('T')[0] }; if (saved) { try { const parsed = JSON.parse(saved); return { ...initial, ...parsed, itemId: '', lotNumber: '', qtyPrincipal: '', qtySecundaria: '' }; } catch (e) { return initial; } } return initial; });
-    useEffect(() => { const toSave = { depositoId: form.depositoId, posicionId: form.posicionId, supplierId: form.supplierId, remito: form.remito }; localStorage.setItem('quick_add_form', JSON.stringify(toSave)); }, [form.depositoId, form.posicionId, form.supplierId, form.remito]);
-    const [isSaving, setIsSaving] = useState(false);
-    const suppliers = useMemo(() => partners.filter((p: any) => p.type === 'SUPPLIER' || p.type === 'BOTH'), [partners]);
-    const selectedDepot = useMemo(() => depots.find((d: any) => d.id === form.depositoId), [depots, form.depositoId]);
-    const selectedItem = useMemo(() => items.find((i: any) => i.id === form.itemId), [items, form.itemId]);
-    const handleSubmit = async () => { 
-        if (!form.depositoId || !form.posicionId || !form.itemId || !form.supplierId || !form.lotNumber || !form.qtyPrincipal) { alert('Completá los campos obligatorios.'); return; } 
-        if (form.remito && !form.fecha) { alert('Ingresá la fecha del remito.'); return; }
-        setIsSaving(true); 
-        try { 
-            if (form.remito) {
-                await createRemitoEntrada({
-                    numero: form.remito,
-                    fecha: form.fecha,
-                    partnerId: form.supplierId,
-                    depositoId: form.depositoId,
-                    items: [{
-                        itemId: form.itemId,
-                        lotNumber: form.lotNumber,
-                        posicionId: form.posicionId,
-                        qtyPrincipal: Number(String(form.qtyPrincipal).replace(',', '.')),
-                        qtySecundaria: form.qtySecundaria ? Number(String(form.qtySecundaria).replace(',', '.')) : undefined
-                    }]
-                }).unwrap();
-                alert('✅ Remito de Entrada creado correctamente');
+    const handleReassignBatch = async (entry: any, newLotNumber: string) => {
+        if (!newLotNumber.trim()) return;
+        if (newLotNumber === entry.batch.lotNumber) return;
+        const entryDepotId = entry.depositoId || depotId;
+        try {
+            const result = await checkBatch({ itemId: entry.batch.item.id, lotNumber: newLotNumber, supplierId: entry.batch.supplier?.id }).unwrap();
+            if (result.exists) {
+                if (!window.confirm(`La partida "${newLotNumber}" ya existe. ¿Querés fusionar el stock con esa partida?`)) return;
             } else {
-                await quickAddStock({ depositoId: form.depositoId, posicionId: form.posicionId, itemId: form.itemId, supplierId: form.supplierId, lotNumber: form.lotNumber, qtyPrincipal: Number(String(form.qtyPrincipal).replace(',', '.')), qtySecundaria: form.qtySecundaria ? Number(String(form.qtySecundaria).replace(',', '.')) : undefined, fecha: form.fecha }).unwrap(); 
-                alert('✅ Stock adicionado correctamente');
+                if (!window.confirm(`La partida "${newLotNumber}" no existe. Se va a crear una nueva. ¿Continuar?`)) return;
             }
-            onClose(); 
-            setForm((prev: any) => ({ ...prev, itemId: '', lotNumber: '', qtyPrincipal: '', qtySecundaria: '' })); 
-        } catch (e: any) { alert(e?.data?.message || 'Error'); } finally { setIsSaving(false); } 
+            await reassignBatch({
+                depositoId: entryDepotId,
+                posicionId: entry.posicionId,
+                itemId: entry.batch.item.id,
+                currentLotId: entry.lotId,
+                newLotNumber: newLotNumber.trim(),
+                fecha: new Date().toISOString(),
+            }).unwrap();
+        } catch (e: any) { alert(e?.data?.message || 'Error al reasignar partida'); }
     };
-    return (
-        <Drawer anchor="bottom" open={open} onClose={onClose} PaperProps={{ sx: { bgcolor: colors.bg, color: colors.text, borderTop: `1px solid ${colors.primary}`, borderTopLeftRadius: 24, borderTopRightRadius: 24, p: 3, pb: 6 } }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}><Typography variant="h5" sx={{ fontWeight: 900, color: colors.primary }}>CARGA RÁPIDA</Typography><IconButton onClick={onClose} sx={{ color: colors.textDim }}><CloseIcon /></IconButton></Box>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Box sx={{ display: 'flex', gap: 2 }}><TextField select label="Depósito" fullWidth value={form.depositoId} onChange={(e) => setForm({...form, depositoId: e.target.value, posicionId: ''})} InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }}>{depots.map((d: any) => <MenuItem key={d.id} value={d.id}>{d.nombre}</MenuItem>)}</TextField><TextField select label="Posición" fullWidth value={form.posicionId} disabled={!form.depositoId} onChange={(e) => setForm({...form, posicionId: e.target.value})} InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }}>{selectedDepot?.positions?.map((p: any) => <MenuItem key={p.id} value={p.id}>{p.codigo}</MenuItem>)}</TextField></Box>
-                <Autocomplete options={suppliers} getOptionLabel={(option: any) => option.name} value={suppliers.find(s => s.id === form.supplierId) || null} renderInput={(params) => <TextField {...params} label="Proveedor" InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ ...params.InputProps, sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} />} onChange={(_e, val: any) => setForm({...form, supplierId: val?.id || ''})} />
-                <Autocomplete options={items} getOptionLabel={(option: any) => `${option.codigoInterno} - ${option.descripcion}`} renderInput={(params) => <TextField {...params} label="Material" InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ ...params.InputProps, sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} />} onChange={(_e, val: any) => setForm({...form, itemId: val?.id || ''})} />
-                <Box sx={{ display: 'flex', gap: 2 }}><TextField label="Lote" fullWidth value={form.lotNumber} onChange={(e) => setForm({...form, lotNumber: e.target.value})} InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} /><TextField label="N° Remito (Opc)" fullWidth value={form.remito} onChange={(e) => setForm({...form, remito: e.target.value})} InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} /></Box>
-                <TextField type="date" label="Fecha Entrada" fullWidth value={form.fecha} onChange={(e) => setForm({...form, fecha: e.target.value})} InputLabelProps={{ shrink: true, sx: { color: colors.textDim } }} InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} />
-                <Box sx={{ display: 'flex', gap: 2 }}><TextField label={`Cant (${selectedItem?.unidadPrincipal || 'Kg'})`} type="number" fullWidth value={form.qtyPrincipal} onChange={(e) => setForm({...form, qtyPrincipal: e.target.value})} InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} /><TextField label={`Sec (${selectedItem?.unidadSecundaria || 'Un'})`} type="number" fullWidth value={form.qtySecundaria} onChange={(e) => setForm({...form, qtySecundaria: e.target.value})} InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} /></Box>
-                <Button fullWidth variant="contained" size="large" disabled={isSaving} startIcon={isSaving ? <CircularProgress size={20} /> : <SaveIcon />} sx={{ mt: 2, bgcolor: colors.primary, color: '#000', fontWeight: 900, borderRadius: 3, py: 1.5, '&:hover': { bgcolor: '#d97706' } }} onClick={handleSubmit}>{isSaving ? 'REGISTRANDO...' : 'REGISTRAR ENTRADA'}</Button>
-            </Box>
-        </Drawer>
-    );
-};
 
-const EditStockLimitsDrawer = ({ open, onClose, initialItem }: { open: boolean, onClose: () => void, initialItem?: any }) => {
-    const { data: items = [] } = useGetItemsQuery({});
-    const [updateItem] = useUpdateItemMutation();
-    const [selectedItem, setSelectedItem] = useState<any>(null);
-    const [limits, setLimits] = useState({ minStock: '', maxStock: '' });
-    const [isSaving, setIsSaving] = useState(false);
-    useEffect(() => { if (initialItem) setSelectedItem(initialItem); }, [initialItem]);
-    useEffect(() => { if (selectedItem) { setLimits({ minStock: String(selectedItem.minStock || ''), maxStock: String(selectedItem.maxStock || '') }); } }, [selectedItem]);
-    const handleSave = async () => { if (!selectedItem) return; setIsSaving(true); try { await updateItem({ id: selectedItem.id, data: { ...selectedItem, minStock: Number(limits.minStock), maxStock: Number(limits.maxStock) } }).unwrap(); alert('Límites actualizados correctamente'); onClose(); setSelectedItem(null); } catch (e: any) { alert(e?.data?.message || 'Error'); } finally { setIsSaving(false); } };
-    return (
-        <Drawer anchor="bottom" open={open} onClose={onClose} PaperProps={{ sx: { bgcolor: colors.bg, color: colors.text, borderTop: `1px solid ${colors.info}`, borderTopLeftRadius: 24, borderTopRightRadius: 24, p: 3, pb: 6 } }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}><Typography variant="h5" sx={{ fontWeight: 900, color: colors.info }}>GESTIÓN DE LÍMITES</Typography><IconButton onClick={onClose} sx={{ color: colors.textDim }}><CloseIcon /></IconButton></Box>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <Autocomplete options={items} getOptionLabel={(option: any) => `${option.codigoInterno} - ${option.descripcion}`} value={selectedItem || null} renderInput={(params) => <TextField {...params} label="Seleccionar Material para configurar" InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ ...params.InputProps, sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} />} onChange={(_e, val: any) => setSelectedItem(val)} />
-                {selectedItem && (<Fade in><Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}><Box sx={{ bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', p: 2, borderRadius: 2, border: `1px solid ${colors.border}` }}><Typography variant="caption" sx={{ color: colors.textDim }}>Configurando:</Typography><Typography variant="subtitle1" sx={{ fontWeight: 800 }}>{selectedItem.descripcion}</Typography><Typography variant="caption" sx={{ color: colors.info }}>Stock actual en sistema se comparará con estos valores.</Typography></Box><Box sx={{ display: 'flex', gap: 2 }}><TextField label={`Stock Mínimo (${selectedItem.unidadPrincipal})`} type="number" fullWidth value={limits.minStock} onChange={(e) => setLimits({...limits, minStock: e.target.value})} InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} /><TextField label={`Stock Máximo (${selectedItem.unidadPrincipal})`} type="number" fullWidth value={limits.maxStock} onChange={(e) => setLimits({...limits, maxStock: e.target.value})} InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} /></Box><Button fullWidth variant="contained" size="large" disabled={isSaving} startIcon={isSaving ? <CircularProgress size={20} /> : <SaveIcon />} sx={{ mt: 2, bgcolor: colors.info, color: '#fff', fontWeight: 900, borderRadius: 3, py: 1.5 }} onClick={handleSave}>{isSaving ? 'GUARDANDO...' : 'ACTUALIZAR LÍMITES'}</Button></Box></Fade>)}
-            </Box>
-        </Drawer>
-    );
-};
-
-export default function DashboardDepositoPage() {
-    const isMobile = useIsMobile();
-    const allowedDepots = useSelector(selectAllowedDepots);
-    const [plantId, setPlantId] = useState<string>('');
-    const [depotId, setDepotId] = useState<string>(() => sessionStorage.getItem('selectedDepotId') || '');
-    const [positionId, setPositionId] = useState<string>('');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState('Todos');
-    const [showFilters, setShowFilters] = useState(false);
-    const [activeKpi, setActiveKpi] = useState<string | null>(null);
-    const [quickAddOpen, setQuickAddOpen] = useState(false);
-    const [editLimitsOpen, setEditLimitsOpen] = useState(false);
-    const [selectedItemToEditLimits, setSelectedItemToEditLimits] = useState<any>(null);
-    const [moveDrawerOpen, setMoveDrawerOpen] = useState(false);
-    const [selectedEntryToMove, setSelectedEntryToMove] = useState<any>(null);
-    const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
-    const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
-    const [salidaDrawerOpen, setSalidaDrawerOpen] = useState(false);
-    const [selectedEntryToSalida, setSelectedEntryToSalida] = useState<any>(null);
-    const togglePin = (id: string) => { 
-        setPinnedIds((prev: Set<string>) => { 
-            const next = new Set(prev); 
-            if (next.has(id)) next.delete(id); 
-            else next.add(id); 
-            return next; 
-        }); 
+    const handleUpdateObs = async () => {
+        setObsSaving(true);
+        try {
+            await updateBatchObservations({ id: obsModal.batchId, observaciones: obsModal.text }).unwrap();
+            setObsModal({ open: false, batchId: '', text: '' });
+        } catch (e: any) { alert(e?.data?.message || 'Error al guardar observación'); }
+        setObsSaving(false);
     };
-    // const { transcript, listening, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition();
-    // useEffect(() => { if (transcript) setSearchQuery(transcript); }, [transcript]);
-    // const toggleListening = () => { if (listening) SpeechRecognition.stopListening(); else { resetTranscript(); SpeechRecognition.startListening({ language: 'es-AR', continuous: true }); } };
-    const browserSupportsSpeechRecognition = false;
-    const listening = false;
-    const toggleListening = () => {};
-    
-    useEffect(() => { if (depotId) sessionStorage.setItem('selectedDepotId', depotId); }, [depotId]);
-    const { data: rawPlants = [] } = useGetPlantsQuery();
-    const { data: rawDepots = [] } = useGetDepotsQuery();
-    const plants = useMemo(() => rawPlants, [rawPlants]);
-    const depots = useMemo(() => { let filtered = allowedDepots ? rawDepots.filter((d: any) => allowedDepots.includes(d.id)) : rawDepots; if (plantId) filtered = filtered.filter((d: any) => d.plantId === plantId); return filtered; }, [rawDepots, allowedDepots, plantId]);
-    useEffect(() => { if (rawPlants.length > 0 && !plantId) { const derwill = rawPlants.find((p: any) => p.name.toLowerCase().includes('derwill')); if (derwill) setPlantId(derwill.id); } }, [rawPlants, plantId]);
-    useEffect(() => { if (depots.length > 0 && !depotId) { const hilado = depots.find((d: any) => d.nombre.toLowerCase().includes('hilado')); if (hilado) setDepotId(hilado.id); else setDepotId(depots[0].id); } }, [depots, depotId]);
-    
-    const { data: rawStock = [], isLoading: loadingStock } = useGetStockQuery({ depotId: depotId || undefined, positionId: positionId || undefined }, { skip: !depotId });
-    
-    const { groupedData, groupedPositionsData, metrics } = useMemo(() => {
-        const genMetrics = { 
-            kilos: 0, 
-            picking: rawStock.length > 0 ? 1 : 0,
-            positionsCount: 0
-        };
+
+    const qaFilteredItems = useMemo(() => {
+        if (!qaSupplier) return items;
+        return items.filter((i: any) => i.supplierId === qaSupplier);
+    }, [items, qaSupplier]);
+
+    const qaSelectedItem = useMemo(() => items.find((i: any) => i.id === qaItem), [items, qaItem]);
+
+
+
+    const handleQuickAddSubmit = async () => {
+        if (isQuickAdding) return;
+        if (!qaDepot || !qaPosition || !qaItem || !qaSupplier || !qaLot || !qaPrincipal) {
+            alert('Completá todos los campos obligatorios.');
+            return;
+        }
+        try {
+            await quickAddStock({
+                depositoId: qaDepot, posicionId: qaPosition, itemId: qaItem, supplierId: qaSupplier,
+                lotNumber: qaLot, qtyPrincipal: Number(qaPrincipal), qtySecundaria: qaSecundaria ? Number(qaSecundaria) : undefined,
+                fecha: new Date().toISOString()
+            }).unwrap();
+            setQuickAddModal(false);
+            setQaItem(''); setQaLot(''); setQaPrincipal(''); setQaSecundaria('');
+        } catch (e: any) { alert(e?.data?.message || 'Error en adición rápida'); }
+    };
+
+    const getEntryKey = (entry: any) => `${entry.depositoId || depotId}-${entry.posicionId}-${entry.batch.item.id}-${entry.lotId}`;
+
+    const handleDeleteLine = async (entry: any) => {
+        if (!window.confirm(`¿Eliminar esta línea de stock (${entry.qtyPrincipal} ${entry.batch.item.unidadPrincipal})?`)) return;
+        const key = getEntryKey(entry);
+        setDeletingKeys(prev => [...prev, key]);
+        try {
+            await deleteStock({
+                depositoId: entry.depositoId || depotId,
+                posicionId: entry.posicionId,
+                itemId: entry.batch.item.id,
+                lotId: entry.lotId,
+                fecha: new Date().toISOString()
+            }).unwrap();
+        } catch (e: any) { 
+            alert(e?.data?.message || 'Error al eliminar línea de stock'); 
+            setDeletingKeys(prev => prev.filter(k => k !== key));
+        }
+    };
+
+    const { data: rawStock = [], isFetching, isLoading } = useGetStockQuery({ 
+        depotId: depotId || undefined,
+        positionId: positionId || undefined
+    }, { skip: !depotId });
+
+    const emptyPositions = useMemo(() => {
+        if (!depotId) return [];
+        const allDepotPositions = (depots.find((d: any) => d.id === depotId)?.positions || []).filter((p: any) => p.activo);
+        const occupiedPositionIds = new Set(rawStock.map((e: any) => e.posicionId).filter(Boolean));
+        return allDepotPositions.filter((p: any) => !occupiedPositionIds.has(p.id));
+    }, [depotId, depots, rawStock]);
+
+    useEffect(() => {
+        if (deletingKeys.length > 0) {
+            setDeletingKeys([]);
+        }
+    }, [rawStock]);
+
+    const { groupedData, generalMetrics } = useMemo(() => {
+        const general = { kilos: 0, units: 0, positions: new Set<string>() };
+        if (!rawStock.length) return { groupedData: [], generalMetrics: null };
         const groups: Record<string, any> = {};
-        const positionGroups: Record<string, any> = {};
-        const occupiedPositions = new Set<string>();
-        const searchTerms = searchQuery.toLowerCase().split(' ').filter(t => t.length > 0);
+        const searchWords = searchTerm.toLowerCase().split(' ').filter(w => w.length > 0);
         
-        rawStock.forEach((entry: any) => {
-            const itemId = entry.batch?.item?.id; 
-            if (!itemId) return;
-            
-            const positionId = entry.posicionId || entry.posicion?.id || 'sin-posicion';
-            const positionCode = entry.posicion?.codigo || 'S/P';
-            
-            if (entry.posicionId || entry.posicion?.id) {
-                occupiedPositions.add(entry.posicionId || entry.posicion?.id);
-            }
-
-            const matchesSearch = searchTerms.length === 0 || searchTerms.every(term => {
+        const filteredStock = rawStock.filter((entry: any) => {
+            if (searchWords.length === 0) return true;
+            return searchWords.every(word => {
                 const itemDesc = (entry.batch?.item?.descripcion || '').toLowerCase();
                 const itemCode = (entry.batch?.item?.codigoInterno || '').toLowerCase();
+                const lotNum = (entry.batch?.lotNumber || '').toLowerCase();
                 const supplierName = (entry.batch?.supplier?.name || '').toLowerCase();
-                const categoryName = (entry.batch?.item?.category?.nombre || '').toLowerCase();
-                const lotNumber = (entry.batch?.lotNumber || '').toLowerCase();
                 const posCode = (entry.posicion?.codigo || '').toLowerCase();
-                return itemDesc.includes(term) || itemCode.includes(term) || supplierName.includes(term) || categoryName.includes(term) || lotNumber.includes(term) || posCode.includes(term);
+                const categoryName = (entry.batch?.item?.category?.nombre || '').toLowerCase();
+                return itemDesc.includes(word) || itemCode.includes(word) || lotNum.includes(word) || supplierName.includes(word) || posCode.includes(word) || categoryName.includes(word);
             });
+        });
 
-            const isPinned = pinnedIds.has(itemId);
-            const isPositionPinned = pinnedIds.has(positionId);
-            const passesCategory = selectedCategory === 'Todos' || entry.batch?.item?.category?.nombre === selectedCategory;
+        filteredStock.forEach((entry: any) => {
+            const itemId = entry.batch?.item?.id;
+            if (!itemId) return;
+            general.kilos += Number(entry.qtyPrincipal || 0);
+            if (entry.qtySecundaria) general.units += Number(entry.qtySecundaria);
+            if (entry.posicionId) general.positions.add(entry.posicionId);
 
-            // For Material grouping
-            const shouldIncludeMaterial = isPinned || (matchesSearch && passesCategory);
-            if (shouldIncludeMaterial) {
-                if (!groups[itemId]) { 
-                    groups[itemId] = { 
-                        item: entry.batch.item, 
-                        entries: [], 
-                        metrics: { kilos: 0, units: 0 }, 
-                        isPinned, 
-                        passesSearchAndCategory: matchesSearch && passesCategory 
-                    }; 
-                }
-                groups[itemId].entries.push(entry);
-                groups[itemId].metrics.kilos += Number(entry.qtyPrincipal || 0);
-                
-                if (matchesSearch && passesCategory) {
-                    genMetrics.kilos += Number(entry.qtyPrincipal || 0);
-                }
+            if (!groups[itemId]) {
+                groups[itemId] = {
+                    item: entry.batch.item,
+                    supplier: entry.batch.supplier,
+                    entries: [],
+                    minLotNumber: entry.batch.lotNumber,
+                    metrics: { kilos: 0, units: 0 }
+                };
             }
-
-            // For Position grouping
-            const shouldIncludePosition = isPositionPinned || (matchesSearch && passesCategory);
-            if (shouldIncludePosition) {
-                if (!positionGroups[positionId]) {
-                    positionGroups[positionId] = {
-                        posicion: entry.posicion || { id: positionId, codigo: positionCode },
-                        entries: [],
-                        metrics: { kilos: 0, itemsCount: 0 },
-                        isPinned: isPositionPinned,
-                        passesSearchAndCategory: matchesSearch && passesCategory
-                    };
-                }
-                positionGroups[positionId].entries.push(entry);
-                positionGroups[positionId].metrics.kilos += Number(entry.qtyPrincipal || 0);
+            groups[itemId].entries.push(entry);
+            groups[itemId].metrics.kilos += Number(entry.qtyPrincipal || 0);
+            if (entry.qtySecundaria) groups[itemId].metrics.units += Number(entry.qtySecundaria);
+            
+            if (entry.batch.lotNumber < groups[itemId].minLotNumber) {
+                groups[itemId].minLotNumber = entry.batch.lotNumber;
             }
         });
 
-        genMetrics.positionsCount = occupiedPositions.size;
+        return {
+            groupedData: Object.values(groups).sort((a: any, b: any) => a.item.descripcion.localeCompare(b.item.descripcion)),
+            generalMetrics: { ...general, positionsCount: general.positions.size }
+        };
+    }, [rawStock, searchTerm]);
 
-        let data = Object.values(groups);
-        data.sort((a: any, b: any) => (a.isPinned === b.isPinned) ? 0 : a.isPinned ? -1 : 1);
+    const detailGroup = useMemo(() => groupedData.find((g: any) => g.item.id === detailGroupId), [groupedData, detailGroupId]);
 
-        let positionsData = Object.values(positionGroups);
-        positionsData.sort((a: any, b: any) => {
-            if (a.isPinned !== b.isPinned) {
-                return a.isPinned ? -1 : 1;
-            }
-            return a.posicion.codigo.localeCompare(b.posicion.codigo);
-        });
+    const inlineEditLot = (entry: any, currentValue: string) => {
+        const val = window.prompt('Editar número de lote:', currentValue);
+        if (val !== null) handleReassignBatch(entry, val);
+    };
 
-        return { groupedData: data, groupedPositionsData: positionsData, metrics: genMetrics };
-    }, [rawStock, searchQuery, selectedCategory, pinnedIds]);
-    
-    const categoriesList = useMemo(() => { 
-        const cats = new Set<string>(); 
-        cats.add('Todos'); 
-        rawStock.forEach((s: any) => { 
-            if (s.batch?.item?.category?.nombre) cats.add(s.batch.item.category.nombre); 
-        }); 
-        return Array.from(cats); 
-    }, [rawStock]);
-    
-    const isLoading = loadingStock;
+    const inlineEditQty = (entry: any, currentValue: number, field: 'principal' | 'secundaria', label: string) => {
+        const val = window.prompt(`Ajustar stock (${label}):`, String(currentValue));
+        if (val !== null) handleAdjustQty(entry, val, field);
+    };
 
     return (
-        <Box sx={{ bgcolor: colors.bg, minHeight: '100vh', color: colors.text, pb: 10, maxWidth: '1400px', margin: '0 auto' }}>
-            {!isMobile && (<Box sx={{ display: 'flex', alignItems: 'center', p: 1.5, bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', borderBottom: `1px solid ${colors.border}`, position: 'sticky', top: 0, zIndex: 100, backdropFilter: 'blur(10px)' }}><IconButton onClick={() => document.dispatchEvent(new CustomEvent('open-sidebar-menu'))} sx={{ color: colors.textDim, mr: 1 }}><MoreVertIcon /></IconButton><Typography variant="h6" sx={{ flex: 1, fontWeight: 900, color: colors.primary, fontSize: '0.9rem', textTransform: 'uppercase' }}>Dashboard Depósito</Typography><IconButton onClick={() => setShowFilters(!showFilters)} sx={{ color: showFilters ? colors.primary : colors.textDim }}><FilterListIcon /></IconButton></Box>)}
-            {isMobile && (<Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1, px: 2 }}><IconButton onClick={() => document.dispatchEvent(new CustomEvent('open-sidebar-menu'))} sx={{ color: colors.textDim }}><MoreVertIcon /></IconButton><IconButton onClick={() => setShowFilters(!showFilters)} sx={{ color: showFilters ? colors.primary : colors.textDim }}><FilterListIcon /></IconButton></Box>)}
-            <Box sx={{ p: 2, pb: 1, display: 'flex', gap: 1 }}><TextField placeholder="Buscar material, código o lote..." size="small" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} fullWidth InputProps={{ startAdornment: <SearchIcon sx={{ color: colors.textDim, mr: 1 }} />, endAdornment: browserSupportsSpeechRecognition && (<IconButton size="small" onClick={toggleListening} sx={{ color: listening ? colors.danger : colors.textDim }}>{listening ? <MicIcon /> : <MicOffIcon sx={{ opacity: 0.5 }} />}</IconButton>), sx: { bgcolor: colors.inputBg, borderRadius: 2, color: 'white', border: `1px solid ${colors.border}` } }} /></Box>
+        <Box sx={{ p: isMobile ? 2 : 4, maxWidth: '1400px', margin: '0 auto', color: colors.text, minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>
             
-            <Box sx={{ display: 'flex', overflowX: 'auto', gap: 1, p: 1.5, pt: 0, '&::-webkit-scrollbar': { display: 'none' } }}>
-                <KPIButton label="Stock" value={metrics.kilos > 1000 ? `${(metrics.kilos / 1000).toFixed(1)}k` : metrics.kilos.toFixed(0)} unit="kg" icon={InventoryIcon} color={colors.primary} active={!activeKpi} onClick={() => setActiveKpi(null)} />
-                <KPIButton label="Posiciones" value={metrics.positionsCount} unit="pos" icon={LocationOnIcon} color={colors.info} active={activeKpi === 'Posiciones'} onClick={() => setActiveKpi('Posiciones')} />
-                <KPIButton label="Picking" value={groupedData.length} unit="items" icon={LocalShippingIcon} color={colors.info} active={activeKpi === 'Picking'} onClick={() => setActiveKpi('Picking')} />
+            {/* Header */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+                <Box>
+                    <Typography variant="h5" sx={{ fontWeight: 900, color: colors.text, letterSpacing: '-0.5px' }}>Gestión de Stock</Typography>
+                    <Typography variant="caption" sx={{ color: colors.textDim }}>Inventario físico y distribución de partidas en posiciones</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button 
+                        variant="contained" 
+                        startIcon={<AddIcon />} 
+                        onClick={() => setQuickAddModal(true)}
+                        sx={{ bgcolor: colors.primary, color: '#000', fontWeight: 800, borderRadius: 2, '&:hover': { bgcolor: '#d97706' } }}
+                    >
+                        Carga Rápida
+                    </Button>
+                </Box>
             </Box>
-            
-            <Collapse in={showFilters}>
-                <Box sx={{ px: 2, pb: 2, display: 'flex', flexDirection: 'column', gap: 1.5, bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.01))', borderRadius: 2, m: 2, p: 2, border: `1px solid ${colors.border}` }}>
-                    <Box sx={{ display: 'flex', gap: 1.5 }}>
-                        <TextField select label="Planta" value={plantId} onChange={(e) => setPlantId(e.target.value)} fullWidth size="small" InputProps={{ sx: { bgcolor: colors.inputBg, color: 'white' } }}>
-                            {plants.map((p: any) => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}
-                        </TextField>
-                        <TextField select label="Depósito" value={depotId} onChange={(e) => setDepotId(e.target.value)} fullWidth size="small" InputProps={{ sx: { bgcolor: colors.inputBg, color: 'white' } }}>
+
+            {/* KPIs */}
+            {!isFetching && depotId && (
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                    <Paper sx={{ flex: '1 1 200px', p: 2, bgcolor: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                        <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 700, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.5px' }}>Stock Kilos</Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 900, color: colors.primary }}>{(generalMetrics?.kilos || 0).toLocaleString('es-AR', { minimumFractionDigits: 1 })} <small style={{ fontSize: '0.8rem', fontWeight: 500 }}>kg</small></Typography>
+                    </Paper>
+                    <Paper sx={{ flex: '1 1 200px', p: 2, bgcolor: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                        <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 700, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.5px' }}>Stock Unidades</Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 900, color: colors.success }}>{(generalMetrics?.units || 0).toLocaleString('es-AR')} <small style={{ fontSize: '0.8rem', fontWeight: 500 }}>un</small></Typography>
+                    </Paper>
+                    <Paper sx={{ flex: '1 1 200px', p: 2, bgcolor: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                        <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 700, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.5px' }}>Ubicaciones Activas</Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 900, color: colors.info }}>{generalMetrics?.positionsCount || 0} <small style={{ fontSize: '0.8rem', fontWeight: 500 }}>pos</small></Typography>
+                    </Paper>
+                    <Paper 
+                        onClick={() => { if (emptyPositions.length > 0) setEmptyPositionsModal(true); }}
+                        sx={{ 
+                            flex: '1 1 200px', 
+                            p: 2, 
+                            bgcolor: colors.cardBg, 
+                            border: `1px solid ${colors.border}`, 
+                            borderRadius: 3, 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            gap: 0.5,
+                            cursor: emptyPositions.length > 0 ? 'pointer' : 'default',
+                            transition: 'all 0.15s ease-in-out',
+                            '&:hover': emptyPositions.length > 0 ? { borderColor: colors.info, transform: 'translateY(-1px)' } : {}
+                        }}
+                    >
+                        <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 700, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            Posiciones Vacías
+                            {emptyPositions.length > 0 && <span style={{ color: colors.info, fontSize: '0.65rem', fontWeight: 800 }}>Ver todas</span>}
+                        </Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 900, color: colors.info }}>{emptyPositions.length} <small style={{ fontSize: '0.8rem', fontWeight: 500 }}>vacías</small></Typography>
+                    </Paper>
+                </Box>
+            )}
+
+            {/* Filters Row */}
+            <Paper sx={{ p: 2, bgcolor: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <TextField
+                        select
+                        label="Depósito"
+                        value={depotId}
+                        onChange={(e) => setDepotId(e.target.value)}
+                        disabled={!isAdmin && depots.length === 1}
+                        size="small"
+                        sx={{ flex: '1 1 200px', '& .MuiInputLabel-root': { color: colors.textDim }, '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
+                    >
+                        <MenuItem value=""><em>Seleccionar depósito...</em></MenuItem>
+                        {depots.map((d: any) => (
+                            <MenuItem key={d.id} value={d.id}>{d.nombre}</MenuItem>
+                        ))}
+                    </TextField>
+
+                    <DebouncedSearchInput
+                        label="Buscar..."
+                        placeholder="Código, Lote, Material o Ubicación..."
+                        value={searchTerm}
+                        onChange={setSearchTerm}
+                        size="small"
+                        InputProps={{
+                            startAdornment: <SearchIcon sx={{ color: colors.textDim, mr: 1, fontSize: '1.2rem' }} />
+                        }}
+                        sx={{ flex: '2 1 300px', '& .MuiInputLabel-root': { color: colors.textDim }, '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
+                    />
+
+                    <Autocomplete
+                        options={(depotId && depots.find((d: any) => d.id === depotId)?.positions || []).filter((p: any) => p.activo)}
+                        getOptionLabel={(option: any) => option.codigo || ''}
+                        value={(depotId && depots.find((d: any) => d.id === depotId)?.positions || []).find((p: any) => p.id === positionId) || null}
+                        onChange={(_e, val: any) => setPositionId(val?.id || '')}
+                        disabled={!depotId}
+                        size="small"
+                        sx={{ flex: '1 1 200px', '& .MuiInputLabel-root': { color: colors.textDim }, '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
+                        renderInput={(params) => <TextField {...params} label="Posición" />}
+                    />
+
+                    {/* View Switcher */}
+                    <Box sx={{ display: 'flex', bgcolor: colors.inputBg, borderRadius: 2, p: 0.5, border: `1px solid ${colors.border}` }}>
+                        <IconButton 
+                            onClick={() => setViewMode('grid')} 
+                            sx={{ color: viewMode === 'grid' ? colors.primary : colors.textDim, borderRadius: 1.5, p: 1 }}
+                        >
+                            <GridViewIcon />
+                        </IconButton>
+                        <IconButton 
+                            onClick={() => setViewMode('list')} 
+                            sx={{ color: viewMode === 'list' ? colors.primary : colors.textDim, borderRadius: 1.5, p: 1 }}
+                        >
+                            <ViewListIcon />
+                        </IconButton>
+                    </Box>
+                </Box>
+            </Paper>
+
+            {/* List / Grid content */}
+            {isFetching || isLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }}><CircularProgress sx={{ color: colors.primary }} /></Box>
+            ) : (
+                <>
+                    {groupedData.length === 0 ? (
+                        <Paper sx={{ p: 6, textAlign: 'center', bgcolor: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 4 }}>
+                            <Typography sx={{ color: colors.textDim }}>No se encontraron registros de stock</Typography>
+                        </Paper>
+                    ) : (
+                        viewMode === 'grid' ? (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '16px' }}>
+                                {groupedData.map((group: any) => {
+                                    const isExpanded = expandedMaterials.includes(group.item.id);
+                                    const categoryName = group.item.category?.nombre || group.item.categoria || 'General';
+                                    const codeText = group.item.codigoInterno;
+
+                                    return (
+                                        <div 
+                                            key={group.item.id} 
+                                            className="material-card-hover"
+                                            style={{ 
+                                                background: colors.cardBg, 
+                                                border: `1px solid ${isExpanded ? colors.primary : colors.border}`, 
+                                                borderRadius: '12px', 
+                                                overflow: 'hidden', 
+                                                transition: 'all 0.15s ease-in-out',
+                                                cursor: 'pointer'
+                                            }}
+                                            onClick={() => toggleMaterial(group.item.id)}
+                                        >
+                                            {/* Header */}
+                                            <div style={{ padding: '16px' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                                                    <div>
+                                                        <div style={{ color: colors.primary, fontWeight: 800, fontSize: '11px', letterSpacing: '0.5px' }}>{codeText}</div>
+                                                        <div style={{ fontWeight: 800, color: 'var(--text-white-dynamic, #fff)', fontSize: '15px', lineHeight: 1.2, marginTop: '2px' }}>{group.item.descripcion}</div>
+                                                    </div>
+                                                    <IconButton size="small" sx={{ color: colors.textDim }}>
+                                                        {isExpanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                                                    </IconButton>
+                                                </div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                                                        <span style={{ fontSize: '20px', fontWeight: 900, color: colors.primary }}>{group.metrics.kilos.toFixed(1)}</span>
+                                                        <span style={{ fontSize: '11px', color: colors.textDim, fontWeight: 700 }}>{group.item.unidadPrincipal || 'kg'}</span>
+                                                    </div>
+                                                    <div style={{ textAlign: 'right' }}>
+                                                        <div style={{ color: colors.textDim, display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600 }}>
+                                                            <CategoryIcon style={{ fontSize: 12 }} /> {categoryName}
+                                                        </div>
+                                                        <div style={{ color: colors.textDim, display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px', fontSize: '11px', fontWeight: 600 }}>
+                                                            <LocationOnIcon style={{ fontSize: 12 }} /> {group.entries.length} registros
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Expanded content */}
+                                            {isExpanded && (
+                                                <div style={{ padding: '12px', background: 'rgba(0,0,0,0.15)', borderTop: `1px solid ${colors.border}` }} onClick={(e) => e.stopPropagation()}>
+                                                    {group.entries.map((entry: any, index: number) => {
+                                                        const isDeleting = deletingKeys.includes(getEntryKey(entry));
+                                                        return (
+                                                            <div 
+                                                                key={entry.id} 
+                                                                style={{ 
+                                                                    display: 'flex', 
+                                                                    justifyContent: 'space-between', 
+                                                                    alignItems: 'center', 
+                                                                    padding: '8px 4px',
+                                                                    borderBottom: index === group.entries.length - 1 ? 'none' : `1px solid ${colors.border}`,
+                                                                    opacity: isDeleting ? 0.5 : 1,
+                                                                    pointerEvents: isDeleting ? 'none' : 'auto'
+                                                                }}
+                                                            >
+                                                                <div>
+                                                                    <div 
+                                                                        onClick={() => navigate('/movimientos', { state: { depositoId: entry.depositoId || depotId, posicionId: entry.posicionId, itemId: entry.batch?.item?.id } })}
+                                                                        style={{ fontWeight: 800, color: colors.info, textDecoration: 'underline', cursor: 'pointer', fontSize: '13px', display: 'inline-block' }}
+                                                                    >
+                                                                        {entry.posicion?.codigo || 'S/P'}
+                                                                    </div>
+                                                                    <div style={{ color: colors.textDim, display: 'block', marginTop: '2px', fontSize: '11px' }}>
+                                                                        Lote: <strong style={{ color: 'var(--text-white-dynamic, #fff)', cursor: 'pointer', textDecoration: 'underline dashed' }} onClick={() => inlineEditLot(entry, entry.batch?.lotNumber || '')}>{entry.batch?.lotNumber}</strong>
+                                                                        {entry.batch?.observaciones && (
+                                                                            <Tooltip title={`Ver obs: ${entry.batch.observaciones}`}>
+                                                                                <IconButton size="small" onClick={() => alert(`Observación: ${entry.batch.observaciones}`)} sx={{ color: colors.danger, p: 0, ml: 0.5 }}><InfoIcon sx={{ fontSize: 14 }} /></IconButton>
+                                                                            </Tooltip>
+                                                                        )}
+                                                                        <IconButton size="small" onClick={() => setObsModal({ open: true, batchId: entry.batch?.id, text: entry.batch?.observaciones || '' })} sx={{ color: colors.textDim, p: 0, ml: 0.5 }}><EditIcon sx={{ fontSize: 12 }} /></IconButton>
+                                                                    </div>
+                                                                </div>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                                    <div style={{ textAlign: 'right' }}>
+                                                                        <div style={{ fontWeight: 800, color: colors.primary, cursor: 'pointer', textDecoration: 'underline dashed', fontSize: '13px' }} onClick={() => inlineEditQty(entry, entry.qtyPrincipal, 'principal', entry.batch.item.unidadPrincipal)}>
+                                                                            {entry.qtyPrincipal} <small style={{ fontWeight: 400, color: colors.textDim }}>{group.item.unidadPrincipal}</small>
+                                                                        </div>
+                                                                        {entry.qtySecundaria && (
+                                                                            <div style={{ color: colors.textDim, cursor: 'pointer', textDecoration: 'underline dashed', fontSize: '11px', marginTop: '2px' }} onClick={() => inlineEditQty(entry, entry.qtySecundaria, 'secundaria', entry.batch.item.unidadSecundaria)}>
+                                                                                {entry.qtySecundaria} <small>{group.item.unidadSecundaria}</small>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <div style={{ display: 'flex', gap: '2px' }}>
+                                                                        <IconButton size="small" onClick={() => openDespacho(entry)} sx={{ color: colors.info }} title="Despachar"><LocalShippingIcon sx={{ fontSize: 16 }} /></IconButton>
+                                                                        {isAdmin && (
+                                                                            <IconButton size="small" onClick={() => handleDeleteLine(entry)} sx={{ color: colors.danger }} title="Eliminar"><DeleteIcon sx={{ fontSize: 16 }} /></IconButton>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: '12px', overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                                    <thead style={{ background: 'var(--bg-alt-row, rgba(0,0,0,0.2))' }}>
+                                        <tr style={{ textAlign: 'left', color: colors.textDim }}>
+                                            <th style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, fontWeight: 800 }}>Código</th>
+                                            <th style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, fontWeight: 800 }}>Material / Descripción</th>
+                                            <th style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, fontWeight: 800 }}>Categoría</th>
+                                            <th style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, fontWeight: 800, textAlign: 'right' }}>Stock Total</th>
+                                            <th style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, fontWeight: 800 }}>Unidades</th>
+                                            <th style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, fontWeight: 800, textAlign: 'center' }}>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {groupedData.map((group: any) => {
+                                            const categoryName = group.item.category?.nombre || group.item.categoria || 'General';
+
+                                            return (
+                                                <tr key={group.item.id} style={{ borderBottom: `1px solid ${colors.border}`, transition: 'background-color 0.15s' }} className="hoverable-row">
+                                                    <td style={{ padding: '12px 16px' }}><span style={{ color: colors.primary, fontWeight: 800, fontSize: '11px' }}>{group.item.codigoInterno}</span></td>
+                                                    <td style={{ padding: '12px 16px' }}><span style={{ fontWeight: 800, color: 'var(--text-white-dynamic, #fff)' }}>{group.item.descripcion}</span></td>
+                                                    <td style={{ padding: '12px 16px' }}><span style={{ color: colors.textDim }}>{categoryName}</span></td>
+                                                    <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                                                        <span style={{ fontWeight: 800, color: colors.primary }}>
+                                                            {group.metrics.kilos.toLocaleString('es-AR', { minimumFractionDigits: 1 })} <small style={{ fontWeight: 400, color: colors.textDim }}>{group.item.unidadPrincipal}</small>
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ padding: '12px 16px' }}>
+                                                        {group.metrics.units > 0 ? (
+                                                            <span style={{ color: colors.success, fontWeight: 700 }}>
+                                                                {group.metrics.units.toLocaleString('es-AR')} <small style={{ color: colors.textDim }}>{group.item.unidadSecundaria}</small>
+                                                            </span>
+                                                        ) : '-'}
+                                                    </td>
+                                                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                                                        <Button 
+                                                            size="small" 
+                                                            onClick={() => setDetailGroupId(group.item.id)}
+                                                            variant="outlined"
+                                                            sx={{ 
+                                                                borderColor: colors.primary, 
+                                                                color: colors.primary, 
+                                                                fontWeight: 800, 
+                                                                fontSize: '0.7rem', 
+                                                                textTransform: 'none',
+                                                                borderRadius: 1.5,
+                                                                '&:hover': { bgcolor: `${colors.primary}10`, borderColor: colors.primary }
+                                                            }}
+                                                        >
+                                                            Detalles
+                                                        </Button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )
+                    )}
+                    <style>{`
+                        .hoverable-row:hover {
+                            background-color: var(--bg-alt-row, rgba(255,255,255,0.02)) !important;
+                        }
+                        .material-card-hover:hover {
+                            border-color: ${colors.primary} !important;
+                            transform: translateY(-1px);
+                        }
+                    `}</style>
+                </>
+            )}
+
+            {/* Carga Rápida Drawer */}
+            <Drawer 
+                anchor="bottom" 
+                open={quickAddModal} 
+                onClose={() => setQuickAddModal(false)}
+                PaperProps={{ sx: { bgcolor: colors.bg, color: colors.text, borderTop: `1px solid ${colors.primary}`, borderTopLeftRadius: 24, borderTopRightRadius: 24, p: 3, pb: 6 } }}
+            >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 900, color: colors.primary }}>CARGA RÁPIDA</Typography>
+                    <IconButton onClick={() => setQuickAddModal(false)} sx={{ color: colors.textDim }}><CloseIcon /></IconButton>
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 600, margin: '0 auto', width: '100%' }}>
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                        <TextField 
+                            select 
+                            label="Depósito" 
+                            fullWidth 
+                            value={qaDepot} 
+                            onChange={(e) => { setQaDepot(e.target.value); setQaPosition(''); }} 
+                            InputLabelProps={{ sx: { color: colors.textDim } }} 
+                            InputProps={{ sx: { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
+                        >
+                            <MenuItem value=""><em>Seleccionar...</em></MenuItem>
                             {depots.map((d: any) => <MenuItem key={d.id} value={d.id}>{d.nombre}</MenuItem>)}
                         </TextField>
+
+                        <TextField 
+                            select 
+                            label="Posición" 
+                            fullWidth 
+                            value={qaPosition} 
+                            disabled={!qaDepot} 
+                            onChange={(e) => setQaPosition(e.target.value)} 
+                            InputLabelProps={{ sx: { color: colors.textDim } }} 
+                            InputProps={{ sx: { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
+                        >
+                            <MenuItem value=""><em>Seleccionar...</em></MenuItem>
+                            {(depots.find((d: any) => d.id === qaDepot)?.positions || []).filter((p: any) => p.activo).map((p: any) => <MenuItem key={p.id} value={p.id}>{p.codigo}</MenuItem>)}
+                        </TextField>
                     </Box>
-                    <TextField select label="Posición" value={positionId} onChange={(e) => setPositionId(e.target.value)} fullWidth size="small" InputProps={{ sx: { bgcolor: colors.inputBg, color: 'white' } }}>
-                        <MenuItem value="">Todas las posiciones</MenuItem>
-                        {depots.find(d => d.id === depotId)?.positions?.map((p: any) => <MenuItem key={p.id} value={p.id}>{p.codigo}</MenuItem>)}
-                    </TextField>
+
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                        <Autocomplete 
+                            options={partners.filter((p: any) => p.type === 'SUPPLIER' || p.type === 'BOTH')} 
+                            getOptionLabel={(option: any) => option.name} 
+                            value={partners.find(p => p.id === qaSupplier) || null}
+                            fullWidth
+                            onChange={(_e, val: any) => { setQaSupplier(val?.id || ''); setQaItem(''); }}
+                            renderInput={(params) => <TextField {...params} label="Proveedor" InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ ...params.InputProps, sx: { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }} />} 
+                        />
+                        <Button variant="outlined" sx={{ color: colors.primary, borderColor: colors.primary, height: '40px', minWidth: '40px', p: 0, borderRadius: 2 }} onClick={() => setCreatePartnerModal(true)}>+</Button>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                        <Autocomplete 
+                            options={qaFilteredItems} 
+                            getOptionLabel={(option: any) => `${option.codigoInterno} - ${option.descripcion}`} 
+                            value={items.find(i => i.id === qaItem) || null}
+                            fullWidth
+                            onChange={(_e, val: any) => setQaItem(val?.id || '')}
+                            renderInput={(params) => <TextField {...params} label="Material" InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ ...params.InputProps, sx: { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }} />} 
+                        />
+                        <Button variant="outlined" sx={{ color: colors.primary, borderColor: colors.primary, height: '40px', minWidth: '40px', p: 0, borderRadius: 2 }} onClick={() => setCreateItemModal(true)}>+</Button>
+                    </Box>
+
+                    <TextField 
+                        label="Número de Lote" 
+                        fullWidth 
+                        value={qaLot} 
+                        onChange={(e) => setQaLot(e.target.value)} 
+                        InputLabelProps={{ sx: { color: colors.textDim } }} 
+                        InputProps={{ sx: { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }} 
+                    />
+
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                        <TextField 
+                            label={`Kilos (${qaSelectedItem?.unidadPrincipal || 'kg'})`} 
+                            type="number" 
+                            fullWidth 
+                            value={qaPrincipal} 
+                            onChange={(e) => setQaPrincipal(e.target.value)} 
+                            InputLabelProps={{ sx: { color: colors.textDim } }} 
+                            InputProps={{ sx: { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }} 
+                        />
+                        <TextField 
+                            label={`Unidades (${qaSelectedItem?.unidadSecundaria || 'un'})`} 
+                            type="number" 
+                            fullWidth 
+                            value={qaSecundaria} 
+                            onChange={(e) => setQaSecundaria(e.target.value)} 
+                            InputLabelProps={{ sx: { color: colors.textDim } }} 
+                            InputProps={{ sx: { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }} 
+                        />
+                    </Box>
+
+                    <Button 
+                        fullWidth 
+                        variant="contained" 
+                        size="large" 
+                        disabled={isQuickAdding} 
+                        startIcon={isQuickAdding ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />} 
+                        sx={{ mt: 2, bgcolor: colors.primary, color: '#000', fontWeight: 900, borderRadius: 3, py: 1.5, '&:hover': { bgcolor: '#d97706' } }} 
+                        onClick={handleQuickAddSubmit}
+                    >
+                        {isQuickAdding ? 'REGISTRANDO...' : 'REGISTRAR STOCK'}
+                    </Button>
                 </Box>
-            </Collapse>
-            
-            <Box sx={{ display: 'flex', overflowX: 'auto', gap: 1, px: 2, pb: 2 }}>{categoriesList.map(cat => <Chip key={cat} label={cat} onClick={() => setSelectedCategory(cat)} sx={{ bgcolor: selectedCategory === cat ? colors.primary : colors.inputBg, color: selectedCategory === cat ? '#000' : colors.textDim, fontWeight: 800, fontSize: '0.65rem' }} />)}</Box>
-            
-            {isLoading ? <Box sx={{ display: 'flex', justifyContent: 'center', p: 10 }}><CircularProgress /></Box> : (
-                <Fade in timeout={400}>
-                    <Box sx={{ px: 2 }}>
-                        <Typography variant="caption" sx={{ fontWeight: 900, color: colors.textDim, textTransform: 'uppercase', mb: 1, display: 'block' }}>
-                            {activeKpi === 'Posiciones' ? 'POSICIONES CON STOCK' : 'INVENTARIO DISPONIBLE'}
-                        </Typography>
-                        <List disablePadding>
-                            {activeKpi === 'Posiciones' ? (
-                                 groupedPositionsData.length > 0 ? groupedPositionsData.map((g: any) => (
-                                     <PositionCard 
-                                         key={g.posicion.id} 
-                                         group={g} 
-                                         isPinned={pinnedIds.has(g.posicion.id)} 
-                                         onTogglePin={() => togglePin(g.posicion.id)} 
-                                         isExpanded={expandedItemId === g.posicion.id} 
-                                         onToggleExpand={() => setExpandedItemId(expandedItemId === g.posicion.id ? null : g.posicion.id)} 
-                                         onMoveRequest={(entry: any) => { setSelectedEntryToMove(entry); setMoveDrawerOpen(true); }} 
-                                         onSalidaRequest={(entry: any) => { setSelectedEntryToSalida(entry); setSalidaDrawerOpen(true); }} 
-                                     />
-                                 )) : (
-                                     <Box sx={{ p: 8, textAlign: 'center' }}><InventoryIcon sx={{ fontSize: 40, color: colors.border, mb: 2 }} /><Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 800, display: 'block' }}>SIN RESULTADOS</Typography></Box>
-                                 )
-                             ) :
-                             groupedData.length > 0 ? groupedData.map((g: any) => (
-                                <MaterialCard key={g.item.id} group={g} isPinned={pinnedIds.has(g.item.id)} onTogglePin={() => togglePin(g.item.id)} isExpanded={expandedItemId === g.item.id} onToggleExpand={() => setExpandedItemId(expandedItemId === g.item.id ? null : g.item.id)} onMoveRequest={(entry: any) => { setSelectedEntryToMove(entry); setMoveDrawerOpen(true); }} onSalidaRequest={(entry: any) => { setSelectedEntryToSalida(entry); setSalidaDrawerOpen(true); }} onEditLimits={(item: any) => { setSelectedItemToEditLimits(item); setEditLimitsOpen(true); }} />
-                             )) : 
-                             <Box sx={{ p: 8, textAlign: 'center' }}><InventoryIcon sx={{ fontSize: 40, color: colors.border, mb: 2 }} /><Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 800, display: 'block' }}>SIN RESULTADOS</Typography></Box>}
-                        </List>
-                    </Box>
-                </Fade>
+            </Drawer>
+
+            {/* Detail Modal for List View */}
+            {detailGroup && (
+                <Modal 
+                    open={!!detailGroupId} 
+                    onClose={() => setDetailGroupId(null)}
+                    sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                    <Paper sx={{ width: '90%', maxWidth: 700, bgcolor: colors.bg, border: `1px solid ${colors.primary}`, borderRadius: 4, p: 3, outline: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.6)', maxHeight: '90vh', overflowY: 'auto' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Box>
+                                <Typography variant="h6" sx={{ fontWeight: 900, color: colors.primary, lineHeight: 1.2 }}>{detailGroup.item.descripcion}</Typography>
+                                <Typography variant="caption" sx={{ color: colors.textDim }}>Proveedor: {detailGroup.supplier?.name || 'Sin proveedor'}</Typography>
+                            </Box>
+                            <IconButton onClick={() => setDetailGroupId(null)} sx={{ color: colors.textDim }}><CloseIcon /></IconButton>
+                        </Box>
+                        
+                        <TableContainer sx={{ maxHeight: 400, overflowY: 'auto', border: `1px solid ${colors.border}`, borderRadius: 2 }}>
+                            <MuiTable size="small">
+                                <TableHead sx={{ bgcolor: 'var(--bg-alt-row, rgba(0,0,0,0.2))' }}>
+                                    <TableRow sx={{ '& th': { color: colors.textDim, fontWeight: 800 } }}>
+                                        <TableCell>Ubicación</TableCell>
+                                        <TableCell>Lote</TableCell>
+                                        <TableCell align="right">Kilos</TableCell>
+                                        <TableCell align="right">Unidades</TableCell>
+                                        <TableCell align="center">Acción</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {detailGroup.entries.map((entry: any) => {
+                                        const isOldest = entry.batch.lotNumber === detailGroup.minLotNumber;
+                                        const isDeleting = deletingKeys.includes(getEntryKey(entry));
+                                        return (
+                                            <TableRow key={entry.id} sx={{ opacity: isDeleting ? 0.5 : 1, '& td': { color: 'var(--text-white-dynamic, #fff)', py: 1 } }}>
+                                                <TableCell>
+                                                    <Typography 
+                                                        variant="body2" 
+                                                        onClick={() => { setDetailGroupId(null); navigate('/movimientos', { state: { depositoId: entry.depositoId || depotId, posicionId: entry.posicionId, itemId: entry.batch?.item?.id } }); }}
+                                                        sx={{ fontWeight: 800, color: colors.info, textDecoration: 'underline', cursor: 'pointer' }}
+                                                    >
+                                                        {entry.posicion?.codigo || 'S/P'}
+                                                    </Typography>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                        <Typography 
+                                                            variant="body2" 
+                                                            onClick={() => inlineEditLot(entry, entry.batch?.lotNumber || '')}
+                                                            sx={{ 
+                                                                cursor: 'pointer', 
+                                                                textDecoration: 'underline dashed',
+                                                                color: isOldest ? colors.primary : 'var(--text-white-dynamic, #fff)',
+                                                                fontWeight: isOldest ? 800 : 400
+                                                            }}
+                                                        >
+                                                            {entry.batch?.lotNumber}
+                                                        </Typography>
+                                                        {entry.batch?.observaciones && (
+                                                            <IconButton size="small" onClick={() => alert(`Observación: ${entry.batch.observaciones}`)} sx={{ color: colors.danger, p: 0 }}><InfoIcon sx={{ fontSize: 14 }} /></IconButton>
+                                                        )}
+                                                        <IconButton size="small" onClick={() => setObsModal({ open: true, batchId: entry.batch?.id, text: entry.batch?.observaciones || '' })} sx={{ color: colors.textDim, p: 0 }}><EditIcon sx={{ fontSize: 12 }} /></IconButton>
+                                                    </Box>
+                                                </TableCell>
+                                                <TableCell align="right">
+                                                    <Typography variant="body2" onClick={() => inlineEditQty(entry, entry.qtyPrincipal, 'principal', entry.batch.item.unidadPrincipal)} sx={{ cursor: 'pointer', textDecoration: 'underline dashed', color: colors.primary, fontWeight: 800 }}>
+                                                        {entry.qtyPrincipal} <small style={{ color: colors.textDim }}>{detailGroup.item.unidadPrincipal}</small>
+                                                    </Typography>
+                                                </TableCell>
+                                                <TableCell align="right">
+                                                    {entry.qtySecundaria ? (
+                                                        <Typography variant="body2" onClick={() => inlineEditQty(entry, entry.qtySecundaria, 'secundaria', entry.batch.item.unidadSecundaria)} sx={{ cursor: 'pointer', textDecoration: 'underline dashed', color: colors.success, fontWeight: 700 }}>
+                                                            {entry.qtySecundaria} <small style={{ color: colors.textDim }}>{detailGroup.item.unidadSecundaria}</small>
+                                                        </Typography>
+                                                    ) : '-'}
+                                                </TableCell>
+                                                <TableCell align="center">
+                                                    <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                                                        <IconButton size="small" onClick={() => openDespacho(entry)} sx={{ color: colors.info }} title="Despachar"><LocalShippingIcon sx={{ fontSize: 16 }} /></IconButton>
+                                                        {isAdmin && (
+                                                            <IconButton size="small" onClick={() => handleDeleteLine(entry)} sx={{ color: colors.danger }} title="Eliminar"><DeleteIcon sx={{ fontSize: 16 }} /></IconButton>
+                                                        )}
+                                                    </Box>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                </TableBody>
+                            </MuiTable>
+                        </TableContainer>
+
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3, borderTop: `1px solid ${colors.border}`, pt: 2 }}>
+                            <Button variant="outlined" onClick={() => setDetailGroupId(null)} sx={{ color: colors.textDim, borderColor: colors.border, borderRadius: 2 }}>
+                                Cerrar
+                            </Button>
+                        </Box>
+                    </Paper>
+                </Modal>
             )}
-            
-            <Fab sx={{ position: 'fixed', bottom: 20, right: 20, bgcolor: colors.primary, color: '#000', '&:hover': { bgcolor: '#d97706' } }} onClick={() => setQuickAddOpen(true)}><AddIcon /></Fab>
-            {quickAddOpen && <QuickAddDrawer open={quickAddOpen} onClose={() => setQuickAddOpen(false)} />}
-            {editLimitsOpen && <EditStockLimitsDrawer open={editLimitsOpen} onClose={() => setEditLimitsOpen(false)} initialItem={selectedItemToEditLimits} />}
-            {moveDrawerOpen && <MoveStockDrawer open={moveDrawerOpen} onClose={() => { setMoveDrawerOpen(false); setSelectedEntryToMove(null); }} entry={selectedEntryToMove} />}
-            {salidaDrawerOpen && <DespachoDirectoDrawer open={salidaDrawerOpen} onClose={() => { setSalidaDrawerOpen(false); setSelectedEntryToSalida(null); }} entry={selectedEntryToSalida} />}
+
+            {/* Observations Modal */}
+            {obsModal.open && (
+                <Modal 
+                    open={obsModal.open} 
+                    onClose={() => setObsModal({ open: false, batchId: '', text: '' })}
+                    sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                    <Paper sx={{ width: '90%', maxWidth: 450, bgcolor: colors.bg, border: `1px solid ${colors.danger}`, borderRadius: 4, p: 3, outline: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+                        <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, color: colors.danger }}>Observación de Partida</Typography>
+                        <TextField
+                            multiline
+                            rows={4}
+                            fullWidth
+                            value={obsModal.text}
+                            onChange={(e) => setObsModal(p => ({ ...p, text: e.target.value }))}
+                            placeholder="Escribí aquí observaciones relativas a la partida..."
+                            sx={{ '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
+                        />
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 3 }}>
+                            <Button variant="text" onClick={() => setObsModal({ open: false, batchId: '', text: '' })} sx={{ color: colors.textDim }}>Cancelar</Button>
+                            <Button variant="contained" disabled={obsSaving} onClick={handleUpdateObs} sx={{ bgcolor: colors.danger, color: '#fff', fontWeight: 800, borderRadius: 2, '&:hover': { bgcolor: '#dc2626' } }}>
+                                {obsSaving ? 'Guardando...' : 'Guardar'}
+                            </Button>
+                        </Box>
+                    </Paper>
+                </Modal>
+            )}
+
+            {/* Despacho Directo Modal */}
+            {despachoModal && despachoEntry && (
+                <Modal 
+                    open={despachoModal} 
+                    onClose={() => setDespachoModal(false)}
+                    sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                    <Paper sx={{ width: '90%', maxWidth: 480, bgcolor: colors.bg, border: `1px solid ${colors.info}`, borderRadius: 4, p: 3, outline: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+                        <Typography variant="h6" sx={{ fontWeight: 900, mb: 2, color: colors.info }}>Despacho Directo</Typography>
+                        
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <Autocomplete 
+                                options={clientOptions} 
+                                getOptionLabel={(option: any) => option.label}
+                                value={clientOptions.find(o => o.value === despachoClient) || null}
+                                onChange={(_e, val: any) => {
+                                    if (val?.value === '__new__') {
+                                        setDespachoNewClient(true);
+                                        setDespachoClient('');
+                                    } else {
+                                        setDespachoNewClient(false);
+                                        setDespachoClient(val?.value || '');
+                                    }
+                                }}
+                                renderInput={(params) => <TextField {...params} label="Cliente" InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ ...params.InputProps, sx: { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }} />}
+                            />
+
+                            {despachoNewClient && isAdmin && (
+                                <TextField 
+                                    label="Nombre del nuevo cliente" 
+                                    fullWidth 
+                                    value={despachoClientName} 
+                                    onChange={(e) => setDespachoClientName(e.target.value)} 
+                                    InputLabelProps={{ sx: { color: colors.textDim } }} 
+                                    InputProps={{ sx: { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }} 
+                                />
+                            )}
+
+                            <TextField 
+                                label="Fecha" 
+                                type="date" 
+                                fullWidth 
+                                value={despachoFecha} 
+                                onChange={(e) => setDespachoFecha(e.target.value)} 
+                                InputLabelProps={{ shrink: true, sx: { color: colors.textDim } }} 
+                                InputProps={{ sx: { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }} 
+                            />
+
+                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                <TextField 
+                                    label={`Cantidad (${despachoEntry.batch.item.unidadPrincipal})`} 
+                                    type="number" 
+                                    fullWidth 
+                                    value={despachoQty} 
+                                    onChange={(e) => setDespachoQty(e.target.value)} 
+                                    InputLabelProps={{ sx: { color: colors.textDim } }} 
+                                    InputProps={{ sx: { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }} 
+                                />
+                                {despachoEntry.batch.item.unidadSecundaria && (
+                                    <TextField 
+                                        label={`Secundaria (${despachoEntry.batch.item.unidadSecundaria})`} 
+                                        type="number" 
+                                        fullWidth 
+                                        value={despachoQtySec} 
+                                        onChange={(e) => setDespachoQtySec(e.target.value)} 
+                                        InputLabelProps={{ sx: { color: colors.textDim } }} 
+                                        InputProps={{ sx: { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }} 
+                                    />
+                                )}
+                            </Box>
+
+                            {Number(despachoQtySec) > 0 && Number(despachoEntry.qtySecundaria) > 0 && (
+                                <Typography variant="caption" sx={{ color: colors.info, textAlign: 'right', display: 'block' }}>
+                                    ≈ {((Number(despachoEntry.qtyPrincipal) / Number(despachoEntry.qtySecundaria)) * Number(despachoQtySec)).toFixed(2)} {despachoEntry.batch.item.unidadPrincipal}
+                                </Typography>
+                            )}
+
+                            <Typography variant="caption" sx={{ color: colors.textDim, fontStyle: 'italic' }}>
+                                💡 Si ya existe un remito de salida para esta fecha y cliente, se agregará automáticamente como línea.
+                            </Typography>
+                        </Box>
+
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 3, borderTop: `1px solid ${colors.border}`, pt: 2 }}>
+                            <Button variant="text" onClick={() => setDespachoModal(false)} sx={{ color: colors.textDim }}>Cancelar</Button>
+                            <Button 
+                                variant="contained" 
+                                disabled={despachoSaving || !despachoQty} 
+                                onClick={handleDespachoSubmit}
+                                sx={{ bgcolor: colors.info, color: '#fff', fontWeight: 800, borderRadius: 2, '&:hover': { bgcolor: '#2563eb' } }}
+                            >
+                                {despachoSaving ? 'Despachando...' : 'Confirmar'}
+                            </Button>
+                        </Box>
+                    </Paper>
+                </Modal>
+            )}
+
+            {/* Empty Positions Modal */}
+            {emptyPositionsModal && (
+                <Modal 
+                    open={emptyPositionsModal} 
+                    onClose={() => setEmptyPositionsModal(false)}
+                    sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                    <Paper sx={{ width: '90%', maxWidth: 450, bgcolor: colors.bg, border: `1px solid ${colors.info}`, borderRadius: 4, p: 3, outline: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Typography variant="h6" sx={{ fontWeight: 900, color: colors.info }}>Posiciones Vacías ({emptyPositions.length})</Typography>
+                            <IconButton onClick={() => setEmptyPositionsModal(false)} sx={{ color: colors.textDim }}><CloseIcon /></IconButton>
+                        </Box>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxHeight: '300px', overflowY: 'auto', p: 1, bgcolor: 'var(--bg-alt-row, rgba(0,0,0,0.2))', borderRadius: 2 }}>
+                            {emptyPositions.length === 0 ? (
+                                <Typography variant="body2" sx={{ color: colors.textDim, p: 2 }}>No hay posiciones vacías en este depósito.</Typography>
+                            ) : (
+                                emptyPositions.map((p: any) => (
+                                    <Box 
+                                        key={p.id} 
+                                        sx={{ 
+                                            px: 1.5, 
+                                            py: 0.5, 
+                                            bgcolor: 'var(--bg-action-btn, rgba(255,255,255,0.05))', 
+                                            border: `1px solid ${colors.border}`, 
+                                            borderRadius: 2, 
+                                            color: 'var(--text-white-dynamic, #fff)', 
+                                            fontSize: '0.8rem', 
+                                            fontWeight: 700 
+                                        }}
+                                    >
+                                        📍 {p.codigo}
+                                    </Box>
+                                ))
+                            )}
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3, borderTop: `1px solid ${colors.border}`, pt: 2 }}>
+                            <Button variant="outlined" onClick={() => setEmptyPositionsModal(false)} sx={{ color: colors.textDim, borderColor: colors.border, borderRadius: 2 }}>
+                                Cerrar
+                            </Button>
+                        </Box>
+                    </Paper>
+                </Modal>
+            )}
+
+            {/* Subdialogs */}
+            <CreateItemDialog open={createItemModal} onClose={() => setCreateItemModal(false)} onSuccess={(item: any) => { setQaItem(item.id); setCreateItemModal(false); }} depositoId={qaDepot} />
+            <CreatePartnerDialog open={createPartnerModal} onClose={() => setCreatePartnerModal(false)} onSuccess={(supplier: any) => { setQaSupplier(supplier.id); setCreatePartnerModal(false); }} defaultType="SUPPLIER" />
         </Box>
     );
 }

@@ -77,14 +77,14 @@ function CapacityTimelineChart() {
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #2a2d3e)" vertical={false} />
                         <XAxis 
                             dataKey="date" 
-                            stroke="#6b7280" 
+                            stroke="var(--text-subtle, #6b7280)" 
                             tick={{ fill: 'var(--text-subtle, #6b7280)', fontSize: 12 }}
                             tickFormatter={(val) => {
                                 const d = new Date(val);
                                 return `${d.getDate()}/${d.getMonth()+1}`;
                             }}
                         />
-                        <YAxis stroke="#6b7280" tick={{ fill: 'var(--text-subtle, #6b7280)', fontSize: 12 }} domain={[0, 1600]} />
+                        <YAxis stroke="var(--text-subtle, #6b7280)" tick={{ fill: 'var(--text-subtle, #6b7280)', fontSize: 12 }} domain={[0, 1600]} />
                         <Tooltip content={<CustomTooltip />} />
                         <ReferenceLine y={1558.48} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'top', value: 'Capacidad Máxima (1558.48 m³)', fill: '#ef4444', fontSize: 12 }} />
                         

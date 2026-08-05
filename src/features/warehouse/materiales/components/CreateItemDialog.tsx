@@ -341,14 +341,14 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                                 height: 56, 
                                 minWidth: 56, 
                                 width: 56, 
-                                bgcolor: 'rgba(255,255,255,0.05)', 
-                                border: '1px solid rgba(255,255,255,0.1)',
+                                bgcolor: 'var(--bg-hover-dynamic, rgba(255,255,255,0.05))', 
+                                border: '1px solid var(--border-dynamic-transparent, rgba(255,255,255,0.1))',
                                 color: 'text.primary',
-                                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+                                '&:hover': { bgcolor: 'var(--border-dynamic-transparent, rgba(255,255,255,0.1))' },
                                 '&:disabled': {
                                     bgcolor: 'rgba(255,255,255,0.02)',
                                     color: 'rgba(255,255,255,0.3)',
-                                    borderColor: 'rgba(255,255,255,0.05)',
+                                    borderColor: 'var(--bg-hover-dynamic, rgba(255,255,255,0.05))',
                                     cursor: 'not-allowed'
                                 }
                             }}
@@ -517,12 +517,12 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
             open={categoryDialogOpen} 
             onClose={() => setCategoryDialogOpen(false)}
             PaperProps={{
-                sx: { bgcolor: '#1a1d2e', color: '#f3f4f6', borderRadius: 3, p: 2 }
+                sx: { bgcolor: 'var(--bg-secondary, #1a1d2e)', color: '#f3f4f6', borderRadius: 3, p: 2 }
             }}
         >
             <DialogTitle sx={{ fontWeight: 800 }}>Nueva Categoría de Material</DialogTitle>
             <DialogContent>
-                <Typography variant="body2" sx={{ color: '#9ca3af', mb: 2 }}>
+                <Typography variant="body2" sx={{ color: 'var(--text-muted, #9ca3af)', mb: 2 }}>
                     Ingresa el nombre de la nueva categoría para este depósito.
                 </Typography>
                 <TextField
@@ -532,12 +532,12 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                     variant="filled"
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
-                    InputLabelProps={{ sx: { color: '#9ca3af' } }}
+                    InputLabelProps={{ sx: { color: 'var(--text-muted, #9ca3af)' } }}
                     InputProps={{ sx: { color: '#f3f4f6' } }}
                 />
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2 }}>
-                <Button onClick={() => setCategoryDialogOpen(false)} sx={{ color: '#9ca3af' }}>
+                <Button onClick={() => setCategoryDialogOpen(false)} sx={{ color: 'var(--text-muted, #9ca3af)' }}>
                     Cancelar
                 </Button>
                 <Button 

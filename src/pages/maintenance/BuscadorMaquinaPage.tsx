@@ -61,7 +61,7 @@ const LogItem = ({ log, idx }: { log: any; idx: number }) => (
         </Box>
 
         <Box sx={{ flex: 2 }}>
-            <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
+            <Typography variant="body2" sx={{ color: 'var(--text-white-dynamic, white)', fontWeight: 500 }}>
                 {log.generatedBy}
             </Typography>
             <Typography variant="caption" sx={{ color: 'var(--text-muted, #9ca3af)' }}>
@@ -169,7 +169,7 @@ export default function BuscadorMaquinaPage() {
                 subtitle="Información técnica, rendimiento (MTBF/MTTR) e historial de intervenciones"
             />
 
-            <Card sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, p: 3, mb: 4, border: '1px solid #1f2937' }}>
+            <Card sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, p: 3, mb: 4, border: '1px solid var(--border-dynamic, #1f2937)' }}>
                 <form onSubmit={handleSearch}>
                     <Grid container spacing={2} alignItems="center">
                         <Grid size={{ xs: 12, md: 3 }}>
@@ -197,7 +197,7 @@ export default function BuscadorMaquinaPage() {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 slotProps={{ htmlInput: { inputMode: 'numeric' } }}
                                 sx={{
-                                    '& .MuiOutlinedInput-root': { color: 'white' },
+                                    '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' },
                                     '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' },
                                     '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' },
                                 }}
@@ -228,7 +228,7 @@ export default function BuscadorMaquinaPage() {
                             bgcolor: 'var(--bg-secondary, #111827)', 
                             borderRadius: 3, 
                             p: { xs: 2, md: 4 }, 
-                            border: '1px solid #1f2937', 
+                            border: '1px solid var(--border-dynamic, #1f2937)', 
                             height: '100%',
                             display: 'flex',
                             flexDirection: 'column'
@@ -236,7 +236,7 @@ export default function BuscadorMaquinaPage() {
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4, flexWrap: 'wrap', gap: 2 }}>
                                 <Box>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-                                        <Typography variant="h3" sx={{ color: 'white', fontWeight: 800 }}>
+                                        <Typography variant="h3" sx={{ color: 'var(--text-white-dynamic, white)', fontWeight: 800 }}>
                                             {searchedMachine.number}
                                         </Typography>
                                         <Chip 
@@ -271,31 +271,31 @@ export default function BuscadorMaquinaPage() {
 
                             <Grid container spacing={2} sx={{ mb: 4 }}>
                                 <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                    <Box sx={{ p: 2, bgcolor: '#1f293750', borderRadius: 2, border: '1px solid var(--border-strong, #374151)40' }}>
+                                    <Box sx={{ p: 2, bgcolor: 'var(--border-dynamic, #1f2937)50', borderRadius: 2, border: '1px solid var(--border-strong, #374151)40' }}>
                                         <Typography variant="caption" sx={{ color: 'var(--text-muted, #9ca3af)', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                             <TimerIcon sx={{ fontSize: 14 }} /> ÚLTIMO CAMBIO
                                         </Typography>
-                                        <Typography variant="h6" sx={{ color: 'white', mt: 0.5 }}>
+                                        <Typography variant="h6" sx={{ color: 'var(--text-white-dynamic, white)', mt: 0.5 }}>
                                             {searchedMachine.lastStatusChange ? new Date(searchedMachine.lastStatusChange).toLocaleString([], { hour12: false }) : 'Sin registros'}
                                         </Typography>
                                     </Box>
                                 </Grid>
                                 <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                    <Box sx={{ p: 2, bgcolor: '#1f293750', borderRadius: 2, border: '1px solid var(--border-strong, #374151)40' }}>
+                                    <Box sx={{ p: 2, bgcolor: 'var(--border-dynamic, #1f2937)50', borderRadius: 2, border: '1px solid var(--border-strong, #374151)40' }}>
                                         <Typography variant="caption" sx={{ color: 'var(--text-muted, #9ca3af)', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                             <EngineeringIcon sx={{ fontSize: 14 }} /> RESPONSABLE ACTUAL
                                         </Typography>
-                                        <Typography variant="h6" sx={{ color: 'white', mt: 0.5 }}>
+                                        <Typography variant="h6" sx={{ color: 'var(--text-white-dynamic, white)', mt: 0.5 }}>
                                             {searchedMachine.lastChangeBy || 'No asignado'}
                                         </Typography>
                                     </Box>
                                 </Grid>
                                 <Grid size={{ xs: 12, md: 4 }}>
-                                    <Box sx={{ p: 2, bgcolor: '#1f293750', borderRadius: 2, border: '1px solid var(--border-strong, #374151)40' }}>
+                                    <Box sx={{ p: 2, bgcolor: 'var(--border-dynamic, #1f2937)50', borderRadius: 2, border: '1px solid var(--border-strong, #374151)40' }}>
                                         <Typography variant="caption" sx={{ color: 'var(--text-muted, #9ca3af)', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                             <ErrorOutlineIcon sx={{ fontSize: 14 }} /> MOTIVO / FALLA
                                         </Typography>
-                                        <Typography variant="h6" sx={{ color: 'white', mt: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        <Typography variant="h6" sx={{ color: 'var(--text-white-dynamic, white)', mt: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                             {searchedMachine.lastFailureType || 'N/A'}
                                         </Typography>
                                     </Box>
@@ -306,7 +306,7 @@ export default function BuscadorMaquinaPage() {
 
                             {!isMobile ? (
                                 <>
-                                    <Typography variant="h6" sx={{ color: 'white', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="h6" sx={{ color: 'var(--text-white-dynamic, white)', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <HistoryIcon color="primary" /> Historial de Intervenciones
                                     </Typography>
                                     <Box sx={{ 
@@ -341,7 +341,7 @@ export default function BuscadorMaquinaPage() {
                                             '&:hover': { opacity: 0.8 }
                                         }}
                                     >
-                                        <Typography variant="h6" sx={{ color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Typography variant="h6" sx={{ color: 'var(--text-white-dynamic, white)', display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <HistoryIcon color="primary" /> Historial de Intervenciones
                                         </Typography>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#3b82f6' }}>
@@ -351,7 +351,7 @@ export default function BuscadorMaquinaPage() {
                                     </Box>
                                     <Box sx={{ p: 2, bgcolor: 'var(--border-strong, #1e293b)40', borderRadius: 2, border: '1px solid var(--border-strong, #374151)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} onClick={() => setIsHistoryDrawerOpen(true)}>
                                         <Box>
-                                            <Typography variant="body2" sx={{ color: 'white', fontWeight: 600 }}>Última intervención</Typography>
+                                            <Typography variant="body2" sx={{ color: 'var(--text-white-dynamic, white)', fontWeight: 600 }}>Última intervención</Typography>
                                             <Typography variant="caption" sx={{ color: 'var(--text-muted, #9ca3af)' }}>
                                                 {history[0] ? `${new Date(history[0].timestamp).toLocaleDateString()} - ${history[0].generatedBy}` : 'Sin registros'}
                                             </Typography>
@@ -369,7 +369,7 @@ export default function BuscadorMaquinaPage() {
                                 PaperProps={{
                                     sx: {
                                         bgcolor: 'var(--bg-secondary, #111827)',
-                                        color: 'white',
+                                        color: 'var(--text-white-dynamic, white)',
                                         borderTop: '1px solid var(--border-strong, #374151)',
                                         borderTopLeftRadius: 20,
                                         borderTopRightRadius: 20,
@@ -401,8 +401,8 @@ export default function BuscadorMaquinaPage() {
                         <Grid container spacing={3}>
                             {/* Performance Card */}
                             <Grid size={{ xs: 12 }}>
-                                <Card sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 3, p: 3, border: '1px solid #1f2937' }}>
-                                    <Typography variant="h6" sx={{ color: 'white', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Card sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 3, p: 3, border: '1px solid var(--border-dynamic, #1f2937)' }}>
+                                    <Typography variant="h6" sx={{ color: 'var(--text-white-dynamic, white)', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <SpeedIcon color="secondary" /> Indicadores de Rendimiento
                                     </Typography>
                                     
@@ -411,21 +411,21 @@ export default function BuscadorMaquinaPage() {
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                 <Box>
                                                     <Typography variant="caption" sx={{ color: 'var(--text-muted, #9ca3af)', display: 'block' }}>DISPONIBILIDAD (OEE)</Typography>
-                                                    <Typography variant="h4" sx={{ color: 'white', fontWeight: 800 }}>{kpis?.availability || '0%'}</Typography>
+                                                    <Typography variant="h4" sx={{ color: 'var(--text-white-dynamic, white)', fontWeight: 800 }}>{kpis?.availability || '0%'}</Typography>
                                                 </Box>
                                                 <Avatar sx={{ bgcolor: '#10b98120', color: '#10b981', width: 56, height: 56 }}>
                                                     {kpis?.availability}
                                                 </Avatar>
                                             </Box>
                                             
-                                            <Divider sx={{ borderColor: '#1f2937' }} />
+                                            <Divider sx={{ borderColor: 'var(--border-dynamic, #1f2937)' }} />
                                             
                                             <Grid container spacing={2}>
                                                 <Grid size={{ xs: 6 }}>
                                                     <Tooltip title="Mean Time Between Failures: Promedio de tiempo entre fallas">
                                                         <Box>
                                                             <Typography variant="caption" sx={{ color: 'var(--text-muted, #9ca3af)' }}>MTBF</Typography>
-                                                            <Typography variant="h5" sx={{ color: 'white', fontWeight: 700 }}>{kpis?.mtbf || '0h'}</Typography>
+                                                            <Typography variant="h5" sx={{ color: 'var(--text-white-dynamic, white)', fontWeight: 700 }}>{kpis?.mtbf || '0h'}</Typography>
                                                         </Box>
                                                     </Tooltip>
                                                 </Grid>
@@ -439,9 +439,9 @@ export default function BuscadorMaquinaPage() {
                                                 </Grid>
                                             </Grid>
                                             
-                                            <Box sx={{ p: 2, bgcolor: '#1f293750', borderRadius: 2 }}>
+                                            <Box sx={{ p: 2, bgcolor: 'var(--border-dynamic, #1f2937)50', borderRadius: 2 }}>
                                                 <Typography variant="caption" sx={{ color: 'var(--text-muted, #9ca3af)' }}>FALLAS REGISTRADAS</Typography>
-                                                <Typography variant="h5" sx={{ color: 'white', fontWeight: 700 }}>{kpis?.failures || 0}</Typography>
+                                                <Typography variant="h5" sx={{ color: 'var(--text-white-dynamic, white)', fontWeight: 700 }}>{kpis?.failures || 0}</Typography>
                                             </Box>
                                         </Box>
                                     )}
@@ -450,8 +450,8 @@ export default function BuscadorMaquinaPage() {
 
                             {/* Technical Specs */}
                             <Grid size={{ xs: 12 }}>
-                                <Card sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 3, p: 3, border: '1px solid #1f2937' }}>
-                                    <Typography variant="h6" sx={{ color: 'white', mb: 2.5 }}>Ficha Técnica</Typography>
+                                <Card sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 3, p: 3, border: '1px solid var(--border-dynamic, #1f2937)' }}>
+                                    <Typography variant="h6" sx={{ color: 'var(--text-white-dynamic, white)', mb: 2.5 }}>Ficha Técnica</Typography>
                                     
                                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                         {[
@@ -460,9 +460,9 @@ export default function BuscadorMaquinaPage() {
                                             { label: 'Trimer', value: searchedMachine.metadata?.tipoTrimer },
                                             { label: 'Marca/Modelo', value: searchedMachine.nombre },
                                         ].map((spec, i) => (
-                                            <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #1f2937', pb: 1 }}>
+                                            <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-dynamic, #1f2937)', pb: 1 }}>
                                                 <Typography variant="body2" sx={{ color: 'var(--text-muted, #9ca3af)' }}>{spec.label}</Typography>
-                                                <Typography variant="body2" sx={{ color: 'white', fontWeight: 600 }}>{spec.value || 'N/A'}</Typography>
+                                                <Typography variant="body2" sx={{ color: 'var(--text-white-dynamic, white)', fontWeight: 600 }}>{spec.value || 'N/A'}</Typography>
                                             </Box>
                                         ))}
                                     </Box>
@@ -471,8 +471,8 @@ export default function BuscadorMaquinaPage() {
 
                             {/* Media Compatibility Mock Card */}
                             <Grid size={{ xs: 12 }}>
-                                <Card sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 3, p: 3, border: '1px solid #1f2937' }}>
-                                    <Typography variant="h6" sx={{ color: 'white', mb: 2.5 }}>Compatibilidad de Artículos</Typography>
+                                <Card sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 3, p: 3, border: '1px solid var(--border-dynamic, #1f2937)' }}>
+                                    <Typography variant="h6" sx={{ color: 'var(--text-white-dynamic, white)', mb: 2.5 }}>Compatibilidad de Artículos</Typography>
                                     
                                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                         <Typography variant="caption" sx={{ color: '#10b981', fontWeight: 900, textTransform: 'uppercase' }}>Soporta</Typography>

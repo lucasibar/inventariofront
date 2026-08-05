@@ -268,12 +268,12 @@ export default function DepositoPage() {
                     border: 1px solid var(--border-subtle, #1e2133); background: var(--bg-secondary, #1a1d2e); border-radius: 12px; padding: 20px; cursor: pointer;
                     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden;
                 }
-                .depot-card:hover { border-color: #4b5563; transform: translateY(-2px); }
+                .depot-card:hover { border-color: var(--text-dimmed, #4b5563); transform: translateY(-2px); }
                 .depot-card.selected { border-color: #6366f1; background: rgba(99, 102, 241, 0.05); box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2); }
                 .depot-card.inactive { opacity: 0.6; filter: grayscale(0.5); }
                 .pos-table-container { animation: slideUp 0.3s ease-out; }
                 @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                .editable-trigger:hover { border-bottom-color: #4b5563; }
+                .editable-trigger:hover { border-bottom-color: var(--text-dimmed, #4b5563); }
             `}</style>
 
             <PageHeader title="Infraestructura" subtitle="Gestión de Plantas, Depósitos y Posiciones">

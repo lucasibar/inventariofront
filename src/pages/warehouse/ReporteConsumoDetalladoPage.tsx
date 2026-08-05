@@ -369,7 +369,7 @@ export default function ReporteConsumoDetalladoPage() {
                                     </div>
                                     <div style={{ fontSize: '32px', fontWeight: 800, color: '#38bdf8' }}>
                                         {totalKilos.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        <span style={{ fontSize: '16px', color: '#94a3b8', marginLeft: '6px' }}>Kg</span>
+                                        <span style={{ fontSize: '16px', color: 'var(--text-subtle, #94a3b8)', marginLeft: '6px' }}>Kg</span>
                                     </div>
                                 </div>
                                 
@@ -380,7 +380,7 @@ export default function ReporteConsumoDetalladoPage() {
                                         </div>
                                         <div style={{ fontSize: '20px', fontWeight: 800, color: '#10b981' }}>
                                             {averageKilos.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            <span style={{ fontSize: '11px', color: '#94a3b8', marginLeft: '3px' }}>Kg</span>
+                                            <span style={{ fontSize: '11px', color: 'var(--text-subtle, #94a3b8)', marginLeft: '3px' }}>Kg</span>
                                         </div>
                                     </div>
                                     
@@ -390,12 +390,12 @@ export default function ReporteConsumoDetalladoPage() {
                                         </div>
                                         <div style={{ fontSize: '20px', fontWeight: 800, color: '#8b5cf6' }}>
                                             {averageKilosMonthly.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            <span style={{ fontSize: '11px', color: '#94a3b8', marginLeft: '3px' }}>Kg</span>
+                                            <span style={{ fontSize: '11px', color: 'var(--text-subtle, #94a3b8)', marginLeft: '3px' }}>Kg</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '14px', borderTop: '1px dashed rgba(255,255,255,0.05)', paddingTop: '8px', width: '100%' }}>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)', marginTop: '14px', borderTop: '1px dashed var(--bg-hover-dynamic, rgba(255,255,255,0.05))', paddingTop: '8px', width: '100%' }}>
                                 Basado en {filteredMovements.length === movements.length ? `${movements.length}` : `${filteredMovements.length} de ${movements.length}`} transacciones
                             </div>
                         </Card>
@@ -407,7 +407,7 @@ export default function ReporteConsumoDetalladoPage() {
                                     📈 Consumo Diario {viewByGroup ? 'por Grupo de Materiales' : '(Kilos)'}
                                 </h3>
                                 {timelineData.length === 0 ? (
-                                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80%', color: '#64748b' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80%', color: 'var(--text-muted, #64748b)' }}>
                                         No hay datos en el rango seleccionado
                                     </div>
                                 ) : viewByGroup ? (
@@ -416,13 +416,13 @@ export default function ReporteConsumoDetalladoPage() {
                                             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-strong, #1e293b)" vertical={false} />
                                             <XAxis 
                                                 dataKey="fecha" 
-                                                stroke="#64748b" 
+                                                stroke="var(--text-muted, #64748b)" 
                                                 fontSize={11}
                                                 tickFormatter={(val) => new Date(val).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })}
                                             />
-                                            <YAxis stroke="#64748b" fontSize={11} />
+                                            <YAxis stroke="var(--text-muted, #64748b)" fontSize={11} />
                                             <Tooltip 
-                                                contentStyle={{ background: 'var(--bg-primary, #0f172a)', border: '1px solid var(--border-strong, #334155)', borderRadius: '8px', color: '#fff' }}
+                                                contentStyle={{ background: 'var(--bg-primary, #0f172a)', border: '1px solid var(--border-strong, #334155)', borderRadius: '8px', color: 'var(--text-white-dynamic, #fff)' }}
                                                 labelFormatter={(val) => new Date(val).toLocaleDateString('es-AR', { dateStyle: 'medium' })}
                                             />
                                             {combos.filter(grupo => !excludedComboIds[grupo.id]).map((grupo, idx) => {
@@ -454,13 +454,13 @@ export default function ReporteConsumoDetalladoPage() {
                                             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-strong, #1e293b)" vertical={false} />
                                             <XAxis 
                                                 dataKey="fecha" 
-                                                stroke="#64748b" 
+                                                stroke="var(--text-muted, #64748b)" 
                                                 fontSize={11}
                                                 tickFormatter={(val) => new Date(val).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })}
                                             />
-                                            <YAxis stroke="#64748b" fontSize={11} />
+                                            <YAxis stroke="var(--text-muted, #64748b)" fontSize={11} />
                                             <Tooltip 
-                                                contentStyle={{ background: 'var(--bg-primary, #0f172a)', border: '1px solid var(--border-strong, #334155)', borderRadius: '8px', color: '#fff' }}
+                                                contentStyle={{ background: 'var(--bg-primary, #0f172a)', border: '1px solid var(--border-strong, #334155)', borderRadius: '8px', color: 'var(--text-white-dynamic, #fff)' }}
                                                 itemStyle={{ color: '#38bdf8' }}
                                                 labelFormatter={(val) => new Date(val).toLocaleDateString('es-AR', { dateStyle: 'medium' })}
                                             />
@@ -495,17 +495,17 @@ export default function ReporteConsumoDetalladoPage() {
                                 </button>
                                 <button 
                                     onClick={viewByGroup ? deselectAllCombos : deselectAllMaterials}
-                                    style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}
+                                    style={{ background: 'none', border: 'none', color: 'var(--text-subtle, #94a3b8)', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}
                                 >
                                     ✗ Desmarcar Todos
                                 </button>
-                                <span style={{ fontSize: '12px', color: '#64748b' }}>| Ordenado por Kilos</span>
+                                <span style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)' }}>| Ordenado por Kilos</span>
                             </div>
                         </div>
 
                         {viewByGroup ? (
                             combos.length === 0 ? (
-                                <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+                                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted, #64748b)' }}>
                                     No se encontraron grupos configurados.
                                 </div>
                             ) : (
@@ -561,7 +561,7 @@ export default function ReporteConsumoDetalladoPage() {
                                                         alignItems: 'center', 
                                                         justifyContent: 'space-between', 
                                                         cursor: 'pointer',
-                                                        background: isExpanded ? 'rgba(15, 23, 42, 0.4)' : 'transparent',
+                                                        background: isExpanded ? 'var(--bg-overlay, rgba(15, 23, 42, 0.4))' : 'transparent',
                                                         transition: 'background 0.2s ease'
                                                     }}
                                                 >
@@ -579,10 +579,10 @@ export default function ReporteConsumoDetalladoPage() {
                                                             }}
                                                         />
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, minWidth: 0 }}>
-                                                            <span style={{ fontWeight: 700, color: isSelected ? '#fff' : '#64748b', fontSize: '15px', textDecoration: isSelected ? 'none' : 'line-through' }}>
+                                                            <span style={{ fontWeight: 700, color: isSelected ? 'var(--text-white-dynamic, #fff)' : 'var(--text-muted, #64748b)', fontSize: '15px', textDecoration: isSelected ? 'none' : 'line-through' }}>
                                                                 {grupo.title}
                                                             </span>
-                                                            <span style={{ color: isSelected ? 'var(--text-muted, #9ca3af)' : '#475569', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                            <span style={{ color: isSelected ? 'var(--text-muted, #9ca3af)' : 'var(--text-mui-secondary, #475569)', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                                 Proveedor: {grupo.supplier?.name || 'Varios / Mixto'} | {grupo.itemIds?.length || 0} materiales
                                                             </span>
                                                         </div>
@@ -610,14 +610,14 @@ export default function ReporteConsumoDetalladoPage() {
                                                             ✏️ Configurar
                                                         </button>
                                                         <div style={{ textAlign: 'right' }}>
-                                                            <span style={{ fontWeight: 800, color: isSelected ? '#38bdf8' : '#475569', fontSize: '16px' }}>
+                                                            <span style={{ fontWeight: 800, color: isSelected ? '#38bdf8' : 'var(--text-mui-secondary, #475569)', fontSize: '16px' }}>
                                                                 {groupConsumoTotal.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                             </span>
-                                                            <span style={{ color: '#64748b', fontSize: '12px', marginLeft: '4px' }}>
+                                                            <span style={{ color: 'var(--text-muted, #64748b)', fontSize: '12px', marginLeft: '4px' }}>
                                                                 Kg
                                                             </span>
                                                         </div>
-                                                        <span style={{ fontSize: '18px', color: '#64748b', transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                                                        <span style={{ fontSize: '18px', color: 'var(--text-muted, #64748b)', transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
                                                             ▼
                                                         </span>
                                                     </div>
@@ -627,7 +627,7 @@ export default function ReporteConsumoDetalladoPage() {
                                                 {isExpanded && (
                                                     <div style={{ padding: '20px', background: 'var(--bg-primary, #0b0f19)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                                         {groupItemsBreakdown.length === 0 ? (
-                                                            <div style={{ color: '#64748b', fontSize: '13px', textAlign: 'center', padding: '10px' }}>
+                                                            <div style={{ color: 'var(--text-muted, #64748b)', fontSize: '13px', textAlign: 'center', padding: '10px' }}>
                                                                 No se registraron consumos para los materiales de este grupo en el período seleccionado.
                                                             </div>
                                                         ) : (
@@ -635,8 +635,8 @@ export default function ReporteConsumoDetalladoPage() {
                                                                 <div key={itemGroup.item.id} style={{ border: '1px solid var(--border-strong, #1e293b)', borderRadius: '8px', overflow: 'hidden' }}>
                                                                     <div style={{ padding: '10px 14px', background: 'var(--bg-secondary, #111827)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                                            <strong style={{ color: '#fff', fontSize: '14px' }}>{itemGroup.item.descripcion}</strong>
-                                                                            <span style={{ fontSize: '11px', color: '#64748b' }}>Cód: {itemGroup.item.codigoInterno}</span>
+                                                                            <strong style={{ color: 'var(--text-white-dynamic, #fff)', fontSize: '14px' }}>{itemGroup.item.descripcion}</strong>
+                                                                            <span style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)' }}>Cód: {itemGroup.item.codigoInterno}</span>
                                                                         </div>
                                                                         <span style={{ fontWeight: 700, color: '#38bdf8', fontSize: '14px' }}>
                                                                             {itemGroup.totalQty.toLocaleString('es-AR', { minimumFractionDigits: 2 })} {itemGroup.item.unidadPrincipal}
@@ -646,11 +646,11 @@ export default function ReporteConsumoDetalladoPage() {
                                                                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                                                                             <thead>
                                                                                 <tr style={{ borderBottom: '1px solid var(--border-strong, #1e293b)', background: 'rgba(0,0,0,0.15)' }}>
-                                                                                    <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b' }}>Fecha</th>
-                                                                                    <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b' }}>Cliente</th>
-                                                                                    <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b' }}>Partida / Lote</th>
-                                                                                    <th style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b' }}>Cantidad</th>
-                                                                                    <th style={{ padding: '8px 12px', textAlign: 'center', color: '#64748b' }}>Remito / Documento</th>
+                                                                                    <th style={{ padding: '8px 12px', textAlign: 'left', color: 'var(--text-muted, #64748b)' }}>Fecha</th>
+                                                                                    <th style={{ padding: '8px 12px', textAlign: 'left', color: 'var(--text-muted, #64748b)' }}>Cliente</th>
+                                                                                    <th style={{ padding: '8px 12px', textAlign: 'left', color: 'var(--text-muted, #64748b)' }}>Partida / Lote</th>
+                                                                                    <th style={{ padding: '8px 12px', textAlign: 'right', color: 'var(--text-muted, #64748b)' }}>Cantidad</th>
+                                                                                    <th style={{ padding: '8px 12px', textAlign: 'center', color: 'var(--text-muted, #64748b)' }}>Remito / Documento</th>
                                                                                 </tr>
                                                                             </thead>
                                                                             <tbody>
@@ -659,10 +659,10 @@ export default function ReporteConsumoDetalladoPage() {
                                                                                     const clientName = mov.documento?.partner?.name || '—';
                                                                                     return (
                                                                                         <tr key={mov.id || index} style={{ borderBottom: index < itemGroup.movements.length - 1 ? '1px solid var(--border-strong, #1e293b)' : 'none' }}>
-                                                                                            <td style={{ padding: '8px 12px', color: '#e2e8f0' }}>
+                                                                                            <td style={{ padding: '8px 12px', color: 'var(--text-white-dynamic-muted, #e2e8f0)' }}>
                                                                                                 {new Date(mov.fecha).toLocaleDateString('es-AR')}
                                                                                             </td>
-                                                                                            <td style={{ padding: '8px 12px', color: '#e2e8f0' }}>
+                                                                                            <td style={{ padding: '8px 12px', color: 'var(--text-white-dynamic-muted, #e2e8f0)' }}>
                                                                                                 {clientName}
                                                                                             </td>
                                                                                             <td style={{ padding: '8px 12px' }}>
@@ -691,7 +691,7 @@ export default function ReporteConsumoDetalladoPage() {
                                                                                                         📄 {docNum || 'Ver Detalle'}
                                                                                                     </button>
                                                                                                 ) : (
-                                                                                                    <span style={{ color: '#64748b' }}>{docNum || '—'}</span>
+                                                                                                    <span style={{ color: 'var(--text-muted, #64748b)' }}>{docNum || '—'}</span>
                                                                                                 )}
                                                                                             </td>
                                                                                         </tr>
@@ -712,7 +712,7 @@ export default function ReporteConsumoDetalladoPage() {
                             )
                         ) : (
                             itemsBreakdown.length === 0 ? (
-                                <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+                                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted, #64748b)' }}>
                                     No se encontraron salidas registradas en el período.
                                 </div>
                             ) : (
@@ -732,7 +732,7 @@ export default function ReporteConsumoDetalladoPage() {
                                                         alignItems: 'center', 
                                                         justifyContent: 'space-between', 
                                                         cursor: 'pointer',
-                                                        background: isExpanded ? 'rgba(15, 23, 42, 0.4)' : 'transparent',
+                                                        background: isExpanded ? 'var(--bg-overlay, rgba(15, 23, 42, 0.4))' : 'transparent',
                                                         transition: 'background 0.2s ease'
                                                     }}
                                                 >
@@ -750,24 +750,24 @@ export default function ReporteConsumoDetalladoPage() {
                                                             }}
                                                         />
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, minWidth: 0 }}>
-                                                            <span style={{ fontWeight: 700, color: isSelected ? '#fff' : '#64748b', fontSize: '15px', textDecoration: isSelected ? 'none' : 'line-through' }}>
+                                                            <span style={{ fontWeight: 700, color: isSelected ? 'var(--text-white-dynamic, #fff)' : 'var(--text-muted, #64748b)', fontSize: '15px', textDecoration: isSelected ? 'none' : 'line-through' }}>
                                                                 {group.item.codigoInterno}
                                                             </span>
-                                                            <span style={{ color: isSelected ? 'var(--text-muted, #9ca3af)' : '#475569', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                            <span style={{ color: isSelected ? 'var(--text-muted, #9ca3af)' : 'var(--text-mui-secondary, #475569)', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                                 {group.item.descripcion}
                                                             </span>
                                                         </div>
                                                     </div>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                                                         <div style={{ textAlign: 'right' }}>
-                                                            <span style={{ fontWeight: 800, color: isSelected ? '#38bdf8' : '#475569', fontSize: '16px' }}>
+                                                            <span style={{ fontWeight: 800, color: isSelected ? '#38bdf8' : 'var(--text-mui-secondary, #475569)', fontSize: '16px' }}>
                                                                 {group.totalQty.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                             </span>
-                                                            <span style={{ color: '#64748b', fontSize: '12px', marginLeft: '4px' }}>
+                                                            <span style={{ color: 'var(--text-muted, #64748b)', fontSize: '12px', marginLeft: '4px' }}>
                                                                 {group.item.unidadPrincipal}
                                                             </span>
                                                         </div>
-                                                        <span style={{ fontSize: '18px', color: '#64748b', transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                                                        <span style={{ fontSize: '18px', color: 'var(--text-muted, #64748b)', transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
                                                             ▼
                                                         </span>
                                                     </div>
@@ -780,11 +780,11 @@ export default function ReporteConsumoDetalladoPage() {
                                                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                                                                 <thead>
                                                                     <tr style={{ borderBottom: '1px solid var(--border-strong, #1e293b)', background: 'var(--bg-secondary, #111827)' }}>
-                                                                        <th style={{ padding: '10px 12px', textAlign: 'left', color: '#64748b' }}>Fecha</th>
-                                                                        <th style={{ padding: '10px 12px', textAlign: 'left', color: '#64748b' }}>Cliente</th>
-                                                                        <th style={{ padding: '10px 12px', textAlign: 'left', color: '#64748b' }}>Partida / Lote</th>
-                                                                        <th style={{ padding: '10px 12px', textAlign: 'right', color: '#64748b' }}>Cantidad</th>
-                                                                        <th style={{ padding: '10px 12px', textAlign: 'center', color: '#64748b' }}>Remito / Documento</th>
+                                                                        <th style={{ padding: '10px 12px', textAlign: 'left', color: 'var(--text-muted, #64748b)' }}>Fecha</th>
+                                                                        <th style={{ padding: '10px 12px', textAlign: 'left', color: 'var(--text-muted, #64748b)' }}>Cliente</th>
+                                                                        <th style={{ padding: '10px 12px', textAlign: 'left', color: 'var(--text-muted, #64748b)' }}>Partida / Lote</th>
+                                                                        <th style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--text-muted, #64748b)' }}>Cantidad</th>
+                                                                        <th style={{ padding: '10px 12px', textAlign: 'center', color: 'var(--text-muted, #64748b)' }}>Remito / Documento</th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
@@ -793,10 +793,10 @@ export default function ReporteConsumoDetalladoPage() {
                                                                         const clientName = mov.documento?.partner?.name || '—';
                                                                         return (
                                                                             <tr key={mov.id || index} style={{ borderBottom: index < group.movements.length - 1 ? '1px solid var(--border-strong, #1e293b)' : 'none' }}>
-                                                                                <td style={{ padding: '10px 12px', color: '#e2e8f0' }}>
+                                                                                <td style={{ padding: '10px 12px', color: 'var(--text-white-dynamic-muted, #e2e8f0)' }}>
                                                                                     {new Date(mov.fecha).toLocaleDateString('es-AR')}
                                                                                 </td>
-                                                                                <td style={{ padding: '10px 12px', color: '#e2e8f0', fontWeight: 500 }}>
+                                                                                <td style={{ padding: '10px 12px', color: 'var(--text-white-dynamic-muted, #e2e8f0)', fontWeight: 500 }}>
                                                                                     {clientName}
                                                                                 </td>
                                                                                 <td style={{ padding: '10px 12px' }}>
@@ -828,7 +828,7 @@ export default function ReporteConsumoDetalladoPage() {
                                                                                             📄 {docNum || 'Ver Detalle'}
                                                                                         </button>
                                                                                     ) : (
-                                                                                        <span style={{ color: '#64748b' }}>{docNum || '—'}</span>
+                                                                                        <span style={{ color: 'var(--text-muted, #64748b)' }}>{docNum || '—'}</span>
                                                                                     )}
                                                                                 </td>
                                                                             </tr>
@@ -860,11 +860,11 @@ export default function ReporteConsumoDetalladoPage() {
                                     margin={{ left: 10, right: 20, top: 0, bottom: 5 }}
                                 >
                                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border-strong, #1e293b)" horizontal={false} />
-                                    <XAxis type="number" stroke="#64748b" fontSize={11} />
-                                    <YAxis dataKey="name" type="category" stroke="#64748b" fontSize={11} width={80} />
+                                    <XAxis type="number" stroke="var(--text-muted, #64748b)" fontSize={11} />
+                                    <YAxis dataKey="name" type="category" stroke="var(--text-muted, #64748b)" fontSize={11} width={80} />
                                     <Tooltip 
                                         cursor={{ fill: 'var(--border-strong, #1e293b)' }}
-                                        contentStyle={{ background: 'var(--bg-primary, #0f172a)', border: '1px solid var(--border-strong, #334155)', borderRadius: '8px', color: '#fff' }}
+                                        contentStyle={{ background: 'var(--bg-primary, #0f172a)', border: '1px solid var(--border-strong, #334155)', borderRadius: '8px', color: 'var(--text-white-dynamic, #fff)' }}
                                     />
                                     <Bar dataKey="kilos" fill="#38bdf8" radius={[0, 4, 4, 0]} barSize={20} />
                                 </BarChart>

@@ -205,9 +205,9 @@ export default function CambioArticuloPage() {
             <Grid container spacing={3}>
                 {/* Form Side */}
                 <Grid size={{ xs: 12, md: 5 }}>
-                    <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid #1f2937' }}>
+                    <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid var(--border-dynamic, #1f2937)' }}>
                         <CardContent sx={{ p: 3 }}>
-                            <Typography variant="h6" sx={{ mb: 2, color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="h6" sx={{ mb: 2, color: 'var(--text-white-dynamic, white)', display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <SwapHorizIcon /> Nuevo Cambio
                             </Typography>
 
@@ -358,10 +358,10 @@ export default function CambioArticuloPage() {
                 {/* Queue Side */}
                 <Grid size={{ xs: 12, md: 7 }}>
                     {/* Pending Queue */}
-                    <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid #1f2937', mb: 3 }}>
+                    <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid var(--border-dynamic, #1f2937)', mb: 3 }}>
                         <CardContent sx={{ p: 3 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                <Typography variant="h6" sx={{ color: 'white' }}>
+                                <Typography variant="h6" sx={{ color: 'var(--text-white-dynamic, white)' }}>
                                     Cola de Cambios ({pendingChanges.length})
                                 </Typography>
                                 {pendingChanges.length > 0 && (
@@ -391,7 +391,7 @@ export default function CambioArticuloPage() {
                                             <ListItemText
                                                 primary={
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                                                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'white' }}>
+                                                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'var(--text-white-dynamic, white)' }}>
                                                             {pc.machineLabel}
                                                         </Typography>
                                                         {pc.changeTypes.map(ct => (
@@ -399,7 +399,7 @@ export default function CambioArticuloPage() {
                                                                 size="small"
                                                                 sx={{
                                                                     bgcolor: (CHANGE_TYPE_COLORS[ct] || '#666') + '33',
-                                                                    color: CHANGE_TYPE_COLORS[ct] || '#fff',
+                                                                    color: CHANGE_TYPE_COLORS[ct] || 'var(--text-white-dynamic, #fff)',
                                                                     fontSize: '0.7rem', height: 20
                                                                 }}
                                                             />
@@ -426,9 +426,9 @@ export default function CambioArticuloPage() {
                     </MuiCard>
 
                     {/* Recent History */}
-                    <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid #1f2937' }}>
+                    <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid var(--border-dynamic, #1f2937)' }}>
                         <CardContent sx={{ p: 3 }}>
-                            <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                            <Typography variant="h6" sx={{ color: 'var(--text-white-dynamic, white)', mb: 2 }}>
                                 Últimos Cambios Registrados
                             </Typography>
                             {loadingChanges ? <Spinner /> : (
@@ -436,12 +436,12 @@ export default function CambioArticuloPage() {
                                     {(recentChanges as any[]).slice(0, 20).map((change: any) => (
                                         <ListItem key={change.id} sx={{
                                             bgcolor: '#0d1520', borderRadius: 1, mb: 0.5,
-                                            border: '1px solid #1f2937'
+                                            border: '1px solid var(--border-dynamic, #1f2937)'
                                         }}>
                                             <ListItemText
                                                 primary={
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                                                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'white', minWidth: '90px' }}>
+                                                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'var(--text-white-dynamic, white)', minWidth: '90px' }}>
                                                             Máq. {change.machine?.number}
                                                         </Typography>
                                                         {(change.changeTypes || []).map((ct: string) => (
@@ -449,7 +449,7 @@ export default function CambioArticuloPage() {
                                                                 size="small"
                                                                 sx={{
                                                                     bgcolor: (CHANGE_TYPE_COLORS[ct] || '#666') + '33',
-                                                                    color: CHANGE_TYPE_COLORS[ct] || '#fff',
+                                                                    color: CHANGE_TYPE_COLORS[ct] || 'var(--text-white-dynamic, #fff)',
                                                                     fontSize: '0.65rem', height: 18
                                                                 }}
                                                             />

@@ -51,7 +51,7 @@ export default function ConciliacionPage() {
                                     style={{ 
                                         cursor: 'pointer', 
                                         border: selectedMov?.id === m.id ? '2px solid #6366f1' : '1px solid var(--bg-action-btn, rgba(255,255,255,0.05))',
-                                        background: selectedMov?.id === m.id ? 'rgba(99, 102, 241, 0.05)' : 'rgba(17, 24, 39, 0.4)'
+                                        background: selectedMov?.id === m.id ? 'rgba(99, 102, 241, 0.05)' : 'var(--bg-overlay, rgba(17, 24, 39, 0.4))'
                                     }}
                                     onClick={() => setSelectedMov(m)}
                                 >
@@ -76,20 +76,20 @@ export default function ConciliacionPage() {
                 <div>
                     <h3 style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>🔗 Acción de Conciliación</h3>
                     {!selectedMov ? (
-                        <Card style={{ textAlign: 'center', padding: '40px', background: 'transparent', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                        <Card style={{ textAlign: 'center', padding: '40px', background: 'transparent', border: '1px dashed var(--border-dynamic-transparent, rgba(255,255,255,0.1))' }}>
                             <p style={{ color: 'var(--text-subtle, #6b7280)' }}>Selecciona una entrada de la izquierda para buscar coincidencias.</p>
                         </Card>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             <div style={{ padding: '16px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '8px', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
                                 <span style={{ fontSize: '11px', color: '#a5b4fc', textTransform: 'uppercase', fontWeight: 700 }}>Buscando para:</span>
-                                <div style={{ color: 'white', fontWeight: 600, fontSize: '15px', marginTop: '4px' }}>{selectedMov.item?.descripcion}</div>
+                                <div style={{ color: 'var(--text-white-dynamic, white)', fontWeight: 600, fontSize: '15px', marginTop: '4px' }}>{selectedMov.item?.descripcion}</div>
                                 <div style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px', marginTop: '4px' }}>Proveedor: {selectedMov.supplier?.name}</div>
                                 <div style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px' }}>Cantidad total recibida: <strong>{Number(selectedMov.qtyPrincipal).toFixed(2)} kg</strong></div>
                             </div>
 
                             <Card style={{ padding: '20px', textAlign: 'center' }}>
-                                <p style={{ color: '#cbd5e1', fontSize: '13px', marginBottom: '16px' }}>
+                                <p style={{ color: 'var(--text-dimmed, #cbd5e1)', fontSize: '13px', marginBottom: '16px' }}>
                                     Hacé click abajo para abrir el panel de vinculación e imputar este ingreso de material a las Órdenes de Compra abiertas de este proveedor.
                                 </p>
                                 <Btn 

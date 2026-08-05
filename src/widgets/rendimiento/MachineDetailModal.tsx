@@ -63,14 +63,14 @@ export const MachineDetailModal: React.FC<MachineDetailModalProps> = ({
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
             <DialogTitle sx={{ 
-                bgcolor: '#1a1d2e', 
-                borderBottom: '1px solid #2a2d3e',
+                bgcolor: 'var(--bg-secondary, #1a1d2e)', 
+                borderBottom: '1px solid var(--border-color, #2a2d3e)',
                 display: 'flex', 
                 justifyContent: 'space-between', 
                 alignItems: 'center'
             }}>
                 <Box>
-                    <Typography variant="h5" color="white" sx={{ fontWeight: 800 }}>
+                    <Typography variant="h5" color="var(--text-white-dynamic, white)" sx={{ fontWeight: 800 }}>
                         {machine.nombre || `MÁQUINA ${machine.number}`}
                     </Typography>
                     <Typography variant="body2" color="primary" sx={{ fontWeight: 600 }}>
@@ -105,7 +105,7 @@ export const MachineDetailModal: React.FC<MachineDetailModalProps> = ({
                                 <MetricCard label="OEE (Calculado)" value={kpis?.oee || '0%'} color="#60a5fa" />
                                 <MetricCard label="MTBF" value={kpis?.mtbf || '0s'} color="#818cf8" />
                                 <MetricCard label="MTTR" value={kpis?.mttr || '0s'} color="#f87171" />
-                                <MetricCard label="Fallas Totales" value={kpis?.failures.toString() || '0'} color="#94a3b8" />
+                                <MetricCard label="Fallas Totales" value={kpis?.failures.toString() || '0'} color="var(--text-subtle, #94a3b8)" />
                             </Box>
                         )}
 
@@ -114,12 +114,12 @@ export const MachineDetailModal: React.FC<MachineDetailModalProps> = ({
                             <Typography variant="subtitle2" color="primary" sx={{ mb: 1, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>
                                 Historial Reciente
                             </Typography>
-                            <List sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <List sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--bg-hover-dynamic, rgba(255,255,255,0.05))' }}>
                                 {kpis?.history.length === 0 && (
                                     <ListItem><ListItemText primary="Sin eventos registrados" /></ListItem>
                                 )}
                                 {kpis?.history.map((log: any) => (
-                                    <ListItem key={log.id} divider sx={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                                    <ListItem key={log.id} divider sx={{ borderColor: 'var(--bg-hover-dynamic, rgba(255,255,255,0.05))' }}>
                                         <ListItemText 
                                             primary={
                                                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
@@ -147,9 +147,9 @@ export const MachineDetailModal: React.FC<MachineDetailModalProps> = ({
                     </Box>
 
                     {/* Sidebar Area */}
-                    <Box sx={{ borderLeft: '1px solid rgba(255,255,255,0.05)', pl: 3 }}>
+                    <Box sx={{ borderLeft: '1px solid var(--bg-hover-dynamic, rgba(255,255,255,0.05))', pl: 3 }}>
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>CÓDIGO INTERNO</Typography>
-                        <Typography variant="h6" sx={{ color: 'white', mb: 3 }}>{machine.codigoInterno}</Typography>
+                        <Typography variant="h6" sx={{ color: 'var(--text-white-dynamic, white)', mb: 3 }}>{machine.codigoInterno}</Typography>
 
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>TIEMPOS TOTALES</Typography>
                         <Box sx={{ mb: 3 }}>
@@ -163,7 +163,7 @@ export const MachineDetailModal: React.FC<MachineDetailModalProps> = ({
                             </Box>
                         </Box>
 
-                        <Divider sx={{ my: 3, borderColor: 'rgba(255,255,255,0.05)' }} />
+                        <Divider sx={{ my: 3, borderColor: 'var(--bg-hover-dynamic, rgba(255,255,255,0.05))' }} />
 
                         {machine.lastObservation && (
                             <Box sx={{ mb: 3 }}>
@@ -175,13 +175,13 @@ export const MachineDetailModal: React.FC<MachineDetailModalProps> = ({
                         )}
                         
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>RESPONSABLE</Typography>
-                        <Typography variant="body2" sx={{ color: 'white' }}>{machine.lastChangeBy || 'N/A'}</Typography>
+                        <Typography variant="body2" sx={{ color: 'var(--text-white-dynamic, white)' }}>{machine.lastChangeBy || 'N/A'}</Typography>
                     </Box>
                 </Box>
             </DialogContent>
 
-            <DialogActions sx={{ bgcolor: '#1a1d2e', p: 3, borderTop: '1px solid #2a2d3e', justifyContent: 'space-between' }}>
-                <Button onClick={onClose} variant="outlined" sx={{ color: 'rgba(255,255,255,0.5)', borderColor: 'rgba(255,255,255,0.1)' }}>Cerrar</Button>
+            <DialogActions sx={{ bgcolor: 'var(--bg-secondary, #1a1d2e)', p: 3, borderTop: '1px solid var(--border-color, #2a2d3e)', justifyContent: 'space-between' }}>
+                <Button onClick={onClose} variant="outlined" sx={{ color: 'rgba(255,255,255,0.5)', borderColor: 'var(--border-dynamic-transparent, rgba(255,255,255,0.1))' }}>Cerrar</Button>
                 
                 <Box sx={{ display: 'flex', gap: 2 }}>
                     <Button 
@@ -222,9 +222,9 @@ const MetricCard: React.FC<{ label: string; value: string; color: string; subLab
         p: 2.5, 
         bgcolor: 'rgba(255,255,255,0.03)', 
         borderRadius: '16px', 
-        border: '1px solid rgba(255,255,255,0.05)',
+        border: '1px solid var(--bg-hover-dynamic, rgba(255,255,255,0.05))',
         transition: 'all 0.2s',
-        '&:hover': { bgcolor: 'rgba(255,255,255,0.05)', borderColor: `${color}44` }
+        '&:hover': { bgcolor: 'var(--bg-hover-dynamic, rgba(255,255,255,0.05))', borderColor: `${color}44` }
     }}>
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>{label}</Typography>
         <Typography variant="h4" sx={{ color: color, fontWeight: 800, mb: 0.5 }}>{value}</Typography>

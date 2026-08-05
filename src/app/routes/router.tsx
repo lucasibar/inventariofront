@@ -17,7 +17,6 @@ const BoxTypesPage = lazy(() => import('../../pages/warehouse/BoxTypesPage'));
 // Sector: Warehouse
 const DepositoPage = lazy(() => import('../../pages/warehouse/DepositoPage'));
 const StockPage = lazy(() => import('../../pages/warehouse/StockPage'));
-const Stock1Page = lazy(() => import('../../pages/warehouse/Stock1Page'));
 const MovimientosPage = lazy(() => import('../../pages/warehouse/MovimientosPage'));
 const RemitosEntradaPage = lazy(() => import('../../pages/warehouse/RemitosEntradaPage'));
 const RemitosSalidaPage = lazy(() => import('../../pages/warehouse/RemitosSalidaPage'));
@@ -65,7 +64,7 @@ const NotificationsPage = lazy(() => import('../../pages/config/NotificationsPag
 const HelpPage = lazy(() => import('../../pages/help/HelpPage'));
 
 const FallbackLoader = () => (
-  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0f1117' }}>
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg-primary, #0f1117)' }}>
     <PageLoader text="Cargando sección..." />
   </div>
 );
@@ -155,7 +154,6 @@ export const router = createBrowserRouter([
               { path: "remitos-salida", element: <LazyRoute element={RemitosSalidaPage} /> },
               { path: "reporte-consumo-detallado", element: <LazyRoute element={ReporteConsumoDetalladoPage} /> },
               { path: "stock", element: <LazyRoute element={StockPage} /> },
-              { path: "stock1", element: <LazyRoute element={Stock1Page} /> },
               { path: "movimientos", element: <LazyRoute element={MovimientosPage} /> },
               { path: "tasks", element: <LazyRoute element={WorkspaceTasksPage} /> },
               

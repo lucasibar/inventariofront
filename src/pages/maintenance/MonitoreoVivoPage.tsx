@@ -19,7 +19,7 @@ import {
 
 const STATUS_COLORS_WITH_FALLBACK: Record<string, string> = {
     ...STATUS_COLORS,
-    SIN_DATOS: '#94a3b8'
+    SIN_DATOS: 'var(--text-subtle, #94a3b8)'
 };
 
 const STATUS_LABELS_WITH_FALLBACK: Record<string, string> = {
@@ -62,7 +62,7 @@ const MachineNode = ({ number, status, onClick }: {
                         bgcolor: `${statusColor}15`,
                         zIndex: 20,
                         boxShadow: `0 0 20px ${statusColor}80`,
-                        borderColor: '#fff'
+                        borderColor: 'var(--text-white-dynamic, #fff)'
                     }
                 }}
             >
@@ -76,7 +76,7 @@ const StatusBar = ({ label, value, color, max }: { label: string, value: number,
     const width = `${Math.max(2, (value / (max || 1)) * 100)}%`;
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
-            <Typography sx={{ color: '#94a3b8', fontSize: '11px', fontWeight: 900, width: 160, textTransform: 'uppercase', lineHeight: 1 }}>{label}</Typography>
+            <Typography sx={{ color: 'var(--text-subtle, #94a3b8)', fontSize: '11px', fontWeight: 900, width: 160, textTransform: 'uppercase', lineHeight: 1 }}>{label}</Typography>
             <Typography sx={{ color: color, fontSize: '12px', fontWeight: 1000, width: 35, textAlign: 'right' }}>{value}</Typography>
             <Box sx={{ flex: 1, height: 4, bgcolor: 'var(--bg-hover-row, rgba(255,255,255,0.03))', borderRadius: 4, overflow: 'hidden' }}>
                 <Box sx={{ width: width, height: '100%', bgcolor: color, borderRadius: 4 }} />
@@ -111,7 +111,7 @@ const FusedModule = ({ title, count, total, color, breakdown, subtitle }: any) =
                 </Box>
             </Box>
             <Box sx={{ flex: 1, bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.01))', p: { xs: 1, md: 1.5 }, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <Typography sx={{ color: '#475569', fontWeight: 1000, textTransform: 'uppercase', fontSize: '11px', mb: 0.5, letterSpacing: 2 }}>{subtitle}</Typography>
+                <Typography sx={{ color: 'var(--text-mui-secondary, #475569)', fontWeight: 1000, textTransform: 'uppercase', fontSize: '11px', mb: 0.5, letterSpacing: 2 }}>{subtitle}</Typography>
                 {breakdown.map((item: any, i: number) => (
                     <StatusBar key={i} label={item.label} value={item.value} color={item.color || color} max={count} />
                 ))}
@@ -262,15 +262,15 @@ export default function MonitoreoVivoPage() {
     return (
         <Box sx={{
             bgcolor: '#0b0e14', height: '100vh', width: '100vw', maxHeight: '100vh',
-            color: '#fff', display: 'flex', flexDirection: 'column', p: 3, gap: 2.5, overflow: 'hidden',
+            color: 'var(--text-white-dynamic, #fff)', display: 'flex', flexDirection: 'column', p: 3, gap: 2.5, overflow: 'hidden',
             position: 'relative'
         }}>
             {/* Discreet Menu Toggle */}
             <IconButton
                 onClick={() => document.dispatchEvent(new Event('open-sidebar-menu'))}
                 sx={{
-                    position: 'absolute', top: 8, left: 8, color: 'rgba(255,255,255,0.2)',
-                    zIndex: 1000, '&:hover': { color: '#fff', bgcolor: 'var(--bg-action-btn, rgba(255,255,255,0.05))' }
+                    position: 'absolute', top: 8, left: 8, color: 'var(--border-dynamic-transparent-strong, rgba(255,255,255,0.2))',
+                    zIndex: 1000, '&:hover': { color: 'var(--text-white-dynamic, #fff)', bgcolor: 'var(--bg-action-btn, rgba(255,255,255,0.05))' }
                 }}
             >
                 <MoreVertIcon fontSize="small" />
@@ -315,8 +315,8 @@ export default function MonitoreoVivoPage() {
                         position: 'relative',
                         '&::-webkit-scrollbar': { height: '6px' },
                         '&::-webkit-scrollbar-track': { background: 'transparent' },
-                        '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.1)', borderRadius: '4px' },
-                        '&::-webkit-scrollbar-thumb:hover': { background: 'rgba(255,255,255,0.2)' }
+                        '&::-webkit-scrollbar-thumb': { background: 'var(--border-dynamic-transparent, rgba(255,255,255,0.1))', borderRadius: '4px' },
+                        '&::-webkit-scrollbar-thumb:hover': { background: 'var(--border-dynamic-transparent-strong, rgba(255,255,255,0.2))' }
                     }}
                 >
                     <Box

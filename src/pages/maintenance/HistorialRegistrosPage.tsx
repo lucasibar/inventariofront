@@ -211,8 +211,8 @@ export default function HistorialRegistrosPage() {
    <Protection/>
   </Style>
   <Style ss:ID="Header">
-   <Font ss:FontName="Segoe UI" x:Family="Swiss" ss:Size="10" ss:Color="#FFFFFF" ss:Bold="1"/>
-   <Interior ss:Color="#1F2937" ss:Pattern="Solid"/>
+   <Font ss:FontName="Segoe UI" x:Family="Swiss" ss:Size="10" ss:Color="var(--text-white-dynamic, #ffffff)" ss:Bold="1"/>
+   <Interior ss:Color="var(--border-dynamic, #1f2937)" ss:Pattern="Solid"/>
    <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
   </Style>
   <Style ss:ID="RowStyle">
@@ -411,7 +411,7 @@ export default function HistorialRegistrosPage() {
                 hideTitleOnMobile={true}
             />
 
-            <Card sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, mb: 4, p: 2.5, border: '1px solid #1f2937', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>
+            <Card sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, mb: 4, p: 2.5, border: '1px solid var(--border-dynamic, #1f2937)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>
                 <Grid container spacing={2} alignItems="center">
                     <Grid size={{ xs: 12, md: 2 }}>
                         <TextField
@@ -425,7 +425,7 @@ export default function HistorialRegistrosPage() {
                             onKeyDown={(e) => e.key === 'Enter' && handleApplyFilters()}
                             slotProps={{ htmlInput: { inputMode: 'numeric' } }}
                             sx={{
-                                '& .MuiOutlinedInput-root': { color: 'white' },
+                                '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' },
                                 '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' },
                                 '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' },
                             }}
@@ -459,7 +459,7 @@ export default function HistorialRegistrosPage() {
                             onKeyDown={(e) => e.key === 'Enter' && handleApplyFilters()}
                             InputLabelProps={{ shrink: true }}
                             sx={{
-                                '& .MuiOutlinedInput-root': { color: 'white' },
+                                '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' },
                                 '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' },
                                 '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' },
                             }}
@@ -477,7 +477,7 @@ export default function HistorialRegistrosPage() {
                             onKeyDown={(e) => e.key === 'Enter' && handleApplyFilters()}
                             InputLabelProps={{ shrink: true }}
                             sx={{
-                                '& .MuiOutlinedInput-root': { color: 'white' },
+                                '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' },
                                 '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' },
                                 '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' },
                             }}
@@ -512,7 +512,7 @@ export default function HistorialRegistrosPage() {
                                                     const m = localStartTime ? localStartTime.split(':')[1] : '00';
                                                     setLocalStartTime(`${e.target.value}:${m}`);
                                                 }}
-                                                sx={{ width: 95, '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
+                                                sx={{ width: 95, '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                                             >
                                                 {Array.from({ length: 24 }).map((_, h) => {
                                                     const hStr = String(h).padStart(2, '0');
@@ -529,7 +529,7 @@ export default function HistorialRegistrosPage() {
                                                     const h = localStartTime ? localStartTime.split(':')[0] : '00';
                                                     setLocalStartTime(`${h}:${e.target.value}`);
                                                 }}
-                                                sx={{ width: 95, '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
+                                                sx={{ width: 95, '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                                             >
                                                 {Array.from({ length: 60 }).map((_, m) => {
                                                     const mStr = String(m).padStart(2, '0');
@@ -550,7 +550,7 @@ export default function HistorialRegistrosPage() {
                                                     const m = localEndTime ? localEndTime.split(':')[1] : '59';
                                                     setLocalEndTime(`${e.target.value}:${m}`);
                                                 }}
-                                                sx={{ width: 95, '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
+                                                sx={{ width: 95, '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                                             >
                                                 {Array.from({ length: 24 }).map((_, h) => {
                                                     const hStr = String(h).padStart(2, '0');
@@ -567,7 +567,7 @@ export default function HistorialRegistrosPage() {
                                                     const h = localEndTime ? localEndTime.split(':')[0] : '23';
                                                     setLocalEndTime(`${h}:${e.target.value}`);
                                                 }}
-                                                sx={{ width: 95, '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
+                                                sx={{ width: 95, '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                                             >
                                                 {Array.from({ length: 60 }).map((_, m) => {
                                                     const mStr = String(m).padStart(2, '0');
@@ -587,7 +587,7 @@ export default function HistorialRegistrosPage() {
                                         handleResetFilters();
                                     }}
                                     startIcon={<RefreshIcon />}
-                                    sx={{ color: 'var(--text-muted, #9ca3af)', borderColor: 'var(--border-strong, #374151)', '&:hover': { borderColor: 'var(--text-subtle, #6b7280)', color: 'white' } }}
+                                    sx={{ color: 'var(--text-muted, #9ca3af)', borderColor: 'var(--border-strong, #374151)', '&:hover': { borderColor: 'var(--text-subtle, #6b7280)', color: 'var(--text-white-dynamic, white)' } }}
                                 >
                                     Limpiar
                                 </Button>
@@ -598,7 +598,7 @@ export default function HistorialRegistrosPage() {
                                     startIcon={<FileDownloadIcon />}
                                     sx={{ 
                                         bgcolor: '#10b981', 
-                                        color: '#ffffff', 
+                                        color: 'var(--text-white-dynamic, #ffffff)', 
                                         fontWeight: 800, 
                                         borderRadius: 1.5, 
                                         boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
@@ -635,7 +635,7 @@ export default function HistorialRegistrosPage() {
             ) : (
                 <Box sx={{ mt: 2 }}>
                     {filteredLogs.length === 0 ? (
-                        <Box sx={{ p: 10, textAlign: 'center', bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.01))', borderRadius: 2, border: '1px dashed #1f2937' }}>
+                        <Box sx={{ p: 10, textAlign: 'center', bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.01))', borderRadius: 2, border: '1px dashed var(--border-dynamic, #1f2937)' }}>
                             <Typography sx={{ color: 'var(--text-dimmed, #4b5563)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: 2 }}>
                                 No se encontraron registros para estos filtros
                             </Typography>
@@ -675,7 +675,7 @@ export default function HistorialRegistrosPage() {
             )}
 
             {/* Delete Confirmation Dialog */}
-            <Dialog open={!!deleteId} onClose={() => setDeleteId(null)} PaperProps={{ sx: { bgcolor: '#1f1f1f', color: 'white', border: '1px solid var(--border-strong, #374151)', borderRadius: 2 } }}>
+            <Dialog open={!!deleteId} onClose={() => setDeleteId(null)} PaperProps={{ sx: { bgcolor: '#1f1f1f', color: 'var(--text-white-dynamic, white)', border: '1px solid var(--border-strong, #374151)', borderRadius: 2 } }}>
                 <DialogTitle sx={{ fontWeight: 800 }}>¿Eliminar registro del historial?</DialogTitle>
                 <DialogContent>
                     <Typography variant="body2" sx={{ color: 'var(--text-muted, #9ca3af)' }}>
@@ -691,7 +691,7 @@ export default function HistorialRegistrosPage() {
             </Dialog>
 
             {/* Edit Dialog */}
-            <Dialog open={!!editLogData} onClose={() => setEditLogData(null)} fullWidth maxWidth="sm" PaperProps={{ sx: { bgcolor: '#1f1f1f', color: 'white', border: '1px solid var(--border-strong, #374151)', borderRadius: 2 } }}>
+            <Dialog open={!!editLogData} onClose={() => setEditLogData(null)} fullWidth maxWidth="sm" PaperProps={{ sx: { bgcolor: '#1f1f1f', color: 'var(--text-white-dynamic, white)', border: '1px solid var(--border-strong, #374151)', borderRadius: 2 } }}>
                 <DialogTitle sx={{ fontWeight: 800 }}>Editar Movimiento en el Historial</DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
@@ -712,7 +712,7 @@ export default function HistorialRegistrosPage() {
                                     const timePart = currentISO.slice(11, 16);
                                     setEditLogData({ ...editLogData, timestamp: new Date(`${datePart}T${timePart}:00`).toISOString() });
                                 }}
-                                sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
+                                sx={{ '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                             />
                             <Box sx={{ display: 'flex', gap: 2 }}>
                                 <TextField
@@ -728,7 +728,7 @@ export default function HistorialRegistrosPage() {
                                         const m = currentISO.slice(14, 16);
                                         setEditLogData({ ...editLogData, timestamp: new Date(`${datePart}T${h}:${m}:00`).toISOString() });
                                     }}
-                                    sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
+                                    sx={{ '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                                 >
                                     {Array.from({ length: 24 }).map((_, h) => {
                                         const hStr = String(h).padStart(2, '0');
@@ -748,7 +748,7 @@ export default function HistorialRegistrosPage() {
                                         const h = currentISO.slice(11, 13);
                                         setEditLogData({ ...editLogData, timestamp: new Date(`${datePart}T${h}:${m}:00`).toISOString() });
                                     }}
-                                    sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
+                                    sx={{ '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                                 >
                                     {Array.from({ length: 60 }).map((_, m) => {
                                         const mStr = String(m).padStart(2, '0');
@@ -765,7 +765,7 @@ export default function HistorialRegistrosPage() {
                             label="Estado Registrado (Lectura)"
                             variant="outlined"
                             value={editLogData?.toStatus || ''}
-                            sx={{ '& .MuiOutlinedInput-root': { color: 'white', opacity: 0.6 }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
+                            sx={{ '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)', opacity: 0.6 }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                         >
                             {Object.keys(statusLabels).map((key) => (
                                 <MenuItem key={key} value={key}>{statusLabels[key]}</MenuItem>
@@ -779,7 +779,7 @@ export default function HistorialRegistrosPage() {
                             variant="outlined"
                             value={editLogData?.failureType || ''}
                             onChange={(e) => setEditLogData({ ...editLogData, failureType: e.target.value })}
-                            sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
+                            sx={{ '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                         >
                             {failureTypes.map((f) => (
                                 <MenuItem key={f} value={f}>{f}</MenuItem>
@@ -793,7 +793,7 @@ export default function HistorialRegistrosPage() {
                             variant="outlined"
                             value={editLogData?.generatedBy || ''}
                             onChange={(e) => setEditLogData({ ...editLogData, generatedBy: e.target.value })}
-                            sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
+                            sx={{ '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                         >
                             {responsables.map((r) => (
                                 <MenuItem key={r} value={r}>{r}</MenuItem>
@@ -808,7 +808,7 @@ export default function HistorialRegistrosPage() {
                             variant="outlined"
                             value={editLogData?.observation || ''}
                             onChange={(e) => setEditLogData({ ...editLogData, observation: e.target.value })}
-                            sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
+                            sx={{ '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                         />
                     </Box>
                 </DialogContent>

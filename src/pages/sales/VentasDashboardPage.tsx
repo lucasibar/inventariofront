@@ -38,7 +38,7 @@ const VentasDashboardPage: React.FC = () => {
                             <Typography variant="subtitle2" sx={{ color: 'var(--text-muted, #9ca3af)', mb: 1, textTransform: 'uppercase', fontSize: '11px', fontWeight: 700 }}>
                                 {m.label}
                             </Typography>
-                            <Typography variant="h4" sx={{ fontWeight: 800, color: '#fff' }}>{m.value}</Typography>
+                            <Typography variant="h4" sx={{ fontWeight: 800, color: 'var(--text-white-dynamic, #fff)' }}>{m.value}</Typography>
                         </Paper>
                     </Grid>
                 ))}

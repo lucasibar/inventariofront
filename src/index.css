@@ -26,6 +26,22 @@
   --border-strong: #374151;
   --border-subtle: #1e2133;
   --bg-action-trigger: rgba(255,255,255,0.05);
+
+  /* New Dynamic Variables for Text, Backgrounds and Opacities */
+  --text-white-dynamic: #ffffff;
+  --text-white-dynamic-muted: #e2e8f0;
+  --text-inverse: #000000;
+  
+  --bg-overlay: rgba(15, 17, 23, 0.65);
+  --bg-overlay-heavy: rgba(0, 0, 0, 0.7);
+  --bg-hover-dynamic: rgba(255,255,255,0.05);
+  --bg-alt-row: rgba(255,255,255,0.02);
+  
+  --border-dynamic: #1e293b;
+  --border-dynamic-light: #334155;
+  --border-dynamic-transparent: rgba(255, 255, 255, 0.1);
+  --border-dynamic-transparent-strong: rgba(255, 255, 255, 0.2);
+
   --shadow-dropdown: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
 
   --bg-alt-row: rgba(255,255,255,0.01);
@@ -45,29 +61,48 @@
 }
 
 [data-theme='light'] {
-  color-scheme: light;
-  --bg-primary: #f0f2f5;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #f8f9fb;
-  --bg-accordion: #f8f9fb;
+  /* Premium Light Mode Palette (Slate/Zinc inspired) */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --bg-accordion: #e2e8f0;
+
   --border-color: #e2e8f0;
   --border-secondary: #cbd5e1;
   --border-table: #f1f5f9;
-  --text-primary: #1e293b;
+  --text-primary: #0f172a;
   --text-secondary: #334155;
+  
   --text-muted: #64748b;
   --text-subtle: #94a3b8;
-  --text-dimmed: #94a3b8;
+  --text-dimmed: #cbd5e1;
+
   --text-mui-primary: #1e293b;
   --text-mui-secondary: #475569;
   --text-accent: #6366f1;
 
-  --bg-report-gradient: linear-gradient(135deg, #e0e7ff 0%, #f0f2f5 100%);
-  --border-report-strong: #c7d2fe;
+  --bg-report-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  --border-report-strong: #e2e8f0;
 
   --border-strong: #cbd5e1;
   --border-subtle: #f1f5f9;
-  --bg-action-trigger: rgba(0,0,0,0.05);
+  --bg-action-trigger: rgba(15, 23, 42, 0.04);
+
+  /* New Dynamic Variables for Light Mode */
+  --text-white-dynamic: #0f172a; /* Was white in dark mode, now slate-900 */
+  --text-white-dynamic-muted: #475569; 
+  --text-inverse: #ffffff;
+  
+  --bg-overlay: rgba(255, 255, 255, 0.85); /* Light translucent overlay */
+  --bg-overlay-heavy: rgba(255, 255, 255, 0.95);
+  --bg-hover-dynamic: rgba(15, 23, 42, 0.04);
+  --bg-alt-row: rgba(15, 23, 42, 0.02);
+  
+  --border-dynamic: #cbd5e1; /* Slate 300 replacing dark borders like #1e293b */
+  --border-dynamic-light: #e2e8f0; /* Slate 200 replacing #334155 */
+  --border-dynamic-transparent: rgba(15, 23, 42, 0.08);
+  --border-dynamic-transparent-strong: rgba(15, 23, 42, 0.15);
+
   --shadow-dropdown: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
 
   --bg-alt-row: rgba(0,0,0,0.02);

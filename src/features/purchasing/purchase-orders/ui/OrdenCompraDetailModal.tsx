@@ -88,11 +88,11 @@ export default function OrdenCompraDetailModal({ orderId, onClose }: OrdenCompra
                     </h3>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px', fontSize: '13px' }}>
                         <div>
-                            <span style={{ color: '#6b7280' }}>Proveedor:</span>
+                            <span style={{ color: 'var(--text-subtle, #6b7280)' }}>Proveedor:</span>
                             <div style={{ color: '#f3f4f6', fontWeight: 600, marginTop: '2px' }}>{order.supplier?.name}</div>
                         </div>
                         <div>
-                            <span style={{ color: '#6b7280' }}>Estado actual:</span>
+                            <span style={{ color: 'var(--text-subtle, #6b7280)' }}>Estado actual:</span>
                             <div style={{ marginTop: '2px' }}>
                                 <Badge color={
                                     order.estado === 'COMPLETADO' ? '#10b981' : 
@@ -102,18 +102,18 @@ export default function OrdenCompraDetailModal({ orderId, onClose }: OrdenCompra
                             </div>
                         </div>
                         <div>
-                            <span style={{ color: '#6b7280' }}>Fecha Emisión:</span>
+                            <span style={{ color: 'var(--text-subtle, #6b7280)' }}>Fecha Emisión:</span>
                             <div style={{ color: '#f3f4f6', marginTop: '2px' }}>{new Date(order.fechaEmision).toLocaleDateString()}</div>
                         </div>
                         <div>
-                            <span style={{ color: '#6b7280' }}>Llegada Esperada:</span>
+                            <span style={{ color: 'var(--text-subtle, #6b7280)' }}>Llegada Esperada:</span>
                             <div style={{ color: '#f3f4f6', marginTop: '2px' }}>
                                 {order.fechaEntregaEsperada ? new Date(order.fechaEntregaEsperada).toLocaleDateString() : 'Sin definir'}
                             </div>
                         </div>
                         <div style={{ gridColumn: 'span 2' }}>
-                            <span style={{ color: '#6b7280' }}>Observaciones generales:</span>
-                            <div style={{ color: '#9ca3af', marginTop: '2px', fontSize: '12px', fontStyle: 'italic' }}>
+                            <span style={{ color: 'var(--text-subtle, #6b7280)' }}>Observaciones generales:</span>
+                            <div style={{ color: 'var(--text-muted, #9ca3af)', marginTop: '2px', fontSize: '12px', fontStyle: 'italic' }}>
                                 {order.observaciones || 'Sin observaciones'}
                             </div>
                         </div>
@@ -125,11 +125,11 @@ export default function OrdenCompraDetailModal({ orderId, onClose }: OrdenCompra
                         <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', color: '#a5b4fc' }}>📊 Avance de Cumplimiento</h3>
                         <div style={{ fontSize: '28px', fontWeight: 800, color: '#10b981', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
                             {resumen.porcentajeGlobal.toFixed(0)}%
-                            <span style={{ fontSize: '13px', fontWeight: 400, color: '#6b7280' }}>completado</span>
+                            <span style={{ fontSize: '13px', fontWeight: 400, color: 'var(--text-subtle, #6b7280)' }}>completado</span>
                         </div>
                         
                         {/* Progress Bar */}
-                        <div style={{ width: '100%', height: '8px', background: '#2a2d3e', borderRadius: '4px', marginTop: '8px', overflow: 'hidden', display: 'flex' }}>
+                        <div style={{ width: '100%', height: '8px', background: 'var(--border-color, #2a2d3e)', borderRadius: '4px', marginTop: '8px', overflow: 'hidden', display: 'flex' }}>
                             <div style={{ 
                                 width: `${resumen.totalPedidoKg > 0 ? (resumen.totalRecibidoKg / resumen.totalPedidoKg) * 100 : 0}%`, 
                                 height: '100%', 
@@ -143,11 +143,11 @@ export default function OrdenCompraDetailModal({ orderId, onClose }: OrdenCompra
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '16px', fontSize: '12px', borderTop: '1px solid #2a2d3e', paddingTop: '12px' }}>
-                        <div><span style={{ color: '#6b7280' }}>Total Pedido:</span> <strong style={{ color: 'white' }}>{resumen.totalPedidoKg.toFixed(1)} kg</strong></div>
-                        <div><span style={{ color: '#6b7280' }}>Recibido:</span> <strong style={{ color: '#10b981' }}>{resumen.totalRecibidoKg.toFixed(1)} kg</strong></div>
-                        <div><span style={{ color: '#6b7280' }}>Ajustado:</span> <strong style={{ color: '#f59e0b' }}>{resumen.totalAjusteKg.toFixed(1)} kg</strong></div>
-                        <div><span style={{ color: '#6b7280' }}>Pendiente:</span> <strong style={{ color: '#ef4444' }}>{resumen.totalPendienteKg.toFixed(1)} kg</strong></div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '16px', fontSize: '12px', borderTop: '1px solid var(--border-color, #2a2d3e)', paddingTop: '12px' }}>
+                        <div><span style={{ color: 'var(--text-subtle, #6b7280)' }}>Total Pedido:</span> <strong style={{ color: 'var(--text-white-dynamic, white)' }}>{resumen.totalPedidoKg.toFixed(1)} kg</strong></div>
+                        <div><span style={{ color: 'var(--text-subtle, #6b7280)' }}>Recibido:</span> <strong style={{ color: '#10b981' }}>{resumen.totalRecibidoKg.toFixed(1)} kg</strong></div>
+                        <div><span style={{ color: 'var(--text-subtle, #6b7280)' }}>Ajustado:</span> <strong style={{ color: '#f59e0b' }}>{resumen.totalAjusteKg.toFixed(1)} kg</strong></div>
+                        <div><span style={{ color: 'var(--text-subtle, #6b7280)' }}>Pendiente:</span> <strong style={{ color: '#ef4444' }}>{resumen.totalPendienteKg.toFixed(1)} kg</strong></div>
                     </div>
                 </Card>
             </div>
@@ -156,13 +156,13 @@ export default function OrdenCompraDetailModal({ orderId, onClose }: OrdenCompra
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {lines.map((line: any) => (
-                    <Card key={line.id} style={{ padding: '16px', border: '1px solid #2a2d3e' }}>
+                    <Card key={line.id} style={{ padding: '16px', border: '1px solid var(--border-color, #2a2d3e)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                             <div>
                                 <h4 style={{ margin: '0', fontSize: '14px', color: '#a5b4fc', fontWeight: 700 }}>
                                     {line.item?.codigoInterno} — {line.item?.descripcion}
                                 </h4>
-                                <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px' }}>
+                                <div style={{ fontSize: '11px', color: 'var(--text-subtle, #6b7280)', marginTop: '4px' }}>
                                     Pedido: {Number(line.qtyPedido).toFixed(1)} kg 
                                     {line.qtySecundaria && ` (${Number(line.qtySecundaria).toFixed(0)} unid)`}
                                     {line.observaciones && ` • Notas: ${line.observaciones}`}
@@ -179,7 +179,7 @@ export default function OrdenCompraDetailModal({ orderId, onClose }: OrdenCompra
                         </div>
 
                         {/* Progress Bar */}
-                        <div style={{ width: '100%', height: '6px', background: '#111827', borderRadius: '3px', marginBottom: '12px', overflow: 'hidden', display: 'flex' }}>
+                        <div style={{ width: '100%', height: '6px', background: 'var(--bg-secondary, #111827)', borderRadius: '3px', marginBottom: '12px', overflow: 'hidden', display: 'flex' }}>
                             <div style={{ 
                                 width: `${Number(line.qtyPedido) > 0 ? (line.lineRecibidoKg / Number(line.qtyPedido)) * 100 : 0}%`, 
                                 height: '100%', 
@@ -193,12 +193,12 @@ export default function OrdenCompraDetailModal({ orderId, onClose }: OrdenCompra
                         </div>
 
                         {/* Historial de vinculaciones */}
-                        <div style={{ background: '#111827', borderRadius: '8px', padding: '12px', marginBottom: '12px' }}>
-                            <span style={{ fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', fontWeight: 700, display: 'block', marginBottom: '8px' }}>
+                        <div style={{ background: 'var(--bg-secondary, #111827)', borderRadius: '8px', padding: '12px', marginBottom: '12px' }}>
+                            <span style={{ fontSize: '11px', color: 'var(--text-subtle, #6b7280)', textTransform: 'uppercase', fontWeight: 700, display: 'block', marginBottom: '8px' }}>
                                 Historial de Entregas e Imputaciones
                             </span>
                             {line.receipts.length === 0 ? (
-                                <div style={{ fontSize: '12px', color: '#4b5563', fontStyle: 'italic', padding: '4px 0' }}>
+                                <div style={{ fontSize: '12px', color: 'var(--text-dimmed, #4b5563)', fontStyle: 'italic', padding: '4px 0' }}>
                                     No hay entregas registradas para este material.
                                 </div>
                             ) : (
@@ -212,7 +212,7 @@ export default function OrdenCompraDetailModal({ orderId, onClose }: OrdenCompra
                                                     <span style={{ color: '#f59e0b' }}>
                                                         ⚖️ <strong>Ajuste de cierre administrativo</strong> ({new Date(r.createdAt).toLocaleDateString()})
                                                         <br />
-                                                        <small style={{ color: '#9ca3af', fontStyle: 'italic' }}>Motivo: "{r.observaciones}"</small>
+                                                        <small style={{ color: 'var(--text-muted, #9ca3af)', fontStyle: 'italic' }}>Motivo: "{r.observaciones}"</small>
                                                     </span>
                                                 )}
                                             </div>

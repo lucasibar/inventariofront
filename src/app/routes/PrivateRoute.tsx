@@ -48,12 +48,12 @@ export const PrivateRoute = () => {
                 justifyContent: 'center',
                 alignItems: 'center',
                 height: '100vh',
-                background: '#0f1117',
+                background: 'var(--bg-primary, #0f1117)',
                 color: '#f3f4f6',
                 fontFamily: 'Inter, system-ui, sans-serif'
             }}>
                 <PageLoader text="Verificando sesión..." minHeight="180px" />
-                <div style={{ fontSize: '12px', color: '#4b5563', marginTop: '12px', maxWidth: '320px', textAlign: 'center', lineHeight: '1.4' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-dimmed, #4b5563)', marginTop: '12px', maxWidth: '320px', textAlign: 'center', lineHeight: '1.4' }}>
                     Si es la primera visita en un rato, el servidor gratuito de Render puede tardar hasta 1 minuto en "despertar".
                 </div>
             </div>

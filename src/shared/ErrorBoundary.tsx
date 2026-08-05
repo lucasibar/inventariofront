@@ -74,7 +74,7 @@ export class ErrorBoundary extends Component<Props, State> {
               <div style={{ marginBottom: '16px' }}>
                 <Spinner size="32px" padding="0" />
               </div>
-              <div style={{ fontSize: '14px', color: '#9ca3af', letterSpacing: '0.5px' }}>
+              <div style={{ fontSize: '14px', color: 'var(--text-muted, #9ca3af)', letterSpacing: '0.5px' }}>
                 Actualizando aplicación...
               </div>
             </div>
@@ -102,7 +102,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#fca5a5', marginBottom: '8px' }}>
             {isChunkLoadFailed ? 'Error de conexión o actualización' : 'Algo salió mal'}
           </h2>
-          <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '24px', lineHeight: '1.5' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted, #9ca3af)', marginBottom: '24px', lineHeight: '1.5' }}>
             {isChunkLoadFailed 
               ? 'Se ha detectado una nueva versión del sistema o un microcorte de red. Por favor, recarga la página.'
               : 'Ocurrió un error inesperado al renderizar esta sección.'}
@@ -112,7 +112,7 @@ export class ErrorBoundary extends Component<Props, State> {
             style={{
               padding: '10px 20px',
               background: '#6366f1',
-              color: 'white',
+              color: 'var(--text-white-dynamic, white)',
               border: 'none',
               borderRadius: '8px',
               fontWeight: 600,

@@ -37,12 +37,12 @@ function CombinationRow({ row, onEdit, onDelete }: { row: any; onEdit: (d: EditD
                 onClick={() => setOpen(!open)}
                 sx={{ cursor: 'pointer', '&:hover': { bgcolor: '#1a2332' }, bgcolor: open ? '#1a2332' : 'transparent' }}
             >
-                <TableCell sx={{ borderBottom: '1px solid #1f2937', width: 40, p: 1 }}>
-                    <IconButton size="small" sx={{ color: 'white' }}>
+                <TableCell sx={{ borderBottom: '1px solid var(--border-dynamic, #1f2937)', width: 40, p: 1 }}>
+                    <IconButton size="small" sx={{ color: 'var(--text-white-dynamic, white)' }}>
                         {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
                     </IconButton>
                 </TableCell>
-                <TableCell sx={{ borderBottom: '1px solid #1f2937' }}>
+                <TableCell sx={{ borderBottom: '1px solid var(--border-dynamic, #1f2937)' }}>
                     <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                         {row.combination.map((ct: string) => (
                             <Chip key={ct}
@@ -50,36 +50,36 @@ function CombinationRow({ row, onEdit, onDelete }: { row: any; onEdit: (d: EditD
                                 size="small"
                                 sx={{
                                     bgcolor: (CHANGE_TYPE_COLORS[ct] || '#666') + '33',
-                                    color: CHANGE_TYPE_COLORS[ct] || '#fff',
+                                    color: CHANGE_TYPE_COLORS[ct] || 'var(--text-white-dynamic, #fff)',
                                     fontWeight: 600, fontSize: '0.75rem'
                                 }}
                             />
                         ))}
                     </Box>
                 </TableCell>
-                <TableCell align="center" sx={{ borderBottom: '1px solid #1f2937', color: 'white', fontWeight: 700, fontSize: '1.1rem' }}>
+                <TableCell align="center" sx={{ borderBottom: '1px solid var(--border-dynamic, #1f2937)', color: 'var(--text-white-dynamic, white)', fontWeight: 700, fontSize: '1.1rem' }}>
                     {row.count}
                 </TableCell>
-                <TableCell align="center" sx={{ borderBottom: '1px solid #1f2937' }}>
+                <TableCell align="center" sx={{ borderBottom: '1px solid var(--border-dynamic, #1f2937)' }}>
                     <Chip label={`${row.percentage}%`} size="small" sx={{
                         bgcolor: row.percentage > 20 ? '#ef444433' : row.percentage > 10 ? '#f59e0b33' : '#10b98133',
                         color: row.percentage > 20 ? '#ef4444' : row.percentage > 10 ? '#f59e0b' : '#10b981',
                         fontWeight: 700
                     }} />
                 </TableCell>
-                <TableCell align="center" sx={{ borderBottom: '1px solid #1f2937', color: '#60a5fa', fontWeight: 600 }}>
+                <TableCell align="center" sx={{ borderBottom: '1px solid var(--border-dynamic, #1f2937)', color: '#60a5fa', fontWeight: 600 }}>
                     {row.avgDurationFormatted}
                 </TableCell>
-                <TableCell align="center" sx={{ borderBottom: '1px solid #1f2937', color: 'rgba(255,255,255,0.5)' }}>
+                <TableCell align="center" sx={{ borderBottom: '1px solid var(--border-dynamic, #1f2937)', color: 'rgba(255,255,255,0.5)' }}>
                     {row.minDurationFormatted}
                 </TableCell>
-                <TableCell align="center" sx={{ borderBottom: '1px solid #1f2937', color: 'rgba(255,255,255,0.5)' }}>
+                <TableCell align="center" sx={{ borderBottom: '1px solid var(--border-dynamic, #1f2937)', color: 'rgba(255,255,255,0.5)' }}>
                     {row.maxDurationFormatted}
                 </TableCell>
             </TableRow>
 
             <TableRow>
-                <TableCell colSpan={7} sx={{ p: 0, borderBottom: open ? '1px solid #1f2937' : 'none' }}>
+                <TableCell colSpan={7} sx={{ p: 0, borderBottom: open ? '1px solid var(--border-dynamic, #1f2937)' : 'none' }}>
                     <Collapse in={open} timeout="auto" unmountOnExit>
                         <Box sx={{ p: 2, bgcolor: '#0d1520' }}>
                             <Typography variant="subtitle2" sx={{ mb: 1, color: 'rgba(255,255,255,0.7)' }}>
@@ -88,20 +88,20 @@ function CombinationRow({ row, onEdit, onDelete }: { row: any; onEdit: (d: EditD
                             <Table size="small">
                                 <TableHead>
                                     <TableRow>
-                                        <TableCell sx={{ color: 'rgba(255,255,255,0.5)', borderBottom: '1px solid #1f2937' }}>Máquina</TableCell>
-                                        <TableCell sx={{ color: 'rgba(255,255,255,0.5)', borderBottom: '1px solid #1f2937' }}>Planta</TableCell>
-                                        <TableCell sx={{ color: 'rgba(255,255,255,0.5)', borderBottom: '1px solid #1f2937' }}>Inicio</TableCell>
-                                        <TableCell sx={{ color: 'rgba(255,255,255,0.5)', borderBottom: '1px solid #1f2937' }}>Arranque</TableCell>
-                                        <TableCell sx={{ color: 'rgba(255,255,255,0.5)', borderBottom: '1px solid #1f2937' }}>Duración</TableCell>
-                                        <TableCell sx={{ color: 'rgba(255,255,255,0.5)', borderBottom: '1px solid #1f2937' }}>Obs.</TableCell>
-                                        <TableCell sx={{ color: 'rgba(255,255,255,0.5)', borderBottom: '1px solid #1f2937' }}>Por</TableCell>
-                                        <TableCell sx={{ color: 'rgba(255,255,255,0.5)', borderBottom: '1px solid #1f2937', width: 80 }}>Acciones</TableCell>
+                                        <TableCell sx={{ color: 'rgba(255,255,255,0.5)', borderBottom: '1px solid var(--border-dynamic, #1f2937)' }}>Máquina</TableCell>
+                                        <TableCell sx={{ color: 'rgba(255,255,255,0.5)', borderBottom: '1px solid var(--border-dynamic, #1f2937)' }}>Planta</TableCell>
+                                        <TableCell sx={{ color: 'rgba(255,255,255,0.5)', borderBottom: '1px solid var(--border-dynamic, #1f2937)' }}>Inicio</TableCell>
+                                        <TableCell sx={{ color: 'rgba(255,255,255,0.5)', borderBottom: '1px solid var(--border-dynamic, #1f2937)' }}>Arranque</TableCell>
+                                        <TableCell sx={{ color: 'rgba(255,255,255,0.5)', borderBottom: '1px solid var(--border-dynamic, #1f2937)' }}>Duración</TableCell>
+                                        <TableCell sx={{ color: 'rgba(255,255,255,0.5)', borderBottom: '1px solid var(--border-dynamic, #1f2937)' }}>Obs.</TableCell>
+                                        <TableCell sx={{ color: 'rgba(255,255,255,0.5)', borderBottom: '1px solid var(--border-dynamic, #1f2937)' }}>Por</TableCell>
+                                        <TableCell sx={{ color: 'rgba(255,255,255,0.5)', borderBottom: '1px solid var(--border-dynamic, #1f2937)', width: 80 }}>Acciones</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
                                     {row.details.map((d: any) => (
                                         <TableRow key={d.id} hover sx={{ '&:hover': { bgcolor: 'var(--bg-secondary, #111827)' } }}>
-                                            <TableCell sx={{ color: 'white', borderBottom: '1px solid #1a2332', fontWeight: 600 }}>
+                                            <TableCell sx={{ color: 'var(--text-white-dynamic, white)', borderBottom: '1px solid #1a2332', fontWeight: 600 }}>
                                                 Máq. {d.machineNumber}
                                             </TableCell>
                                             <TableCell sx={{ color: 'rgba(255,255,255,0.6)', borderBottom: '1px solid #1a2332' }}>
@@ -262,7 +262,7 @@ export default function InformeCambiosPage() {
             />
 
             {/* Filters */}
-            <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid #1f2937', mb: 3 }}>
+            <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid var(--border-dynamic, #1f2937)', mb: 3 }}>
                 <CardContent sx={{ p: 2 }}>
                     <Grid container spacing={2} alignItems="center">
                         <Grid size={{ xs: 12, sm: 4 }}>
@@ -297,26 +297,26 @@ export default function InformeCambiosPage() {
             {/* Summary Cards */}
             <Grid container spacing={3} sx={{ mb: 3 }}>
                 <Grid size={{ xs: 12, md: 4 }}>
-                    <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid #1f2937' }}>
+                    <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid var(--border-dynamic, #1f2937)' }}>
                         <CardContent>
                             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', mb: 1 }}>Total Cambios</Typography>
-                            <Typography variant="h4" sx={{ color: 'white', fontWeight: 700 }}>{totalChanges}</Typography>
+                            <Typography variant="h4" sx={{ color: 'var(--text-white-dynamic, white)', fontWeight: 700 }}>{totalChanges}</Typography>
                         </CardContent>
                     </MuiCard>
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                    <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid #1f2937' }}>
+                    <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid var(--border-dynamic, #1f2937)' }}>
                         <CardContent>
                             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', mb: 1 }}>Combinación Frecuente</Typography>
                             {mostCommon ? (
                                 <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 0.5 }}>
                                     {mostCommon.combination.map((ct: string) => (
                                         <Chip key={ct} label={CHANGE_TYPES.find(c => c.value === ct)?.label || ct} size="small"
-                                            sx={{ bgcolor: (CHANGE_TYPE_COLORS[ct] || '#666') + '33', color: CHANGE_TYPE_COLORS[ct] || '#fff' }} />
+                                            sx={{ bgcolor: (CHANGE_TYPE_COLORS[ct] || '#666') + '33', color: CHANGE_TYPE_COLORS[ct] || 'var(--text-white-dynamic, #fff)' }} />
                                     ))}
                                 </Box>
                             ) : (
-                                <Typography variant="h6" sx={{ color: 'white' }}>N/A</Typography>
+                                <Typography variant="h6" sx={{ color: 'var(--text-white-dynamic, white)' }}>N/A</Typography>
                             )}
                             <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
                                 {mostCommon ? `${mostCommon.count} veces (${mostCommon.percentage}%)` : ''}
@@ -325,7 +325,7 @@ export default function InformeCambiosPage() {
                     </MuiCard>
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                    <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid #1f2937' }}>
+                    <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid var(--border-dynamic, #1f2937)' }}>
                         <CardContent>
                             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', mb: 1 }}>Promedio General</Typography>
                             <Typography variant="h4" sx={{ color: '#60a5fa', fontWeight: 700 }}>{formatDuration(totalAvgMs)}</Typography>
@@ -335,11 +335,11 @@ export default function InformeCambiosPage() {
             </Grid>
 
             {/* Table */}
-            <TableContainer component={Paper} sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid #1f2937' }}>
+            <TableContainer component={Paper} sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid var(--border-dynamic, #1f2937)' }}>
                 {loadingReport ? (
                     <Box sx={{ p: 4 }}><Spinner /></Box>
                 ) : report.length === 0 ? (
-                    <Typography variant="body1" sx={{ color: 'white', textAlign: 'center', py: 4 }}>
+                    <Typography variant="body1" sx={{ color: 'var(--text-white-dynamic, white)', textAlign: 'center', py: 4 }}>
                         No hay datos para el período seleccionado.
                     </Typography>
                 ) : (
@@ -365,7 +365,7 @@ export default function InformeCambiosPage() {
             </TableContainer>
 
             {/* Edit Modal */}
-            <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { bgcolor: 'var(--bg-secondary, #111827)', color: 'white' } }}>
+            <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { bgcolor: 'var(--bg-secondary, #111827)', color: 'var(--text-white-dynamic, white)' } }}>
                 <DialogTitle>Editar Cambio</DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
@@ -402,7 +402,7 @@ export default function InformeCambiosPage() {
                         <TextField label="Registrado por" value={editGeneratedBy} onChange={e => setEditGeneratedBy(e.target.value)} fullWidth />
                     </Box>
                 </DialogContent>
-                <DialogActions sx={{ p: 2, borderTop: '1px solid #1f2937' }}>
+                <DialogActions sx={{ p: 2, borderTop: '1px solid var(--border-dynamic, #1f2937)' }}>
                     <Button onClick={() => setEditOpen(false)} sx={{ color: 'rgba(255,255,255,0.7)' }}>Cancelar</Button>
                     <Button variant="contained" onClick={handleEditSave} disabled={isUpdating} sx={{ bgcolor: '#1f6feb', '&:hover': { bgcolor: '#1a5cc7' } }}>
                         {isUpdating ? 'Guardando...' : 'Guardar Cambios'}

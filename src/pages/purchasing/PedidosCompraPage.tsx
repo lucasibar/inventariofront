@@ -432,7 +432,7 @@ function GenerateRemitoModal({ order, depots, onClose, onSuccess }: any) {
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '250px', overflowY: 'auto' }}>
                         {lines.map((l: any, idx: number) => (
-                            <div key={l.lineId} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1.2fr 1fr', gap: '8px', alignItems: 'center', background: '#1f2937', padding: '8px 12px', borderRadius: '6px' }}>
+                            <div key={l.lineId} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1.2fr 1fr', gap: '8px', alignItems: 'center', background: 'var(--border-dynamic, #1f2937)', padding: '8px 12px', borderRadius: '6px' }}>
                                 <div>
                                     <div style={{ color: 'var(--text-primary, #f3f4f6)', fontWeight: 600, fontSize: '13px' }}>{l.itemDesc}</div>
                                     <small style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '11px' }}>{l.itemCode} &middot; Pendiente: {l.pending.toFixed(1)} kg</small>

@@ -80,7 +80,7 @@ export default function PendientesPage() {
 
             <Grid container spacing={3} sx={{ mb: 4 }}>
                 <Grid size={{ xs: 12, md: 8 }}>
-                    <Card sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, p: 3, border: '1px solid #1f2937' }}>
+                    <Card sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, p: 3, border: '1px solid var(--border-dynamic, #1f2937)' }}>
                         <Grid container spacing={2} alignItems="center">
                             <Grid size={{ xs: 12, sm: 6 }}>
                                 <Select 
@@ -105,9 +105,9 @@ export default function PendientesPage() {
                     <Card sx={{ bgcolor: unassignedCount > 0 ? '#7f1d1d' : '#064e3b', borderRadius: 2, p: 3, border: '1px solid #ef444430', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
                         <Box>
                             <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>SIN RESPONSABLE</Typography>
-                            <Typography variant="h3" sx={{ color: 'white', fontWeight: 900 }}>{unassignedCount}</Typography>
+                            <Typography variant="h3" sx={{ color: 'var(--text-white-dynamic, white)', fontWeight: 900 }}>{unassignedCount}</Typography>
                         </Box>
-                        <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.1)', width: 64, height: 64 }}>
+                        <Avatar sx={{ bgcolor: 'var(--border-dynamic-transparent, rgba(255,255,255,0.1))', width: 64, height: 64 }}>
                             {unassignedCount > 0 ? <ErrorOutlineIcon sx={{ fontSize: 40 }} /> : <CheckCircleOutlineIcon sx={{ fontSize: 40 }} />}
                         </Avatar>
                     </Card>
@@ -117,7 +117,7 @@ export default function PendientesPage() {
             {loadingMachines ? <Spinner /> : pendingMachines.length === 0 ? (
                 <Box sx={{ p: 10, textAlign: 'center', bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 3, border: '1px dashed var(--border-strong, #374151)' }}>
                     <CheckCircleOutlineIcon sx={{ fontSize: 80, color: '#10b981', mb: 2, opacity: 0.5 }} />
-                    <Typography variant="h5" sx={{ color: 'white' }}>No hay máquinas paradas pendientes</Typography>
+                    <Typography variant="h5" sx={{ color: 'var(--text-white-dynamic, white)' }}>No hay máquinas paradas pendientes</Typography>
                     <Typography sx={{ color: 'var(--text-muted, #9ca3af)' }}>¡Buen trabajo! Todas las máquinas están activas o en revisión controlada.</Typography>
                 </Box>
             ) : (
@@ -129,7 +129,7 @@ export default function PendientesPage() {
                                 <Card sx={{ 
                                     bgcolor: 'var(--bg-secondary, #111827)', 
                                     borderRadius: 3, 
-                                    border: '1px solid #1f2937',
+                                    border: '1px solid var(--border-dynamic, #1f2937)',
                                     transition: 'transform 0.2s, box-shadow 0.2s',
                                     '&:hover': {
                                         transform: 'translateY(-4px)',
@@ -145,7 +145,7 @@ export default function PendientesPage() {
                                     <CardContent sx={{ p: 2.5 }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                                             <Box>
-                                                <Typography variant="h5" sx={{ color: 'white', fontWeight: 800 }}>
+                                                <Typography variant="h5" sx={{ color: 'var(--text-white-dynamic, white)', fontWeight: 800 }}>
                                                     {m.number}
                                                 </Typography>
                                                 <Typography variant="caption" sx={{ color: 'var(--text-subtle, #6b7280)' }}>
@@ -164,13 +164,13 @@ export default function PendientesPage() {
                                                 <Avatar sx={{ width: 24, height: 24, bgcolor: isUnassigned ? '#ef444420' : '#3b82f620' }}>
                                                     <EngineeringIcon sx={{ fontSize: 16, color: isUnassigned ? '#ef4444' : '#3b82f6' }} />
                                                 </Avatar>
-                                                <Typography variant="body2" sx={{ color: isUnassigned ? '#f87171' : 'white', fontWeight: isUnassigned ? 700 : 500 }}>
+                                                <Typography variant="body2" sx={{ color: isUnassigned ? '#f87171' : 'var(--text-white-dynamic, white)', fontWeight: isUnassigned ? 700 : 500 }}>
                                                     {isUnassigned ? 'SIN MECÁNICO' : m.lastChangeBy}
                                                 </Typography>
                                             </Box>
                                             
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Avatar sx={{ width: 24, height: 24, bgcolor: '#1f2937' }}>
+                                                <Avatar sx={{ width: 24, height: 24, bgcolor: 'var(--border-dynamic, #1f2937)' }}>
                                                     <ErrorOutlineIcon sx={{ fontSize: 16, color: 'var(--text-muted, #9ca3af)' }} />
                                                 </Avatar>
                                                 <Typography variant="body2" sx={{ color: 'var(--text-muted, #9ca3af)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -179,7 +179,7 @@ export default function PendientesPage() {
                                             </Box>
                                         </Box>
 
-                                        <Divider sx={{ mb: 2, borderColor: '#1f2937' }} />
+                                        <Divider sx={{ mb: 2, borderColor: 'var(--border-dynamic, #1f2937)' }} />
 
                                         <Box sx={{ display: 'flex', gap: 1 }}>
                                             <Tooltip title="Ver ficha técnica e historial">

@@ -113,7 +113,7 @@ export default function ReporteChequeoPage() {
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {report && (
-                            <Btn small onClick={handleDownloadCSV} style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff' }}>
+                            <Btn small onClick={handleDownloadCSV} style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'var(--text-white-dynamic, #fff)' }}>
                                 📥 Descargar Excel (CSV)
                             </Btn>
                         )}

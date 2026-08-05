@@ -226,9 +226,9 @@ export default function RegistroMaquinasPage() {
             <Grid container spacing={3}>
                 {/* Form Side */}
                 <Grid size={{ xs: 12, md: 6 }}>
-                    <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid #1f2937' }}>
+                    <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid var(--border-dynamic, #1f2937)' }}>
                         <CardContent sx={{ p: 3 }}>
-                            <Typography variant="h6" sx={{ mb: 2, color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="h6" sx={{ mb: 2, color: 'var(--text-white-dynamic, white)', display: 'flex', alignItems: 'center', gap: 1 }}>
                                 1. Seleccionar Máquina
                             </Typography>
                             
@@ -262,27 +262,27 @@ export default function RegistroMaquinasPage() {
                                             placeholder="Escriba para filtrar..."
                                             slotProps={{ htmlInput: { ...params.inputProps, inputMode: 'numeric' } }}
                                             sx={{
-                                                '& .MuiOutlinedInput-root': { color: 'white' },
+                                                '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' },
                                                 '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' },
                                                 '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' },
                                             }}
                                         />
                                     )}
                                     slotProps={{
-                                        paper: { sx: { bgcolor: 'var(--bg-secondary, #111827)', color: 'white', border: '1px solid var(--border-strong, #374151)' } }
+                                        paper: { sx: { bgcolor: 'var(--bg-secondary, #111827)', color: 'var(--text-white-dynamic, white)', border: '1px solid var(--border-strong, #374151)' } }
                                     }}
                                 />
                             </Box>
 
-                            <Divider sx={{ my: 3, borderColor: '#1f2937' }} />
+                            <Divider sx={{ my: 3, borderColor: 'var(--border-dynamic, #1f2937)' }} />
 
-                            <Typography variant="h6" sx={{ mb: 2, color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="h6" sx={{ mb: 2, color: 'var(--text-white-dynamic, white)', display: 'flex', alignItems: 'center', gap: 1 }}>
                                 2. Datos del Movimiento
                             </Typography>
 
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                                 {/* Evento Principal */}
-                                <Box sx={{ p: 2, bgcolor: '#1f293740', borderRadius: 2, border: '1px solid var(--border-strong, #374151)' }}>
+                                <Box sx={{ p: 2, bgcolor: 'var(--border-dynamic, #1f2937)40', borderRadius: 2, border: '1px solid var(--border-strong, #374151)' }}>
                                     <Typography variant="subtitle2" sx={{ color: '#3b82f6', mb: 2, fontWeight: 700 }}>
                                         Movimiento a Registrar
                                     </Typography>
@@ -291,7 +291,7 @@ export default function RegistroMaquinasPage() {
                                             name="targetStatus"
                                             control={control}
                                             render={({ field }) => (
-                                                <TextField {...field} select fullWidth size="small" label="Estado Destino" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }}>
+                                                <TextField {...field} select fullWidth size="small" label="Estado Destino" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }}>
                                                     {targetStatuses.map((opt) => (
                                                         <MenuItem key={opt.value} value={opt.value}>
                                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -308,7 +308,7 @@ export default function RegistroMaquinasPage() {
                                             name="date"
                                             control={control}
                                             render={({ field }) => (
-                                                <TextField {...field} fullWidth size="small" type="date" label="Fecha del evento" variant="outlined" InputLabelProps={{ shrink: true }} sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }} />
+                                                <TextField {...field} fullWidth size="small" type="date" label="Fecha del evento" variant="outlined" InputLabelProps={{ shrink: true }} sx={{ '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }} />
                                             )}
                                         />
 
@@ -317,7 +317,7 @@ export default function RegistroMaquinasPage() {
                                                 name="hour"
                                                 control={control}
                                                 render={({ field }) => (
-                                                    <TextField {...field} select fullWidth size="small" label="Hora del evento" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }}>
+                                                    <TextField {...field} select fullWidth size="small" label="Hora del evento" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }}>
                                                         {Array.from({ length: 24 }).map((_, h) => {
                                                             const hStr = String(h).padStart(2, '0');
                                                             return <MenuItem key={hStr} value={hStr}>{hStr}</MenuItem>;
@@ -329,7 +329,7 @@ export default function RegistroMaquinasPage() {
                                                 name="minute"
                                                 control={control}
                                                 render={({ field }) => (
-                                                    <TextField {...field} select fullWidth size="small" label="Minuto del evento" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }}>
+                                                    <TextField {...field} select fullWidth size="small" label="Minuto del evento" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }}>
                                                         {Array.from({ length: 60 }).map((_, m) => {
                                                             const mStr = String(m).padStart(2, '0');
                                                             return <MenuItem key={mStr} value={mStr}>{mStr}</MenuItem>;
@@ -343,7 +343,7 @@ export default function RegistroMaquinasPage() {
                                             name="generatedBy"
                                             control={control}
                                             render={({ field }) => (
-                                                <TextField {...field} select fullWidth size="small" label="Responsable" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }}>
+                                                <TextField {...field} select fullWidth size="small" label="Responsable" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }}>
                                                     {responsables.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
                                                 </TextField>
                                             )}
@@ -353,7 +353,7 @@ export default function RegistroMaquinasPage() {
                                             name="failureType"
                                             control={control}
                                             render={({ field }) => (
-                                                <TextField {...field} select fullWidth size="small" label="Tipo de Falla" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }}>
+                                                <TextField {...field} select fullWidth size="small" label="Tipo de Falla" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }}>
                                                     {failureTypes.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
                                                 </TextField>
                                             )}
@@ -363,7 +363,7 @@ export default function RegistroMaquinasPage() {
                                             name="observation"
                                             control={control}
                                             render={({ field }) => (
-                                                <TextField {...field} fullWidth size="small" multiline rows={2} label="Observación" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }} />
+                                                <TextField {...field} fullWidth size="small" multiline rows={2} label="Observación" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }} />
                                             )}
                                         />
                                     </Box>
@@ -401,7 +401,7 @@ export default function RegistroMaquinasPage() {
                                                 label="Estado Posterior" 
                                                 value={secondStatus} 
                                                 onChange={(e) => setSecondStatus(e.target.value)}
-                                                sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }}
+                                                sx={{ '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }}
                                             >
                                                 {targetStatuses.map((opt) => (
                                                     <MenuItem key={opt.value} value={opt.value}>
@@ -421,7 +421,7 @@ export default function RegistroMaquinasPage() {
                                                 value={secondDate} 
                                                 onChange={(e) => setSecondDate(e.target.value)}
                                                 InputLabelProps={{ shrink: true }} 
-                                                sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }} 
+                                                sx={{ '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }} 
                                             />
 
                                             <Box sx={{ display: 'flex', gap: 2 }}>
@@ -432,7 +432,7 @@ export default function RegistroMaquinasPage() {
                                                     label="Hora posterior" 
                                                     value={secondHour} 
                                                     onChange={(e) => setSecondHour(e.target.value)}
-                                                    sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }} 
+                                                    sx={{ '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }} 
                                                 >
                                                     {Array.from({ length: 24 }).map((_, h) => {
                                                         const hStr = String(h).padStart(2, '0');
@@ -446,7 +446,7 @@ export default function RegistroMaquinasPage() {
                                                     label="Minuto posterior" 
                                                     value={secondMinute} 
                                                     onChange={(e) => setSecondMinute(e.target.value)}
-                                                    sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }} 
+                                                    sx={{ '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }} 
                                                 >
                                                     {Array.from({ length: 60 }).map((_, m) => {
                                                         const mStr = String(m).padStart(2, '0');
@@ -462,7 +462,7 @@ export default function RegistroMaquinasPage() {
                                                 label="Tipo de Falla" 
                                                 value={secondFailure} 
                                                 onChange={(e) => setSecondFailure(e.target.value)}
-                                                sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }}
+                                                sx={{ '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }}
                                             >
                                                 {failureTypes.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
                                             </TextField>
@@ -475,7 +475,7 @@ export default function RegistroMaquinasPage() {
                                                 label="Observación Posterior" 
                                                 value={secondObservation} 
                                                 onChange={(e) => setSecondObservation(e.target.value)}
-                                                sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }} 
+                                                sx={{ '& .MuiOutlinedInput-root': { color: 'var(--text-white-dynamic, white)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' } }} 
                                             />
                                         </Box>
                                     </Box>
@@ -498,8 +498,8 @@ export default function RegistroMaquinasPage() {
 
                 {/* Queue Side */}
                 <Grid size={{ xs: 12, md: 6 }}>
-                    <Paper sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, p: 3, border: '1px solid #1f2937', minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
-                        <Typography variant="h6" sx={{ color: 'white', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Paper sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, p: 3, border: '1px solid var(--border-dynamic, #1f2937)', minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+                        <Typography variant="h6" sx={{ color: 'var(--text-white-dynamic, white)', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                             <HistoryIcon /> Cola de Movimientos a Enviar ({pendingEvents.length})
                         </Typography>
 
@@ -512,7 +512,7 @@ export default function RegistroMaquinasPage() {
                         ) : (
                             <List sx={{ flex: 1 }}>
                                 {pendingEvents.map((event) => (
-                                    <ListItem key={event.id} sx={{ mb: 2, bgcolor: '#1f293750', borderRadius: 2, border: '1px solid var(--border-strong, #374151)40' }}>
+                                    <ListItem key={event.id} sx={{ mb: 2, bgcolor: 'var(--border-dynamic, #1f2937)50', borderRadius: 2, border: '1px solid var(--border-strong, #374151)40' }}>
                                         <ListItemText 
                                             primary={
                                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>

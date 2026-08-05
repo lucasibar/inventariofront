@@ -31,7 +31,7 @@ import {
 // Theme colors matching dashboard
 const colors = {
     primary: '#818cf8', // Indigo
-    secondary: '#475569',
+    secondary: 'var(--text-mui-secondary, #475569)',
     bg: 'var(--bg-primary, #0f1117)',
     cardBg: 'var(--bg-hover-row, rgba(255,255,255,0.03))',
     border: 'rgba(255, 255, 255, 0.08)',
@@ -391,7 +391,7 @@ export default function GraficoSierraPage() {
                     disabled={!isAdmin && depots.length <= 1}
                     sx={{
                         minWidth: 200,
-                        '& .MuiSelect-select': { color: 'white' },
+                        '& .MuiSelect-select': { color: 'var(--text-white-dynamic, white)' },
                         '& .MuiInputLabel-root': { color: colors.textDim },
                         '& .MuiOutlinedInput-root': {
                             bgcolor: colors.cardBg,
@@ -420,10 +420,10 @@ export default function GraficoSierraPage() {
                         size="small"
                         sx={{ bgcolor: colors.cardBg, border: `1px solid ${colors.border}` }}
                     >
-                        <ToggleButton value="individual" sx={{ color: colors.textDim, '&.Mui-selected': { color: '#fff', bgcolor: `${colors.primary}40` } }}>
+                        <ToggleButton value="individual" sx={{ color: colors.textDim, '&.Mui-selected': { color: 'var(--text-white-dynamic, #fff)', bgcolor: `${colors.primary}40` } }}>
                             Líneas Individuales
                         </ToggleButton>
-                        <ToggleButton value="sum" disabled={isHeterogeneous} sx={{ color: colors.textDim, '&.Mui-selected': { color: '#fff', bgcolor: `${colors.primary}40` } }}>
+                        <ToggleButton value="sum" disabled={isHeterogeneous} sx={{ color: colors.textDim, '&.Mui-selected': { color: 'var(--text-white-dynamic, #fff)', bgcolor: `${colors.primary}40` } }}>
                             Suma Consolidada
                         </ToggleButton>
                     </ToggleButtonGroup>
@@ -435,13 +435,13 @@ export default function GraficoSierraPage() {
                         size="small"
                         sx={{ bgcolor: colors.cardBg, border: `1px solid ${colors.border}` }}
                     >
-                        <ToggleButton value={15} sx={{ color: colors.textDim, '&.Mui-selected': { color: '#fff', bgcolor: `${colors.primary}40` } }}>
+                        <ToggleButton value={15} sx={{ color: colors.textDim, '&.Mui-selected': { color: 'var(--text-white-dynamic, #fff)', bgcolor: `${colors.primary}40` } }}>
                             15D
                         </ToggleButton>
-                        <ToggleButton value={30} sx={{ color: colors.textDim, '&.Mui-selected': { color: '#fff', bgcolor: `${colors.primary}40` } }}>
+                        <ToggleButton value={30} sx={{ color: colors.textDim, '&.Mui-selected': { color: 'var(--text-white-dynamic, #fff)', bgcolor: `${colors.primary}40` } }}>
                             30D
                         </ToggleButton>
-                        <ToggleButton value={60} sx={{ color: colors.textDim, '&.Mui-selected': { color: '#fff', bgcolor: `${colors.primary}40` } }}>
+                        <ToggleButton value={60} sx={{ color: colors.textDim, '&.Mui-selected': { color: 'var(--text-white-dynamic, #fff)', bgcolor: `${colors.primary}40` } }}>
                             60D
                         </ToggleButton>
                     </ToggleButtonGroup>
@@ -526,7 +526,7 @@ export default function GraficoSierraPage() {
                     <Card style={{ padding: '24px', marginBottom: '24px' }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, flexWrap: 'wrap', gap: 2 }}>
                             <Box>
-                                <Typography variant="h6" sx={{ fontWeight: 800, color: '#fff' }}>
+                                <Typography variant="h6" sx={{ fontWeight: 800, color: 'var(--text-white-dynamic, #fff)' }}>
                                     Evolución Histórica y Proyección de Stock
                                 </Typography>
                                 <Typography variant="caption" sx={{ color: colors.textDim }}>
@@ -553,7 +553,7 @@ export default function GraficoSierraPage() {
                         </Box>
 
                         {selectedItemIds.length === 0 ? (
-                            <Box sx={{ p: 8, textAlign: 'center', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 3 }}>
+                            <Box sx={{ p: 8, textAlign: 'center', border: '1px dashed var(--border-dynamic-transparent, rgba(255,255,255,0.1))', borderRadius: 3 }}>
                                 <Typography sx={{ color: colors.textDim }}>
                                     Selecciona materiales en la tabla de abajo para visualizarlos en el gráfico de sierra.
                                 </Typography>
@@ -573,7 +573,7 @@ export default function GraficoSierraPage() {
                                             tick={{ fontSize: 11 }}
                                         />
                                         <Tooltip 
-                                            contentStyle={{ backgroundColor: colors.bg, borderColor: colors.border, borderRadius: '8px', color: '#fff' }}
+                                            contentStyle={{ backgroundColor: colors.bg, borderColor: colors.border, borderRadius: '8px', color: 'var(--text-white-dynamic, #fff)' }}
                                         />
                                         <Legend wrapperStyle={{ fontSize: '12px', marginTop: '10px' }} />
 
@@ -688,7 +688,7 @@ export default function GraficoSierraPage() {
                                         sx={{ p: 0, color: 'rgba(255,255,255,0.3)', '&.Mui-checked': { color: colors.primary } }}
                                     />,
                                     <code key="code" style={{ color: colors.primary, fontWeight: 700 }}>{item.codigoInterno}</code>,
-                                    <span key="desc" style={{ color: '#fff', fontWeight: 600 }}>{item.descripcion}</span>,
+                                    <span key="desc" style={{ color: 'var(--text-white-dynamic, #fff)', fontWeight: 600 }}>{item.descripcion}</span>,
                                     <span key="prov" style={{ color: colors.textDim }}>{item.supplier?.name || '—'}</span>,
                                     <span key="stock" style={{ fontWeight: 700, color: stock < Number(item.stockMinimo || 0) ? colors.danger : colors.success }}>
                                         {Number(stock).toFixed(1)}

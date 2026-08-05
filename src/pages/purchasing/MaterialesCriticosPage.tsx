@@ -162,24 +162,24 @@ export default function MaterialesCriticosPage() {
             <style>{`
                 .combos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
                 .combo-card { 
-                    background: #1f2937; border: 1px solid var(--border-strong, #374151); border-radius: 12px; padding: 20px;
+                    background: var(--border-dynamic, #1f2937); border: 1px solid var(--border-strong, #374151); border-radius: 12px; padding: 20px;
                     display: flex; flex-direction: column; gap: 16px; transition: transform 0.2s, border-color 0.2s;
                     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
                 }
                 .combo-card:hover { transform: translateY(-2px); border-color: #6366f1; }
                 
                 .mobile-combo-row {
-                    background: #1f2937; border: 1px solid var(--border-strong, #374151); border-radius: 8px; padding: 12px 16px;
+                    background: var(--border-dynamic, #1f2937); border: 1px solid var(--border-strong, #374151); border-radius: 8px; padding: 12px 16px;
                     display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
                     cursor: pointer;
                 }
                 .mobile-combo-row:active { background: var(--border-strong, #374151); }
 
-                .metric-row { display: flex; align-items: center; gap: 12px; color: #d1d5db; }
+                .metric-row { display: flex; align-items: center; gap: 12px; color: var(--text-secondary, #d1d5db); }
                 .metric-icon { font-size: 18px; width: 24px; text-align: center; }
-                .metric-value { font-size: 18px; font-weight: 700; color: #fff; }
-                .metric-label { font-size: 12px; color: #9ca3af; margin-left: auto; }
-                .editable-title { background: transparent; border: none; color: #fff; font-size: 18px; font-weight: 700; outline: none; width: 100%; border-bottom: 1px dashed transparent; }
+                .metric-value { font-size: 18px; font-weight: 700; color: var(--text-white-dynamic, #fff); }
+                .metric-label { font-size: 12px; color: var(--text-muted, #9ca3af); margin-left: auto; }
+                .editable-title { background: transparent; border: none; color: var(--text-white-dynamic, #fff); font-size: 18px; font-weight: 700; outline: none; width: 100%; border-bottom: 1px dashed transparent; }
                 .editable-title:hover, .editable-title:focus { border-bottom-color: #6366f1; }
                 .search-mini { background: var(--bg-secondary, #111827); border: 1px solid var(--border-strong, #374151); border-radius: 6px; padding: 8px 12px; color: white; width: 100%; box-sizing: border-box; outline: none; margin-bottom: 12px; }
             `}</style>            <PageHeader title="Materiales Críticos" subtitle="Control de stock y reposición" hideTitleOnMobile>
@@ -241,7 +241,7 @@ export default function MaterialesCriticosPage() {
                                         combo.supplier?.name || 'Mixto',
                                         `${Number(combo.totalStock || 0).toFixed(1)} ${combo.unitLabel}`,
                                         <span key="p" style={{ color: combo.pendingStock > 0 ? '#f59e0b' : 'var(--text-subtle, #6b7280)' }}>{Number(combo.pendingStock || 0).toFixed(1)} {combo.unitLabel}</span>,
-                                        <span key="c" style={{ color: '#94a3b8' }}>{Number(combo.totalConsumed30Days || 0).toFixed(1)} {combo.unitLabel}</span>,
+                                        <span key="c" style={{ color: 'var(--text-subtle, #94a3b8)' }}>{Number(combo.totalConsumed30Days || 0).toFixed(1)} {combo.unitLabel}</span>,
                                         <span key="s" style={{ color: combo.daysOfSupply < 15 ? '#ef4444' : '#10b981', fontWeight: 600 }}>{combo.daysOfSupply !== null ? `~ ${Math.ceil(combo.daysOfSupply)} días` : 'N/A'}</span>,
                                         <ActionMenu key="a" options={[
                                             { label: 'Detalle', icon: '🔍', onClick: () => setShowBreakdownId(combo.id) },
@@ -351,7 +351,7 @@ function ComboCard({ combo, onClick, onUpdateTitle, onEdit, onDelete }: any) {
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         {combo.supplier && <Badge color="#6366f1">{combo.supplier.name}</Badge>}
-                        <Badge color="#4b5563">{combo.itemIds?.length || 0} ITEMS</Badge>
+                        <Badge color="var(--text-dimmed, #4b5563)">{combo.itemIds?.length || 0} ITEMS</Badge>
                     </div>
                 </div>
                 <ActionMenu options={[
@@ -381,8 +381,8 @@ function ComboCard({ combo, onClick, onUpdateTitle, onEdit, onDelete }: any) {
                     <span className="metric-label">PEDIDO</span>
                 </div>
                 <div className="metric-row">
-                    <span className="metric-icon" style={{ color: '#94a3b8' }}>📤</span>
-                    <span className="metric-value" style={{ color: '#94a3b8' }}>{Number(combo.totalConsumed30Days || 0).toLocaleString()}</span>
+                    <span className="metric-icon" style={{ color: 'var(--text-subtle, #94a3b8)' }}>📤</span>
+                    <span className="metric-value" style={{ color: 'var(--text-subtle, #94a3b8)' }}>{Number(combo.totalConsumed30Days || 0).toLocaleString()}</span>
                     <span style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '14px' }}>{combo.unitLabel}</span>
                     <span className="metric-label">SALIDA (30D)</span>
                 </div>
@@ -417,13 +417,13 @@ function BreakdownModal({ id, onClose }: { id: string, onClose: () => void }) {
             {isLoading ? <Spinner /> : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {breakdown.map((item: any) => (
-                        <div key={item.itemId} style={{ background: '#1f2937', borderRadius: '10px', border: '1px solid var(--border-strong, #374151)', overflow: 'hidden' }}>
+                        <div key={item.itemId} style={{ background: 'var(--border-dynamic, #1f2937)', borderRadius: '10px', border: '1px solid var(--border-strong, #374151)', overflow: 'hidden' }}>
                             <div 
                                 style={{ padding: '16px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: expandedItem === item.itemId ? 'var(--border-strong, #374151)' : 'transparent' }}
                                 onClick={() => setExpandedItem(expandedItem === item.itemId ? null : item.itemId)}
                             >
                                 <div style={{ flex: 1 }}>
-                                    <h4 style={{ color: '#fff', fontSize: '14px', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.description}</h4>
+                                    <h4 style={{ color: 'var(--text-white-dynamic, #fff)', fontSize: '14px', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.description}</h4>
                                     <code style={{ fontSize: '11px', color: 'var(--text-muted, #9ca3af)' }}>{item.code}</code>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '20px' }}>
@@ -441,7 +441,7 @@ function BreakdownModal({ id, onClose }: { id: string, onClose: () => void }) {
                                         cols={['Partida/Lote', 'Stock Acumulado']}
                                         rows={item.batches.map((b: any) => [
                                             <strong key="l" style={{ color: 'var(--text-primary, #f3f4f6)' }}>{b.lotNumber}</strong>,
-                                            <span key="q" style={{ color: '#fff', fontWeight: 600 }}>{b.qty.toFixed(1)} {item.unitLabel}</span>
+                                            <span key="q" style={{ color: 'var(--text-white-dynamic, #fff)', fontWeight: 600 }}>{b.qty.toFixed(1)} {item.unitLabel}</span>
                                         ])}
                                     />
                                     {item.pendingStock > 0 && (

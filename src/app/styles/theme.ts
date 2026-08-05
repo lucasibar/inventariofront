@@ -49,8 +49,8 @@ export const darkTheme = createTheme({
             paper: '#1a1d2e',
         },
         text: {
-            primary: '#E6E1E5',
-            secondary: '#CAC4D0',
+            primary: '#f3f4f6',
+            secondary: '#9ca3af',
         },
     },
     typography: sharedTypography,
@@ -73,12 +73,12 @@ export const lightTheme = createTheme({
             contrastText: '#ffffff',
         },
         background: {
-            default: '#f0f2f5',
+            default: '#f8fafc',
             paper: '#ffffff',
         },
         text: {
-            primary: '#1e293b',
-            secondary: '#64748b',
+            primary: '#0f172a',
+            secondary: '#475569',
         },
     },
     typography: sharedTypography,

@@ -119,14 +119,14 @@ const StatBox = ({ label, dayVal, nightVal, fmt = 'n', invert }: {
             <Box sx={{ display: 'flex', justifyContent: 'space-around', gap: 1 }}>
                 <Box sx={{ textAlign: 'center' }}>
                     <Typography sx={{ fontSize: '0.5rem', color: '#eab308', fontWeight: 700 }}>☀️</Typography>
-                    <Typography sx={{ fontSize: '1.1rem', fontWeight: 900, color: dayW ? '#10b981' : nightW ? '#ef4444' : '#fff', lineHeight: 1 }}>
+                    <Typography sx={{ fontSize: '1.1rem', fontWeight: 900, color: dayW ? '#10b981' : nightW ? '#ef4444' : 'var(--text-white-dynamic, #fff)', lineHeight: 1 }}>
                         {f(dayVal)}
                     </Typography>
                 </Box>
                 <Box sx={{ width: '1px', bgcolor: 'rgba(255,255,255,0.06)' }} />
                 <Box sx={{ textAlign: 'center' }}>
                     <Typography sx={{ fontSize: '0.5rem', color: '#818cf8', fontWeight: 700 }}>🌙</Typography>
-                    <Typography sx={{ fontSize: '1.1rem', fontWeight: 900, color: nightW ? '#10b981' : dayW ? '#ef4444' : '#fff', lineHeight: 1 }}>
+                    <Typography sx={{ fontSize: '1.1rem', fontWeight: 900, color: nightW ? '#10b981' : dayW ? '#ef4444' : 'var(--text-white-dynamic, #fff)', lineHeight: 1 }}>
                         {f(nightVal)}
                     </Typography>
                 </Box>
@@ -291,11 +291,11 @@ export default function InformeTurnosPage() {
         .sort((a, b) => b.stops - a.stops);
 
     // Row style helper
-    const thStyle: React.CSSProperties = { padding: '6px 8px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-dimmed, #4b5563)', textAlign: 'left', borderBottom: '1px solid #1f2937' };
+    const thStyle: React.CSSProperties = { padding: '6px 8px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-dimmed, #4b5563)', textAlign: 'left', borderBottom: '1px solid var(--border-dynamic, #1f2937)' };
     const tdStyle = (i: number): React.CSSProperties => ({ padding: '6px 8px', fontSize: '12px', fontWeight: 700, borderBottom: '1px solid var(--bg-hover-row, rgba(255,255,255,0.03))', background: i % 2 === 0 ? 'transparent' : 'var(--bg-alt-row, rgba(255,255,255,0.01))' });
 
     return (
-        <Box sx={{ p: 0, maxWidth: '1400px', margin: '0 auto', color: 'white', pb: 10 }}>
+        <Box sx={{ p: 0, maxWidth: '1400px', margin: '0 auto', color: 'var(--text-white-dynamic, white)', pb: 10 }}>
 
             {/* ── Top Bar (dashboard style) ── */}
             <Box sx={{
@@ -313,14 +313,14 @@ export default function InformeTurnosPage() {
                         </Typography>
                         <Typography sx={{ color: 'var(--text-dimmed, #4b5563)', fontWeight: 800, fontSize: '0.5rem', textTransform: 'uppercase' }}>☀️ Paradas Día</Typography>
                     </Box>
-                    <Box sx={{ width: '1px', bgcolor: 'rgba(255,255,255,0.1)' }} />
+                    <Box sx={{ width: '1px', bgcolor: 'var(--border-dynamic-transparent, rgba(255,255,255,0.1))' }} />
                     <Box sx={{ textAlign: 'center' }}>
                         <Typography sx={{ color: '#818cf8', fontWeight: 900, fontSize: '1.4rem', lineHeight: 1 }}>
                             {isDetailedLoading ? '...' : night.stops}
                         </Typography>
                         <Typography sx={{ color: 'var(--text-dimmed, #4b5563)', fontWeight: 800, fontSize: '0.5rem', textTransform: 'uppercase' }}>🌙 Paradas Noche</Typography>
                     </Box>
-                    <Box sx={{ width: '1px', bgcolor: 'rgba(255,255,255,0.1)' }} />
+                    <Box sx={{ width: '1px', bgcolor: 'var(--border-dynamic-transparent, rgba(255,255,255,0.1))' }} />
                     <Box sx={{ textAlign: 'center' }}>
                         <Typography sx={{
                             color: night.rate < 50 ? '#ef4444' : '#10b981',
@@ -349,7 +349,7 @@ export default function InformeTurnosPage() {
                                 sx={{
                                     fontSize: '0.65rem', fontWeight: 800, minWidth: 'auto', px: 1.2,
                                     bgcolor: period === p ? '#6366f1' : 'transparent',
-                                    borderColor: 'var(--border-strong, #374151)', color: period === p ? '#fff' : 'var(--text-subtle, #6b7280)',
+                                    borderColor: 'var(--border-strong, #374151)', color: period === p ? 'var(--text-white-dynamic, #fff)' : 'var(--text-subtle, #6b7280)',
                                 }}
                             >
                                 {p}d
@@ -451,9 +451,9 @@ export default function InformeTurnosPage() {
                                             <ResponsiveContainer width="100%" height={220}>
                                                 <BarChart data={monthData.data} barGap={4} barCategoryGap="25%">
                                                     <CartesianGrid strokeDasharray="3 3" stroke="var(--bg-action-btn, rgba(255,255,255,0.05))" />
-                                                    <XAxis dataKey="name" tick={{ fill: 'var(--text-subtle, #6b7280)', fontSize: 10 }} axisLine={{ stroke: '#1f2937' }} />
-                                                    <YAxis tick={{ fill: 'var(--text-subtle, #6b7280)', fontSize: 10 }} axisLine={{ stroke: '#1f2937' }} />
-                                                    <RechartsTooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid var(--border-strong, #374151)', borderRadius: '6px', color: 'var(--text-primary, #f3f4f6)', fontSize: '11px' }} />
+                                                    <XAxis dataKey="name" tick={{ fill: 'var(--text-subtle, #6b7280)', fontSize: 10 }} axisLine={{ stroke: 'var(--border-dynamic, #1f2937)' }} />
+                                                    <YAxis tick={{ fill: 'var(--text-subtle, #6b7280)', fontSize: 10 }} axisLine={{ stroke: 'var(--border-dynamic, #1f2937)' }} />
+                                                    <RechartsTooltip contentStyle={{ backgroundColor: 'var(--border-dynamic, #1f2937)', border: '1px solid var(--border-strong, #374151)', borderRadius: '6px', color: 'var(--text-primary, #f3f4f6)', fontSize: '11px' }} />
                                                     <Bar dataKey="☀️ Día" fill="#eab308" radius={[3, 3, 0, 0]} />
                                                     <Bar dataKey="🌙 Noche" fill="#818cf8" radius={[3, 3, 0, 0]} />
                                                 </BarChart>

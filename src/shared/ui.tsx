@@ -140,7 +140,7 @@ export function Input({ label, value, onChange, type = 'text', placeholder, styl
                         onClick={() => setShowPassword(!showPassword)}
                         style={{
                             position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
-                            background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer',
+                            background: 'none', border: 'none', color: 'var(--text-subtle, #6b7280)', cursor: 'pointer',
                             padding: '4px', display: 'flex', alignItems: 'center', fontSize: '14px'
                         }}
                     >
@@ -294,11 +294,11 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
                 />
                 {value && !open && (
                     <button onClick={handleClear} style={{
-                        background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer',
+                        background: 'none', border: 'none', color: 'var(--text-subtle, #6b7280)', cursor: 'pointer',
                         padding: '0 8px', fontSize: '14px', lineHeight: 1, display: 'flex', alignItems: 'center'
                     }}>✕</button>
                 )}
-                <span style={{ padding: '0 8px', color: '#4b5563', fontSize: '10px', pointerEvents: 'none' }}>▼</span>
+                <span style={{ padding: '0 8px', color: 'var(--text-dimmed, #4b5563)', fontSize: '10px', pointerEvents: 'none' }}>▼</span>
             </div>
             {open && (
                 <div ref={listRef} style={{
@@ -308,7 +308,7 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
                     maxHeight: '200px', overflowY: 'auto',
                 }}>
                     {filtered.length === 0 && (
-                        <div style={{ padding: '12px', textAlign: 'center', color: '#4b5563', fontSize: '12px' }}>Sin resultados</div>
+                        <div style={{ padding: '12px', textAlign: 'center', color: 'var(--text-dimmed, #4b5563)', fontSize: '12px' }}>Sin resultados</div>
                     )}
                     {filtered.map((o, i) => {
                         const isHighlighted = i === highlightedIndex;
@@ -373,7 +373,7 @@ export function Modal({ title, children, onClose, wide }: { title: string; child
             }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                     <h2 style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: '17px', fontWeight: 700, margin: 0 }}>{title}</h2>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '20px' }}>✕</button>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-subtle, #6b7280)', cursor: 'pointer', fontSize: '20px' }}>✕</button>
                 </div>
                 {children}
             </div>
@@ -512,7 +512,7 @@ export function ActionMenu({ options }: { options: { label: string; onClick: () 
                             key={i} 
                             onClick={(e) => { e.stopPropagation(); opt.onClick(); setOpen(false); }}
                             style={{ 
-                                padding: '10px 16px', fontSize: '13px', color: opt.color || '#d1d5db', 
+                                padding: '10px 16px', fontSize: '13px', color: opt.color || 'var(--text-secondary, #d1d5db)', 
                                 cursor: 'pointer', borderBottom: i === options.length - 1 ? 'none' : '1px solid var(--border-color, #2a2d3e)',
                                 display: 'flex', alignItems: 'center', gap: '8px'
                             }}
@@ -578,7 +578,7 @@ export function Badge({ children, color = '#a5b4fc' }: { children: React.ReactNo
 export function SearchBar({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
     return (
         <div style={{ position: 'relative' }}>
-            <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#6b7280' }}>🔍</span>
+            <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-subtle, #6b7280)' }}>🔍</span>
             <input
                 value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder ?? 'Buscar...'}
                 style={{
@@ -666,7 +666,7 @@ export function EditableCell({ value, onSave, numeric, style, inputStyle }: { va
         return (
             <span
                 style={{
-                    color: '#9ca3af',
+                    color: 'var(--text-muted, #9ca3af)',
                     fontStyle: 'italic',
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -695,7 +695,7 @@ export function EditableCell({ value, onSave, numeric, style, inputStyle }: { va
             title="Click para editar"
             style={{
                 cursor: 'pointer',
-                borderBottom: '1px dashed #4b5563',
+                borderBottom: '1px dashed var(--text-dimmed, #4b5563)',
                 paddingBottom: '1px',
                 transition: 'color 0.2s',
                 ...style
