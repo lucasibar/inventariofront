@@ -4,7 +4,7 @@ import { useLazyGetRemitoSalidaQuery } from '../../features/warehouse/remitosSal
 import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.api';
 import { RemitoDetailModal } from '../../features/warehouse/remitos/ui/RemitoDetailModal';
 import { EditComboModal } from '../purchasing/MaterialesCriticosPage';
-import { PageHeader, Card, Input, Spinner, Btn, Modal, Table } from '../../shared/ui';
+import { PageHeader, Card, Input, Spinner, Btn } from '../../shared/ui';
 import { useIsMobile } from '../../shared/ui';
 import { 
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar, LineChart, Line 
@@ -40,7 +40,6 @@ function DebouncedSearchInput({ value, onChange, delay = 300, ...props }: Deboun
         />
     );
 }
-
 
 export default function ReporteConsumoDetalladoPage() {
     const isMobile = useIsMobile();
@@ -584,170 +583,6 @@ export default function ReporteConsumoDetalladoPage() {
                                                             </span>
                                                             <span style={{ color: '#64748b', fontSize: '12px', marginLeft: '4px' }}>
                                                                 Kg
-                                                            </span>
-                                                        </div>
-                                                        <span style={{ fontSize: '18px', color: '#64748b', transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-                                                            ▼
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Accordion Detail Content */}
-                                                {isExpanded && (
-                                                    <div style={{ padding: '20px', background: 'var(--bg-primary, #0b0f19)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                                        {groupItemsBreakdown.length === 0 ? (
-                                                            <div style={{ color: '#64748b', fontSize: '13px', textAlign: 'center', padding: '10px' }}>
-                                                                No se registraron consumos para los materiales de este grupo en el período seleccionado.
-                                                            </div>
-                                                        ) : (
-                                                            groupItemsBreakdown.map((itemGroup) => (
-                                                                <div key={itemGroup.item.id} style={{ border: '1px solid var(--border-strong, #1e293b)', borderRadius: '8px', overflow: 'hidden' }}>
-                                                                    <div style={{ padding: '10px 14px', background: 'var(--bg-secondary, #111827)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                                            <strong style={{ color: '#fff', fontSize: '14px' }}>{itemGroup.item.descripcion}</strong>
-                                                                            <span style={{ fontSize: '11px', color: '#64748b' }}>Cód: {itemGroup.item.codigoInterno}</span>
-                                                                        </div>
-                                                                        <span style={{ fontWeight: 700, color: '#38bdf8', fontSize: '14px' }}>
-                                                                            {itemGroup.totalQty.toLocaleString('es-AR', { minimumFractionDigits: 2 })} {itemGroup.item.unidadPrincipal}
-                                                                        </span>
-                                                                    </div>
-                                                                    <div style={{ overflowX: 'auto' }}>
-                                                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                                                                            <thead>
-                                                                                <tr style={{ borderBottom: '1px solid var(--border-strong, #1e293b)', background: 'rgba(0,0,0,0.15)' }}>
-                                                                                    <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b' }}>Fecha</th>
-                                                                                    <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b' }}>Cliente</th>
-                                                                                    <th style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b' }}>Cantidad</th>
-                                                                                    <th style={{ padding: '8px 12px', textAlign: 'center', color: '#64748b' }}>Remito / Documento</th>
-                                                                                </tr>
-                                                                            </thead>
-                                                                            <tbody>
-                                                                                {itemGroup.movements.map((mov: any, index: number) => {
-                                                                                    const docNum = mov.documento?.numero || mov.documentoNumero;
-                                                                                    const clientName = mov.documento?.partner?.name || '—';
-                                                                                    return (
-                                                                                        <tr key={mov.id || index} style={{ borderBottom: index < itemGroup.movements.length - 1 ? '1px solid var(--border-strong, #1e293b)' : 'none' }}>
-                                                                                            <td style={{ padding: '8px 12px', color: '#e2e8f0' }}>
-                                                                                                {new Date(mov.fecha).toLocaleDateString('es-AR')}
-                                                                                            </td>
-                                                                                            <td style={{ padding: '8px 12px', color: '#e2e8f0' }}>
-                                                                                                {clientName}
-                                                                                            </td>
-                                                                                            <td style={{ padding: '8px 12px', textAlign: 'right', color: '#38bdf8', fontWeight: 600 }}>
-                                                                                                {Math.abs(Number(mov.qtyPrincipal)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                                                                                            </td>
-                                                                                            <td style={{ padding: '8px 12px', textAlign: 'center' }}>
-                                                                                                {mov.documentoId ? (
-                                                                                                    <button 
-                                                                                                        onClick={(e) => handleRemitoClick(e, mov.documentoId, docNum)}
-                                                                                                        style={{ 
-                                                                                                            background: 'rgba(56, 189, 248, 0.1)', 
-                                                                                                            border: '1px solid rgba(56, 189, 248, 0.3)', 
-                                                                                                            color: '#38bdf8', 
-                                                                                                            padding: '2px 6px', 
-                                                                                                            borderRadius: '4px', 
-                                                                                                            fontSize: '10px',
-                                                                                                            fontWeight: 600,
-                                                                                                            cursor: 'pointer'
-                                                                                                        }}
-                                                                                                    >
-                                                                                                        📄 {docNum || 'Ver Detalle'}
-                                                                                                    </button>
-                                                                                                ) : (
-                                                                                                    <span style={{ color: '#64748b' }}>{docNum || '—'}</span>
-                                                                                                )}
-                                                                                            </td>
-                                                                                        </tr>
-                                                                                    );
-                                                                                })}
-                                                                            </tbody>
-                                                                        </table>
-                                                                    </div>
-                                                                </div>
-                                                            ))
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )
-                        ) : (
-                            itemsBreakdown.length === 0 ? (
-                                <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
-                                    No se encontraron salidas registradas en el período.
-                                </div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    {itemsBreakdown.map((group) => {
-                                        const isExpanded = !!expandedItems[group.item.id];
-                                        const isSelected = !excludedMaterialIds[group.item.id];
-                                        return (
-                                            <div key={group.item.id} style={{ borderBottom: '1px solid var(--border-strong, #1e293b)' }}>
-                                                
-                                                {/* Accordion Trigger Row */}
-                                                <div 
-                                                    onClick={() => toggleItemExpanded(group.item.id)}
-                                                    style={{ 
-                                                        padding: '16px 20px', 
-                                                        display: 'flex', 
-                                                        alignItems: 'center', 
-                                                        justifyContent: 'space-between', 
-                                                        cursor: 'pointer',
-                                                        background: isExpanded ? 'rgba(15, 23, 42, 0.4)' : 'transparent',
-                                                        transition: 'background 0.2s ease'
-                                                    }}
-                                                >
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                                                        <input 
-                                                            type="checkbox"
-                                                            checked={isSelected}
-                                                            onClick={(e) => e.stopPropagation()}
-                                                            onChange={() => toggleMaterialSelection(group.item.id)}
-                                                            style={{ 
-                                                                cursor: 'pointer', 
-                                                                width: '18px', 
-                                                                height: '18px', 
-                                                                accentColor: '#38bdf8' 
-                                                            }}
-                                                        />
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, minWidth: 0 }}>
-                                                            <span style={{ fontWeight: 700, color: isSelected ? '#fff' : '#64748b', fontSize: '15px', textDecoration: isSelected ? 'none' : 'line-through' }}>
-                                                                {group.item.codigoInterno}
-                                                            </span>
-                                                            <span style={{ color: isSelected ? 'var(--text-muted, #9ca3af)' : '#475569', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                                {group.item.descripcion}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                                        <div style={{ textAlign: 'right' }}>
-                                                            <span style={{ fontWeight: 800, color: isSelected ? '#38bdf8' : '#475569', fontSize: '16px' }}>
-                                                                {group.totalQty.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                            </span>
-                                                            <span style={{ color: '#64748b', fontSize: '12px', marginLeft: '4px' }}>
-                                                                {group.item.unidadPrincipal}
-                                                            </span>
-                                                        </div>
-                                                        <span style={{ fontSize: '18px', color: '#64748b', transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-                                                            ▼
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Accordion Detail Content */}
-                                                {isExpanded && (
-                                                    <div style={{ padding: '0 20px 20px 20px', background: 'var(--bg-primary, #0b0f19)' }}>
-                                                        <div style={{ overflowX: 'auto', border: '1px solid var(--border-strong, #1e293b)', borderRadius: '8px' }}>
-                                                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                                                                <thead>
-                                                                    <tr style={{ borderBottom: '1px solid var(--border-strong, #1e293b)', background: 'var(--bg-secondary, #111827)' }}>
-                                                                        <th style={{ padding: '10px 12px', textAlign: 'left', color: '#64748b' }}>Fecha</th>
-                                                                        <th style={{ padding: '10px 12px', textAlign: 'left', color: '#64748b' }}>Cliente</th>
-                                                                        <th style={{ padding: '10px 12px', textAlign: 'right', color: '#64748b' }}>Cantidad</th>
-                                                                        <th style={{ padding: '10px 12px', textAlign: 'center', color: '#64748b' }}>Remito / Documento</th>
-                                                                    </tr>
                                                             </span>
                                                         </div>
                                                         <span style={{ fontSize: '18px', color: '#64748b', transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
