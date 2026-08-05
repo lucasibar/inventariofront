@@ -140,7 +140,7 @@ const navGroups: NavGroup[] = [
                 ]
             },
             { to: '/compras/conciliacion', label: '🔗 Conciliación' },
-            { to: '/compras/materiales-criticos', label: '🧵 Materiales Críticos' },
+            { to: '/compras/materiales-criticos', label: '🧵 Grupos de Materiales' },
             { to: '/compras/alertas-stock', label: '⚠️ Alertas de Stock' },
             { to: '/dashboard/capacity', label: '📈 Capacidad' },
             { to: '/dashboard/volumes', label: '📦 Volúmenes' },

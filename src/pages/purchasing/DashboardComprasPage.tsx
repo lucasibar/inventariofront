@@ -102,7 +102,7 @@ const ComboCard = ({ combo, onBuy }: any) => {
                 <Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                         <LayersIcon sx={{ color: colors.primary, fontSize: 16 }} />
-                        <Typography variant="caption" sx={{ color: colors.primary, fontWeight: 900, letterSpacing: '0.05em' }}>COMBO DE COMPRA</Typography>
+                        <Typography variant="caption" sx={{ color: colors.primary, fontWeight: 900, letterSpacing: '0.05em' }}>GRUPO DE MATERIALES</Typography>
                     </Box>
                     <Typography variant="subtitle1" sx={{ fontWeight: 800, color: colors.text }}>{combo.title}</Typography>
                     <Typography variant="caption" sx={{ color: colors.textDim }}>{combo.supplier?.name || 'Varios Proveedores'}</Typography>
@@ -234,7 +234,7 @@ export default function DashboardComprasPage() {
             {/* Summary Strip */}
             <Box sx={{ px: 2, pb: 1.5, display: 'flex', gap: 1, overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' } }}>
                 <Chip label={`${rawOrders.length} OCs totales`} size="small" sx={{ bgcolor: `${colors.primary}15`, color: colors.primary, fontWeight: 800, fontSize: '0.65rem' }} />
-                <Chip label={`${combos.filter((c: any) => c.daysOfSupply !== null && c.daysOfSupply < 15).length} combos urgentes`} size="small" sx={{ bgcolor: `${colors.danger}15`, color: colors.danger, fontWeight: 800, fontSize: '0.65rem' }} />
+                <Chip label={`${combos.filter((c: any) => c.daysOfSupply !== null && c.daysOfSupply < 15).length} grupos urgentes`} size="small" sx={{ bgcolor: `${colors.danger}15`, color: colors.danger, fontWeight: 800, fontSize: '0.65rem' }} />
                 {metrics.delayed > 0 && <Chip label={`${metrics.delayed} demoradas`} size="small" sx={{ bgcolor: `${colors.warning}15`, color: colors.warning, fontWeight: 800, fontSize: '0.65rem' }} />}
             </Box>
 
@@ -301,7 +301,7 @@ export default function DashboardComprasPage() {
                     <Box sx={{ px: 2 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                             <Typography variant="caption" sx={{ fontWeight: 900, color: colors.textDim, textTransform: 'uppercase', display: 'block' }}>
-                                {tab === 3 ? 'ÓRDENES DEMORADAS' : tab === 2 ? 'MATERIALES Y COMBOS CRÍTICOS' : tab === 1 ? 'REMITOS PENDIENTES DE VINCULACIÓN' : 'ÓRDENES DE COMPRA ACTIVAS'}
+                                {tab === 3 ? 'ÓRDENES DEMORADAS' : tab === 2 ? 'MATERIALES Y GRUPOS CRÍTICOS' : tab === 1 ? 'REMITOS PENDIENTES DE VINCULACIÓN' : 'ÓRDENES DE COMPRA ACTIVAS'}
                             </Typography>
                             <Button 
                                 size="small" 

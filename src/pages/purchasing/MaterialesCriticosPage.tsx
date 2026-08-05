@@ -80,13 +80,20 @@ export default function MaterialesCriticosPage() {
             });
     }, [combos, comboSearch]);
 
-    const filteredItems = items.filter(i => {
-        const matchesSearch = 
-            i.descripcion.toLowerCase().includes(materialSearch.toLowerCase()) ||
-            i.codigoInterno.toLowerCase().includes(materialSearch.toLowerCase());
-        const matchesSupplier = !newCombo.supplierId || i.supplierId === newCombo.supplierId;
-        return matchesSearch && matchesSupplier;
-    });
+    const filteredItems = useMemo(() => {
+        const searchWords = materialSearch.toLowerCase().split(' ').filter(w => w.length > 0);
+        return items.filter(i => {
+            const matchesSupplier = !newCombo.supplierId || i.supplierId === newCombo.supplierId;
+            if (!matchesSupplier) return false;
+            if (searchWords.length === 0) return true;
+            return searchWords.every(word => {
+                const desc = (i.descripcion || '').toLowerCase();
+                const code = (i.codigoInterno || '').toLowerCase();
+                const supplier = (i.supplier?.name || i.supplierName || '').toLowerCase();
+                return desc.includes(word) || code.includes(word) || supplier.includes(word);
+            });
+        });
+    }, [items, materialSearch, newCombo.supplierId]);
 
     const handleCreate = async () => {
         if (!newCombo.title || !newCombo.depositoId || newCombo.itemIds.length === 0) return;
@@ -175,15 +182,13 @@ export default function MaterialesCriticosPage() {
                 .editable-title { background: transparent; border: none; color: #fff; font-size: 18px; font-weight: 700; outline: none; width: 100%; border-bottom: 1px dashed transparent; }
                 .editable-title:hover, .editable-title:focus { border-bottom-color: #6366f1; }
                 .search-mini { background: var(--bg-secondary, #111827); border: 1px solid var(--border-strong, #374151); border-radius: 6px; padding: 8px 12px; color: white; width: 100%; box-sizing: border-box; outline: none; margin-bottom: 12px; }
-            `}</style>
-
-            <PageHeader title="Materiales Críticos" subtitle="Control de stock y reposición" hideTitleOnMobile>
+            `}</style>            <PageHeader title="Materiales Críticos" subtitle="Control de stock y reposición" hideTitleOnMobile>
                 {!isMobile && <Btn variant="secondary" onClick={exportToExcel}>⬇️ Exportar Excel</Btn>}
-                <Btn onClick={() => setShowCreateModal(true)} small={isMobile}>+ Nuevo Combo</Btn>
+                <Btn onClick={() => setShowCreateModal(true)} small={isMobile}>+ Nuevo Grupo</Btn>
             </PageHeader>
-
+ 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? '16px' : '24px', gap: '16px', flexWrap: 'wrap' }}>
-                <h3 style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: isMobile ? '16px' : '18px', fontWeight: 600, margin: 0 }}>📦 Mis Combos</h3>
+                <h3 style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: isMobile ? '16px' : '18px', fontWeight: 600, margin: 0 }}>📦 Mis Grupos de Materiales</h3>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flex: isMobile ? '1 1 100%' : 'none' }}>
                     <Select
                         value={depotId}
@@ -192,7 +197,7 @@ export default function MaterialesCriticosPage() {
                         options={[{ value: '', label: 'Todos los depósitos' }, ...depots.map((d: any) => ({ value: d.id, label: d.nombre }))]}
                         style={{ width: isMobile ? '100%' : '200px' }}
                     />
-                    {!isMobile && <Input placeholder="Buscar combo..." value={comboSearch} onChange={setComboSearch} style={{ width: '250px' }} />}
+                    {!isMobile && <Input placeholder="Buscar grupo..." value={comboSearch} onChange={setComboSearch} style={{ width: '250px' }} />}'250px' }} />}
                     <Btn variant="secondary" small onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}>
                         {viewMode === 'grid' ? '📋' : '🔲'}
                     </Btn>
@@ -223,14 +228,14 @@ export default function MaterialesCriticosPage() {
                                         onClick={() => setShowBreakdownId(combo.id)}
                                         onUpdateTitle={(title: string) => updateCombo({ id: combo.id, title })}
                                         onEdit={() => setEditComboId(combo.id)}
-                                        onDelete={() => { if (window.confirm('¿Eliminar combo?')) deleteCombo(combo.id); }}
+                                        onDelete={() => { if (window.confirm('¿Eliminar grupo de materiales?')) deleteCombo(combo.id); }}
                                     />
                                 ))}
                             </div>
                         ) : (
                             <Card style={{ padding: '0' }}>
                                 <Table 
-                                    cols={['Combo', 'Proveedor', 'Stock Total', 'Pendiente PO', 'Salida (30d)', 'Sustento', 'Acciones']}
+                                    cols={['Grupo de Materiales', 'Proveedor', 'Stock Total', 'Pendiente PO', 'Salida (30d)', 'Sustento', 'Acciones']}
                                     rows={filteredCombos.map((combo: any) => [
                                         <strong key="t" onClick={() => setShowBreakdownId(combo.id)} style={{ cursor: 'pointer' }}>{combo.title}</strong>,
                                         combo.supplier?.name || 'Mixto',
@@ -241,7 +246,7 @@ export default function MaterialesCriticosPage() {
                                         <ActionMenu key="a" options={[
                                             { label: 'Detalle', icon: '🔍', onClick: () => setShowBreakdownId(combo.id) },
                                             { label: 'Editar', icon: '✏️', onClick: () => setEditComboId(combo.id) },
-                                            { label: 'Eliminar', icon: '🗑️', color: '#ef4444', onClick: () => { if (window.confirm('¿Eliminar?')) deleteCombo(combo.id); } }
+                                            { label: 'Eliminar', icon: '🗑️', color: '#ef4444', onClick: () => { if (window.confirm('¿Eliminar grupo?')) deleteCombo(combo.id); } }
                                         ]} />
                                     ])}
                                 />
@@ -252,24 +257,32 @@ export default function MaterialesCriticosPage() {
             )}
 
             {showCreateModal && (
-                <Modal title="Nuevo Combo" onClose={() => setShowCreateModal(false)}>
+                <Modal title="Nuevo Grupo de Materiales" onClose={() => setShowCreateModal(false)}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <Input label="Título" value={newCombo.title} onChange={v => setNewCombo({...newCombo, title: v})} />
                         <Select label="Depósito" value={newCombo.depositoId} onChange={v => setNewCombo({...newCombo, depositoId: v})} options={[{value: '', label: 'Seleccionar depósito...'}, ...depots.map(d => ({value: d.id, label: d.nombre}))]} />
                         <Select label="Proveedor (Opcional)" value={newCombo.supplierId} onChange={v => setNewCombo({...newCombo, supplierId: v})} options={[{value: '', label: 'Cualquier proveedor'}, ...partners.map(p => ({value: p.id, label: p.name}))]} />
-                        <Input label="Buscar Materiales" value={materialSearch} onChange={setMaterialSearch} />
-                        <div style={{ maxHeight: '200px', overflow: 'auto', background: 'var(--bg-secondary, #111827)', borderRadius: '8px', padding: '10px' }}>
+                        <Input label="Buscar Materiales (Descripción, Código o Proveedor)" value={materialSearch} onChange={setMaterialSearch} />
+                        <div style={{ maxHeight: '250px', overflow: 'auto', background: 'var(--bg-secondary, #111827)', borderRadius: '8px', padding: '10px', border: '1px solid var(--border-strong, #374151)' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '30px 2fr 1fr 1.5fr', padding: '8px 0', borderBottom: '1px solid var(--border-strong, #374151)', fontSize: '11px', color: 'var(--text-muted, #9ca3af)', fontWeight: 'bold', position: 'sticky', top: 0, background: 'var(--bg-secondary, #111827)', zIndex: 1 }}>
+                                <div></div>
+                                <div>Descripción</div>
+                                <div>Código</div>
+                                <div>Proveedor</div>
+                            </div>
                             {filteredItems.map(item => (
-                                <label key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0', color: 'var(--text-secondary, #d1d5db)', cursor: 'pointer' }}>
+                                <label key={item.id} style={{ display: 'grid', gridTemplateColumns: '30px 2fr 1fr 1.5fr', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border-subtle, #1e2133)', color: 'var(--text-secondary, #d1d5db)', cursor: 'pointer', fontSize: '12px' }}>
                                     <input type="checkbox" checked={newCombo.itemIds.includes(item.id)} onChange={e => {
                                         const ids = e.target.checked ? [...newCombo.itemIds, item.id] : newCombo.itemIds.filter(id => id !== item.id);
                                         setNewCombo({...newCombo, itemIds: ids});
-                                    }} />
-                                    {item.descripcion} ({item.codigoInterno})
+                                    }} style={{ cursor: 'pointer', width: '15px', height: '15px' }} />
+                                    <div style={{ paddingRight: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.descripcion}>{item.descripcion}</div>
+                                    <div style={{ fontFamily: 'monospace', color: '#38bdf8' }}>{item.codigoInterno}</div>
+                                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-muted, #9ca3af)' }} title={item.supplier?.name || item.supplierName || '—'}>{item.supplier?.name || item.supplierName || '—'}</div>
                                 </label>
                             ))}
                         </div>
-                        <Btn onClick={handleCreate} disabled={!newCombo.title || !newCombo.depositoId || newCombo.itemIds.length === 0}>Crear Combo</Btn>
+                        <Btn onClick={handleCreate} disabled={!newCombo.title || !newCombo.depositoId || newCombo.itemIds.length === 0}>Crear Grupo</Btn>
                     </div>
                 </Modal>
             )}
@@ -426,22 +439,55 @@ function BreakdownModal({ id, onClose }: { id: string, onClose: () => void }) {
     );
 }
 
-function EditComboModal({ combo, items, onClose, onSave }: any) {
+export function EditComboModal({ combo, items, onClose, onSave }: any) {
     const [selectedIds, setSelectedIds] = useState<string[]>(combo?.itemIds || []);
     const [search, setSearch] = useState('');
     const [saving, setSaving] = useState(false);
     if (!combo) return null;
-    const filtered = items.filter((i: any) => (i.descripcion.toLowerCase().includes(search.toLowerCase()) || i.codigoInterno.toLowerCase().includes(search.toLowerCase())) && (!combo.supplierId || i.supplierId === combo.supplierId));
+
+    const filtered = useMemo(() => {
+        const searchWords = search.toLowerCase().split(' ').filter(w => w.length > 0);
+        return items.filter((i: any) => {
+            const matchesSupplier = !combo.supplierId || i.supplierId === combo.supplierId;
+            if (!matchesSupplier) return false;
+            if (searchWords.length === 0) return true;
+            return searchWords.every(word => {
+                const desc = (i.descripcion || '').toLowerCase();
+                const code = (i.codigoInterno || '').toLowerCase();
+                const supplier = (i.supplier?.name || i.supplierName || '').toLowerCase();
+                return desc.includes(word) || code.includes(word) || supplier.includes(word);
+            });
+        });
+    }, [items, search, combo.supplierId]);
 
     return (
-        <Modal title={`Configurar — ${combo.title}`} onClose={onClose}>
+        <Modal title={`Configurar Grupo — ${combo.title}`} onClose={onClose}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <input type="text" className="search-mini" placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} />
-                <div style={{ maxHeight: '300px', overflow: 'auto', background: 'var(--bg-secondary, #111827)', borderRadius: '8px', padding: '8px' }}>
+                <input 
+                    type="text" 
+                    className="search-mini" 
+                    placeholder="Buscar por descripción, código o proveedor..." 
+                    value={search} 
+                    onChange={e => setSearch(e.target.value)} 
+                />
+                <div style={{ maxHeight: '300px', overflow: 'auto', background: 'var(--bg-secondary, #111827)', borderRadius: '8px', padding: '10px', border: '1px solid var(--border-strong, #374151)' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '30px 2fr 1fr 1.5fr', padding: '8px 0', borderBottom: '1px solid var(--border-strong, #374151)', fontSize: '11px', color: 'var(--text-muted, #9ca3af)', fontWeight: 'bold', position: 'sticky', top: 0, background: 'var(--bg-secondary, #111827)', zIndex: 1 }}>
+                        <div></div>
+                        <div>Descripción</div>
+                        <div>Código</div>
+                        <div>Proveedor</div>
+                    </div>
                     {filtered.map((item: any) => (
-                        <label key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', borderBottom: '1px solid var(--border-subtle, #1e2133)', cursor: 'pointer', color: 'var(--text-secondary, #d1d5db)' }}>
-                            <input type="checkbox" checked={selectedIds.includes(item.id)} onChange={e => e.target.checked ? setSelectedIds([...selectedIds, item.id]) : setSelectedIds(selectedIds.filter(id => id !== item.id))} />
-                            {item.descripcion}
+                        <label key={item.id} style={{ display: 'grid', gridTemplateColumns: '30px 2fr 1fr 1.5fr', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border-subtle, #1e2133)', color: 'var(--text-secondary, #d1d5db)', cursor: 'pointer', fontSize: '12px' }}>
+                            <input 
+                                type="checkbox" 
+                                checked={selectedIds.includes(item.id)} 
+                                onChange={e => e.target.checked ? setSelectedIds([...selectedIds, item.id]) : setSelectedIds(selectedIds.filter(id => id !== item.id))} 
+                                style={{ cursor: 'pointer', width: '15px', height: '15px' }}
+                            />
+                            <div style={{ paddingRight: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.descripcion}>{item.descripcion}</div>
+                            <div style={{ fontFamily: 'monospace', color: '#38bdf8' }}>{item.codigoInterno}</div>
+                            <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-muted, #9ca3af)' }} title={item.supplier?.name || item.supplierName || '—'}>{item.supplier?.name || item.supplierName || '—'}</div>
                         </label>
                     ))}
                 </div>
