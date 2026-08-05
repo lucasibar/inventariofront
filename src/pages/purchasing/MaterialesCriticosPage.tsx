@@ -13,6 +13,7 @@ import { PageHeader, Card, Badge, Btn, Modal, Table, Spinner, Input, Select, Act
 import { useSelector } from 'react-redux';
 import { selectCurrentUser, selectAllowedDepots } from '../../entities/auth/model/authSlice';
 import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
+import { EditComboModal } from './EditComboModal';
 
 export default function MaterialesCriticosPage() {
     const isMobile = useIsMobile();
@@ -83,17 +84,16 @@ export default function MaterialesCriticosPage() {
     const filteredItems = useMemo(() => {
         const searchWords = materialSearch.toLowerCase().split(' ').filter(w => w.length > 0);
         return items.filter(i => {
-            const matchesSupplier = !newCombo.supplierId || i.supplierId === newCombo.supplierId;
-            if (!matchesSupplier) return false;
             if (searchWords.length === 0) return true;
             return searchWords.every(word => {
                 const desc = (i.descripcion || '').toLowerCase();
                 const code = (i.codigoInterno || '').toLowerCase();
                 const supplier = (i.supplier?.name || i.supplierName || '').toLowerCase();
-                return desc.includes(word) || code.includes(word) || supplier.includes(word);
+                const category = (i.category?.nombre || i.categoria || '').toLowerCase();
+                return desc.includes(word) || code.includes(word) || supplier.includes(word) || category.includes(word);
             });
         });
-    }, [items, materialSearch, newCombo.supplierId]);
+    }, [items, materialSearch]);
 
     const handleCreate = async () => {
         if (!newCombo.title || !newCombo.depositoId || newCombo.itemIds.length === 0) return;
@@ -197,7 +197,7 @@ export default function MaterialesCriticosPage() {
                         options={[{ value: '', label: 'Todos los depósitos' }, ...depots.map((d: any) => ({ value: d.id, label: d.nombre }))]}
                         style={{ width: isMobile ? '100%' : '200px' }}
                     />
-                    {!isMobile && <Input placeholder="Buscar grupo..." value={comboSearch} onChange={setComboSearch} style={{ width: '250px' }} />}'250px' }} />}
+                    {!isMobile && <Input placeholder="Buscar grupo..." value={comboSearch} onChange={setComboSearch} style={{ width: '250px' }} />}
                     <Btn variant="secondary" small onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}>
                         {viewMode === 'grid' ? '📋' : '🔲'}
                     </Btn>
@@ -263,6 +263,27 @@ export default function MaterialesCriticosPage() {
                         <Select label="Depósito" value={newCombo.depositoId} onChange={v => setNewCombo({...newCombo, depositoId: v})} options={[{value: '', label: 'Seleccionar depósito...'}, ...depots.map(d => ({value: d.id, label: d.nombre}))]} />
                         <Select label="Proveedor (Opcional)" value={newCombo.supplierId} onChange={v => setNewCombo({...newCombo, supplierId: v})} options={[{value: '', label: 'Cualquier proveedor'}, ...partners.map(p => ({value: p.id, label: p.name}))]} />
                         <Input label="Buscar Materiales (Descripción, Código o Proveedor)" value={materialSearch} onChange={setMaterialSearch} />
+                        
+                        {newCombo.itemIds.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', maxHeight: '100px', overflowY: 'auto', padding: '10px', background: 'rgba(56, 189, 248, 0.05)', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.15)' }}>
+                                {items.filter(i => newCombo.itemIds.includes(i.id)).map(item => (
+                                    <span key={item.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '3px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 600 }}>
+                                        {item.descripcion} ({item.codigoInterno})
+                                        <button 
+                                            type="button"
+                                            onClick={() => {
+                                                const ids = newCombo.itemIds.filter(id => id !== item.id);
+                                                setNewCombo({...newCombo, itemIds: ids});
+                                            }}
+                                            style={{ background: 'none', border: 'none', color: '#fb7185', cursor: 'pointer', fontWeight: 'bold', padding: 0, display: 'flex', alignItems: 'center', fontSize: '10px' }}
+                                        >
+                                            ✕
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+
                         <div style={{ maxHeight: '250px', overflow: 'auto', background: 'var(--bg-secondary, #111827)', borderRadius: '8px', padding: '10px', border: '1px solid var(--border-strong, #374151)' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '30px 2fr 1fr 1.5fr', padding: '8px 0', borderBottom: '1px solid var(--border-strong, #374151)', fontSize: '11px', color: 'var(--text-muted, #9ca3af)', fontWeight: 'bold', position: 'sticky', top: 0, background: 'var(--bg-secondary, #111827)', zIndex: 1 }}>
                                 <div></div>
@@ -439,63 +460,3 @@ function BreakdownModal({ id, onClose }: { id: string, onClose: () => void }) {
     );
 }
 
-export function EditComboModal({ combo, items, onClose, onSave }: any) {
-    const [selectedIds, setSelectedIds] = useState<string[]>(combo?.itemIds || []);
-    const [search, setSearch] = useState('');
-    const [saving, setSaving] = useState(false);
-    if (!combo) return null;
-
-    const filtered = useMemo(() => {
-        const searchWords = search.toLowerCase().split(' ').filter(w => w.length > 0);
-        return items.filter((i: any) => {
-            const matchesSupplier = !combo.supplierId || i.supplierId === combo.supplierId;
-            if (!matchesSupplier) return false;
-            if (searchWords.length === 0) return true;
-            return searchWords.every(word => {
-                const desc = (i.descripcion || '').toLowerCase();
-                const code = (i.codigoInterno || '').toLowerCase();
-                const supplier = (i.supplier?.name || i.supplierName || '').toLowerCase();
-                return desc.includes(word) || code.includes(word) || supplier.includes(word);
-            });
-        });
-    }, [items, search, combo.supplierId]);
-
-    return (
-        <Modal title={`Configurar Grupo — ${combo.title}`} onClose={onClose}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <input 
-                    type="text" 
-                    className="search-mini" 
-                    placeholder="Buscar por descripción, código o proveedor..." 
-                    value={search} 
-                    onChange={e => setSearch(e.target.value)} 
-                />
-                <div style={{ maxHeight: '300px', overflow: 'auto', background: 'var(--bg-secondary, #111827)', borderRadius: '8px', padding: '10px', border: '1px solid var(--border-strong, #374151)' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '30px 2fr 1fr 1.5fr', padding: '8px 0', borderBottom: '1px solid var(--border-strong, #374151)', fontSize: '11px', color: 'var(--text-muted, #9ca3af)', fontWeight: 'bold', position: 'sticky', top: 0, background: 'var(--bg-secondary, #111827)', zIndex: 1 }}>
-                        <div></div>
-                        <div>Descripción</div>
-                        <div>Código</div>
-                        <div>Proveedor</div>
-                    </div>
-                    {filtered.map((item: any) => (
-                        <label key={item.id} style={{ display: 'grid', gridTemplateColumns: '30px 2fr 1fr 1.5fr', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border-subtle, #1e2133)', color: 'var(--text-secondary, #d1d5db)', cursor: 'pointer', fontSize: '12px' }}>
-                            <input 
-                                type="checkbox" 
-                                checked={selectedIds.includes(item.id)} 
-                                onChange={e => e.target.checked ? setSelectedIds([...selectedIds, item.id]) : setSelectedIds(selectedIds.filter(id => id !== item.id))} 
-                                style={{ cursor: 'pointer', width: '15px', height: '15px' }}
-                            />
-                            <div style={{ paddingRight: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.descripcion}>{item.descripcion}</div>
-                            <div style={{ fontFamily: 'monospace', color: '#38bdf8' }}>{item.codigoInterno}</div>
-                            <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-muted, #9ca3af)' }} title={item.supplier?.name || item.supplierName || '—'}>{item.supplier?.name || item.supplierName || '—'}</div>
-                        </label>
-                    ))}
-                </div>
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                    <Btn variant="secondary" onClick={onClose}>Cancelar</Btn>
-                    <Btn onClick={async () => { setSaving(true); await onSave(selectedIds); setSaving(false); }} disabled={saving}>Guardar</Btn>
-                </div>
-            </div>
-        </Modal>
-    );
-}

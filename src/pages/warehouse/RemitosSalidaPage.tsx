@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '../../entities/auth/model/authSlice';
 import { 
@@ -13,10 +13,12 @@ import { CreatePartnerDialog } from '../../features/config/CreatePartnerDialog';
 import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
 import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.api';
 import { useGetStockQuery } from '../../features/warehouse/stock/api/stock.api';
-import { PageHeader, Card, Btn, Input, SearchSelect, Modal, Table, Badge, HelpTooltip } from '../../shared/ui';
+import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
+import { PageHeader, Card, Btn, Input, SearchSelect, Modal, Table, Badge, HelpTooltip, SearchBar } from '../../shared/ui';
 
 export default function RemitosSalidaPage() {
     const { data: remitos = [], isLoading } = useGetRemitosSalidaQuery();
+    const { data: depots = [] } = useGetDepotsQuery();
     const { data: clients = [] } = useGetPartnersQuery({ type: 'CLIENT' });
     const { data: items = [] } = useGetItemsQuery({});
     const { data: stock = [] } = useGetStockQuery({});
@@ -40,6 +42,50 @@ export default function RemitosSalidaPage() {
     const [selectedRemito, setSelectedRemito] = useState<any>(null);
     const [showDetail, setShowDetail] = useState(false);
     const [triggerGetDetail] = useLazyGetRemitoSalidaQuery();
+
+    const [search, setSearch] = useState('');
+    const [selectedDepotId, setSelectedDepotId] = useState('');
+    const [fechaDesde, setFechaDesde] = useState('');
+    const [fechaHasta, setFechaHasta] = useState('');
+
+    const filteredRemitos = useMemo(() => {
+        let list = remitos;
+        if (selectedDepotId) {
+            list = list.filter((r: any) => r.depositoId === selectedDepotId || r.deposito?.id === selectedDepotId);
+        }
+        if (fechaDesde) {
+            list = list.filter((r: any) => new Date(r.fecha || r.date).getTime() >= new Date(fechaDesde + 'T00:00:00').getTime());
+        }
+        if (fechaHasta) {
+            list = list.filter((r: any) => new Date(r.fecha || r.date).getTime() <= new Date(fechaHasta + 'T23:59:59').getTime());
+        }
+
+        const query = search.toLowerCase().trim();
+        if (!query) return list;
+        const tokens = query.split(/\s+/).filter(Boolean);
+
+        return list.filter((r: any) => {
+            const linesContent = (r.lines || []).map((l: any) => {
+                const itemCode = l.codigoInterno || l.item?.codigoInterno || '';
+                const itemDesc = l.descripcion || l.item?.descripcion || '';
+                const itemCat = l.categoria || l.item?.categoria || l.item?.category?.nombre || '';
+                const lotNum = l.lotNumber || l.batch?.lote || l.batch?.lotNumber || '';
+                const itemSupplier = l.item?.supplier?.name || l.item?.supplierName || l.supplierName || '';
+                return `${itemCode} ${itemDesc} ${itemCat} ${lotNum} ${itemSupplier}`;
+            }).join(' ');
+
+            const searchableContent = [
+                r.numero || '',
+                r.documentId || '',
+                r.id || '',
+                r.partner?.name || r.client?.name || r.partnerName || '',
+                r.observaciones || '',
+                linesContent
+            ].join(' ').toLowerCase();
+
+            return tokens.every(token => searchableContent.includes(token));
+        });
+    }, [remitos, search, selectedDepotId, fechaDesde, fechaHasta]);
 
     const handleRowClick = async (remito: any) => {
         try {
@@ -100,20 +146,116 @@ export default function RemitosSalidaPage() {
                 <Btn onClick={() => { setStep('form'); setError(''); }}>+ Nuevo Remito</Btn>
             </PageHeader>
 
-            <Card>
-                <Table
-                    loading={isLoading}
-                    onRowClick={(i) => handleRowClick(remitos[i])}
-                    cols={['Número', 'Fecha', 'Cliente', 'Líneas', '']}
-                    rows={remitos.map((r: any) => [
-                        <span key="num" style={{ color: '#a5b4fc', fontWeight: 600 }}>{r.numero}</span>,
-                        new Date(r.fecha).toLocaleDateString('es-AR'),
-                        (r.partner?.name || r.client?.name) ?? '—',
-                        <Badge key="badge">{r.lines?.length ?? 0} ítems</Badge>,
-                        <Btn key="del" small variant="danger" onClick={(e: any) => { e.stopPropagation(); if (window.confirm('¿Anular este remito de salida?')) deleteRemito(r.id); }}>🗑</Btn>,
-                    ])}
-                />
-            </Card>
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <div style={{ flex: 1, minWidth: '250px' }}>
+                    <SearchBar
+                        value={search}
+                        onChange={setSearch}
+                        placeholder="Buscar por n° remito, cliente, código, descripción o partida..."
+                    />
+                </div>
+                <div style={{ width: '220px' }}>
+                    <select
+                        value={selectedDepotId}
+                        onChange={e => setSelectedDepotId(e.target.value)}
+                        style={{
+                            width: '100%',
+                            height: '42px',
+                            padding: '0 12px',
+                            background: 'var(--bg-secondary, #111827)',
+                            border: '1px solid var(--border-strong, #374151)',
+                            borderRadius: '8px',
+                            color: 'var(--text-primary, #f3f4f6)',
+                            outline: 'none',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <option value="">Todos los depósitos</option>
+                        {depots.map(d => (
+                            <option key={d.id} value={d.id}>{d.nombre}</option>
+                        ))}
+                    </select>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                        type="date"
+                        value={fechaDesde}
+                        onChange={e => setFechaDesde(e.target.value)}
+                        style={{
+                            height: '42px',
+                            padding: '0 8px',
+                            background: 'var(--bg-secondary, #111827)',
+                            border: '1px solid var(--border-strong, #374151)',
+                            borderRadius: '8px',
+                            color: 'var(--text-primary, #f3f4f6)',
+                            fontSize: '13px',
+                            outline: 'none'
+                        }}
+                    />
+                    <span style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '13px' }}>al</span>
+                    <input
+                        type="date"
+                        value={fechaHasta}
+                        onChange={e => setFechaHasta(e.target.value)}
+                        style={{
+                            height: '42px',
+                            padding: '0 8px',
+                            background: 'var(--bg-secondary, #111827)',
+                            border: '1px solid var(--border-strong, #374151)',
+                            borderRadius: '8px',
+                            color: 'var(--text-primary, #f3f4f6)',
+                            fontSize: '13px',
+                            outline: 'none'
+                        }}
+                    />
+                    {(fechaDesde || fechaHasta) && (
+                        <button
+                            onClick={() => { setFechaDesde(''); setFechaHasta(''); }}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#fb7185',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                fontWeight: 'bold',
+                                padding: '0 4px'
+                            }}
+                        >
+                            Limpiar
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {filteredRemitos.length === 0 && search.trim() ? (
+                <Card style={{ textAlign: 'center', padding: '40px' }}>
+                    <p style={{ color: 'var(--text-muted, #9ca3af)' }}>No se encontraron remitos de salida que coincidan con "{search}".</p>
+                </Card>
+            ) : (
+                <Card>
+                    <Table
+                        loading={isLoading}
+                        onRowClick={(i) => handleRowClick(filteredRemitos[i])}
+                        cols={['Número', 'Fecha', 'Cliente', 'Items', 'Cantidades', '']}
+                        rows={filteredRemitos.map((r: any) => {
+                            const lines = r.lines || [];
+                            const totalPrincipal = lines.reduce((sum: number, l: any) => sum + Number(l.qtyPrincipal || 0), 0);
+                            const totalSecundario = lines.reduce((sum: number, l: any) => sum + Number(l.qtySecundaria || 0), 0);
+                            return [
+                                <span key="num" style={{ color: '#a5b4fc', fontWeight: 600 }}>{r.numero}</span>,
+                                new Date(r.fecha).toLocaleDateString('es-AR'),
+                                (r.partner?.name || r.client?.name) ?? '—',
+                                <Badge key="badge">{lines.length} ítems</Badge>,
+                                <div key="qty" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <span style={{ fontWeight: 600, color: '#38bdf8', fontSize: '13px' }}>{totalPrincipal.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg</span>
+                                    {totalSecundario > 0 && <span style={{ color: '#a78bfa', fontSize: '11px', fontWeight: 500 }}>{totalSecundario.toLocaleString('es-AR', { minimumFractionDigits: 0 })} un</span>}
+                                </div>,
+                                <Btn key="del" small variant="danger" onClick={(e: any) => { e.stopPropagation(); if (window.confirm('¿Anular este remito de salida?')) deleteRemito(r.id); }}>🗑</Btn>
+                            ];
+                        })}
+                    />
+                </Card>
+            )}
 
             {step === 'form' && (
                 <Modal title="Nuevo Remito de Salida" onClose={() => setStep(null)} wide>

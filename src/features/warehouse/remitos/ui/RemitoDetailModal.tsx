@@ -1,8 +1,9 @@
-
+import { useState, useMemo } from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     Button, Typography, Box, Table, TableBody,
-    TableCell, TableHead, TableRow, Chip, Divider, IconButton, Tooltip
+    TableCell, TableHead, TableRow, Chip, Divider, IconButton, Tooltip,
+    TextField
 } from '@mui/material';
 import { Undo as RevertIcon } from '@mui/icons-material';
 import { useDeleteRemitoSalidaLineMutation } from '../../remitosSalida/api/remitos-salida.api';
@@ -15,8 +16,28 @@ interface RemitoDetailModalProps {
 
 export const RemitoDetailModal = ({ open, onClose, remito }: RemitoDetailModalProps) => {
     const [revertLine, { isLoading: isReverting }] = useDeleteRemitoSalidaLineMutation();
-    if (!remito) return null;
+    const [search, setSearch] = useState('');
 
+    const filteredLines = useMemo(() => {
+        if (!remito) return [];
+        const lines = remito.lines || remito.items || [];
+        const query = search.toLowerCase().trim();
+        if (!query) return lines;
+        const tokens = query.split(/\s+/).filter(Boolean);
+
+        return lines.filter((l: any) => {
+            const code = (l.item?.codigoInterno || l.codigoInterno || '').toLowerCase();
+            const desc = (l.item?.descripcion || l.descripcion || '').toLowerCase();
+            const lot = (l.batch?.lotNumber || l.lotNumber || '').toLowerCase();
+            const cat = (l.item?.category?.nombre || l.item?.categoria || l.categoria || '').toLowerCase();
+            const supplier = (l.item?.supplier?.name || l.item?.supplierName || l.supplierName || '').toLowerCase();
+            const searchable = `${code} ${desc} ${lot} ${cat} ${supplier}`.toLowerCase();
+            return tokens.every(token => searchable.includes(token));
+        });
+    }, [remito, search]);
+
+    if (!remito) return null;
+    const lines = remito.lines || remito.items || [];
     const isSalida = remito.tipo?.includes('SALIDA');
     const isActive = remito.status === 'ACTIVO';
 
@@ -25,7 +46,6 @@ export const RemitoDetailModal = ({ open, onClose, remito }: RemitoDetailModalPr
         try {
             await revertLine(line.id).unwrap();
             alert('Registro revertido con éxito.');
-            // Note: Since we invalidate RemitosSalida tag, if the parent is watching it should refetch
         } catch (e: any) {
             alert(e?.data?.message || 'Error al revertir registro');
         }
@@ -45,7 +65,7 @@ export const RemitoDetailModal = ({ open, onClose, remito }: RemitoDetailModalPr
                 Detalle de Remito: {remito.numero || remito.documentId}
             </DialogTitle>
             <DialogContent sx={{ px: 3 }}>
-                <Box sx={{ mb: 4, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2 }}>
+                <Box sx={{ mb: 4, display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(5, 1fr)' }, gap: 2 }}>
                     <Box>
                         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
                             Fecha
@@ -56,7 +76,7 @@ export const RemitoDetailModal = ({ open, onClose, remito }: RemitoDetailModalPr
                     </Box>
                     <Box>
                         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
-                            {remito.tipo?.includes('SALIDA') ? 'Cliente' : 'Proveedor'}
+                            {isSalida ? 'Cliente' : 'Proveedor'}
                         </Typography>
                         <Typography variant="body1" sx={{ fontWeight: 500 }}>
                             {remito.partner?.name || remito.supplier?.name || remito.provider?.name || remito.client?.name || '—'}
@@ -70,13 +90,38 @@ export const RemitoDetailModal = ({ open, onClose, remito }: RemitoDetailModalPr
                             {remito.partner?.taxId || remito.supplier?.taxId || '—'}
                         </Typography>
                     </Box>
+                    <Box sx={{ background: 'rgba(56, 189, 248, 0.05)', p: 1, borderRadius: 2, border: '1px solid rgba(56, 189, 248, 0.15)' }}>
+                        <Typography variant="caption" color="primary.main" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
+                            Total Peso
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 800, color: 'primary.main' }}>
+                            {lines.reduce((sum: number, line: any) => sum + Number(line.qtyPrincipal || 0), 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
+                        </Typography>
+                    </Box>
+                    <Box sx={{ background: 'rgba(139, 92, 246, 0.05)', p: 1, borderRadius: 2, border: '1px solid rgba(139, 92, 246, 0.15)' }}>
+                        <Typography variant="caption" color="secondary.main" sx={{ fontWeight: 700, textTransform: 'uppercase' }}>
+                            Total Secundario
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 800, color: 'secondary.main' }}>
+                            {lines.reduce((sum: number, line: any) => sum + Number(line.qtySecundaria || 0), 0).toLocaleString('es-AR', { minimumFractionDigits: 0 })} un
+                        </Typography>
+                    </Box>
                 </Box>
 
                 <Divider sx={{ mb: 3 }} />
 
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: 'primary.main' }}>
-                    Items Recibidos
-                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 2 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                        {isSalida ? 'Materiales Despachados' : 'Materiales Recibidos'}
+                    </Typography>
+                    <TextField
+                        size="small"
+                        placeholder="Buscar material en este remito..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        sx={{ width: { xs: '100%', sm: '300px' } }}
+                    />
+                </Box>
 
                 <Table size="small">
                     <TableHead>
@@ -91,7 +136,7 @@ export const RemitoDetailModal = ({ open, onClose, remito }: RemitoDetailModalPr
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {(remito.lines || remito.items || []).map((line: any, idx: number) => (
+                        {filteredLines.map((line: any, idx: number) => (
                             <TableRow key={idx}>
                                 <TableCell>{line.item?.codigoInterno || line.codigoInterno}</TableCell>
                                 <TableCell>{line.item?.descripcion || line.descripcion}</TableCell>

@@ -3,7 +3,7 @@ import { useGetRecentMovementsQuery, useGetCombosQuery, useUpdateComboMutation }
 import { useLazyGetRemitoSalidaQuery } from '../../features/warehouse/remitosSalida/api/remitos-salida.api';
 import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.api';
 import { RemitoDetailModal } from '../../features/warehouse/remitos/ui/RemitoDetailModal';
-import { EditComboModal } from '../purchasing/MaterialesCriticosPage';
+import { EditComboModal } from '../purchasing/EditComboModal';
 import { PageHeader, Card, Input, Spinner, Btn } from '../../shared/ui';
 import { useIsMobile } from '../../shared/ui';
 import { 
@@ -133,7 +133,7 @@ export default function ReporteConsumoDetalladoPage() {
     }, [filteredMovements]);
 
     // Calculate aggregated metrics and charts data based on filtered (non-excluded) materials/groups
-    const { timelineData, barChartData, totalKilos } = useMemo(() => {
+    const { timelineData, barChartData, totalKilos, averageKilos, averageKilosMonthly } = useMemo(() => {
         let sumKilos = 0;
         const dailyTotals: Record<string, number> = {};
         const dailyGroupTotals: Record<string, Record<string, number>> = {};
@@ -227,10 +227,16 @@ export default function ReporteConsumoDetalladoPage() {
                 })).slice(0, 10); // top 10 selected materials
         }
 
+        const totalDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+        const averageKilos = sumKilos / totalDays;
+        const averageKilosMonthly = averageKilos * 30;
+
         return {
             timelineData: timeline,
             barChartData: bars,
-            totalKilos: sumKilos
+            totalKilos: sumKilos,
+            averageKilos,
+            averageKilosMonthly
         };
     }, [filteredMovements, excludedMaterialIds, excludedComboIds, itemsBreakdown, combos, viewByGroup, desde, hasta]);
 
@@ -356,15 +362,41 @@ export default function ReporteConsumoDetalladoPage() {
                     {/* General Summary Card */}
                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr', gap: '20px' }}>
                         <Card style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', background: 'var(--bg-report-gradient, linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%))', border: '1px solid var(--border-report-strong, #312e81)' }}>
-                            <div style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '13px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px' }}>
-                                Consumo Total del Período
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+                                <div>
+                                    <div style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '6px' }}>
+                                        Consumo Total del Período
+                                    </div>
+                                    <div style={{ fontSize: '32px', fontWeight: 800, color: '#38bdf8' }}>
+                                        {totalKilos.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        <span style={{ fontSize: '16px', color: '#94a3b8', marginLeft: '6px' }}>Kg</span>
+                                    </div>
+                                </div>
+                                
+                                <div style={{ borderTop: '1px solid rgba(56, 189, 248, 0.15)', paddingTop: '14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%' }}>
+                                    <div style={{ borderRight: '1px solid rgba(56, 189, 248, 0.15)', paddingRight: '6px' }}>
+                                        <div style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '4px' }}>
+                                            Promedio Diario
+                                        </div>
+                                        <div style={{ fontSize: '20px', fontWeight: 800, color: '#10b981' }}>
+                                            {averageKilos.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            <span style={{ fontSize: '11px', color: '#94a3b8', marginLeft: '3px' }}>Kg</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style={{ paddingLeft: '6px' }}>
+                                        <div style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '4px' }}>
+                                            Promedio Mensual
+                                        </div>
+                                        <div style={{ fontSize: '20px', fontWeight: 800, color: '#8b5cf6' }}>
+                                            {averageKilosMonthly.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            <span style={{ fontSize: '11px', color: '#94a3b8', marginLeft: '3px' }}>Kg</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div style={{ fontSize: '36px', fontWeight: 800, color: '#38bdf8' }}>
-                                {totalKilos.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                <span style={{ fontSize: '18px', color: '#94a3b8', marginLeft: '6px' }}>Kg</span>
-                            </div>
-                            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '10px' }}>
-                                Basado en {filteredMovements.length === movements.length ? `${movements.length}` : `${filteredMovements.length} de ${movements.length}`} transacciones registradas
+                            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '14px', borderTop: '1px dashed rgba(255,255,255,0.05)', paddingTop: '8px', width: '100%' }}>
+                                Basado en {filteredMovements.length === movements.length ? `${movements.length}` : `${filteredMovements.length} de ${movements.length}`} transacciones
                             </div>
                         </Card>
 
@@ -616,6 +648,7 @@ export default function ReporteConsumoDetalladoPage() {
                                                                                 <tr style={{ borderBottom: '1px solid var(--border-strong, #1e293b)', background: 'rgba(0,0,0,0.15)' }}>
                                                                                     <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b' }}>Fecha</th>
                                                                                     <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b' }}>Cliente</th>
+                                                                                    <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b' }}>Partida / Lote</th>
                                                                                     <th style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b' }}>Cantidad</th>
                                                                                     <th style={{ padding: '8px 12px', textAlign: 'center', color: '#64748b' }}>Remito / Documento</th>
                                                                                 </tr>
@@ -631,6 +664,11 @@ export default function ReporteConsumoDetalladoPage() {
                                                                                             </td>
                                                                                             <td style={{ padding: '8px 12px', color: '#e2e8f0' }}>
                                                                                                 {clientName}
+                                                                                            </td>
+                                                                                            <td style={{ padding: '8px 12px' }}>
+                                                                                                <code style={{ background: 'rgba(56, 189, 248, 0.1)', padding: '2px 6px', borderRadius: '4px', color: '#38bdf8', fontSize: '11px', fontFamily: 'monospace' }}>
+                                                                                                    {mov.batch?.lotNumber || '—'}
+                                                                                                </code>
                                                                                             </td>
                                                                                             <td style={{ padding: '8px 12px', textAlign: 'right', color: '#38bdf8', fontWeight: 600 }}>
                                                                                                 {Math.abs(Number(mov.qtyPrincipal)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
@@ -744,6 +782,7 @@ export default function ReporteConsumoDetalladoPage() {
                                                                     <tr style={{ borderBottom: '1px solid var(--border-strong, #1e293b)', background: 'var(--bg-secondary, #111827)' }}>
                                                                         <th style={{ padding: '10px 12px', textAlign: 'left', color: '#64748b' }}>Fecha</th>
                                                                         <th style={{ padding: '10px 12px', textAlign: 'left', color: '#64748b' }}>Cliente</th>
+                                                                        <th style={{ padding: '10px 12px', textAlign: 'left', color: '#64748b' }}>Partida / Lote</th>
                                                                         <th style={{ padding: '10px 12px', textAlign: 'right', color: '#64748b' }}>Cantidad</th>
                                                                         <th style={{ padding: '10px 12px', textAlign: 'center', color: '#64748b' }}>Remito / Documento</th>
                                                                     </tr>
@@ -759,6 +798,11 @@ export default function ReporteConsumoDetalladoPage() {
                                                                                 </td>
                                                                                 <td style={{ padding: '10px 12px', color: '#e2e8f0', fontWeight: 500 }}>
                                                                                     {clientName}
+                                                                                </td>
+                                                                                <td style={{ padding: '10px 12px' }}>
+                                                                                    <code style={{ background: 'rgba(56, 189, 248, 0.1)', padding: '2px 6px', borderRadius: '4px', color: '#38bdf8', fontSize: '11px', fontFamily: 'monospace' }}>
+                                                                                        {mov.batch?.lotNumber || '—'}
+                                                                                    </code>
                                                                                 </td>
                                                                                 <td style={{ padding: '10px 12px', textAlign: 'right', color: '#38bdf8', fontWeight: 600 }}>
                                                                                     {Math.abs(Number(mov.qtyPrincipal)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}

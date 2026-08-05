@@ -14,10 +14,10 @@ export default function AdminMovementsPage() {
     const user = useSelector(selectCurrentUser);
     const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
 
-    // Current date - 14 days
+    // Current date - 2 days
     const defaultDesde = useMemo(() => {
         const d = new Date();
-        d.setDate(d.getDate() - 14);
+        d.setDate(d.getDate() - 2);
         return d.toISOString().split('T')[0];
     }, []);
 
@@ -26,6 +26,7 @@ export default function AdminMovementsPage() {
     const [depositoId, setDepositoId] = useState('');
     const [itemId, setItemId] = useState('');
     const [lotNumber, setLotNumber] = useState('');
+    const [tipo, setTipo] = useState('');
 
     const { data: rawDepots = [] } = useGetDepotsQuery();
     const { data: rawItems = [] } = useGetItemsQuery({});
@@ -35,7 +36,8 @@ export default function AdminMovementsPage() {
         hasta,
         depositoId: depositoId || undefined,
         itemId: itemId || undefined,
-        lotNumber: lotNumber || undefined
+        lotNumber: lotNumber || undefined,
+        tipo: tipo || undefined
     });
     const [reverseMovement] = useReverseMovementMutation();
 
@@ -178,6 +180,23 @@ export default function AdminMovementsPage() {
                         <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: 'var(--text-muted, #9ca3af)' }}>📅 Hasta</label>
                         <input type="date" className="date-input" value={hasta} onChange={(e) => setHasta(e.target.value)} />
                     </div>
+                    <Select
+                        label="⚙️ Tipo de Movimiento"
+                        value={tipo}
+                        onChange={setTipo}
+                        options={[
+                            { value: '', label: 'Todos los tipos' },
+                            { value: 'REMITO_ENTRADA', label: 'ENTRADA (Remito)' },
+                            { value: 'REMITO_SALIDA', label: 'SALIDA (Remito)' },
+                            { value: 'AJUSTE_SUMA', label: 'AJUSTE (+)' },
+                            { value: 'AJUSTE_RESTA', label: 'AJUSTE (-)' },
+                            { value: 'MOVE_INTERNO', label: 'TRASLADO' },
+                            { value: 'ANULACION_ENTRADA', label: 'ANUL. ENTRADA' },
+                            { value: 'ANULACION_SALIDA', label: 'ANUL. SALIDA' },
+                            { value: 'ANULACION_AJUSTE_SUMA', label: 'ANUL. AJUSTE (+)' },
+                            { value: 'ANULACION_AJUSTE_RESTA', label: 'ANUL. AJUSTE (-)' },
+                        ]}
+                    />
                     <Select
                         label="📦 Depósito"
                         value={depositoId}
