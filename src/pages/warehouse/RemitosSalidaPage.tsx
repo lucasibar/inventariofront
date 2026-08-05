@@ -123,7 +123,7 @@ export default function RemitosSalidaPage() {
                     </div>
 
                     <div style={{ marginBottom: '16px' }}>
-                        <label style={{ color: '#9ca3af', fontSize: '12px' }}>Cliente</label>
+                        <label style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px' }}>Cliente</label>
                         <SearchSelect
                             value={clientId}
                             onChange={v => {
@@ -144,7 +144,7 @@ export default function RemitosSalidaPage() {
 
                     <div style={{ marginBottom: '16px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                            <label style={{ color: '#9ca3af', fontSize: '12px' }}>Materiales a despachar</label>
+                            <label style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px' }}>Materiales a despachar</label>
                             <Btn small onClick={() => setLines(p => [...p, { itemId: '', lotId: '', posicionId: '', qtyPrincipal: '', qtySecundaria: '' }])}>+ Línea</Btn>
                         </div>
                         {lines.map((l: any, i: number) => {
@@ -207,7 +207,7 @@ export default function RemitosSalidaPage() {
                             {previewData.warnings.map((w: string, i: number) => <p key={i} style={{ color: '#f87171', margin: '2px 0', fontSize: '13px' }}>⚠️ {w}</p>)}
                         </div>
                     )}
-                    <p style={{ color: '#9ca3af', fontSize: '12px', marginBottom: '12px' }}>Se descontará el stock de las posiciones PICKING con lógica FIFO:</p>
+                    <p style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px', marginBottom: '12px' }}>Se descontará el stock de las posiciones PICKING con lógica FIFO:</p>
                     <Table
                         cols={['Material', 'Partida', 'Posición', 'Kilos a descontar', 'Stock restante']}
                         rows={(previewData.lines ?? []).map((l: any) => [

@@ -19,7 +19,7 @@ export default function WorkspaceTasksPage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {tasks.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280', fontSize: '15px' }}>
+                    <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-subtle, #6b7280)', fontSize: '15px' }}>
                         ¡Buen trabajo! No tienes tareas pendientes en este momento.
                     </div>
                 ) : tasks.map((task: any) => (
@@ -30,22 +30,22 @@ export default function WorkspaceTasksPage() {
                                     <Badge color={task.type === 'PUTAWAY' ? '#a5b4fc' : '#f472b6'}>
                                         {task.type === 'PUTAWAY' ? 'ENTRADA A STOCK' : task.type}
                                     </Badge>
-                                    <span style={{ fontSize: '12px', color: '#6b7280' }}>Prioridad: {task.priority}</span>
+                                    <span style={{ fontSize: '12px', color: 'var(--text-subtle, #6b7280)' }}>Prioridad: {task.priority}</span>
                                 </div>
-                                <h4 style={{ margin: '0 0 4px', color: '#f3f4f6' }}>{task.item?.descripcion}</h4>
-                                <div style={{ fontSize: '13px', color: '#9ca3af' }}>
+                                <h4 style={{ margin: '0 0 4px', color: 'var(--text-primary, #f3f4f6)' }}>{task.item?.descripcion}</h4>
+                                <div style={{ fontSize: '13px', color: 'var(--text-muted, #9ca3af)' }}>
                                     Cantidad: <span style={{ color: '#fff', fontWeight: 600 }}>{task.qty}</span> | 
                                     Lote: <span style={{ color: '#fff' }}>{task.batch?.lotNumber || 'Sin Lote'}</span>
                                 </div>
                                 
-                                <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '12px', background: '#0f1117', padding: '12px', borderRadius: '8px' }}>
+                                <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--bg-primary, #0f1117)', padding: '12px', borderRadius: '8px' }}>
                                     <div style={{ flex: 1, textAlign: 'center' }}>
-                                        <div style={{ fontSize: '10px', color: '#6b7280', textTransform: 'uppercase' }}>Origen</div>
+                                        <div style={{ fontSize: '10px', color: 'var(--text-subtle, #6b7280)', textTransform: 'uppercase' }}>Origen</div>
                                         <div style={{ color: '#6366f1', fontWeight: 700 }}>{task.sourcePosition?.codigo}</div>
                                     </div>
-                                    <div style={{ color: '#4b5563' }}>➔</div>
+                                    <div style={{ color: 'var(--text-dimmed, #4b5563)' }}>➔</div>
                                     <div style={{ flex: 1, textAlign: 'center' }}>
-                                        <div style={{ fontSize: '10px', color: '#6b7280', textTransform: 'uppercase' }}>Destino Sugerido</div>
+                                        <div style={{ fontSize: '10px', color: 'var(--text-subtle, #6b7280)', textTransform: 'uppercase' }}>Destino Sugerido</div>
                                         <div style={{ color: '#34d399', fontWeight: 700 }}>{task.targetPosition?.codigo}</div>
                                     </div>
                                 </div>

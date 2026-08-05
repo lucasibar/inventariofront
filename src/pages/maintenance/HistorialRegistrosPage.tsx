@@ -327,11 +327,11 @@ export default function HistorialRegistrosPage() {
 
     const LogItem = ({ log }: { log: any }) => (
         <Card sx={{ 
-            bgcolor: 'rgba(255,255,255,0.02)', 
+            bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', 
             mb: 1.5, 
             borderRadius: 2, 
             p: 2, 
-            border: '1px solid rgba(255,255,255,0.05)',
+            border: '1px solid var(--bg-action-btn, rgba(255,255,255,0.05))',
             transition: 'all 0.2s ease',
             '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(59, 130, 246, 0.3)' }
         }}>
@@ -344,7 +344,7 @@ export default function HistorialRegistrosPage() {
                     >
                         MÁQUINA {log.machine?.number || log.machineId?.slice(0,6)}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: '#9ca3af', fontWeight: 700, fontSize: '0.7rem', display: 'block', mt: 0.5 }}>
+                    <Typography variant="caption" sx={{ color: 'var(--text-muted, #9ca3af)', fontWeight: 700, fontSize: '0.7rem', display: 'block', mt: 0.5 }}>
                         {new Date(log.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short', hour12: false })}
                     </Typography>
                 </Box>
@@ -353,29 +353,29 @@ export default function HistorialRegistrosPage() {
                     <Chip 
                         label={statusLabels[log.fromStatus] || log.fromStatus} 
                         size="small"
-                        sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: '#6b7280', fontSize: '0.65rem', fontWeight: 700 }} 
+                        sx={{ bgcolor: 'var(--bg-action-btn, rgba(255,255,255,0.05))', color: 'var(--text-subtle, #6b7280)', fontSize: '0.65rem', fontWeight: 700 }} 
                     />
-                    <Typography sx={{ color: '#4b5563', fontSize: '0.8rem', fontWeight: 900 }}>→</Typography>
+                    <Typography sx={{ color: 'var(--text-dimmed, #4b5563)', fontSize: '0.8rem', fontWeight: 900 }}>→</Typography>
                     <Chip 
                         label={statusLabels[log.toStatus] || log.toStatus} 
                         size="small"
-                        sx={{ bgcolor: `${statusColors[log.toStatus] || '#6b7280'}20`, color: statusColors[log.toStatus] || '#9ca3af', border: `1px solid ${statusColors[log.toStatus] || '#6b7280'}40`, fontWeight: 900, fontSize: '0.7rem' }} 
+                        sx={{ bgcolor: `${statusColors[log.toStatus] || 'var(--text-subtle, #6b7280)'}20`, color: statusColors[log.toStatus] || 'var(--text-muted, #9ca3af)', border: `1px solid ${statusColors[log.toStatus] || 'var(--text-subtle, #6b7280)'}40`, fontWeight: 900, fontSize: '0.7rem' }} 
                     />
                 </Box>
             </Box>
 
             <Grid container spacing={2}>
                 <Grid size={{ xs: 6, sm: 3 }}>
-                    <Typography variant="caption" sx={{ color: '#4b5563', display: 'block', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.6rem' }}>Duración</Typography>
+                    <Typography variant="caption" sx={{ color: 'var(--text-dimmed, #4b5563)', display: 'block', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.6rem' }}>Duración</Typography>
                     <Typography variant="body2" sx={{ color: '#10b981', fontWeight: 800 }}>{log.durationFormatted || '-'}</Typography>
                 </Grid>
                 <Grid size={{ xs: 6, sm: 3 }}>
-                    <Typography variant="caption" sx={{ color: '#4b5563', display: 'block', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.6rem' }}>Falla</Typography>
-                    <Typography variant="body2" sx={{ color: '#d1d5db', fontWeight: 700 }}>{log.failureType || 'Ninguna'}</Typography>
+                    <Typography variant="caption" sx={{ color: 'var(--text-dimmed, #4b5563)', display: 'block', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.6rem' }}>Falla</Typography>
+                    <Typography variant="body2" sx={{ color: 'var(--text-secondary, #d1d5db)', fontWeight: 700 }}>{log.failureType || 'Ninguna'}</Typography>
                 </Grid>
                 <Grid size={{ xs: 6, sm: 3 }}>
-                    <Typography variant="caption" sx={{ color: '#4b5563', display: 'block', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.6rem' }}>Responsable</Typography>
-                    <Typography variant="body2" sx={{ color: '#d1d5db', fontWeight: 700 }}>{log.generatedBy || '-'}</Typography>
+                    <Typography variant="caption" sx={{ color: 'var(--text-dimmed, #4b5563)', display: 'block', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.6rem' }}>Responsable</Typography>
+                    <Typography variant="body2" sx={{ color: 'var(--text-secondary, #d1d5db)', fontWeight: 700 }}>{log.generatedBy || '-'}</Typography>
                 </Grid>
                 <Grid size={{ xs: 6, sm: 3 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
@@ -392,9 +392,9 @@ export default function HistorialRegistrosPage() {
                     </Box>
                 </Grid>
                 <Grid size={{ xs: 12 }}>
-                    <Typography variant="caption" sx={{ color: '#4b5563', display: 'block', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.6rem', mb: 0.5 }}>Observaciones</Typography>
-                    <Box sx={{ p: 1.5, bgcolor: 'rgba(255,255,255,0.01)', borderRadius: 1, border: '1px solid rgba(255,255,255,0.03)' }}>
-                        <Typography variant="body2" sx={{ color: '#9ca3af', fontStyle: log.observation ? 'normal' : 'italic', whiteSpace: 'pre-line' }}>
+                    <Typography variant="caption" sx={{ color: 'var(--text-dimmed, #4b5563)', display: 'block', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.6rem', mb: 0.5 }}>Observaciones</Typography>
+                    <Box sx={{ p: 1.5, bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.01))', borderRadius: 1, border: '1px solid var(--bg-hover-row, rgba(255,255,255,0.03))' }}>
+                        <Typography variant="body2" sx={{ color: 'var(--text-muted, #9ca3af)', fontStyle: log.observation ? 'normal' : 'italic', whiteSpace: 'pre-line' }}>
                             {log.observation || 'Sin comentarios adicionales.'}
                         </Typography>
                     </Box>
@@ -411,7 +411,7 @@ export default function HistorialRegistrosPage() {
                 hideTitleOnMobile={true}
             />
 
-            <Card sx={{ bgcolor: '#111827', borderRadius: 2, mb: 4, p: 2.5, border: '1px solid #1f2937', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>
+            <Card sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, mb: 4, p: 2.5, border: '1px solid #1f2937', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>
                 <Grid container spacing={2} alignItems="center">
                     <Grid size={{ xs: 12, md: 2 }}>
                         <TextField
@@ -426,8 +426,8 @@ export default function HistorialRegistrosPage() {
                             slotProps={{ htmlInput: { inputMode: 'numeric' } }}
                             sx={{
                                 '& .MuiOutlinedInput-root': { color: 'white' },
-                                '& .MuiInputLabel-root': { color: '#9ca3af' },
-                                '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' },
+                                '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' },
+                                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--border-strong, #374151)' },
                             }}
                         />
                     </Grid>
@@ -460,8 +460,8 @@ export default function HistorialRegistrosPage() {
                             InputLabelProps={{ shrink: true }}
                             sx={{
                                 '& .MuiOutlinedInput-root': { color: 'white' },
-                                '& .MuiInputLabel-root': { color: '#9ca3af' },
-                                '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' },
+                                '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' },
+                                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' },
                             }}
                         />
                     </Grid>
@@ -478,8 +478,8 @@ export default function HistorialRegistrosPage() {
                             InputLabelProps={{ shrink: true }}
                             sx={{
                                 '& .MuiOutlinedInput-root': { color: 'white' },
-                                '& .MuiInputLabel-root': { color: '#9ca3af' },
-                                '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' },
+                                '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' },
+                                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' },
                             }}
                         />
                     </Grid>
@@ -512,7 +512,7 @@ export default function HistorialRegistrosPage() {
                                                     const m = localStartTime ? localStartTime.split(':')[1] : '00';
                                                     setLocalStartTime(`${e.target.value}:${m}`);
                                                 }}
-                                                sx={{ width: 95, '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                                                sx={{ width: 95, '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                                             >
                                                 {Array.from({ length: 24 }).map((_, h) => {
                                                     const hStr = String(h).padStart(2, '0');
@@ -529,7 +529,7 @@ export default function HistorialRegistrosPage() {
                                                     const h = localStartTime ? localStartTime.split(':')[0] : '00';
                                                     setLocalStartTime(`${h}:${e.target.value}`);
                                                 }}
-                                                sx={{ width: 95, '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                                                sx={{ width: 95, '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                                             >
                                                 {Array.from({ length: 60 }).map((_, m) => {
                                                     const mStr = String(m).padStart(2, '0');
@@ -550,7 +550,7 @@ export default function HistorialRegistrosPage() {
                                                     const m = localEndTime ? localEndTime.split(':')[1] : '59';
                                                     setLocalEndTime(`${e.target.value}:${m}`);
                                                 }}
-                                                sx={{ width: 95, '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                                                sx={{ width: 95, '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                                             >
                                                 {Array.from({ length: 24 }).map((_, h) => {
                                                     const hStr = String(h).padStart(2, '0');
@@ -567,7 +567,7 @@ export default function HistorialRegistrosPage() {
                                                     const h = localEndTime ? localEndTime.split(':')[0] : '23';
                                                     setLocalEndTime(`${h}:${e.target.value}`);
                                                 }}
-                                                sx={{ width: 95, '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                                                sx={{ width: 95, '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                                             >
                                                 {Array.from({ length: 60 }).map((_, m) => {
                                                     const mStr = String(m).padStart(2, '0');
@@ -587,7 +587,7 @@ export default function HistorialRegistrosPage() {
                                         handleResetFilters();
                                     }}
                                     startIcon={<RefreshIcon />}
-                                    sx={{ color: '#9ca3af', borderColor: '#374151', '&:hover': { borderColor: '#6b7280', color: 'white' } }}
+                                    sx={{ color: 'var(--text-muted, #9ca3af)', borderColor: 'var(--border-strong, #374151)', '&:hover': { borderColor: 'var(--text-subtle, #6b7280)', color: 'white' } }}
                                 >
                                     Limpiar
                                 </Button>
@@ -635,14 +635,14 @@ export default function HistorialRegistrosPage() {
             ) : (
                 <Box sx={{ mt: 2 }}>
                     {filteredLogs.length === 0 ? (
-                        <Box sx={{ p: 10, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.01)', borderRadius: 2, border: '1px dashed #1f2937' }}>
-                            <Typography sx={{ color: '#4b5563', fontWeight: 900, textTransform: 'uppercase', letterSpacing: 2 }}>
+                        <Box sx={{ p: 10, textAlign: 'center', bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.01))', borderRadius: 2, border: '1px dashed #1f2937' }}>
+                            <Typography sx={{ color: 'var(--text-dimmed, #4b5563)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: 2 }}>
                                 No se encontraron registros para estos filtros
                             </Typography>
                         </Box>
                     ) : (
                         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                            <Typography variant="caption" sx={{ color: '#6b7280', mb: 1, display: 'block', fontWeight: 700 }}>
+                            <Typography variant="caption" sx={{ color: 'var(--text-subtle, #6b7280)', mb: 1, display: 'block', fontWeight: 700 }}>
                                 Mostrando {Math.min(visibleCount, filteredLogs.length)} de {filteredLogs.length} resultados ordenados del más reciente al más antiguo
                             </Typography>
                             {visibleLogs.map((log: any) => (
@@ -655,13 +655,13 @@ export default function HistorialRegistrosPage() {
                                         onClick={() => setVisibleCount(prev => prev + 50)}
                                         sx={{ 
                                             color: '#3b82f6', 
-                                            borderColor: '#374151', 
+                                            borderColor: 'var(--border-strong, #374151)', 
                                             fontWeight: 800,
                                             borderRadius: 1.5,
                                             px: 4,
                                             '&:hover': {
-                                                borderColor: '#6b7280',
-                                                bgcolor: 'rgba(255, 255, 255, 0.02)'
+                                                borderColor: 'var(--text-subtle, #6b7280)',
+                                                bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))'
                                             }
                                         }}
                                     >
@@ -675,15 +675,15 @@ export default function HistorialRegistrosPage() {
             )}
 
             {/* Delete Confirmation Dialog */}
-            <Dialog open={!!deleteId} onClose={() => setDeleteId(null)} PaperProps={{ sx: { bgcolor: '#1f1f1f', color: 'white', border: '1px solid #374151', borderRadius: 2 } }}>
+            <Dialog open={!!deleteId} onClose={() => setDeleteId(null)} PaperProps={{ sx: { bgcolor: '#1f1f1f', color: 'white', border: '1px solid var(--border-strong, #374151)', borderRadius: 2 } }}>
                 <DialogTitle sx={{ fontWeight: 800 }}>¿Eliminar registro del historial?</DialogTitle>
                 <DialogContent>
-                    <Typography variant="body2" sx={{ color: '#9ca3af' }}>
+                    <Typography variant="body2" sx={{ color: 'var(--text-muted, #9ca3af)' }}>
                         Esta acción quitará el movimiento permanentemente. La memoria caché local se actualizará al instante.
                     </Typography>
                 </DialogContent>
                 <DialogActions sx={{ p: 2 }}>
-                    <Button onClick={() => setDeleteId(null)} sx={{ color: '#9ca3af', fontWeight: 700 }}>Cancelar</Button>
+                    <Button onClick={() => setDeleteId(null)} sx={{ color: 'var(--text-muted, #9ca3af)', fontWeight: 700 }}>Cancelar</Button>
                     <Button onClick={handleDelete} color="error" variant="contained" disabled={isDeleting} sx={{ fontWeight: 800 }}>
                         {isDeleting ? 'Eliminando...' : 'Eliminar Local y Servidor'}
                     </Button>
@@ -691,12 +691,12 @@ export default function HistorialRegistrosPage() {
             </Dialog>
 
             {/* Edit Dialog */}
-            <Dialog open={!!editLogData} onClose={() => setEditLogData(null)} fullWidth maxWidth="sm" PaperProps={{ sx: { bgcolor: '#1f1f1f', color: 'white', border: '1px solid #374151', borderRadius: 2 } }}>
+            <Dialog open={!!editLogData} onClose={() => setEditLogData(null)} fullWidth maxWidth="sm" PaperProps={{ sx: { bgcolor: '#1f1f1f', color: 'white', border: '1px solid var(--border-strong, #374151)', borderRadius: 2 } }}>
                 <DialogTitle sx={{ fontWeight: 800 }}>Editar Movimiento en el Historial</DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                            <Typography variant="caption" sx={{ color: '#9ca3af', fontWeight: 700 }}>
+                            <Typography variant="caption" sx={{ color: 'var(--text-muted, #9ca3af)', fontWeight: 700 }}>
                                 Fecha / Hora del Movimiento
                             </Typography>
                             <TextField
@@ -712,7 +712,7 @@ export default function HistorialRegistrosPage() {
                                     const timePart = currentISO.slice(11, 16);
                                     setEditLogData({ ...editLogData, timestamp: new Date(`${datePart}T${timePart}:00`).toISOString() });
                                 }}
-                                sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                                sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                             />
                             <Box sx={{ display: 'flex', gap: 2 }}>
                                 <TextField
@@ -728,7 +728,7 @@ export default function HistorialRegistrosPage() {
                                         const m = currentISO.slice(14, 16);
                                         setEditLogData({ ...editLogData, timestamp: new Date(`${datePart}T${h}:${m}:00`).toISOString() });
                                     }}
-                                    sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                                    sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                                 >
                                     {Array.from({ length: 24 }).map((_, h) => {
                                         const hStr = String(h).padStart(2, '0');
@@ -748,7 +748,7 @@ export default function HistorialRegistrosPage() {
                                         const h = currentISO.slice(11, 13);
                                         setEditLogData({ ...editLogData, timestamp: new Date(`${datePart}T${h}:${m}:00`).toISOString() });
                                     }}
-                                    sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                                    sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                                 >
                                     {Array.from({ length: 60 }).map((_, m) => {
                                         const mStr = String(m).padStart(2, '0');
@@ -765,7 +765,7 @@ export default function HistorialRegistrosPage() {
                             label="Estado Registrado (Lectura)"
                             variant="outlined"
                             value={editLogData?.toStatus || ''}
-                            sx={{ '& .MuiOutlinedInput-root': { color: 'white', opacity: 0.6 }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                            sx={{ '& .MuiOutlinedInput-root': { color: 'white', opacity: 0.6 }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                         >
                             {Object.keys(statusLabels).map((key) => (
                                 <MenuItem key={key} value={key}>{statusLabels[key]}</MenuItem>
@@ -779,7 +779,7 @@ export default function HistorialRegistrosPage() {
                             variant="outlined"
                             value={editLogData?.failureType || ''}
                             onChange={(e) => setEditLogData({ ...editLogData, failureType: e.target.value })}
-                            sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                            sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                         >
                             {failureTypes.map((f) => (
                                 <MenuItem key={f} value={f}>{f}</MenuItem>
@@ -793,7 +793,7 @@ export default function HistorialRegistrosPage() {
                             variant="outlined"
                             value={editLogData?.generatedBy || ''}
                             onChange={(e) => setEditLogData({ ...editLogData, generatedBy: e.target.value })}
-                            sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                            sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                         >
                             {responsables.map((r) => (
                                 <MenuItem key={r} value={r}>{r}</MenuItem>
@@ -808,12 +808,12 @@ export default function HistorialRegistrosPage() {
                             variant="outlined"
                             value={editLogData?.observation || ''}
                             onChange={(e) => setEditLogData({ ...editLogData, observation: e.target.value })}
-                            sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4b5563' } }}
+                            sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: 'var(--text-muted, #9ca3af)' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--text-dimmed, #4b5563)' } }}
                         />
                     </Box>
                 </DialogContent>
                 <DialogActions sx={{ p: 2 }}>
-                    <Button onClick={() => setEditLogData(null)} sx={{ color: '#9ca3af', fontWeight: 700 }}>Cancelar</Button>
+                    <Button onClick={() => setEditLogData(null)} sx={{ color: 'var(--text-muted, #9ca3af)', fontWeight: 700 }}>Cancelar</Button>
                     <Button 
                         onClick={async () => {
                             if (!editLogData) return;

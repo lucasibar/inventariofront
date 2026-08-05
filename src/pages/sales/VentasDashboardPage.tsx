@@ -20,7 +20,7 @@ const VentasDashboardPage: React.FC = () => {
     ];
 
     return (
-        <Box sx={{ p: 4, background: '#0f1117', minHeight: '100vh', color: '#f3f4f6' }}>
+        <Box sx={{ p: 4, background: 'var(--bg-primary, #0f1117)', minHeight: '100vh', color: 'var(--text-primary, #f3f4f6)' }}>
             <Typography variant="h4" sx={{ mb: 4, fontWeight: 800, color: '#ec4899' }}>
                 Dashboard de Ventas y Pedidos
             </Typography>
@@ -31,11 +31,11 @@ const VentasDashboardPage: React.FC = () => {
                     <Grid size={{ xs: 12, sm: 6, md: 4 }} key={m.label}>
                         <Paper sx={{ 
                             p: 3, 
-                            background: 'rgba(255, 255, 255, 0.03)', 
+                            background: 'var(--bg-hover-row, rgba(255,255,255,0.03))', 
                             borderRadius: '16px',
                             borderTop: `4px solid ${m.color}`,
                         }}>
-                            <Typography variant="subtitle2" sx={{ color: '#9ca3af', mb: 1, textTransform: 'uppercase', fontSize: '11px', fontWeight: 700 }}>
+                            <Typography variant="subtitle2" sx={{ color: 'var(--text-muted, #9ca3af)', mb: 1, textTransform: 'uppercase', fontSize: '11px', fontWeight: 700 }}>
                                 {m.label}
                             </Typography>
                             <Typography variant="h4" sx={{ fontWeight: 800, color: '#fff' }}>{m.value}</Typography>
@@ -47,9 +47,9 @@ const VentasDashboardPage: React.FC = () => {
                 <Grid size={{ xs: 12 }}>
                     <Paper sx={{ 
                         p: 4, 
-                        background: 'rgba(255, 255, 255, 0.02)', 
+                        background: 'var(--bg-alt-row, rgba(255,255,255,0.02))', 
                         borderRadius: '24px',
-                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        border: '1px solid var(--bg-action-btn, rgba(255,255,255,0.05))',
                     }}>
                         <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>Últimos Pedidos</Typography>
                         <Box sx={{ width: '100%' }}>
@@ -58,7 +58,7 @@ const VentasDashboardPage: React.FC = () => {
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 2, alignItems: 'center' }}>
                                         <Box>
                                             <Typography variant="body1" sx={{ fontWeight: 600 }}>{order.client}</Typography>
-                                            <Typography variant="caption" sx={{ color: '#6b7280' }}>{order.id}</Typography>
+                                            <Typography variant="caption" sx={{ color: 'var(--text-subtle, #6b7280)' }}>{order.id}</Typography>
                                         </Box>
                                         <Box sx={{ textAlign: 'right' }}>
                                             <Typography variant="body1" sx={{ fontWeight: 700, color: '#10b981' }}>{order.total}</Typography>
@@ -71,7 +71,7 @@ const VentasDashboardPage: React.FC = () => {
                                             </Typography>
                                         </Box>
                                     </Box>
-                                    {i < recentOrders.length - 1 && <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)' }} />}
+                                    {i < recentOrders.length - 1 && <Divider sx={{ borderColor: 'var(--bg-action-btn, rgba(255,255,255,0.05))' }} />}
                                 </Box>
                             ))}
                         </Box>

@@ -18,7 +18,7 @@ const RRHHDashboardPage: React.FC = () => {
     ];
 
     return (
-        <Box sx={{ p: 4, background: '#0f1117', minHeight: '100vh', color: '#f3f4f6' }}>
+        <Box sx={{ p: 4, background: 'var(--bg-primary, #0f1117)', minHeight: '100vh', color: 'var(--text-primary, #f3f4f6)' }}>
             <Typography variant="h4" sx={{ mb: 4, fontWeight: 800, color: '#3b82f6' }}>
                 Dashboard de Recursos Humanos
             </Typography>
@@ -29,11 +29,11 @@ const RRHHDashboardPage: React.FC = () => {
                     <Grid size={{ xs: 12, sm: 6, md: 3 }} key={m.label}>
                         <Paper sx={{ 
                             p: 3, 
-                            background: 'rgba(255, 255, 255, 0.03)', 
+                            background: 'var(--bg-hover-row, rgba(255,255,255,0.03))', 
                             borderRadius: '16px',
                             textAlign: 'center'
                         }}>
-                            <Typography variant="subtitle2" sx={{ color: '#9ca3af', mb: 1, textTransform: 'uppercase', fontSize: '10px', fontWeight: 700 }}>
+                            <Typography variant="subtitle2" sx={{ color: 'var(--text-muted, #9ca3af)', mb: 1, textTransform: 'uppercase', fontSize: '10px', fontWeight: 700 }}>
                                 {m.label}
                             </Typography>
                             <Typography variant="h4" sx={{ fontWeight: 800, color: m.color }}>{m.value}{m.unit}</Typography>
@@ -45,9 +45,9 @@ const RRHHDashboardPage: React.FC = () => {
                 <Grid size={{ xs: 12, md: 6 }}>
                     <Paper sx={{ 
                         p: 4, 
-                        background: 'rgba(255, 255, 255, 0.02)', 
+                        background: 'var(--bg-alt-row, rgba(255,255,255,0.02))', 
                         borderRadius: '24px',
-                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        border: '1px solid var(--bg-action-btn, rgba(255,255,255,0.05))',
                     }}>
                         <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>Productividad por Operario</Typography>
                         {productivity.map((op) => (
@@ -61,7 +61,7 @@ const RRHHDashboardPage: React.FC = () => {
                                     <LinearProgress 
                                         variant="determinate" 
                                         value={op.value} 
-                                        sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.05)', '& .MuiLinearProgress-bar': { bgcolor: op.color } }}
+                                        sx={{ height: 4, borderRadius: 2, bgcolor: 'var(--bg-action-btn, rgba(255,255,255,0.05))', '& .MuiLinearProgress-bar': { bgcolor: op.color } }}
                                     />
                                 </Box>
                             </Box>
@@ -82,17 +82,17 @@ const RRHHDashboardPage: React.FC = () => {
                         justifyContent: 'center'
                     }}>
                         <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>Análisis de Costo Laboral</Typography>
-                        <Typography variant="body2" sx={{ color: '#9ca3af', mb: 4 }}>Relación entre horas trabajadas y producción total.</Typography>
+                        <Typography variant="body2" sx={{ color: 'var(--text-muted, #9ca3af)', mb: 4 }}>Relación entre horas trabajadas y producción total.</Typography>
                         
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', gap: 2 }}>
                             <Box sx={{ textAlign: 'center' }}>
                                 <Typography variant="h4" sx={{ fontWeight: 800 }}>$14.2k</Typography>
-                                <Typography variant="caption" sx={{ color: '#9ca3af' }}>Costo Total Hoy</Typography>
+                                <Typography variant="caption" sx={{ color: 'var(--text-muted, #9ca3af)' }}>Costo Total Hoy</Typography>
                             </Box>
                             <Box sx={{ height: 60, width: 2, bgcolor: 'rgba(255,255,255,0.1)' }} />
                             <Box sx={{ textAlign: 'center' }}>
                                 <Typography variant="h4" sx={{ fontWeight: 800, color: '#10b981' }}>$3.34</Typography>
-                                <Typography variant="caption" sx={{ color: '#9ca3af' }}>Costo por Unidad</Typography>
+                                <Typography variant="caption" sx={{ color: 'var(--text-muted, #9ca3af)' }}>Costo por Unidad</Typography>
                             </Box>
                         </Box>
                     </Paper>

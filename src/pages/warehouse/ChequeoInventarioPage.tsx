@@ -15,7 +15,7 @@ type Phase = 'select' | 'check' | 'report';
 type Tag = 'PENDIENTE' | 'CORRECTO' | 'A_CHEQUEAR' | 'POSICION_INCORRECTA';
 
 const TAG_CONFIG: Record<Tag, { label: string; icon: string; color: string; bg: string; border: string }> = {
-    PENDIENTE: { label: 'Pendiente', icon: '⏳', color: '#9ca3af', bg: 'rgba(156,163,175,0.1)', border: 'rgba(156,163,175,0.25)' },
+    PENDIENTE: { label: 'Pendiente', icon: '⏳', color: 'var(--text-muted, #9ca3af)', bg: 'rgba(156,163,175,0.1)', border: 'rgba(156,163,175,0.25)' },
     CORRECTO: { label: 'Correcto', icon: '✅', color: '#34d399', bg: 'rgba(52,211,153,0.1)', border: 'rgba(52,211,153,0.3)' },
     A_CHEQUEAR: { label: 'A Chequear', icon: '⚠️', color: '#fbbf24', bg: 'rgba(251,191,36,0.1)', border: 'rgba(251,191,36,0.3)' },
     POSICION_INCORRECTA: { label: 'Pos. Incorrecta', icon: '❌', color: '#f87171', bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.3)' },
@@ -219,12 +219,12 @@ export default function ChequeoInventarioPage() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
                 }}>
                     <Card style={{ padding: '24px', maxWidth: '400px', width: '100%' }}>
-                        <h3 style={{ color: '#f3f4f6', margin: '0 0 8px', fontSize: '18px' }}>
+                        <h3 style={{ color: 'var(--text-primary, #f3f4f6)', margin: '0 0 8px', fontSize: '18px' }}>
                             📋 Finalizar Chequeo
                         </h3>
-                        <p style={{ color: '#9ca3af', fontSize: '14px', margin: '0 0 8px' }}>
-                            Se revisaron <strong style={{ color: '#f3f4f6' }}>{progress}</strong> de{' '}
-                            <strong style={{ color: '#f3f4f6' }}>{sortedItems.length}</strong> posiciones.
+                        <p style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '14px', margin: '0 0 8px' }}>
+                            Se revisaron <strong style={{ color: 'var(--text-primary, #f3f4f6)' }}>{progress}</strong> de{' '}
+                            <strong style={{ color: 'var(--text-primary, #f3f4f6)' }}>{sortedItems.length}</strong> posiciones.
                         </p>
                         {progress < sortedItems.length && (
                             <p style={{
@@ -273,23 +273,23 @@ function SelectPhase({ isMobile, depots, depotId, onDepotChange, onStart, onResu
     return (
         <>
             <Card style={{ padding: isMobile ? '20px' : '28px' }}>
-                <h2 style={{ color: '#f3f4f6', fontSize: '18px', fontWeight: 700, margin: '0 0 4px' }}>
+                <h2 style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: '18px', fontWeight: 700, margin: '0 0 4px' }}>
                     🔍 Chequeo de Inventario
                 </h2>
-                <p style={{ color: '#6b7280', fontSize: '13px', margin: '0 0 20px' }}>
+                <p style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '13px', margin: '0 0 20px' }}>
                     Revisión visual de posiciones por depósito
                 </p>
 
                 <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '6px' }}>
+                    <label style={{ display: 'block', color: 'var(--text-muted, #9ca3af)', fontSize: '12px', marginBottom: '6px' }}>
                         Depósito
                     </label>
                     <select
                         value={depotId}
                         onChange={e => onDepotChange(e.target.value)}
                         style={{
-                            width: '100%', background: '#0f1117', border: '1px solid #374151', borderRadius: '10px',
-                            padding: '14px 12px', color: '#f3f4f6', fontSize: '15px', outline: 'none',
+                            width: '100%', background: 'var(--bg-primary, #0f1117)', border: '1px solid var(--border-strong, #374151)', borderRadius: '10px',
+                            padding: '14px 12px', color: 'var(--text-primary, #f3f4f6)', fontSize: '15px', outline: 'none',
                             boxSizing: 'border-box', colorScheme: 'dark',
                         }}
                     >
@@ -317,14 +317,14 @@ function SelectPhase({ isMobile, depots, depotId, onDepotChange, onStart, onResu
                     disabled={!depotId || creating}
                     style={{
                         width: '100%', padding: '14px', fontSize: '16px',
-                        background: !depotId ? '#374151' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                        background: !depotId ? 'var(--border-strong, #374151)' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                     }}
                 >
                     {creating ? 'Creando chequeo...' : existingCheck ? '🔄 Nuevo Chequeo (reemplaza anterior)' : '🚀 Iniciar Chequeo'}
                 </Btn>
 
                 {existingCheck && (
-                    <p style={{ color: '#6b7280', fontSize: '11px', marginTop: '8px', textAlign: 'center' }}>
+                    <p style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '11px', marginTop: '8px', textAlign: 'center' }}>
                         Iniciar uno nuevo eliminará el chequeo anterior de este depósito
                     </p>
                 )}
@@ -364,16 +364,16 @@ function CheckPhase({ isMobile, items, currentIdx, onIdxChange, onTag, progress,
     return (
         <>
             {/* Header */}
-            <div style={{ marginBottom: '16px', background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: '12px', padding: '16px' }}>
+            <div style={{ marginBottom: '16px', background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-color, #2a2d3e)', borderRadius: '12px', padding: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <button
                             onClick={onBack}
-                            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid #374151', borderRadius: '6px', color: '#9ca3af', cursor: 'pointer', fontSize: '13px', padding: '6px 10px' }}
+                            style={{ background: 'var(--bg-action-btn, rgba(255,255,255,0.05))', border: '1px solid var(--border-strong, #374151)', borderRadius: '6px', color: 'var(--text-muted, #9ca3af)', cursor: 'pointer', fontSize: '13px', padding: '6px 10px' }}
                         >
                             ← Cambiar depósito
                         </button>
-                        <span style={{ color: '#f3f4f6', fontSize: '16px', fontWeight: 800 }}>
+                        <span style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: '16px', fontWeight: 800 }}>
                             🏭 {depotName}
                         </span>
                     </div>
@@ -382,7 +382,7 @@ function CheckPhase({ isMobile, items, currentIdx, onIdxChange, onTag, progress,
                     </Btn>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ color: '#9ca3af', fontSize: '12px' }}>Progreso del chequeo</span>
+                    <span style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px' }}>Progreso del chequeo</span>
                     <span style={{
                         background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', fontSize: '12px',
                         padding: '2px 8px', borderRadius: '6px', fontWeight: 700,
@@ -392,7 +392,7 @@ function CheckPhase({ isMobile, items, currentIdx, onIdxChange, onTag, progress,
                 </div>
                 {/* Progress bar */}
                 <div style={{
-                    width: '100%', height: '6px', background: '#0f1117', borderRadius: '3px', overflow: 'hidden',
+                    width: '100%', height: '6px', background: 'var(--bg-primary, #0f1117)', borderRadius: '3px', overflow: 'hidden',
                 }}>
                     <div style={{
                         width: `${pct}%`, height: '100%', borderRadius: '3px',
@@ -408,9 +408,9 @@ function CheckPhase({ isMobile, items, currentIdx, onIdxChange, onTag, progress,
                     onClick={() => setShowList(!showList)}
                     style={{
                         width: '100%',
-                        background: showList ? 'rgba(99,102,241,0.2)' : '#1a1d2e',
-                        border: '1px solid ' + (showList ? 'rgba(99,102,241,0.4)' : '#2a2d3e'),
-                        borderRadius: '8px', color: '#f3f4f6', padding: '10px 14px',
+                        background: showList ? 'rgba(99,102,241,0.2)' : 'var(--bg-secondary, #1a1d2e)',
+                        border: '1px solid ' + (showList ? 'rgba(99,102,241,0.4)' : 'var(--border-color, #2a2d3e)'),
+                        borderRadius: '8px', color: 'var(--text-primary, #f3f4f6)', padding: '10px 14px',
                         fontSize: '13px', fontWeight: 600, cursor: 'pointer',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
                     }}
@@ -430,11 +430,11 @@ function CheckPhase({ isMobile, items, currentIdx, onIdxChange, onTag, progress,
                             onChange={(e) => setSearchQuery(e.target.value)}
                             style={{
                                 width: '100%',
-                                background: '#0f1117',
-                                border: '1px solid #374151',
+                                background: 'var(--bg-primary, #0f1117)',
+                                border: '1px solid var(--border-strong, #374151)',
                                 borderRadius: '8px',
                                 padding: '10px 12px',
-                                color: '#f3f4f6',
+                                color: 'var(--text-primary, #f3f4f6)',
                                 fontSize: '14px',
                                 outline: 'none',
                                 boxSizing: 'border-box'
@@ -452,7 +452,7 @@ function CheckPhase({ isMobile, items, currentIdx, onIdxChange, onTag, progress,
                                         width: '100%', padding: '12px 14px',
                                         background: originalIdx === currentIdx ? 'rgba(99,102,241,0.15)' : 'transparent',
                                         border: 'none', borderBottom: '1px solid #1f2233', cursor: 'pointer',
-                                        color: '#f3f4f6', fontSize: '14px', textAlign: 'left',
+                                        color: 'var(--text-primary, #f3f4f6)', fontSize: '14px', textAlign: 'left',
                                         borderRadius: '6px'
                                     }}
                                 >
@@ -468,7 +468,7 @@ function CheckPhase({ isMobile, items, currentIdx, onIdxChange, onTag, progress,
                                 </button>
                             ))
                         ) : (
-                            <div style={{ padding: '16px', textAlign: 'center', color: '#6b7280', fontSize: '13px' }}>
+                            <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-subtle, #6b7280)', fontSize: '13px' }}>
                                 No se encontraron posiciones que coincidan con "{searchQuery}"
                             </div>
                         )}
@@ -562,15 +562,15 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
                 {/* Position header */}
                 <div style={{
                     padding: isMobile ? '16px' : '20px',
-                    borderBottom: '1px solid #2a2d3e',
+                    borderBottom: '1px solid var(--border-color, #2a2d3e)',
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 }}>
                     <div>
-                        <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-subtle, #6b7280)', marginBottom: '4px' }}>
                             Posición {posIndex} de {posTotal}
                         </div>
                         <h2 style={{
-                            color: '#f3f4f6', fontSize: isMobile ? '22px' : '26px',
+                            color: 'var(--text-primary, #f3f4f6)', fontSize: isMobile ? '22px' : '26px',
                             fontWeight: 800, margin: 0, fontFamily: 'monospace',
                             letterSpacing: '1px',
                         }}>
@@ -590,7 +590,7 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
 
                 {/* Stock info */}
                 <div style={{ padding: isMobile ? '16px' : '20px' }}>
-                    <div style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ fontSize: '13px', color: 'var(--text-muted, #9ca3af)', marginBottom: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         📦 Stock en sistema {stock.length === 0 && <span style={{ color: '#ef4444', textTransform: 'none' }}>— Posición vacía</span>}
                     </div>
                     {stock.length > 0 ? (
@@ -598,8 +598,8 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
                             {stock.map((s: any, i: number) => (
                                 <div key={i} style={{
                                     background: '#0d0f17', borderRadius: '12px', padding: '14px 16px',
-                                    border: '1px solid #374151',
-                                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                                    border: '1px solid var(--border-strong, #374151)',
+                                    boxShadow: '0 4px 12px var(--bg-alt-row, rgba(0,0,0,0.2))'
                                 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -614,15 +614,15 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
                                             <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', fontSize: '13px' }}>
                                                 {s.lotNumber && (
                                                     <span style={{ color: '#a5b4fc', fontWeight: 600 }}>
-                                                        Lote: <strong style={{ color: '#d1d5db', fontWeight: 700 }}>{s.lotNumber}</strong>
+                                                        Lote: <strong style={{ color: 'var(--text-secondary, #d1d5db)', fontWeight: 700 }}>{s.lotNumber}</strong>
                                                     </span>
                                                 )}
                                                 {s.lotNumber && s.supplierName && (
-                                                    <span style={{ color: '#4b5563' }}>•</span>
+                                                    <span style={{ color: 'var(--text-dimmed, #4b5563)' }}>•</span>
                                                 )}
                                                 {s.supplierName && (
                                                     <span style={{ color: '#6ee7b7', fontWeight: 600 }}>
-                                                        Prov: <strong style={{ color: '#d1d5db', fontWeight: 700 }}>{s.supplierName}</strong>
+                                                        Prov: <strong style={{ color: 'var(--text-secondary, #d1d5db)', fontWeight: 700 }}>{s.supplierName}</strong>
                                                     </span>
                                                 )}
                                             </div>
@@ -635,14 +635,14 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
                                                         <span style={{ color: '#fbbf24' }}>
                                                             {Number(s.qtySecundaria).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                                                         </span>
-                                                        <span style={{ color: '#4b5563', margin: '0 4px' }}>/</span>
+                                                        <span style={{ color: 'var(--text-dimmed, #4b5563)', margin: '0 4px' }}>/</span>
                                                         <span style={{ color: '#60a5fa' }}>
                                                             {Number(s.qtyPrincipal).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                                                         </span>
                                                     </div>
                                                     <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginTop: '3px' }}>
                                                         <span style={{ color: '#fbbf24' }}>{s.unidadSecundaria || 'unid.'}</span>
-                                                        <span style={{ color: '#4b5563', margin: '0 4px' }}>/</span>
+                                                        <span style={{ color: 'var(--text-dimmed, #4b5563)', margin: '0 4px' }}>/</span>
                                                         <span style={{ color: '#60a5fa' }}>{s.unidadPrincipal || 'kg'}</span>
                                                     </div>
                                                 </>
@@ -664,10 +664,10 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
                     ) : (
                         <div style={{
                             background: '#0d0f17', borderRadius: '12px', padding: '24px',
-                            border: '1px solid #374151', textAlign: 'center',
+                            border: '1px solid var(--border-strong, #374151)', textAlign: 'center',
                         }}>
                             <span style={{ fontSize: '32px' }}>📭</span>
-                            <p style={{ color: '#9ca3af', fontSize: '15px', fontWeight: 700, margin: '8px 0 0' }}>
+                            <p style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '15px', fontWeight: 700, margin: '8px 0 0' }}>
                                 Posición sin stock registrado en el sistema
                             </p>
                         </div>
@@ -679,7 +679,7 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
                     padding: isMobile ? '12px 16px 16px' : '14px 20px 20px',
                     borderTop: '1px solid #1f2233',
                 }}>
-                    <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-subtle, #6b7280)', marginBottom: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                         Resultado del chequeo
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
@@ -692,8 +692,8 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
                                     key={tag}
                                     onClick={() => handleQuickTag(tag)}
                                     style={{
-                                        background: isActive ? cfg.bg : '#0f1117',
-                                        border: `2px solid ${isActive || isExpanded ? cfg.color : '#2a2d3e'}`,
+                                        background: isActive ? cfg.bg : 'var(--bg-primary, #0f1117)',
+                                        border: `2px solid ${isActive || isExpanded ? cfg.color : 'var(--border-color, #2a2d3e)'}`,
                                         borderRadius: '10px', padding: isMobile ? '14px 8px' : '12px 10px',
                                         cursor: 'pointer', display: 'flex', flexDirection: 'column',
                                         alignItems: 'center', gap: '6px',
@@ -703,7 +703,7 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
                                 >
                                     <span style={{ fontSize: isMobile ? '22px' : '20px' }}>{cfg.icon}</span>
                                     <span style={{
-                                        color: isActive ? cfg.color : '#9ca3af',
+                                        color: isActive ? cfg.color : 'var(--text-muted, #9ca3af)',
                                         fontSize: isMobile ? '11px' : '12px', fontWeight: 600,
                                         lineHeight: 1.2, textAlign: 'center',
                                     }}>
@@ -718,10 +718,10 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
                     {expanded && (
                         <div style={{
                             marginTop: '12px', padding: '14px', borderRadius: '10px',
-                            background: '#0f1117', border: '1px solid #2a2d3e',
+                            background: 'var(--bg-primary, #0f1117)', border: '1px solid var(--border-color, #2a2d3e)',
                             animation: 'fadeIn 0.2s ease',
                         }}>
-                            <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '10px', fontWeight: 600 }}>
+                            <div style={{ fontSize: '12px', color: 'var(--text-muted, #9ca3af)', marginBottom: '10px', fontWeight: 600 }}>
                                 Observación
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
@@ -732,10 +732,10 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
                                         style={{
                                             background: selectedObs === obs
                                                 ? TAG_CONFIG[expanded].bg
-                                                : '#1a1d2e',
-                                            border: `1px solid ${selectedObs === obs ? TAG_CONFIG[expanded].border : '#2a2d3e'}`,
+                                                : 'var(--bg-secondary, #1a1d2e)',
+                                            border: `1px solid ${selectedObs === obs ? TAG_CONFIG[expanded].border : 'var(--border-color, #2a2d3e)'}`,
                                             borderRadius: '8px', padding: '10px 12px',
-                                            color: selectedObs === obs ? TAG_CONFIG[expanded].color : '#d1d5db',
+                                            color: selectedObs === obs ? TAG_CONFIG[expanded].color : 'var(--text-secondary, #d1d5db)',
                                             fontSize: '13px', cursor: 'pointer', textAlign: 'left',
                                             transition: 'all 0.1s ease',
                                         }}
@@ -745,7 +745,7 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
                                 ))}
                             </div>
                             <div style={{ marginBottom: '12px' }}>
-                                <label style={{ display: 'block', color: '#6b7280', fontSize: '11px', marginBottom: '4px' }}>
+                                <label style={{ display: 'block', color: 'var(--text-subtle, #6b7280)', fontSize: '11px', marginBottom: '4px' }}>
                                     Nota adicional (opcional)
                                 </label>
                                 <textarea
@@ -754,8 +754,8 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
                                     placeholder="Escribir observación..."
                                     rows={2}
                                     style={{
-                                        width: '100%', background: '#1a1d2e', border: '1px solid #2a2d3e',
-                                        borderRadius: '8px', padding: '10px', color: '#f3f4f6', fontSize: '13px',
+                                        width: '100%', background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-color, #2a2d3e)',
+                                        borderRadius: '8px', padding: '10px', color: 'var(--text-primary, #f3f4f6)', fontSize: '13px',
                                         outline: 'none', resize: 'vertical', boxSizing: 'border-box',
                                         fontFamily: 'inherit',
                                     }}
@@ -783,17 +783,17 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
                     <button
                         onClick={onPrev} disabled={!hasPrev}
                         style={{
-                            background: hasPrev ? '#1a1d2e' : 'transparent',
-                            border: '1px solid ' + (hasPrev ? '#2a2d3e' : 'transparent'),
+                            background: hasPrev ? 'var(--bg-secondary, #1a1d2e)' : 'transparent',
+                            border: '1px solid ' + (hasPrev ? 'var(--border-color, #2a2d3e)' : 'transparent'),
                             borderRadius: '8px', padding: '10px 20px',
-                            color: hasPrev ? '#f3f4f6' : '#374151',
+                            color: hasPrev ? 'var(--text-primary, #f3f4f6)' : 'var(--border-strong, #374151)',
                             fontSize: '14px', cursor: hasPrev ? 'pointer' : 'default',
                             fontWeight: 600,
                         }}
                     >
                         ← Anterior
                     </button>
-                    <span style={{ color: '#4b5563', fontSize: '12px' }}>
+                    <span style={{ color: 'var(--text-dimmed, #4b5563)', fontSize: '12px' }}>
                         {isMobile ? 'Deslizá' : ''} ←→
                     </span>
                     <button
@@ -802,7 +802,7 @@ function PositionCard({ item, isMobile, onTag, onPrev, onNext, hasPrev, hasNext,
                             background: hasNext ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
                             border: hasNext ? 'none' : '1px solid transparent',
                             borderRadius: '8px', padding: '10px 20px',
-                            color: hasNext ? '#fff' : '#374151',
+                            color: hasNext ? '#fff' : 'var(--border-strong, #374151)',
                             fontSize: '14px', cursor: hasNext ? 'pointer' : 'default',
                             fontWeight: 600,
                         }}
@@ -848,7 +848,7 @@ function ReportPhase({ isMobile, report, onReturnToCheck, onNewCheck }: {
         { label: 'Correctas', tagKey: 'CORRECTO', value: stats.correcto || 0, color: '#34d399', icon: '✅' },
         { label: 'A Chequear', tagKey: 'A_CHEQUEAR', value: stats.aChequear || 0, color: '#fbbf24', icon: '⚠️' },
         { label: 'Incorrectas', tagKey: 'POSICION_INCORRECTA', value: stats.incorrecta || 0, color: '#f87171', icon: '❌' },
-        { label: 'Pendientes', tagKey: 'PENDIENTE', value: stats.pendiente || 0, color: '#6b7280', icon: '⏳' },
+        { label: 'Pendientes', tagKey: 'PENDIENTE', value: stats.pendiente || 0, color: 'var(--text-subtle, #6b7280)', icon: '⏳' },
     ];
 
     return (
@@ -856,7 +856,7 @@ function ReportPhase({ isMobile, report, onReturnToCheck, onNewCheck }: {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                 <button
                     onClick={onReturnToCheck}
-                    style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '14px', padding: '4px' }}
+                    style={{ background: 'none', border: 'none', color: 'var(--text-muted, #9ca3af)', cursor: 'pointer', fontSize: '14px', padding: '4px' }}
                 >
                     ← Volver a seguir chequeando
                 </button>
@@ -915,15 +915,15 @@ function ReportPhase({ isMobile, report, onReturnToCheck, onNewCheck }: {
                             onClick={() => setSelectedTagFilter(s.tagKey)}
                             style={{
                                 padding: '14px', textAlign: 'center', cursor: 'pointer',
-                                border: `2px solid ${isSelected ? s.color : '#2a2d3e'}`,
-                                background: isSelected ? 'rgba(255,255,255,0.03)' : '#1a1d2e',
+                                border: `2px solid ${isSelected ? s.color : 'var(--border-color, #2a2d3e)'}`,
+                                background: isSelected ? 'var(--bg-hover-row, rgba(255,255,255,0.03))' : 'var(--bg-secondary, #1a1d2e)',
                                 transition: 'all 0.15s ease',
                                 transform: isSelected ? 'scale(1.02)' : 'scale(1)'
                             }}
                         >
                             <div style={{ fontSize: '20px', marginBottom: '4px' }}>{s.icon}</div>
                             <div style={{ color: s.color, fontSize: '24px', fontWeight: 800 }}>{s.value}</div>
-                            <div style={{ color: isSelected ? '#f3f4f6' : '#6b7280', fontSize: '11px', fontWeight: 600, marginTop: '2px' }}>
+                            <div style={{ color: isSelected ? 'var(--text-primary, #f3f4f6)' : 'var(--text-subtle, #6b7280)', fontSize: '11px', fontWeight: 600, marginTop: '2px' }}>
                                 {s.label}
                             </div>
                         </Card>
@@ -945,13 +945,13 @@ function ReportPhase({ isMobile, report, onReturnToCheck, onNewCheck }: {
             {filteredReportItems.length > 0 ? (
                 <Card style={{ padding: '0', overflow: 'hidden' }}>
                     <div style={{
-                        padding: '14px 16px', borderBottom: '1px solid #2a2d3e',
-                        background: 'rgba(255,255,255,0.02)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                        padding: '14px 16px', borderBottom: '1px solid var(--border-color, #2a2d3e)',
+                        background: 'var(--bg-alt-row, rgba(255,255,255,0.02))', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                     }}>
-                        <h3 style={{ color: '#f3f4f6', fontSize: '15px', fontWeight: 700, margin: 0 }}>
+                        <h3 style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: '15px', fontWeight: 700, margin: 0 }}>
                             📌 Posiciones ({filteredReportItems.length})
                         </h3>
-                        <span style={{ fontSize: '12px', color: '#9ca3af' }}>
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted, #9ca3af)' }}>
                             Filtrado por: <strong>{statCards.find(s => s.tagKey === selectedTagFilter)?.label}</strong>
                         </span>
                     </div>
@@ -963,7 +963,7 @@ function ReportPhase({ isMobile, report, onReturnToCheck, onNewCheck }: {
                                 padding: '14px 16px', borderBottom: i < filteredReportItems.length - 1 ? '1px solid #1f2233' : 'none',
                             }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                                    <span style={{ color: '#f3f4f6', fontFamily: 'monospace', fontWeight: 700, fontSize: '16px' }}>
+                                    <span style={{ color: 'var(--text-primary, #f3f4f6)', fontFamily: 'monospace', fontWeight: 700, fontSize: '16px' }}>
                                         {item.posicionCodigo}
                                     </span>
                                     <span style={{
@@ -980,18 +980,18 @@ function ReportPhase({ isMobile, report, onReturnToCheck, onNewCheck }: {
                                     </div>
                                 )}
                                 {item.notaLibre && (
-                                    <div style={{ color: '#d1d5db', fontSize: '12px', fontStyle: 'italic', marginBottom: '4px' }}>
+                                    <div style={{ color: 'var(--text-secondary, #d1d5db)', fontSize: '12px', fontStyle: 'italic', marginBottom: '4px' }}>
                                         💬 {item.notaLibre}
                                     </div>
                                 )}
                                 {item.stockSnapshot && item.stockSnapshot.length > 0 ? (
-                                    <div style={{ marginTop: '6px', fontSize: '12px', color: '#9ca3af', background: '#0f1117', padding: '6px 10px', borderRadius: '6px' }}>
+                                    <div style={{ marginTop: '6px', fontSize: '12px', color: 'var(--text-muted, #9ca3af)', background: 'var(--bg-primary, #0f1117)', padding: '6px 10px', borderRadius: '6px' }}>
                                         <strong>Stock registrado:</strong> {item.stockSnapshot.map((s: any) =>
                                             `${s.itemName || s.itemCodigo || 'Material'}${s.lotNumber ? ` (Lote: ${s.lotNumber})` : ''} - ${Number(s.qtyPrincipal).toLocaleString('es-AR')} kg/un.`
                                         ).join(' | ')}
                                     </div>
                                 ) : (
-                                    <div style={{ marginTop: '4px', fontSize: '11px', color: '#6b7280' }}>
+                                    <div style={{ marginTop: '4px', fontSize: '11px', color: 'var(--text-subtle, #6b7280)' }}>
                                         <em>Sin stock registrado en sistema</em>
                                     </div>
                                 )}
@@ -1002,7 +1002,7 @@ function ReportPhase({ isMobile, report, onReturnToCheck, onNewCheck }: {
             ) : (
                 <Card style={{ padding: '40px', textAlign: 'center' }}>
                     <div style={{ fontSize: '36px', marginBottom: '12px' }}>🔍</div>
-                    <h3 style={{ color: '#9ca3af', fontSize: '16px', fontWeight: 600, margin: 0 }}>
+                    <h3 style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '16px', fontWeight: 600, margin: 0 }}>
                         No hay posiciones con la etiqueta "{statCards.find(s => s.tagKey === selectedTagFilter)?.label}"
                     </h3>
                 </Card>

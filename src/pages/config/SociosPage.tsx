@@ -68,7 +68,7 @@ export default function SociosPage() {
                     loading={isLoading}
                     cols={['Nombre', 'Tipo', 'CUIT/CUIL', 'Email', 'Teléfono', '']}
                     rows={filteredPartners.map((p: any) => [
-                        <span style={{ color: '#d1d5db', fontWeight: 600 }}>{p.name}</span>,
+                        <span style={{ color: 'var(--text-secondary, #d1d5db)', fontWeight: 600 }}>{p.name}</span>,
                         <Badge color={TYPE_COLORS[p.type]}>{TYPES.find(t => t.value === p.type)?.label ?? p.type}</Badge>,
                         p.taxId ?? '—',
                         p.email ?? '—',

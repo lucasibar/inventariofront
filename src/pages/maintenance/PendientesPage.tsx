@@ -80,7 +80,7 @@ export default function PendientesPage() {
 
             <Grid container spacing={3} sx={{ mb: 4 }}>
                 <Grid size={{ xs: 12, md: 8 }}>
-                    <Card sx={{ bgcolor: '#111827', borderRadius: 2, p: 3, border: '1px solid #1f2937' }}>
+                    <Card sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, p: 3, border: '1px solid #1f2937' }}>
                         <Grid container spacing={2} alignItems="center">
                             <Grid size={{ xs: 12, sm: 6 }}>
                                 <Select 
@@ -115,10 +115,10 @@ export default function PendientesPage() {
             </Grid>
 
             {loadingMachines ? <Spinner /> : pendingMachines.length === 0 ? (
-                <Box sx={{ p: 10, textAlign: 'center', bgcolor: '#111827', borderRadius: 3, border: '1px dashed #374151' }}>
+                <Box sx={{ p: 10, textAlign: 'center', bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 3, border: '1px dashed var(--border-strong, #374151)' }}>
                     <CheckCircleOutlineIcon sx={{ fontSize: 80, color: '#10b981', mb: 2, opacity: 0.5 }} />
                     <Typography variant="h5" sx={{ color: 'white' }}>No hay máquinas paradas pendientes</Typography>
-                    <Typography sx={{ color: '#9ca3af' }}>¡Buen trabajo! Todas las máquinas están activas o en revisión controlada.</Typography>
+                    <Typography sx={{ color: 'var(--text-muted, #9ca3af)' }}>¡Buen trabajo! Todas las máquinas están activas o en revisión controlada.</Typography>
                 </Box>
             ) : (
                 <Grid container spacing={2}>
@@ -127,14 +127,14 @@ export default function PendientesPage() {
                         return (
                             <Grid size={{ xs: 12, sm: 6, lg: 4, xl: 3 }} key={m.id}>
                                 <Card sx={{ 
-                                    bgcolor: '#111827', 
+                                    bgcolor: 'var(--bg-secondary, #111827)', 
                                     borderRadius: 3, 
                                     border: '1px solid #1f2937',
                                     transition: 'transform 0.2s, box-shadow 0.2s',
                                     '&:hover': {
                                         transform: 'translateY(-4px)',
                                         boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.4)',
-                                        borderColor: '#374151'
+                                        borderColor: 'var(--border-strong, #374151)'
                                     },
                                     position: 'relative',
                                     overflow: 'hidden'
@@ -148,7 +148,7 @@ export default function PendientesPage() {
                                                 <Typography variant="h5" sx={{ color: 'white', fontWeight: 800 }}>
                                                     {m.number}
                                                 </Typography>
-                                                <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                                                <Typography variant="caption" sx={{ color: 'var(--text-subtle, #6b7280)' }}>
                                                     {m.codigoInterno}
                                                 </Typography>
                                             </Box>
@@ -171,9 +171,9 @@ export default function PendientesPage() {
                                             
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <Avatar sx={{ width: 24, height: 24, bgcolor: '#1f2937' }}>
-                                                    <ErrorOutlineIcon sx={{ fontSize: 16, color: '#9ca3af' }} />
+                                                    <ErrorOutlineIcon sx={{ fontSize: 16, color: 'var(--text-muted, #9ca3af)' }} />
                                                 </Avatar>
-                                                <Typography variant="body2" sx={{ color: '#9ca3af', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                <Typography variant="body2" sx={{ color: 'var(--text-muted, #9ca3af)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                     {m.lastFailureType || 'Falla no especificada'}
                                                 </Typography>
                                             </Box>
@@ -188,7 +188,7 @@ export default function PendientesPage() {
                                                     size="small" 
                                                     fullWidth
                                                     onClick={() => handleDetail(m)}
-                                                    sx={{ borderRadius: 1.5, borderColor: '#374151', color: '#9ca3af' }}
+                                                    sx={{ borderRadius: 1.5, borderColor: 'var(--border-strong, #374151)', color: 'var(--text-muted, #9ca3af)' }}
                                                 >
                                                     Detalle
                                                 </Button>

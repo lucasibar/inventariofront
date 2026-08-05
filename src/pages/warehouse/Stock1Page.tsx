@@ -58,15 +58,15 @@ import { useIsMobile } from '../../shared/ui';
 const colors = {
     primary: '#f59e0b', // Amber
     secondary: '#475569', // Slate
-    bg: '#0f1117',
-    cardBg: 'rgba(255, 255, 255, 0.03)',
+    bg: 'var(--bg-primary, #0f1117)',
+    cardBg: 'var(--bg-hover-row, rgba(255,255,255,0.03))',
     border: 'rgba(255, 255, 255, 0.08)',
-    text: '#f3f4f6',
-    textDim: '#9ca3af',
+    text: 'var(--text-primary, #f3f4f6)',
+    textDim: 'var(--text-muted, #9ca3af)',
     danger: '#ef4444',
     success: '#10b981',
     info: '#3b82f6',
-    inputBg: 'rgba(255, 255, 255, 0.05)'
+    inputBg: 'var(--bg-action-btn, rgba(255,255,255,0.05))'
 };
 
 interface DebouncedSearchInputProps {
@@ -671,7 +671,7 @@ export default function Stock1Page() {
                         ) : (
                             <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: '12px', overflowX: 'auto' }}>
                                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                                    <thead style={{ background: 'rgba(0,0,0,0.2)' }}>
+                                    <thead style={{ background: 'var(--bg-alt-row, rgba(0,0,0,0.2))' }}>
                                         <tr style={{ textAlign: 'left', color: colors.textDim }}>
                                             <th style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, fontWeight: 800 }}>Código</th>
                                             <th style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, fontWeight: 800 }}>Material / Descripción</th>
@@ -730,7 +730,7 @@ export default function Stock1Page() {
                     )}
                     <style>{`
                         .hoverable-row:hover {
-                            background-color: rgba(255, 255, 255, 0.02) !important;
+                            background-color: var(--bg-alt-row, rgba(255,255,255,0.02)) !important;
                         }
                         .material-card-hover:hover {
                             border-color: ${colors.primary} !important;
@@ -867,7 +867,7 @@ export default function Stock1Page() {
                         
                         <TableContainer sx={{ maxHeight: 400, overflowY: 'auto', border: `1px solid ${colors.border}`, borderRadius: 2 }}>
                             <MuiTable size="small">
-                                <TableHead sx={{ bgcolor: 'rgba(0,0,0,0.2)' }}>
+                                <TableHead sx={{ bgcolor: 'var(--bg-alt-row, rgba(0,0,0,0.2))' }}>
                                     <TableRow sx={{ '& th': { color: colors.textDim, fontWeight: 800 } }}>
                                         <TableCell>Ubicación</TableCell>
                                         <TableCell>Lote</TableCell>
@@ -1084,7 +1084,7 @@ export default function Stock1Page() {
                             <Typography variant="h6" sx={{ fontWeight: 900, color: colors.info }}>Posiciones Vacías ({emptyPositions.length})</Typography>
                             <IconButton onClick={() => setEmptyPositionsModal(false)} sx={{ color: colors.textDim }}><CloseIcon /></IconButton>
                         </Box>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxHeight: '300px', overflowY: 'auto', p: 1, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 }}>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxHeight: '300px', overflowY: 'auto', p: 1, bgcolor: 'var(--bg-alt-row, rgba(0,0,0,0.2))', borderRadius: 2 }}>
                             {emptyPositions.length === 0 ? (
                                 <Typography variant="body2" sx={{ color: colors.textDim, p: 2 }}>No hay posiciones vacías en este depósito.</Typography>
                             ) : (
@@ -1094,7 +1094,7 @@ export default function Stock1Page() {
                                         sx={{ 
                                             px: 1.5, 
                                             py: 0.5, 
-                                            bgcolor: 'rgba(255, 255, 255, 0.05)', 
+                                            bgcolor: 'var(--bg-action-btn, rgba(255,255,255,0.05))', 
                                             border: `1px solid ${colors.border}`, 
                                             borderRadius: 2, 
                                             color: '#fff', 

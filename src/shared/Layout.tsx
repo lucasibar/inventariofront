@@ -793,12 +793,14 @@ export default function Layout() {
 
             {/* Main Content Area */}
             <main 
+                className="app-content"
                 style={{
                     flex: 1,
                     overflowY: 'auto',
                     overflowX: 'hidden',
                     position: 'relative',
-                    width: '100%'
+                    width: '100%',
+                    background: theme === 'light' ? '#f0f2f5' : undefined,
                 }}
             >
                 {isNavigating && (

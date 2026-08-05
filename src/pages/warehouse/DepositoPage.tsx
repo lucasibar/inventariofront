@@ -23,14 +23,14 @@ function EditableCell({ value, onSave, label, type = 'text', options }: { value:
 
     if (!editing) return (
         <div onClick={() => { setDraft(value); setEditing(true); }} style={{ cursor: 'pointer', padding: '6px 0', borderBottom: '1px dashed transparent', transition: 'all 0.2s' }} className="editable-trigger">
-            {label && <div style={{ fontSize: '10px', color: '#6b7280', textTransform: 'uppercase', marginBottom: '2px' }}>{label}</div>}
-            <div style={{ color: '#f3f4f6', fontWeight: 500 }}>{value || '—'}</div>
+            {label && <div style={{ fontSize: '10px', color: 'var(--text-subtle, #6b7280)', textTransform: 'uppercase', marginBottom: '2px' }}>{label}</div>}
+            <div style={{ color: 'var(--text-primary, #f3f4f6)', fontWeight: 500 }}>{value || '—'}</div>
         </div>
     );
 
     return (
         <div style={{ padding: '4px 0' }}>
-            {label && <div style={{ fontSize: '10px', color: '#6b7280', textTransform: 'uppercase', marginBottom: '2px' }}>{label}</div>}
+            {label && <div style={{ fontSize: '10px', color: 'var(--text-subtle, #6b7280)', textTransform: 'uppercase', marginBottom: '2px' }}>{label}</div>}
             {options ? (
                 <select
                     ref={ref as any}
@@ -38,7 +38,7 @@ function EditableCell({ value, onSave, label, type = 'text', options }: { value:
                     onChange={e => setDraft(e.target.value)}
                     onBlur={commit}
                     disabled={saving}
-                    style={{ width: '100%', background: '#0f1117', border: '1px solid #6366f1', borderRadius: '6px', padding: '6px 10px', color: '#f3f4f6', fontSize: '13px', outline: 'none' }}
+                    style={{ width: '100%', background: 'var(--bg-primary, #0f1117)', border: '1px solid #6366f1', borderRadius: '6px', padding: '6px 10px', color: 'var(--text-primary, #f3f4f6)', fontSize: '13px', outline: 'none' }}
                 >
                     {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
@@ -52,8 +52,8 @@ function EditableCell({ value, onSave, label, type = 'text', options }: { value:
                     onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false); }}
                     disabled={saving}
                     style={{
-                        width: '100%', background: '#0f1117', border: '1px solid #6366f1',
-                        borderRadius: '6px', padding: '6px 10px', color: '#f3f4f6',
+                        width: '100%', background: 'var(--bg-primary, #0f1117)', border: '1px solid #6366f1',
+                        borderRadius: '6px', padding: '6px 10px', color: 'var(--text-primary, #f3f4f6)',
                         fontSize: '13px', outline: 'none', boxShadow: '0 0 0 2px rgba(99, 102, 241, 0.2)'
                     }}
                 />
@@ -72,21 +72,21 @@ function CategoryManager({ categoriaPrincipal, categoriaSecundaria, itemCategori
 }) {
     return (
         <div style={{ 
-            display: 'flex', flexDirection: 'column', gap: '12px', background: '#0f1117', 
-            padding: '16px', borderRadius: '12px', border: '1px solid #1e2133', minWidth: '250px',
+            display: 'flex', flexDirection: 'column', gap: '12px', background: 'var(--bg-primary, #0f1117)', 
+            padding: '16px', borderRadius: '12px', border: '1px solid var(--border-subtle, #1e2133)', minWidth: '250px',
             boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)', position: 'relative', zIndex: 100
         }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1e2133', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '11px', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Filtros de Material</span>
-                <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '14px' }}>✕</button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-subtle, #1e2133)', paddingBottom: '8px' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-subtle, #6b7280)', fontWeight: 600, textTransform: 'uppercase' }}>Filtros de Material</span>
+                <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-subtle, #6b7280)', cursor: 'pointer', fontSize: '14px' }}>✕</button>
             </div>
 
             <div>
-                <label style={{ display: 'block', color: '#9ca3af', fontSize: '11px', marginBottom: '4px' }}>Categoría Principal</label>
+                <label style={{ display: 'block', color: 'var(--text-muted, #9ca3af)', fontSize: '11px', marginBottom: '4px' }}>Categoría Principal</label>
                 <select 
                     value={categoriaPrincipal || ''}
                     onChange={e => onUpdate(e.target.value || null, categoriaSecundaria)}
-                    style={{ width: '100%', background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: '6px', padding: '6px', color: '#f3f4f6', fontSize: '12px', outline: 'none' }}
+                    style={{ width: '100%', background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-color, #2a2d3e)', borderRadius: '6px', padding: '6px', color: 'var(--text-primary, #f3f4f6)', fontSize: '12px', outline: 'none' }}
                 >
                     <option value="">— Libre —</option>
                     {itemCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
@@ -94,11 +94,11 @@ function CategoryManager({ categoriaPrincipal, categoriaSecundaria, itemCategori
             </div>
 
             <div>
-                <label style={{ display: 'block', color: '#9ca3af', fontSize: '11px', marginBottom: '4px' }}>Categoría Secundaria</label>
+                <label style={{ display: 'block', color: 'var(--text-muted, #9ca3af)', fontSize: '11px', marginBottom: '4px' }}>Categoría Secundaria</label>
                 <select 
                     value={categoriaSecundaria || ''}
                     onChange={e => onUpdate(categoriaPrincipal, e.target.value || null)}
-                    style={{ width: '100%', background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: '6px', padding: '6px', color: '#f3f4f6', fontSize: '12px', outline: 'none' }}
+                    style={{ width: '100%', background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-color, #2a2d3e)', borderRadius: '6px', padding: '6px', color: 'var(--text-primary, #f3f4f6)', fontSize: '12px', outline: 'none' }}
                 >
                     <option value="">— Libre —</option>
                     {itemCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
@@ -180,8 +180,8 @@ export default function DepositoPage() {
 
     if (!isAdmin) {
         return (
-            <div style={{ padding: '48px', textAlign: 'center', color: '#9ca3af' }}>
-                <h2 style={{ color: '#f3f4f6', marginBottom: '8px' }}>Acceso Restringido</h2>
+            <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted, #9ca3af)' }}>
+                <h2 style={{ color: 'var(--text-primary, #f3f4f6)', marginBottom: '8px' }}>Acceso Restringido</h2>
                 <p>Solo los administradores registrados pueden gestionar la infraestructura.</p>
             </div>
         );
@@ -265,7 +265,7 @@ export default function DepositoPage() {
                 .infra-container { font-family: 'Inter', sans-serif; }
                 .depot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 32px; }
                 .depot-card { 
-                    border: 1px solid #1e2133; background: #1a1d2e; border-radius: 12px; padding: 20px; cursor: pointer;
+                    border: 1px solid var(--border-subtle, #1e2133); background: var(--bg-secondary, #1a1d2e); border-radius: 12px; padding: 20px; cursor: pointer;
                     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden;
                 }
                 .depot-card:hover { border-color: #4b5563; transform: translateY(-2px); }
@@ -319,12 +319,12 @@ export default function DepositoPage() {
                                         />
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '10px', color: '#6b7280', textTransform: 'uppercase' }}>Posiciones</div>
-                                        <div style={{ fontSize: '18px', fontWeight: 700, color: '#f3f4f6' }}>{d.positions?.length || 0}</div>
+                                        <div style={{ fontSize: '10px', color: 'var(--text-subtle, #6b7280)', textTransform: 'uppercase' }}>Posiciones</div>
+                                        <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary, #f3f4f6)' }}>{d.positions?.length || 0}</div>
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '8px', marginTop: '16px', borderTop: '1px solid #2a2d3e', paddingTop: '12px' }}>
+                                <div style={{ display: 'flex', gap: '8px', marginTop: '16px', borderTop: '1px solid var(--border-color, #2a2d3e)', paddingTop: '12px' }}>
                                     <Btn small variant={selectedDepotId === d.id ? 'primary' : 'secondary'} style={{ flex: 1 }}>
                                         {selectedDepotId === d.id ? 'Ocultar Posiciones' : 'Ver Posiciones'}
                                     </Btn>
@@ -337,10 +337,10 @@ export default function DepositoPage() {
                     {selectedDepot && (
                         <div className="pos-table-container">
                             <Card style={{ padding: '24px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #1e2133', paddingBottom: '16px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-subtle, #1e2133)', paddingBottom: '16px' }}>
                                     <div>
-                                        <h3 style={{ margin: 0, color: '#f3f4f6', fontSize: '18px' }}>Detalles de {selectedDepot.nombre}</h3>
-                                        <p style={{ margin: '4px 0 0', color: '#9ca3af', fontSize: '13px' }}>Gestiona posiciones físicas o configura los límites máximos y mínimos de las categorías.</p>
+                                        <h3 style={{ margin: 0, color: 'var(--text-primary, #f3f4f6)', fontSize: '18px' }}>Detalles de {selectedDepot.nombre}</h3>
+                                        <p style={{ margin: '4px 0 0', color: 'var(--text-muted, #9ca3af)', fontSize: '13px' }}>Gestiona posiciones físicas o configura los límites máximos y mínimos de las categorías.</p>
                                     </div>
                                     <div style={{ display: 'flex', gap: '12px' }}>
                                         {detailTab === 'positions' ? (
@@ -354,12 +354,12 @@ export default function DepositoPage() {
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid #1e2133' }}>
+                                <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid var(--border-subtle, #1e2133)' }}>
                                     <button 
                                         onClick={() => setDetailTab('positions')}
                                         style={{
                                             background: 'none', border: 'none', padding: '12px 16px', fontSize: '14px', fontWeight: 600,
-                                            color: detailTab === 'positions' ? '#6366f1' : '#9ca3af',
+                                            color: detailTab === 'positions' ? '#6366f1' : 'var(--text-muted, #9ca3af)',
                                             borderBottom: detailTab === 'positions' ? '2px solid #6366f1' : '2px solid transparent',
                                             cursor: 'pointer', outline: 'none', transition: 'all 0.2s'
                                         }}
@@ -370,7 +370,7 @@ export default function DepositoPage() {
                                         onClick={() => setDetailTab('categories')}
                                         style={{
                                             background: 'none', border: 'none', padding: '12px 16px', fontSize: '14px', fontWeight: 600,
-                                            color: detailTab === 'categories' ? '#6366f1' : '#9ca3af',
+                                            color: detailTab === 'categories' ? '#6366f1' : 'var(--text-muted, #9ca3af)',
                                             borderBottom: detailTab === 'categories' ? '2px solid #6366f1' : '2px solid transparent',
                                             cursor: 'pointer', outline: 'none', transition: 'all 0.2s'
                                         }}
@@ -382,22 +382,22 @@ export default function DepositoPage() {
                                 {detailTab === 'positions' ? (
                                     <>
                                         {/* Filtros de Búsqueda */}
-                                        <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', background: '#0f1117', padding: '16px', borderRadius: '12px', border: '1px solid #1e2133' }}>
+                                        <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', background: 'var(--bg-primary, #0f1117)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-subtle, #1e2133)' }}>
                                             <div style={{ flex: 2 }}>
-                                                <label style={{ display: 'block', fontSize: '10px', color: '#6b7280', textTransform: 'uppercase', marginBottom: '6px' }}>Buscar por Código</label>
+                                                <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-subtle, #6b7280)', textTransform: 'uppercase', marginBottom: '6px' }}>Buscar por Código</label>
                                                 <input 
                                                     placeholder="Ej: 1-1-A..."
                                                     value={posSearch}
                                                     onChange={e => setPosSearch(e.target.value)}
-                                                    style={{ width: '100%', background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: '8px', padding: '8px 12px', color: '#f3f4f6', outline: 'none' }}
+                                                    style={{ width: '100%', background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-color, #2a2d3e)', borderRadius: '8px', padding: '8px 12px', color: 'var(--text-primary, #f3f4f6)', outline: 'none' }}
                                                 />
                                             </div>
                                             <div style={{ flex: 1 }}>
-                                                <label style={{ display: 'block', fontSize: '10px', color: '#6b7280', textTransform: 'uppercase', marginBottom: '6px' }}>Zona / Categoría</label>
+                                                <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-subtle, #6b7280)', textTransform: 'uppercase', marginBottom: '6px' }}>Zona / Categoría</label>
                                                 <select 
                                                     value={posFilterCat}
                                                     onChange={e => setPosFilterCat(e.target.value)}
-                                                    style={{ width: '100%', background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: '8px', padding: '8px 12px', color: '#f3f4f6', outline: 'none' }}
+                                                    style={{ width: '100%', background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-color, #2a2d3e)', borderRadius: '8px', padding: '8px 12px', color: 'var(--text-primary, #f3f4f6)', outline: 'none' }}
                                                 >
                                                     <option value="">Todas las zonas</option>
                                                     <option value="STOCK">Stock</option>
@@ -408,11 +408,11 @@ export default function DepositoPage() {
                                                 </select>
                                             </div>
                                             <div style={{ flex: 1 }}>
-                                                <label style={{ display: 'block', fontSize: '10px', color: '#6b7280', textTransform: 'uppercase', marginBottom: '6px' }}>Cat. Material</label>
+                                                <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-subtle, #6b7280)', textTransform: 'uppercase', marginBottom: '6px' }}>Cat. Material</label>
                                                 <select 
                                                     value={posFilterItem}
                                                     onChange={e => setPosFilterItem(e.target.value)}
-                                                    style={{ width: '100%', background: '#1a1d2e', border: '1px solid #2a2d3e', borderRadius: '8px', padding: '8px 12px', color: '#f3f4f6', outline: 'none' }}
+                                                    style={{ width: '100%', background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-color, #2a2d3e)', borderRadius: '8px', padding: '8px 12px', color: 'var(--text-primary, #f3f4f6)', outline: 'none' }}
                                                 >
                                                     <option value="">Todos los materiales</option>
                                                     {itemCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
@@ -422,18 +422,18 @@ export default function DepositoPage() {
 
                                         <div style={{ overflowX: 'auto', maxHeight: '600px', overflowY: 'auto' }}>
                                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                                <thead style={{ position: 'sticky', top: 0, background: '#1a1d2e', zIndex: 10 }}>
+                                                <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-secondary, #1a1d2e)', zIndex: 10 }}>
                                                     <tr>
                                                         {['Código', 'Volumen (m³)', 'Tipo / Zona', 'Items Asignados', 'Estado'].map(h => (
-                                                            <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #1e2133' }}>{h}</th>
+                                                            <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: '11px', color: 'var(--text-subtle, #6b7280)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid var(--border-subtle, #1e2133)' }}>{h}</th>
                                                         ))}
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {filteredPositions.length === 0 ? (
-                                                        <tr><td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: '#4b5563' }}>No se encontraron posiciones con los filtros seleccionados.</td></tr>
+                                                        <tr><td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-dimmed, #4b5563)' }}>No se encontraron posiciones con los filtros seleccionados.</td></tr>
                                                     ) : filteredPositions.slice(0, 200).map((p: any) => (
-                                                        <tr key={p.id} style={{ borderBottom: '1px solid #1e2133', opacity: p.activo ? 1 : 0.5 }}>
+                                                        <tr key={p.id} style={{ borderBottom: '1px solid var(--border-subtle, #1e2133)', opacity: p.activo ? 1 : 0.5 }}>
                                                             <td style={{ padding: '8px 16px' }}>
                                                                 <EditableCell 
                                                                     value={p.codigo} 
@@ -460,7 +460,7 @@ export default function DepositoPage() {
                                                                         await updatePosition({ id: p.id, data: { categoria: e.target.value } }).unwrap(); 
                                                                         refetch();
                                                                     }}
-                                                                    style={{ background: '#0f1117', border: '1px solid #2a2d3e', color: '#f3f4f6', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', outline: 'none' }}
+                                                                    style={{ background: 'var(--bg-primary, #0f1117)', border: '1px solid var(--border-color, #2a2d3e)', color: 'var(--text-primary, #f3f4f6)', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', outline: 'none' }}
                                                                 >
                                                                     <option value="STOCK">Stock General</option>
                                                                     <option value="PICKING">Picking</option>
@@ -545,19 +545,19 @@ export default function DepositoPage() {
                                 ) : (
                                     <div style={{ overflowX: 'auto', maxHeight: '600px', overflowY: 'auto' }}>
                                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                            <thead style={{ position: 'sticky', top: 0, background: '#1a1d2e', zIndex: 10 }}>
+                                            <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-secondary, #1a1d2e)', zIndex: 10 }}>
                                                 <tr>
                                                     {['Nombre Categoría', 'Stock Mínimo Alerta', 'Stock Máximo Alerta', 'Estado'].map(h => (
-                                                        <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #1e2133' }}>{h}</th>
+                                                        <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: '11px', color: 'var(--text-subtle, #6b7280)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid var(--border-subtle, #1e2133)' }}>{h}</th>
                                                     ))}
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {categories.length === 0 ? (
-                                                    <tr><td colSpan={4} style={{ padding: '32px', textAlign: 'center', color: '#4b5563' }}>No hay categorías de materiales registradas en este depósito.</td></tr>
+                                                    <tr><td colSpan={4} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-dimmed, #4b5563)' }}>No hay categorías de materiales registradas en este depósito.</td></tr>
                                                 ) : categories.map((cat: any) => (
-                                                    <tr key={cat.id} style={{ borderBottom: '1px solid #1e2133', opacity: cat.activo ? 1 : 0.5 }}>
-                                                        <td style={{ padding: '8px 16px', fontWeight: 600, color: '#f3f4f6' }}>
+                                                    <tr key={cat.id} style={{ borderBottom: '1px solid var(--border-subtle, #1e2133)', opacity: cat.activo ? 1 : 0.5 }}>
+                                                        <td style={{ padding: '8px 16px', fontWeight: 600, color: 'var(--text-primary, #f3f4f6)' }}>
                                                             {cat.nombre}
                                                         </td>
                                                         <td style={{ padding: '8px 16px', width: '180px' }}>
@@ -611,10 +611,10 @@ export default function DepositoPage() {
             {showNewDepot && (
                 <Modal title="Nuevo Depósito" onClose={() => setShowNewDepot(false)}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>Crea un nuevo depósito físico. Se generará automáticamente una posición ENTRADA.</p>
+                        <p style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '13px', margin: 0 }}>Crea un nuevo depósito físico. Se generará automáticamente una posición ENTRADA.</p>
                         <Input label="Nombre del Depósito" value={newDepotForm.nombre} onChange={v => setNewDepotForm(p => ({...p, nombre: v}))} />
                         <Input label="Planta" value={newDepotForm.planta} onChange={v => setNewDepotForm(p => ({...p, planta: v}))} />
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #1e2133', paddingTop: '16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid var(--border-subtle, #1e2133)', paddingTop: '16px' }}>
                             <Btn variant="secondary" onClick={() => setShowNewDepot(false)}>Cancelar</Btn>
                             <Btn onClick={handleCreateDepot} disabled={isSavingDepot}>{isSavingDepot ? 'Guardando...' : 'Crear Depósito'}</Btn>
                         </div>
@@ -625,18 +625,18 @@ export default function DepositoPage() {
             {showNewPosition && (
                 <Modal title="Nueva Posición" onClose={() => setShowNewPosition(null)}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>Define una nueva ubicación física dentro del depósito.</p>
+                        <p style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '13px', margin: 0 }}>Define una nueva ubicación física dentro del depósito.</p>
                         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
                             <Input label="Código de Posición" value={newPosForm.codigo} onChange={v => setNewPosForm(p => ({...p, codigo: v}))} placeholder="Ej: A-01-01" />
                             <Input label="m³" type="number" value={newPosForm.metrosCubicos} onChange={v => setNewPosForm(p => ({...p, metrosCubicos: v}))} placeholder="0.0" />
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                             <div>
-                                <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>Tipo / Categoría</label>
+                                <label style={{ display: 'block', color: 'var(--text-muted, #9ca3af)', fontSize: '12px', marginBottom: '4px' }}>Tipo / Categoría</label>
                                 <select 
                                     value={newPosForm.categoria} 
                                     onChange={e => setNewPosForm(p => ({...p, categoria: e.target.value}))}
-                                    style={{ width: '100%', background: '#0f1117', border: '1px solid #374151', borderRadius: '8px', padding: '8px 10px', color: '#f3f4f6', fontSize: '13px', outline: 'none' }}
+                                    style={{ width: '100%', background: 'var(--bg-primary, #0f1117)', border: '1px solid var(--border-strong, #374151)', borderRadius: '8px', padding: '8px 10px', color: 'var(--text-primary, #f3f4f6)', fontSize: '13px', outline: 'none' }}
                                 >
                                     <option value="STOCK">Stock General</option>
                                     <option value="PICKING">Picking</option>
@@ -647,29 +647,29 @@ export default function DepositoPage() {
                                 </select>
                             </div>
                             <div>
-                                <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>Cat. Principal (Opcional)</label>
+                                <label style={{ display: 'block', color: 'var(--text-muted, #9ca3af)', fontSize: '12px', marginBottom: '4px' }}>Cat. Principal (Opcional)</label>
                                 <select 
                                     value={newPosForm.categoria_item_primario} 
                                     onChange={e => setNewPosForm(p => ({...p, categoria_item_primario: e.target.value}))}
-                                    style={{ width: '100%', background: '#0f1117', border: '1px solid #374151', borderRadius: '8px', padding: '8px 10px', color: '#f3f4f6', fontSize: '13px', outline: 'none' }}
+                                    style={{ width: '100%', background: 'var(--bg-primary, #0f1117)', border: '1px solid var(--border-strong, #374151)', borderRadius: '8px', padding: '8px 10px', color: 'var(--text-primary, #f3f4f6)', fontSize: '13px', outline: 'none' }}
                                 >
                                     <option value="">— Ninguna —</option>
                                     {itemCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                                 </select>
                             </div>
                             <div>
-                                <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '4px' }}>Cat. Secundaria (Opcional)</label>
+                                <label style={{ display: 'block', color: 'var(--text-muted, #9ca3af)', fontSize: '12px', marginBottom: '4px' }}>Cat. Secundaria (Opcional)</label>
                                 <select 
                                     value={newPosForm.categoria_item_secundario} 
                                     onChange={e => setNewPosForm(p => ({...p, categoria_item_secundario: e.target.value}))}
-                                    style={{ width: '100%', background: '#0f1117', border: '1px solid #374151', borderRadius: '8px', padding: '8px 10px', color: '#f3f4f6', fontSize: '13px', outline: 'none' }}
+                                    style={{ width: '100%', background: 'var(--bg-primary, #0f1117)', border: '1px solid var(--border-strong, #374151)', borderRadius: '8px', padding: '8px 10px', color: 'var(--text-primary, #f3f4f6)', fontSize: '13px', outline: 'none' }}
                                 >
                                     <option value="">— Ninguna —</option>
                                     {itemCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                                 </select>
                             </div>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #1e2133', paddingTop: '16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid var(--border-subtle, #1e2133)', paddingTop: '16px' }}>
                             <Btn variant="secondary" onClick={() => setShowNewPosition(null)} disabled={isCreatingPosition}>Cancelar</Btn>
                             <Btn onClick={handleAddPosition} disabled={isCreatingPosition}>
                                 {isCreatingPosition ? 'Creando...' : 'Crear Posición'}
@@ -681,13 +681,13 @@ export default function DepositoPage() {
             {showNewCategory && (
                 <Modal title="Nueva Categoría de Materiales" onClose={() => setShowNewCategory(false)}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>Crea una nueva categoría de material en este depósito.</p>
+                        <p style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '13px', margin: 0 }}>Crea una nueva categoría de material en este depósito.</p>
                         <Input label="Nombre de Categoría" value={newCategoryForm.nombre} onChange={v => setNewCategoryForm(p => ({...p, nombre: v}))} placeholder="Ej: POLIESTER" />
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                             <Input label="Alerta Stock Mínimo" type="number" value={newCategoryForm.minimo} onChange={v => setNewCategoryForm(p => ({...p, minimo: v}))} placeholder="Ej: 100" />
                             <Input label="Alerta Stock Máximo" type="number" value={newCategoryForm.maximo} onChange={v => setNewCategoryForm(p => ({...p, maximo: v}))} placeholder="Ej: 500" />
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #1e2133', paddingTop: '16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid var(--border-subtle, #1e2133)', paddingTop: '16px' }}>
                             <Btn variant="secondary" onClick={() => setShowNewCategory(false)} disabled={isCreatingCategory}>Cancelar</Btn>
                             <Btn onClick={handleCreateCategory} disabled={isCreatingCategory}>
                                 {isCreatingCategory ? 'Creando...' : 'Crear Categoría'}

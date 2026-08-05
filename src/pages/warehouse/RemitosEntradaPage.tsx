@@ -86,12 +86,12 @@ export default function RemitosEntradaPage() {
                 </div>
             ) : remitos.length === 0 && !isLoading ? (
                 <Card style={{ textAlign: 'center', padding: '60px' }}>
-                    <h3 style={{ color: '#f3f4f6', marginBottom: '8px' }}>Todavía no hay ningún remito cargado</h3>
-                    <p style={{ color: '#9ca3af' }}>Inicie una nueva recepción de materiales presionando el botón "+ Nuevo Ingreso".</p>
+                    <h3 style={{ color: 'var(--text-primary, #f3f4f6)', marginBottom: '8px' }}>Todavía no hay ningún remito cargado</h3>
+                    <p style={{ color: 'var(--text-muted, #9ca3af)' }}>Inicie una nueva recepción de materiales presionando el botón "+ Nuevo Ingreso".</p>
                 </Card>
             ) : filteredRemitos.length === 0 && search.trim() ? (
                 <Card style={{ textAlign: 'center', padding: '40px' }}>
-                    <p style={{ color: '#9ca3af' }}>No se encontraron remitos que coincidan con "{search}".</p>
+                    <p style={{ color: 'var(--text-muted, #9ca3af)' }}>No se encontraron remitos que coincidan con "{search}".</p>
                 </Card>
             ) : (
                 <Card>

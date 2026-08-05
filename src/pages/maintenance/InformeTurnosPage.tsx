@@ -110,10 +110,10 @@ const StatBox = ({ label, dayVal, nightVal, fmt = 'n', invert }: {
     return (
         <Box sx={{
             flex: '1 1 0', minWidth: 130, p: 1.5, borderRadius: 2,
-            bgcolor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+            bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', border: '1px solid rgba(255,255,255,0.06)',
             transition: 'all 0.2s', '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' }
         }}>
-            <Typography sx={{ color: '#4b5563', fontWeight: 800, fontSize: '0.55rem', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
+            <Typography sx={{ color: 'var(--text-dimmed, #4b5563)', fontWeight: 800, fontSize: '0.55rem', textTransform: 'uppercase', letterSpacing: '0.08em', mb: 1 }}>
                 {label}
             </Typography>
             <Box sx={{ display: 'flex', justifyContent: 'space-around', gap: 1 }}>
@@ -291,8 +291,8 @@ export default function InformeTurnosPage() {
         .sort((a, b) => b.stops - a.stops);
 
     // Row style helper
-    const thStyle: React.CSSProperties = { padding: '6px 8px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: '#4b5563', textAlign: 'left', borderBottom: '1px solid #1f2937' };
-    const tdStyle = (i: number): React.CSSProperties => ({ padding: '6px 8px', fontSize: '12px', fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.03)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' });
+    const thStyle: React.CSSProperties = { padding: '6px 8px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-dimmed, #4b5563)', textAlign: 'left', borderBottom: '1px solid #1f2937' };
+    const tdStyle = (i: number): React.CSSProperties => ({ padding: '6px 8px', fontSize: '12px', fontWeight: 700, borderBottom: '1px solid var(--bg-hover-row, rgba(255,255,255,0.03))', background: i % 2 === 0 ? 'transparent' : 'var(--bg-alt-row, rgba(255,255,255,0.01))' });
 
     return (
         <Box sx={{ p: 0, maxWidth: '1400px', margin: '0 auto', color: 'white', pb: 10 }}>
@@ -300,9 +300,9 @@ export default function InformeTurnosPage() {
             {/* ── Top Bar (dashboard style) ── */}
             <Box sx={{
                 display: 'flex', alignItems: 'center', p: 1,
-                bgcolor: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.08)',
+                bgcolor: 'var(--bg-hover-row, rgba(255,255,255,0.03))', borderBottom: '1px solid rgba(255,255,255,0.08)',
             }}>
-                <IconButton size="medium" onClick={toggleSidebar} sx={{ color: '#6b7280', mr: 1 }}>
+                <IconButton size="medium" onClick={toggleSidebar} sx={{ color: 'var(--text-subtle, #6b7280)', mr: 1 }}>
                     <MoreVertIcon />
                 </IconButton>
 
@@ -311,14 +311,14 @@ export default function InformeTurnosPage() {
                         <Typography sx={{ color: '#eab308', fontWeight: 900, fontSize: '1.4rem', lineHeight: 1 }}>
                             {isDetailedLoading ? '...' : day.stops}
                         </Typography>
-                        <Typography sx={{ color: '#4b5563', fontWeight: 800, fontSize: '0.5rem', textTransform: 'uppercase' }}>☀️ Paradas Día</Typography>
+                        <Typography sx={{ color: 'var(--text-dimmed, #4b5563)', fontWeight: 800, fontSize: '0.5rem', textTransform: 'uppercase' }}>☀️ Paradas Día</Typography>
                     </Box>
                     <Box sx={{ width: '1px', bgcolor: 'rgba(255,255,255,0.1)' }} />
                     <Box sx={{ textAlign: 'center' }}>
                         <Typography sx={{ color: '#818cf8', fontWeight: 900, fontSize: '1.4rem', lineHeight: 1 }}>
                             {isDetailedLoading ? '...' : night.stops}
                         </Typography>
-                        <Typography sx={{ color: '#4b5563', fontWeight: 800, fontSize: '0.5rem', textTransform: 'uppercase' }}>🌙 Paradas Noche</Typography>
+                        <Typography sx={{ color: 'var(--text-dimmed, #4b5563)', fontWeight: 800, fontSize: '0.5rem', textTransform: 'uppercase' }}>🌙 Paradas Noche</Typography>
                     </Box>
                     <Box sx={{ width: '1px', bgcolor: 'rgba(255,255,255,0.1)' }} />
                     <Box sx={{ textAlign: 'center' }}>
@@ -328,18 +328,18 @@ export default function InformeTurnosPage() {
                         }}>
                             {isDetailedLoading ? '...' : `${night.rate.toFixed(0)}%`}
                         </Typography>
-                        <Typography sx={{ color: '#4b5563', fontWeight: 800, fontSize: '0.5rem', textTransform: 'uppercase' }}>🌙 Resolución</Typography>
+                        <Typography sx={{ color: 'var(--text-dimmed, #4b5563)', fontWeight: 800, fontSize: '0.5rem', textTransform: 'uppercase' }}>🌙 Resolución</Typography>
                     </Box>
                 </Box>
 
-                <IconButton size="medium" onClick={() => setShowFilters(!showFilters)} sx={{ color: showFilters ? '#10b981' : '#6b7280', ml: 1 }}>
+                <IconButton size="medium" onClick={() => setShowFilters(!showFilters)} sx={{ color: showFilters ? '#10b981' : 'var(--text-subtle, #6b7280)', ml: 1 }}>
                     <FilterListIcon />
                 </IconButton>
             </Box>
 
             {/* ── Filters (collapsible) ── */}
             <Collapse in={showFilters}>
-                <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.01)', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+                <Box sx={{ p: 2, bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.01))', borderBottom: '1px solid var(--bg-action-btn, rgba(255,255,255,0.05))', display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
                         {(['7', '15', '30'] as const).map(p => (
                             <Button
@@ -349,7 +349,7 @@ export default function InformeTurnosPage() {
                                 sx={{
                                     fontSize: '0.65rem', fontWeight: 800, minWidth: 'auto', px: 1.2,
                                     bgcolor: period === p ? '#6366f1' : 'transparent',
-                                    borderColor: '#374151', color: period === p ? '#fff' : '#6b7280',
+                                    borderColor: 'var(--border-strong, #374151)', color: period === p ? '#fff' : 'var(--text-subtle, #6b7280)',
                                 }}
                             >
                                 {p}d
@@ -367,7 +367,7 @@ export default function InformeTurnosPage() {
             {/* ── Executive Summary (inline, no card overhead) ── */}
             {!isDetailedLoading && night.unresolved > 0 && (
                 <Box sx={{ px: 2, py: 1.5, bgcolor: 'rgba(239,68,68,0.06)', borderBottom: '1px solid rgba(239,68,68,0.15)' }}>
-                    <Typography sx={{ color: '#d1d5db', fontSize: '0.8rem', lineHeight: 1.6 }}>
+                    <Typography sx={{ color: 'var(--text-secondary, #d1d5db)', fontSize: '0.8rem', lineHeight: 1.6 }}>
                         ⚠️ En los últimos <strong>{period} días</strong>, el turno noche acumuló <strong style={{ color: '#ef4444' }}>{night.unresolved} paradas sin resolver</strong> que
                         el turno día tuvo que absorber. Tasa de resolución nocturna: <strong style={{ color: night.rate < 50 ? '#ef4444' : '#10b981' }}>{night.rate.toFixed(0)}%</strong> vs
                         diurna: <strong style={{ color: day.rate < 50 ? '#ef4444' : '#10b981' }}>{day.rate.toFixed(0)}%</strong>.
@@ -385,7 +385,7 @@ export default function InformeTurnosPage() {
                 {isDetailedLoading ? (
                     <Box sx={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'center', py: 1 }}>
                         <Spinner />
-                        <Typography sx={{ color: '#6b7280', fontSize: '0.75rem', fontWeight: 600, ml: 1 }}>
+                        <Typography sx={{ color: 'var(--text-subtle, #6b7280)', fontSize: '0.75rem', fontWeight: 600, ml: 1 }}>
                             Cargando KPIs...
                         </Typography>
                     </Box>
@@ -416,10 +416,10 @@ export default function InformeTurnosPage() {
                         onClick={() => setTab(t.id)}
                         sx={{
                             px: 2, py: 1.2, cursor: 'pointer', fontSize: '0.75rem', fontWeight: 800,
-                            color: tab === t.id ? '#a5b4fc' : '#4b5563',
+                            color: tab === t.id ? '#a5b4fc' : 'var(--text-dimmed, #4b5563)',
                             borderBottom: tab === t.id ? '2px solid #6366f1' : '2px solid transparent',
                             transition: 'all 0.15s', textTransform: 'uppercase', letterSpacing: '0.05em',
-                            '&:hover': { color: '#9ca3af' },
+                            '&:hover': { color: 'var(--text-muted, #9ca3af)' },
                         }}
                     >
                         {t.label}
@@ -437,23 +437,23 @@ export default function InformeTurnosPage() {
                             {isSimplifiedLoading ? (
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 6, gap: 2 }}>
                                     <Spinner />
-                                    <Typography sx={{ color: '#9ca3af', fontSize: '0.85rem', fontWeight: 600 }}>
+                                    <Typography sx={{ color: 'var(--text-muted, #9ca3af)', fontSize: '0.85rem', fontWeight: 600 }}>
                                         Cargando comparativas mensuales...
                                     </Typography>
                                 </Box>
                             ) : (
                                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
                                     {monthlyChartsData.map((monthData, idx) => (
-                                        <Box key={idx} sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, p: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <Box key={idx} sx={{ bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', borderRadius: 2, p: 2, border: '1px solid var(--bg-action-btn, rgba(255,255,255,0.05))' }}>
                                             <Typography sx={{ fontWeight: 800, fontSize: '0.8rem', color: '#a5b4fc', mb: 1.5, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                                 Comparativa General - {monthData.monthName}
                                             </Typography>
                                             <ResponsiveContainer width="100%" height={220}>
                                                 <BarChart data={monthData.data} barGap={4} barCategoryGap="25%">
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                                    <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={{ stroke: '#1f2937' }} />
-                                                    <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={{ stroke: '#1f2937' }} />
-                                                    <RechartsTooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '6px', color: '#f3f4f6', fontSize: '11px' }} />
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="var(--bg-action-btn, rgba(255,255,255,0.05))" />
+                                                    <XAxis dataKey="name" tick={{ fill: 'var(--text-subtle, #6b7280)', fontSize: 10 }} axisLine={{ stroke: '#1f2937' }} />
+                                                    <YAxis tick={{ fill: 'var(--text-subtle, #6b7280)', fontSize: 10 }} axisLine={{ stroke: '#1f2937' }} />
+                                                    <RechartsTooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid var(--border-strong, #374151)', borderRadius: '6px', color: 'var(--text-primary, #f3f4f6)', fontSize: '11px' }} />
                                                     <Bar dataKey="☀️ Día" fill="#eab308" radius={[3, 3, 0, 0]} />
                                                     <Bar dataKey="🌙 Noche" fill="#818cf8" radius={[3, 3, 0, 0]} />
                                                 </BarChart>
@@ -467,15 +467,15 @@ export default function InformeTurnosPage() {
 
                     {/* FALLAS */}
                     {tab === 'fallas' && (
-                        <Box sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                        <Box sx={{ bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', borderRadius: 2, border: '1px solid var(--bg-action-btn, rgba(255,255,255,0.05))', overflow: 'hidden' }}>
                             {isDetailedLoading ? (
                                 <Box sx={{ p: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
                                     <Spinner />
-                                    <Typography sx={{ color: '#9ca3af', fontSize: '0.85rem', fontWeight: 600 }}>Cargando desglose de fallas...</Typography>
+                                    <Typography sx={{ color: 'var(--text-muted, #9ca3af)', fontSize: '0.85rem', fontWeight: 600 }}>Cargando desglose de fallas...</Typography>
                                 </Box>
                             ) : faultRows.length === 0 ? (
                                 <Box sx={{ p: 6, textAlign: 'center' }}>
-                                    <Typography sx={{ color: '#374151', fontWeight: 800 }}>SIN DATOS DE FALLAS</Typography>
+                                    <Typography sx={{ color: 'var(--border-strong, #374151)', fontWeight: 800 }}>SIN DATOS DE FALLAS</Typography>
                                 </Box>
                             ) : (
                                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -490,10 +490,10 @@ export default function InformeTurnosPage() {
                                     <tbody>
                                         {faultRows.map((r, i) => (
                                             <tr key={r.ft}>
-                                                <td style={{ ...tdStyle(i), color: '#d1d5db' }}>{r.ft}</td>
+                                                <td style={{ ...tdStyle(i), color: 'var(--text-secondary, #d1d5db)' }}>{r.ft}</td>
                                                 <td style={{ ...tdStyle(i), color: '#eab308', textAlign: 'center', fontWeight: 800 }}>{r.d}</td>
                                                 <td style={{ ...tdStyle(i), color: '#818cf8', textAlign: 'center', fontWeight: 800 }}>{r.n}</td>
-                                                <td style={{ ...tdStyle(i), color: '#6b7280', textAlign: 'center' }}>{r.t}</td>
+                                                <td style={{ ...tdStyle(i), color: 'var(--text-subtle, #6b7280)', textAlign: 'center' }}>{r.t}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -504,15 +504,15 @@ export default function InformeTurnosPage() {
 
                     {/* MECÁNICOS */}
                     {tab === 'mecanicos' && (
-                        <Box sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                        <Box sx={{ bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', borderRadius: 2, border: '1px solid var(--bg-action-btn, rgba(255,255,255,0.05))', overflow: 'hidden' }}>
                             {isDetailedLoading ? (
                                 <Box sx={{ p: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
                                     <Spinner />
-                                    <Typography sx={{ color: '#9ca3af', fontSize: '0.85rem', fontWeight: 600 }}>Cargando desglose de mecánicos...</Typography>
+                                    <Typography sx={{ color: 'var(--text-muted, #9ca3af)', fontSize: '0.85rem', fontWeight: 600 }}>Cargando desglose de mecánicos...</Typography>
                                 </Box>
                             ) : mechRows.length === 0 ? (
                                 <Box sx={{ p: 6, textAlign: 'center' }}>
-                                    <Typography sx={{ color: '#374151', fontWeight: 800 }}>SIN DATOS</Typography>
+                                    <Typography sx={{ color: 'var(--border-strong, #374151)', fontWeight: 800 }}>SIN DATOS</Typography>
                                 </Box>
                             ) : (
                                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -527,7 +527,7 @@ export default function InformeTurnosPage() {
                                     <tbody>
                                         {mechRows.map((r, i) => (
                                             <tr key={r.name}>
-                                                <td style={{ ...tdStyle(i), color: '#d1d5db' }}>{r.name}</td>
+                                                <td style={{ ...tdStyle(i), color: 'var(--text-secondary, #d1d5db)' }}>{r.name}</td>
                                                 <td style={{ ...tdStyle(i), color: '#eab308', textAlign: 'center', fontWeight: 800 }}>{r.dr}</td>
                                                 <td style={{ ...tdStyle(i), color: '#818cf8', textAlign: 'center', fontWeight: 800 }}>{r.nr}</td>
                                                 <td style={{ ...tdStyle(i), color: '#10b981', textAlign: 'center', fontWeight: 800 }}>{r.t}</td>
@@ -541,15 +541,15 @@ export default function InformeTurnosPage() {
 
                     {/* MÁQUINAS */}
                     {tab === 'maquinas' && (
-                        <Box sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                        <Box sx={{ bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', borderRadius: 2, border: '1px solid var(--bg-action-btn, rgba(255,255,255,0.05))', overflow: 'hidden' }}>
                             {isDetailedLoading ? (
                                 <Box sx={{ p: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
                                     <Spinner />
-                                    <Typography sx={{ color: '#9ca3af', fontSize: '0.85rem', fontWeight: 600 }}>Cargando desglose de máquinas...</Typography>
+                                    <Typography sx={{ color: 'var(--text-muted, #9ca3af)', fontSize: '0.85rem', fontWeight: 600 }}>Cargando desglose de máquinas...</Typography>
                                 </Box>
                             ) : machRows.length === 0 ? (
                                 <Box sx={{ p: 6, textAlign: 'center' }}>
-                                    <Typography sx={{ color: '#374151', fontWeight: 800 }}>SIN DATOS</Typography>
+                                    <Typography sx={{ color: 'var(--border-strong, #374151)', fontWeight: 800 }}>SIN DATOS</Typography>
                                 </Box>
                             ) : (
                                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -574,7 +574,7 @@ export default function InformeTurnosPage() {
                                                 </td>
                                                 <td style={{ ...tdStyle(i), color: '#ef4444', textAlign: 'center', fontWeight: 800 }}>{r.stops}</td>
                                                 <td style={{ ...tdStyle(i), color: '#10b981', textAlign: 'center', fontWeight: 800 }}>{r.repairs}</td>
-                                                <td style={{ ...tdStyle(i), color: r.unresolved > 0 ? '#ef4444' : '#6b7280', textAlign: 'center', fontWeight: 800 }}>{r.unresolved}</td>
+                                                <td style={{ ...tdStyle(i), color: r.unresolved > 0 ? '#ef4444' : 'var(--text-subtle, #6b7280)', textAlign: 'center', fontWeight: 800 }}>{r.unresolved}</td>
                                             </tr>
                                         ))}
                                     </tbody>

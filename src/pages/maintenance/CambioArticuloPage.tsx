@@ -205,7 +205,7 @@ export default function CambioArticuloPage() {
             <Grid container spacing={3}>
                 {/* Form Side */}
                 <Grid size={{ xs: 12, md: 5 }}>
-                    <MuiCard sx={{ bgcolor: '#111827', borderRadius: 2, border: '1px solid #1f2937' }}>
+                    <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid #1f2937' }}>
                         <CardContent sx={{ p: 3 }}>
                             <Typography variant="h6" sx={{ mb: 2, color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <SwapHorizIcon /> Nuevo Cambio
@@ -358,7 +358,7 @@ export default function CambioArticuloPage() {
                 {/* Queue Side */}
                 <Grid size={{ xs: 12, md: 7 }}>
                     {/* Pending Queue */}
-                    <MuiCard sx={{ bgcolor: '#111827', borderRadius: 2, border: '1px solid #1f2937', mb: 3 }}>
+                    <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid #1f2937', mb: 3 }}>
                         <CardContent sx={{ p: 3 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                                 <Typography variant="h6" sx={{ color: 'white' }}>
@@ -426,7 +426,7 @@ export default function CambioArticuloPage() {
                     </MuiCard>
 
                     {/* Recent History */}
-                    <MuiCard sx={{ bgcolor: '#111827', borderRadius: 2, border: '1px solid #1f2937' }}>
+                    <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid #1f2937' }}>
                         <CardContent sx={{ p: 3 }}>
                             <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
                                 Últimos Cambios Registrados

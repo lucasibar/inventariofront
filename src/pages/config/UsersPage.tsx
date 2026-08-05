@@ -88,7 +88,7 @@ export default function UsersPage() {
     const cols = ['Usuario', 'Rol', 'Depósitos Permitidos', 'Estado', 'Acciones'];
     
     const rows = users.map(u => [
-        <div style={{ fontWeight: 600, color: '#f3f4f6' }}>
+        <div style={{ fontWeight: 600, color: 'var(--text-primary, #f3f4f6)' }}>
             <EditableCell 
                 value={u.username} 
                 onSave={async (v) => { await updateUser({ id: u.id, data: { username: v } }).unwrap(); }} 
@@ -98,7 +98,7 @@ export default function UsersPage() {
             value={u.role + (u.sector ? '_' + u.sector : '')} 
             onChange={(e) => handleUpdateRole(u, e.target.value)}
             style={{ 
-                background: '#1a1d2e', border: '1px solid #2a2d3e', color: '#f3f4f6', 
+                background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-color, #2a2d3e)', color: 'var(--text-primary, #f3f4f6)', 
                 borderRadius: '6px', padding: '4px 8px', fontSize: '13px', outline: 'none' 
             }}
         >
@@ -117,7 +117,7 @@ export default function UsersPage() {
                         const d = depots.find(depo => depo.id === id);
                         return <Badge key={id} color="#4b5563">{d?.nombre || id}</Badge>;
                     })}
-                    {u.allowedDepotIds?.length === 0 && <span style={{ color: '#6b7280', fontSize: '12px', fontStyle: 'italic' }}>Ninguno (Sin acceso)</span>}
+                    {u.allowedDepotIds?.length === 0 && <span style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '12px', fontStyle: 'italic' }}>Ninguno (Sin acceso)</span>}
                     <button 
                         onClick={() => setEditingDepotsFor(u)}
                         style={{ border: 'none', background: 'none', color: '#6366f1', fontSize: '12px', cursor: 'pointer', textDecoration: 'underline' }}
@@ -153,7 +153,7 @@ export default function UsersPage() {
                     rows={rows} 
                 />
                 {!loadingUsers && users.length === 0 && (
-                    <div style={{ padding: '60px', textAlign: 'center', color: '#6b7280' }}>
+                    <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-subtle, #6b7280)' }}>
                         No hay usuarios registrados aparte del administrador inicial.
                     </div>
                 )}
@@ -175,11 +175,11 @@ export default function UsersPage() {
                             onChange={v => setNewUserForm(p => ({...p, password: v}))} 
                         />
                         <div>
-                            <label style={{ display: 'block', color: '#9ca3af', fontSize: '13px', marginBottom: '8px' }}>Rol</label>
+                            <label style={{ display: 'block', color: 'var(--text-muted, #9ca3af)', fontSize: '13px', marginBottom: '8px' }}>Rol</label>
                             <select 
                                 value={newUserForm.roleComposite}
                                 onChange={e => setNewUserForm(p => ({...p, roleComposite: e.target.value}))}
-                                style={{ width: '100%', background: '#0f1117', border: '1px solid #2a2d3e', color: '#f3f4f6', borderRadius: '8px', padding: '10px' }}
+                                style={{ width: '100%', background: 'var(--bg-primary, #0f1117)', border: '1px solid var(--border-color, #2a2d3e)', color: 'var(--text-primary, #f3f4f6)', borderRadius: '8px', padding: '10px' }}
                             >
                                 <option value="OPERARIO_DEPOSITO">OPERARIO (Depósito)</option>
                                 <option value="SUPERVISOR_DEPOSITO">SUPERVISOR (Depósito)</option>
@@ -200,11 +200,11 @@ export default function UsersPage() {
             {editingDepotsFor && (
                 <Modal title={`Depósitos para ${editingDepotsFor.username}`} onClose={() => setEditingDepotsFor(null)}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px', maxHeight: '400px', overflowY: 'auto' }}>
-                        <p style={{ color: '#9ca3af', fontSize: '13px', margin: '0 0 12px 0' }}>Selecciona los depósitos a los que este usuario tiene permiso de acceso:</p>
+                        <p style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '13px', margin: '0 0 12px 0' }}>Selecciona los depósitos a los que este usuario tiene permiso de acceso:</p>
                         {depots.map(d => (
                             <label key={d.id} style={{ 
                                 display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', 
-                                background: 'rgba(255,255,255,0.03)', borderRadius: '8px', cursor: 'pointer',
+                                background: 'var(--bg-hover-row, rgba(255,255,255,0.03))', borderRadius: '8px', cursor: 'pointer',
                                 border: '1px solid transparent', transition: 'all 0.2s'
                             }}>
                                 <input 
@@ -219,8 +219,8 @@ export default function UsersPage() {
                                     }}
                                 />
                                 <div>
-                                    <div style={{ color: '#f3f4f6', fontWeight: 500 }}>{d.nombre}</div>
-                                    <div style={{ color: '#6b7280', fontSize: '11px' }}>{d.planta || 'Sin planta'}</div>
+                                    <div style={{ color: 'var(--text-primary, #f3f4f6)', fontWeight: 500 }}>{d.nombre}</div>
+                                    <div style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '11px' }}>{d.planta || 'Sin planta'}</div>
                                 </div>
                             </label>
                         ))}

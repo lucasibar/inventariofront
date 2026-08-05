@@ -6,7 +6,7 @@ import { CreateItemDialog } from '../../features/warehouse/materiales/components
 const ROTACION_COLORS: Record<string, string> = {
     ALTA: '#ef4444',
     MEDIA: '#eab308',
-    BAJA: '#6b7280',
+    BAJA: 'var(--text-subtle, #6b7280)',
     TEMPORAL: '#06b6d4',
 };
 
@@ -102,18 +102,18 @@ export default function MaterialesPage() {
                             <div key="code" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 <code style={{ color: '#818cf8', fontWeight: 600, fontSize: '13px' }}>{it.codigoInterno}</code>
                                 {it.tono && (
-                                    <span style={{ fontSize: '11px', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
+                                    <span style={{ fontSize: '11px', color: 'var(--text-muted, #9ca3af)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
                                         {TONO_LABELS[it.tono] || it.tono}
                                     </span>
                                 )}
                             </div>,
                             <div key="desc" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <div style={{ fontWeight: 600, color: '#f3f4f6' }}>{it.descripcion}</div>
-                                <div style={{ fontSize: '11px', color: '#6b7280' }}>Prov: {it.supplier?.name || '—'}</div>
+                                <div style={{ fontWeight: 600, color: 'var(--text-primary, #f3f4f6)' }}>{it.descripcion}</div>
+                                <div style={{ fontSize: '11px', color: 'var(--text-subtle, #6b7280)' }}>Prov: {it.supplier?.name || '—'}</div>
                             </div>,
                             <div key="cat-rot" style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
                                 <Badge>{it.category?.nombre || 'General'}</Badge>
-                                <Badge color={ROTACION_COLORS[it.rotacion] || '#9ca3af'}>
+                                <Badge color={ROTACION_COLORS[it.rotacion] || 'var(--text-muted, #9ca3af)'}>
                                     {ROTACION_LABELS[it.rotacion] || it.rotacion || 'Media'}
                                 </Badge>
                                 {it.depot?.nombre && (
@@ -122,19 +122,19 @@ export default function MaterialesPage() {
                                     </span>
                                 )}
                             </div>,
-                            <div key="stock" style={{ fontSize: '12px', color: '#d1d5db', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <div><span style={{ color: '#6b7280', fontSize: '11px' }}>Mín:</span> {it.stockMinimo != null ? it.stockMinimo : '—'}</div>
-                                <div><span style={{ color: '#6b7280', fontSize: '11px' }}>Máx:</span> {it.stockMaximo != null ? it.stockMaximo : '—'}</div>
+                            <div key="stock" style={{ fontSize: '12px', color: 'var(--text-secondary, #d1d5db)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <div><span style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '11px' }}>Mín:</span> {it.stockMinimo != null ? it.stockMinimo : '—'}</div>
+                                <div><span style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '11px' }}>Máx:</span> {it.stockMaximo != null ? it.stockMaximo : '—'}</div>
                             </div>,
-                            <div key="box" style={{ fontSize: '12px', color: '#d1d5db', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <div key="box" style={{ fontSize: '12px', color: 'var(--text-secondary, #d1d5db)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                 <div style={{ fontWeight: 500 }}>{it.boxType?.nombre || '—'}</div>
-                                <div style={{ fontSize: '11px', color: '#6b7280' }}>
+                                <div style={{ fontSize: '11px', color: 'var(--text-subtle, #6b7280)' }}>
                                     {it.kilosPorCaja ? `${it.kilosPorCaja} kg/caja` : '—'}
                                 </div>
                             </div>,
-                            <div key="units" style={{ fontSize: '12px', color: '#d1d5db', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <div><span style={{ color: '#6b7280', fontSize: '11px' }}>P:</span> {it.unidadPrincipal}</div>
-                                <div><span style={{ color: '#6b7280', fontSize: '11px' }}>S:</span> {it.unidadSecundaria || '—'}</div>
+                            <div key="units" style={{ fontSize: '12px', color: 'var(--text-secondary, #d1d5db)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <div><span style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '11px' }}>P:</span> {it.unidadPrincipal}</div>
+                                <div><span style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '11px' }}>S:</span> {it.unidadSecundaria || '—'}</div>
                             </div>,
                             <div key="actions" style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
                                 <Btn small variant="secondary" onClick={(e) => { e.stopPropagation(); handleEdit(it); }} title="Editar material">✏️</Btn>

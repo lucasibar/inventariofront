@@ -19,13 +19,13 @@ export default function VolumenesDashboardPage() {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '24px' }}>
                 <Card>
-                    <p style={{ color: '#9ca3af', marginBottom: '8px' }}>Total de Cajas Ocupadas (Aprox)</p>
-                    <h2 style={{ fontSize: '32px', color: '#f3f4f6', margin: 0 }}>{totalBoxes} <span style={{fontSize:'16px', color:'#6b7280'}}>cajas físicas estimadas</span></h2>
+                    <p style={{ color: 'var(--text-muted, #9ca3af)', marginBottom: '8px' }}>Total de Cajas Ocupadas (Aprox)</p>
+                    <h2 style={{ fontSize: '32px', color: 'var(--text-primary, #f3f4f6)', margin: 0 }}>{totalBoxes} <span style={{fontSize:'16px', color:'var(--text-subtle, #6b7280)'}}>cajas físicas estimadas</span></h2>
                 </Card>
                 <Card>
-                    <p style={{ color: '#9ca3af', marginBottom: '8px' }}>Alertas de Sobre-Stock</p>
+                    <p style={{ color: 'var(--text-muted, #9ca3af)', marginBottom: '8px' }}>Alertas de Sobre-Stock</p>
                     <h2 style={{ fontSize: '32px', color: overStockItems.length > 0 ? '#ef4444' : '#10b981', margin: 0 }}>
-                        {overStockItems.length} <span style={{fontSize:'16px', color:'#6b7280'}}>materiales excedidos</span>
+                        {overStockItems.length} <span style={{fontSize:'16px', color:'var(--text-subtle, #6b7280)'}}>materiales excedidos</span>
                     </h2>
                 </Card>
             </div>
@@ -39,7 +39,7 @@ export default function VolumenesDashboardPage() {
                             rows={overStockItems.map(it => [
                                 <div>
                                     <span style={{ fontWeight: 600 }}>{it.descripcion}</span>
-                                    <br /><code style={{ fontSize: '12px', color: '#9ca3af' }}>{it.codigoInterno}</code>
+                                    <br /><code style={{ fontSize: '12px', color: 'var(--text-muted, #9ca3af)' }}>{it.codigoInterno}</code>
                                 </div>,
                                 <span style={{ color: '#10b981' }}>{it.stockMaximo} kg (aprox {Math.ceil(it.maxBoxes)} cajas)</span>,
                                 <span style={{ color: '#ef4444' }}>{it.currentKilos} kg (aprox {Math.ceil(it.currentBoxes)} cajas)</span>,
@@ -58,7 +58,7 @@ export default function VolumenesDashboardPage() {
                     rows={volumes.map(it => [
                         <div>
                             <span style={{ fontWeight: 600 }}>{it.descripcion}</span>
-                            <br /><code style={{ fontSize: '12px', color: '#9ca3af' }}>{it.codigoInterno}</code>
+                            <br /><code style={{ fontSize: '12px', color: 'var(--text-muted, #9ca3af)' }}>{it.codigoInterno}</code>
                         </div>,
                         it.kilosPorCaja ? (
                             <Badge color="#6366f1">{it.kilosPorCaja} kg = 1 Caja</Badge>
@@ -66,13 +66,13 @@ export default function VolumenesDashboardPage() {
                             <span style={{ opacity: 0.5 }}>No configurado</span>
                         ),
                         it.stockMaximo ? (
-                            <span style={{ color: '#9ca3af' }}>Max: {it.stockMaximo} kg ({Math.ceil(it.maxBoxes)} cajas)</span>
+                            <span style={{ color: 'var(--text-muted, #9ca3af)' }}>Max: {it.stockMaximo} kg ({Math.ceil(it.maxBoxes)} cajas)</span>
                         ) : (
                             <span style={{ opacity: 0.5 }}>Sin límite</span>
                         ),
                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                            <span style={{ color: '#f3f4f6', fontWeight: 600 }}>{it.currentKilos} kg</span>
-                            <span style={{ color: '#6b7280' }}>({Math.ceil(it.currentBoxes)} cajas)</span>
+                            <span style={{ color: 'var(--text-primary, #f3f4f6)', fontWeight: 600 }}>{it.currentKilos} kg</span>
+                            <span style={{ color: 'var(--text-subtle, #6b7280)' }}>({Math.ceil(it.currentBoxes)} cajas)</span>
                             {it.isOverStock && <Badge color="#ef4444">Excedido</Badge>}
                         </div>
                     ])}

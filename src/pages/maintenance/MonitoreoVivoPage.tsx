@@ -78,7 +78,7 @@ const StatusBar = ({ label, value, color, max }: { label: string, value: number,
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
             <Typography sx={{ color: '#94a3b8', fontSize: '11px', fontWeight: 900, width: 160, textTransform: 'uppercase', lineHeight: 1 }}>{label}</Typography>
             <Typography sx={{ color: color, fontSize: '12px', fontWeight: 1000, width: 35, textAlign: 'right' }}>{value}</Typography>
-            <Box sx={{ flex: 1, height: 4, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 4, overflow: 'hidden' }}>
+            <Box sx={{ flex: 1, height: 4, bgcolor: 'var(--bg-hover-row, rgba(255,255,255,0.03))', borderRadius: 4, overflow: 'hidden' }}>
                 <Box sx={{ width: width, height: '100%', bgcolor: color, borderRadius: 4 }} />
             </Box>
         </Box>
@@ -87,13 +87,13 @@ const StatusBar = ({ label, value, color, max }: { label: string, value: number,
 
 const FusedModule = ({ title, count, total, color, breakdown, subtitle }: any) => {
     const chartData = [
-        { value: total - count, color: 'rgba(255,255,255,0.05)' },
+        { value: total - count, color: 'var(--bg-action-btn, rgba(255,255,255,0.05))' },
         { value: count, color: color }
     ];
 
     return (
-        <Box sx={{ flex: 1, display: 'flex', height: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <Box sx={{ flex: '0 0 42%', bgcolor: '#151921', p: { xs: 1, md: 1.5 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
+        <Box sx={{ flex: 1, display: 'flex', height: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--bg-action-btn, rgba(255,255,255,0.05))' }}>
+            <Box sx={{ flex: '0 0 42%', bgcolor: '#151921', p: { xs: 1, md: 1.5 }, display: 'flex', flexDirection: 'column', justifyContent: 'center', borderRight: '1px solid var(--bg-action-btn, rgba(255,255,255,0.05))' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
                     <Box>
                         <Typography sx={{ color: color, fontWeight: 1000, fontSize: { xs: '30px', sm: '40px', md: '65px' }, lineHeight: 0.85 }}>{count}</Typography>
@@ -110,7 +110,7 @@ const FusedModule = ({ title, count, total, color, breakdown, subtitle }: any) =
                     </Box>
                 </Box>
             </Box>
-            <Box sx={{ flex: 1, bgcolor: 'rgba(255,255,255,0.01)', p: { xs: 1, md: 1.5 }, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <Box sx={{ flex: 1, bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.01))', p: { xs: 1, md: 1.5 }, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                 <Typography sx={{ color: '#475569', fontWeight: 1000, textTransform: 'uppercase', fontSize: '11px', mb: 0.5, letterSpacing: 2 }}>{subtitle}</Typography>
                 {breakdown.map((item: any, i: number) => (
                     <StatusBar key={i} label={item.label} value={item.value} color={item.color || color} max={count} />
@@ -270,7 +270,7 @@ export default function MonitoreoVivoPage() {
                 onClick={() => document.dispatchEvent(new Event('open-sidebar-menu'))}
                 sx={{
                     position: 'absolute', top: 8, left: 8, color: 'rgba(255,255,255,0.2)',
-                    zIndex: 1000, '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.05)' }
+                    zIndex: 1000, '&:hover': { color: '#fff', bgcolor: 'var(--bg-action-btn, rgba(255,255,255,0.05))' }
                 }}
             >
                 <MoreVertIcon fontSize="small" />
@@ -305,7 +305,7 @@ export default function MonitoreoVivoPage() {
                         flex: 1,
                         bgcolor: '#151921',
                         borderRadius: '12px',
-                        border: '1px solid rgba(255,255,255,0.05)',
+                        border: '1px solid var(--bg-action-btn, rgba(255,255,255,0.05))',
                         display: 'flex',
                         justifyContent: mapContainerRef.current && mapContainerRef.current.clientHeight > mapContainerRef.current.clientWidth ? 'flex-start' : 'center',
                         alignItems: 'center',

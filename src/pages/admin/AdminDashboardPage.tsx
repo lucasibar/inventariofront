@@ -20,7 +20,7 @@ const AdminDashboardPage: React.FC = () => {
     ];
 
     return (
-        <Box sx={{ p: 4, background: '#0f1117', minHeight: '100vh', color: '#f3f4f6' }}>
+        <Box sx={{ p: 4, background: 'var(--bg-primary, #0f1117)', minHeight: '100vh', color: 'var(--text-primary, #f3f4f6)' }}>
             <Typography variant="h4" sx={{ mb: 4, fontWeight: 800, color: '#a5b4fc', letterSpacing: '-0.5px' }}>
                 Dashboard General de Administración
             </Typography>
@@ -31,16 +31,16 @@ const AdminDashboardPage: React.FC = () => {
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }} key={sector.name}>
                         <Paper sx={{ 
                             p: 3, 
-                            background: 'rgba(255, 255, 255, 0.03)', 
+                            background: 'var(--bg-hover-row, rgba(255,255,255,0.03))', 
                             backdropFilter: 'blur(10px)',
-                            border: '1px solid rgba(255, 255, 255, 0.05)',
+                            border: '1px solid var(--bg-action-btn, rgba(255,255,255,0.05))',
                             borderRadius: '16px',
                             textAlign: 'center',
                             transition: 'transform 0.2s',
-                            '&:hover': { transform: 'translateY(-5px)', background: 'rgba(255, 255, 255, 0.05)' }
+                            '&:hover': { transform: 'translateY(-5px)', background: 'var(--bg-action-btn, rgba(255,255,255,0.05))' }
                         }}>
                             <Typography sx={{ fontSize: '24px', mb: 1 }}>{sector.icon}</Typography>
-                            <Typography variant="subtitle2" sx={{ color: '#9ca3af', textTransform: 'uppercase', fontSize: '10px', fontWeight: 700 }}>
+                            <Typography variant="subtitle2" sx={{ color: 'var(--text-muted, #9ca3af)', textTransform: 'uppercase', fontSize: '10px', fontWeight: 700 }}>
                                 {sector.name}
                             </Typography>
                             <Typography variant="h6" sx={{ color: sector.color, fontWeight: 800 }}>
@@ -66,7 +66,7 @@ const AdminDashboardPage: React.FC = () => {
                                 <Grid size={{ xs: 12, sm: 6 }} key={stat.label}>
                                     <Box sx={{ mb: 2 }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                            <Typography variant="body2" sx={{ color: '#9ca3af' }}>{stat.label}</Typography>
+                                            <Typography variant="body2" sx={{ color: 'var(--text-muted, #9ca3af)' }}>{stat.label}</Typography>
                                             <Typography variant="body2" sx={{ fontWeight: 700 }}>{stat.value}{stat.unit}</Typography>
                                         </Box>
                                         <LinearProgress 
@@ -75,7 +75,7 @@ const AdminDashboardPage: React.FC = () => {
                                             sx={{ 
                                                 height: 8, 
                                                 borderRadius: 4, 
-                                                bgcolor: 'rgba(255,255,255,0.05)',
+                                                bgcolor: 'var(--bg-action-btn, rgba(255,255,255,0.05))',
                                                 '& .MuiLinearProgress-bar': {
                                                     borderRadius: 4,
                                                     background: 'linear-gradient(90deg, #6366f1 0%, #a5b4fc 100%)'
@@ -94,9 +94,9 @@ const AdminDashboardPage: React.FC = () => {
                     <Paper sx={{ 
                         p: 4, 
                         height: '100%',
-                        background: 'rgba(255, 255, 255, 0.03)',
+                        background: 'var(--bg-hover-row, rgba(255,255,255,0.03))',
                         backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        border: '1px solid var(--bg-action-btn, rgba(255,255,255,0.05))',
                         borderRadius: '24px'
                     }}>
                         <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>Alertas de Planta</Typography>
@@ -108,12 +108,12 @@ const AdminDashboardPage: React.FC = () => {
                         ].map((alert, i) => (
                             <Box key={i} sx={{ 
                                 display: 'flex', gap: 2, mb: 2, p: 2, 
-                                borderRadius: '12px', bgcolor: 'rgba(255,255,255,0.02)',
+                                borderRadius: '12px', bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))',
                                 borderLeft: `4px solid ${alert.type === 'error' ? '#ef4444' : alert.type === 'warning' ? '#f59e0b' : '#3b82f6'}`
                             }}>
                                 <Box sx={{ flex: 1 }}>
                                     <Typography variant="body2" sx={{ fontSize: '13px' }}>{alert.msg}</Typography>
-                                    <Typography sx={{ fontSize: '10px', color: '#6b7280' }}>Hace {alert.time}</Typography>
+                                    <Typography sx={{ fontSize: '10px', color: 'var(--text-subtle, #6b7280)' }}>Hace {alert.time}</Typography>
                                 </Box>
                             </Box>
                         ))}

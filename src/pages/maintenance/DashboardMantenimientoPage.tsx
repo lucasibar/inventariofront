@@ -104,11 +104,11 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
     };
     return (
         <ListItem sx={{ 
-            bgcolor: 'rgba(255,255,255,0.02)', 
+            bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', 
             mb: 0.5, 
             borderRadius: 0, 
             p: 1.8, 
-            borderBottom: '1px solid rgba(255,255,255,0.05)', 
+            borderBottom: '1px solid var(--bg-action-btn, rgba(255,255,255,0.05))', 
             display: 'flex', 
             flexDirection: 'column',
             alignItems: 'flex-start',
@@ -129,7 +129,7 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                     <Typography 
                         variant="caption" 
                         onClick={(e) => setAnchorElMechanic(e.currentTarget)}
-                        sx={{ color: machine.lastChangeBy ? '#6b7280' : '#ef4444', cursor: 'pointer', mt: 0.5, fontSize: '0.75rem', fontWeight: 700 }}
+                        sx={{ color: machine.lastChangeBy ? 'var(--text-subtle, #6b7280)' : '#ef4444', cursor: 'pointer', mt: 0.5, fontSize: '0.75rem', fontWeight: 700 }}
                     >
                         {machine.lastChangeBy || 'Sin asignar'}
                     </Typography>
@@ -138,7 +138,7 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                         anchorEl={anchorElMechanic}
                         open={Boolean(anchorElMechanic)}
                         onClose={() => setAnchorElMechanic(null)}
-                        PaperProps={{ sx: { bgcolor: '#1a1d24', color: 'white', border: '1px solid #374151', maxHeight: 300 } }}
+                        PaperProps={{ sx: { bgcolor: '#1a1d24', color: 'white', border: '1px solid var(--border-strong, #374151)', maxHeight: 300 } }}
                     >
                         {responsables.map(r => (
                             <MenuItem 
@@ -187,7 +187,7 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                                     anchorEl={anchorElStatus}
                                     open={Boolean(anchorElStatus)}
                                     onClose={() => setAnchorElStatus(null)}
-                                    PaperProps={{ sx: { bgcolor: '#1a1d24', color: 'white', border: '1px solid #374151' } }}
+                                    PaperProps={{ sx: { bgcolor: '#1a1d24', color: 'white', border: '1px solid var(--border-strong, #374151)' } }}
                                 >
                                     {Object.keys(statusColors).map(s => (
                                         <MenuItem 
@@ -203,7 +203,7 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                                 <Typography 
                                     variant="caption" 
                                     onClick={(e) => setAnchorElFailure(e.currentTarget)}
-                                    sx={{ color: '#9ca3af', fontSize: '0.65rem', fontWeight: 600, cursor: 'pointer', mt: 0.3, display: 'flex', alignItems: 'center', gap: 0.3 }}
+                                    sx={{ color: 'var(--text-muted, #9ca3af)', fontSize: '0.65rem', fontWeight: 600, cursor: 'pointer', mt: 0.3, display: 'flex', alignItems: 'center', gap: 0.3 }}
                                 >
                                     <ErrorOutlineIcon sx={{ fontSize: 10 }} />
                                     {machine.lastFailureType || 'Sin fallo'}
@@ -213,7 +213,7 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                                     anchorEl={anchorElFailure}
                                     open={Boolean(anchorElFailure)}
                                     onClose={() => setAnchorElFailure(null)}
-                                    PaperProps={{ sx: { bgcolor: '#1a1d24', color: 'white', border: '1px solid #374151', maxHeight: 300 } }}
+                                    PaperProps={{ sx: { bgcolor: '#1a1d24', color: 'white', border: '1px solid var(--border-strong, #374151)', maxHeight: 300 } }}
                                 >
                                     {failureTypes.map(f => (
                                         <MenuItem 
@@ -234,7 +234,7 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                                 onClick={() => setIsEditingObservation(!isEditingObservation)}
                                 sx={{ 
                                     p: 0, 
-                                    color: machine.lastObservation ? '#3b82f6' : '#4b5563', 
+                                    color: machine.lastObservation ? '#3b82f6' : 'var(--text-dimmed, #4b5563)', 
                                     '&:hover': { color: '#fff' } 
                                 }}
                             >
@@ -255,7 +255,7 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                                         setCustomMinute(m);
                                     }
                                 }}
-                                sx={{ color: '#4b5563', fontWeight: 800, fontSize: '0.6rem', cursor: 'pointer', '&:hover': { color: '#fff' } }}
+                                sx={{ color: 'var(--text-dimmed, #4b5563)', fontWeight: 800, fontSize: '0.6rem', cursor: 'pointer', '&:hover': { color: '#fff' } }}
                             >
                                 Hace {timeAgo}
                             </Typography>
@@ -264,9 +264,9 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                                 anchorEl={anchorElTime}
                                 open={Boolean(anchorElTime)}
                                 onClose={() => setAnchorElTime(null)}
-                                PaperProps={{ sx: { bgcolor: '#1a1d24', color: 'white', border: '1px solid #374151', p: 1.5 } }}
+                                PaperProps={{ sx: { bgcolor: '#1a1d24', color: 'white', border: '1px solid var(--border-strong, #374151)', p: 1.5 } }}
                             >
-                                <Typography variant="caption" sx={{ color: '#9ca3af', display: 'block', mb: 1, fontWeight: 700 }}>
+                                <Typography variant="caption" sx={{ color: 'var(--text-muted, #9ca3af)', display: 'block', mb: 1, fontWeight: 700 }}>
                                     Fecha/Hora del Registro
                                 </Typography>
                                 <Box sx={{ display: 'flex', gap: 1, mb: 1.5, flexDirection: 'column' }}>
@@ -330,7 +330,7 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
 
             {/* Observation Edit Overlay / Expansion */}
             <Collapse in={isEditingObservation} sx={{ width: '100%' }}>
-                <Box sx={{ mt: 1, p: 1.5, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
+                <Box sx={{ mt: 1, p: 1.5, bgcolor: 'var(--bg-hover-row, rgba(255,255,255,0.03))', borderRadius: 2, border: '1px solid var(--bg-action-btn, rgba(255,255,255,0.05))' }}>
                     <TextField
                         fullWidth
                         multiline
@@ -345,7 +345,7 @@ const InteractiveMachineItem = ({ machine, sortMode }: { machine: Machine, sortM
                         }}
                     />
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
-                        <Button size="small" onClick={() => { setIsEditingObservation(false); setObsText(machine.lastObservation || ''); }} sx={{ color: '#6b7280', fontSize: '0.6rem' }}>Cancelar</Button>
+                        <Button size="small" onClick={() => { setIsEditingObservation(false); setObsText(machine.lastObservation || ''); }} sx={{ color: 'var(--text-subtle, #6b7280)', fontSize: '0.6rem' }}>Cancelar</Button>
                         <Button size="small" onClick={() => handleQuickUpdate({ observation: obsText })} sx={{ color: '#10b981', fontWeight: 900, fontSize: '0.6rem' }}>Guardar</Button>
                     </Box>
                 </Box>
@@ -366,7 +366,7 @@ const StatusButton = ({ status, count, active, onClick }: { status: string, coun
                 height: 70,
                 p: 1, 
                 borderRadius: 3, 
-                bgcolor: active ? `${color}25` : 'rgba(255,255,255,0.03)',
+                bgcolor: active ? `${color}25` : 'var(--bg-hover-row, rgba(255,255,255,0.03))',
                 border: '1px solid',
                 borderColor: active ? color : 'rgba(255,255,255,0.06)',
                 display: 'flex',
@@ -385,7 +385,7 @@ const StatusButton = ({ status, count, active, onClick }: { status: string, coun
                 {count}
             </Typography>
             <Typography variant="caption" sx={{ 
-                color: active ? '#fff' : '#6b7280', 
+                color: active ? '#fff' : 'var(--text-subtle, #6b7280)', 
                 fontSize: '0.45rem', 
                 fontWeight: 800, 
                 textAlign: 'center',
@@ -519,10 +519,10 @@ export default function DashboardMantenimientoPage() {
                 display: 'flex', 
                 alignItems: 'center', 
                 p: 1, 
-                bgcolor: 'rgba(255,255,255,0.03)',
+                bgcolor: 'var(--bg-hover-row, rgba(255,255,255,0.03))',
                 borderBottom: '1px solid rgba(255,255,255,0.08)',
             }}>
-                <IconButton size="medium" onClick={toggleSidebar} sx={{ color: '#6b7280', mr: 1 }}>
+                <IconButton size="medium" onClick={toggleSidebar} sx={{ color: 'var(--text-subtle, #6b7280)', mr: 1 }}>
                     <MoreVertIcon />
                 </IconButton>
 
@@ -535,7 +535,7 @@ export default function DashboardMantenimientoPage() {
                             bgcolor: sortMode === 'mtbf' ? 'rgba(16,185,129,0.1)' : 'transparent', borderRadius: 2, py: 0.5
                         }}
                     >
-                        <Typography sx={{ color: sortMode === 'mtbf' ? '#10b981' : '#4b5563', fontWeight: 900, fontSize: '1.4rem', textTransform: 'uppercase' }}>MTBF</Typography>
+                        <Typography sx={{ color: sortMode === 'mtbf' ? '#10b981' : 'var(--text-dimmed, #4b5563)', fontWeight: 900, fontSize: '1.4rem', textTransform: 'uppercase' }}>MTBF</Typography>
                         <Typography sx={{ color: sortMode === 'mtbf' ? '#10b981' : '#fff', fontWeight: 950, fontSize: '1.6rem', letterSpacing: '-0.03em' }}>{kpis?.mtbf?.split(' ')[0] || '0d'}</Typography>
                     </Box>
                     <Box sx={{ width: '1px', height: '24px', bgcolor: 'rgba(255,255,255,0.1)', mx: 0.5 }} />
@@ -547,18 +547,18 @@ export default function DashboardMantenimientoPage() {
                             bgcolor: sortMode === 'mttr' ? 'rgba(248,113,113,0.1)' : 'transparent', borderRadius: 2, py: 0.5
                         }}
                     >
-                        <Typography sx={{ color: sortMode === 'mttr' ? '#f87171' : '#4b5563', fontWeight: 900, fontSize: '1.4rem', textTransform: 'uppercase' }}>MTTR</Typography>
+                        <Typography sx={{ color: sortMode === 'mttr' ? '#f87171' : 'var(--text-dimmed, #4b5563)', fontWeight: 900, fontSize: '1.4rem', textTransform: 'uppercase' }}>MTTR</Typography>
                         <Typography sx={{ color: sortMode === 'mttr' ? '#f87171' : '#fff', fontWeight: 950, fontSize: '1.6rem', letterSpacing: '-0.03em' }}>{kpis?.mttr?.split(' ')[0] || '0h'}</Typography>
                     </Box>
                 </Box>
                 
-                <IconButton size="medium" onClick={() => setShowFilters(!showFilters)} sx={{ color: showFilters ? '#10b981' : '#6b7280', ml: 1 }}>
+                <IconButton size="medium" onClick={() => setShowFilters(!showFilters)} sx={{ color: showFilters ? '#10b981' : 'var(--text-subtle, #6b7280)', ml: 1 }}>
                     <FilterListIcon />
                 </IconButton>
             </Box>
 
             <Collapse in={showFilters}>
-                <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.01)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <Box sx={{ p: 2, bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.01))', borderBottom: '1px solid var(--bg-action-btn, rgba(255,255,255,0.05))' }}>
                     <TextField
                         placeholder="N° de máquina..."
                         size="small"
@@ -568,7 +568,7 @@ export default function DashboardMantenimientoPage() {
                         InputProps={{
                             startAdornment: (
                                 <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
-                                    <SearchIcon sx={{ color: '#4b5563', fontSize: '1.1rem' }} />
+                                    <SearchIcon sx={{ color: 'var(--text-dimmed, #4b5563)', fontSize: '1.1rem' }} />
                                 </Box>
                             ),
                             sx: { bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 2, color: 'white', fontSize: '0.85rem' }
@@ -612,9 +612,9 @@ export default function DashboardMantenimientoPage() {
                     <Fade in timeout={300}>
                         <Box>
                             <Box sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <Typography component="div" sx={{ fontWeight: 900, display: 'flex', alignItems: 'center', gap: 1, fontSize: '0.8rem', color: '#4b5563', textTransform: 'uppercase' }}>
+                                <Typography component="div" sx={{ fontWeight: 900, display: 'flex', alignItems: 'center', gap: 1, fontSize: '0.8rem', color: 'var(--text-dimmed, #4b5563)', textTransform: 'uppercase' }}>
                                     {sortMode ? `ORDENADO POR ${sortMode}` : (selectedStatus ? formatStatus(selectedStatus) : 'INCIDENCIAS')}
-                                    <Chip label={filteredMachines.length} size="small" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 800, bgcolor: 'rgba(255,255,255,0.05)' }} />
+                                    <Chip label={filteredMachines.length} size="small" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 800, bgcolor: 'var(--bg-action-btn, rgba(255,255,255,0.05))' }} />
                                 </Typography>
                                 
                                 <Box sx={{ display: 'flex', gap: 1 }}>
@@ -651,11 +651,11 @@ export default function DashboardMantenimientoPage() {
                                         startIcon={<MapIcon />}
                                         onClick={() => navigate('/mantenimiento/monitoreo')}
                                         sx={{ 
-                                            color: '#6b7280', 
+                                            color: 'var(--text-subtle, #6b7280)', 
                                             fontWeight: 800, 
                                             fontSize: '0.65rem',
                                             textTransform: 'uppercase',
-                                            '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.05)' }
+                                            '&:hover': { color: '#fff', bgcolor: 'var(--bg-action-btn, rgba(255,255,255,0.05))' }
                                         }}
                                     >
                                         Volver al Mapa
@@ -670,7 +670,7 @@ export default function DashboardMantenimientoPage() {
                                     ))
                                 ) : (
                                     <Box sx={{ p: 6, textAlign: 'center' }}>
-                                        <Typography variant="caption" sx={{ color: '#374151', fontWeight: 800 }}>SIN NOVEDADES</Typography>
+                                        <Typography variant="caption" sx={{ color: 'var(--border-strong, #374151)', fontWeight: 800 }}>SIN NOVEDADES</Typography>
                                     </Box>
                                 )}
                             </List>

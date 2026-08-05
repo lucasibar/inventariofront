@@ -7,13 +7,13 @@ function CapacityGauge({ percentage, label, occupied, total }: { percentage: num
     const color = percentage > 90 ? '#ef4444' : percentage > 70 ? '#f59e0b' : '#34d399';
     
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px', background: '#1a1d2e', borderRadius: '12px', border: '1px solid #2a2d3e' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px', background: 'var(--bg-secondary, #1a1d2e)', borderRadius: '12px', border: '1px solid var(--border-color, #2a2d3e)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>{label}</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted, #9ca3af)', textTransform: 'uppercase' }}>{label}</span>
                 <span style={{ fontSize: '18px', fontWeight: 800, color }}>{percentage.toFixed(1)}%</span>
             </div>
             
-            <div style={{ height: '8px', background: '#0f1117', borderRadius: '4px', overflow: 'hidden', position: 'relative' }}>
+            <div style={{ height: '8px', background: 'var(--bg-primary, #0f1117)', borderRadius: '4px', overflow: 'hidden', position: 'relative' }}>
                 <div 
                     style={{ 
                         height: '100%', 
@@ -25,7 +25,7 @@ function CapacityGauge({ percentage, label, occupied, total }: { percentage: num
                 />
             </div>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#6b7280' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-subtle, #6b7280)' }}>
                 <span>Ocupado: {occupied.toFixed(3)} m³</span>
                 <span>Total: {total.toFixed(3)} m³</span>
             </div>
@@ -56,12 +56,12 @@ function CapacityTimelineChart() {
             else if(type === 'projected') typeLabel = "Proyectado";
 
             return (
-                <div style={{ background: '#1a1d2e', border: '1px solid #2a2d3e', padding: '12px', borderRadius: '8px' }}>
-                    <p style={{ margin: '0 0 8px 0', color: '#9ca3af', fontWeight: 600 }}>{label}</p>
-                    <p style={{ margin: 0, color: '#f3f4f6' }}>
+                <div style={{ background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-color, #2a2d3e)', padding: '12px', borderRadius: '8px' }}>
+                    <p style={{ margin: '0 0 8px 0', color: 'var(--text-muted, #9ca3af)', fontWeight: 600 }}>{label}</p>
+                    <p style={{ margin: 0, color: 'var(--text-primary, #f3f4f6)' }}>
                         Volumen: <span style={{ fontWeight: 'bold', color: type === 'projected' ? '#818cf8' : '#34d399' }}>{vol} m³</span>
                     </p>
-                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#6b7280' }}>{typeLabel}</p>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-subtle, #6b7280)' }}>{typeLabel}</p>
                 </div>
             );
         }
@@ -70,21 +70,21 @@ function CapacityTimelineChart() {
 
     return (
         <Card style={{ marginBottom: '24px', padding: '24px' }}>
-            <h3 style={{ margin: '0 0 24px 0', color: '#f3f4f6' }}>Evolución y Proyección de Capacidad (30 Días)</h3>
+            <h3 style={{ margin: '0 0 24px 0', color: 'var(--text-primary, #f3f4f6)' }}>Evolución y Proyección de Capacidad (30 Días)</h3>
             <div style={{ height: '400px', width: '100%' }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#2a2d3e" vertical={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #2a2d3e)" vertical={false} />
                         <XAxis 
                             dataKey="date" 
                             stroke="#6b7280" 
-                            tick={{ fill: '#6b7280', fontSize: 12 }}
+                            tick={{ fill: 'var(--text-subtle, #6b7280)', fontSize: 12 }}
                             tickFormatter={(val) => {
                                 const d = new Date(val);
                                 return `${d.getDate()}/${d.getMonth()+1}`;
                             }}
                         />
-                        <YAxis stroke="#6b7280" tick={{ fill: '#6b7280', fontSize: 12 }} domain={[0, 1600]} />
+                        <YAxis stroke="#6b7280" tick={{ fill: 'var(--text-subtle, #6b7280)', fontSize: 12 }} domain={[0, 1600]} />
                         <Tooltip content={<CustomTooltip />} />
                         <ReferenceLine y={1558.48} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'top', value: 'Capacidad Máxima (1558.48 m³)', fill: '#ef4444', fontSize: 12 }} />
                         
@@ -94,7 +94,7 @@ function CapacityTimelineChart() {
                             stroke="#34d399" 
                             strokeWidth={3}
                             dot={false}
-                            activeDot={{ r: 6, fill: '#34d399', stroke: '#1a1d2e', strokeWidth: 2 }}
+                            activeDot={{ r: 6, fill: '#34d399', stroke: 'var(--bg-secondary, #1a1d2e)', strokeWidth: 2 }}
                             connectNulls={false}
                         />
                         <Line 
@@ -104,7 +104,7 @@ function CapacityTimelineChart() {
                             strokeDasharray="5 5"
                             strokeWidth={3}
                             dot={false}
-                            activeDot={{ r: 6, fill: '#818cf8', stroke: '#1a1d2e', strokeWidth: 2 }}
+                            activeDot={{ r: 6, fill: '#818cf8', stroke: 'var(--bg-secondary, #1a1d2e)', strokeWidth: 2 }}
                             connectNulls={false}
                         />
                     </ComposedChart>
@@ -128,14 +128,14 @@ export default function CapacityDashboardPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '24px' }}>
                 {dashboard.map((dep: any) => (
                     <Card key={dep.depotId}>
-                        <div style={{ padding: '20px', borderBottom: '1px solid #2a2d3e' }}>
+                        <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color, #2a2d3e)' }}>
                             <div style={{ fontSize: '10px', color: '#6366f1', fontWeight: 700, textTransform: 'uppercase' }}>{dep.planta || 'Sin Planta'}</div>
-                            <h3 style={{ margin: 0, color: '#f3f4f6' }}>{dep.depotNombre}</h3>
+                            <h3 style={{ margin: 0, color: 'var(--text-primary, #f3f4f6)' }}>{dep.depotNombre}</h3>
                         </div>
                         
                         <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {dep.categories.length === 0 ? (
-                                <div style={{ textAlign: 'center', padding: '20px', color: '#4b5563', fontSize: '13px' }}>
+                                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-dimmed, #4b5563)', fontSize: '13px' }}>
                                     No hay posiciones configuradas con capacidad en este depósito.
                                 </div>
                             ) : dep.categories.map((cat: any) => (

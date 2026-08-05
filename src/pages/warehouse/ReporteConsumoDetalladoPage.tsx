@@ -219,8 +219,8 @@ export default function ReporteConsumoDetalladoPage() {
                     
                     {/* General Summary Card */}
                     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr', gap: '20px' }}>
-                        <Card style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', background: 'linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%)', border: '1px solid #312e81' }}>
-                            <div style={{ color: '#9ca3af', fontSize: '13px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px' }}>
+                        <Card style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', background: 'var(--bg-report-gradient, linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%))', border: '1px solid var(--border-report-strong, #312e81)' }}>
+                            <div style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '13px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px' }}>
                                 Consumo Total del Período
                             </div>
                             <div style={{ fontSize: '36px', fontWeight: 800, color: '#38bdf8' }}>
@@ -235,7 +235,7 @@ export default function ReporteConsumoDetalladoPage() {
                         {/* Desktop Daily Consumption Chart */}
                         {!isMobile && (
                             <Card style={{ padding: '20px', height: '240px' }}>
-                                <h3 style={{ color: '#f3f4f6', fontSize: '14px', margin: '0 0 15px 0', fontWeight: 700 }}>
+                                <h3 style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: '14px', margin: '0 0 15px 0', fontWeight: 700 }}>
                                     📈 Consumo Diario (Kilos)
                                 </h3>
                                 {timelineData.length === 0 ? (
@@ -251,7 +251,7 @@ export default function ReporteConsumoDetalladoPage() {
                                                     <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
                                                 </linearGradient>
                                             </defs>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-strong, #1e293b)" vertical={false} />
                                             <XAxis 
                                                 dataKey="fecha" 
                                                 stroke="#64748b" 
@@ -260,7 +260,7 @@ export default function ReporteConsumoDetalladoPage() {
                                             />
                                             <YAxis stroke="#64748b" fontSize={11} />
                                             <Tooltip 
-                                                contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }}
+                                                contentStyle={{ background: 'var(--bg-primary, #0f172a)', border: '1px solid var(--border-strong, #334155)', borderRadius: '8px', color: '#fff' }}
                                                 itemStyle={{ color: '#38bdf8' }}
                                                 labelFormatter={(val) => new Date(val).toLocaleDateString('es-AR', { dateStyle: 'medium' })}
                                             />
@@ -282,8 +282,8 @@ export default function ReporteConsumoDetalladoPage() {
 
                     {/* Material List with accordions */}
                     <Card style={{ padding: '0px', overflow: 'hidden' }}>
-                        <div style={{ padding: '16px 20px', borderBottom: '1px solid #1e293b', background: '#111827', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                            <span style={{ fontWeight: 700, color: '#f3f4f6' }}>Materiales Consumidos</span>
+                        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-strong, #1e293b)', background: 'var(--bg-secondary, #111827)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                            <span style={{ fontWeight: 700, color: 'var(--text-primary, #f3f4f6)' }}>Materiales Consumidos</span>
                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                                 <button 
                                     onClick={selectAllMaterials}
@@ -311,7 +311,7 @@ export default function ReporteConsumoDetalladoPage() {
                                     const isExpanded = !!expandedItems[group.item.id];
                                     const isSelected = !excludedMaterialIds[group.item.id];
                                     return (
-                                        <div key={group.item.id} style={{ borderBottom: '1px solid #1e293b' }}>
+                                        <div key={group.item.id} style={{ borderBottom: '1px solid var(--border-strong, #1e293b)' }}>
                                             
                                             {/* Accordion Trigger Row */}
                                             <div 
@@ -343,7 +343,7 @@ export default function ReporteConsumoDetalladoPage() {
                                                         <span style={{ fontWeight: 700, color: isSelected ? '#fff' : '#64748b', fontSize: '15px', textDecoration: isSelected ? 'none' : 'line-through' }}>
                                                             {group.item.codigoInterno}
                                                         </span>
-                                                        <span style={{ color: isSelected ? '#9ca3af' : '#475569', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                        <span style={{ color: isSelected ? 'var(--text-muted, #9ca3af)' : '#475569', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                             {group.item.descripcion}
                                                         </span>
                                                     </div>
@@ -365,11 +365,11 @@ export default function ReporteConsumoDetalladoPage() {
 
                                             {/* Accordion Detail Content */}
                                             {isExpanded && (
-                                                <div style={{ padding: '0 20px 20px 20px', background: '#0b0f19' }}>
-                                                    <div style={{ overflowX: 'auto', border: '1px solid #1e293b', borderRadius: '8px' }}>
+                                                <div style={{ padding: '0 20px 20px 20px', background: 'var(--bg-primary, #0b0f19)' }}>
+                                                    <div style={{ overflowX: 'auto', border: '1px solid var(--border-strong, #1e293b)', borderRadius: '8px' }}>
                                                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                                                             <thead>
-                                                                <tr style={{ borderBottom: '1px solid #1e293b', background: '#111827' }}>
+                                                                <tr style={{ borderBottom: '1px solid var(--border-strong, #1e293b)', background: 'var(--bg-secondary, #111827)' }}>
                                                                     <th style={{ padding: '10px 12px', textAlign: 'left', color: '#64748b' }}>Fecha</th>
                                                                     <th style={{ padding: '10px 12px', textAlign: 'left', color: '#64748b' }}>Cliente</th>
                                                                     <th style={{ padding: '10px 12px', textAlign: 'right', color: '#64748b' }}>Cantidad</th>
@@ -381,7 +381,7 @@ export default function ReporteConsumoDetalladoPage() {
                                                                     const docNum = mov.documento?.numero || mov.documentoNumero;
                                                                     const clientName = mov.documento?.partner?.name || '—';
                                                                     return (
-                                                                        <tr key={mov.id || index} style={{ borderBottom: index < group.movements.length - 1 ? '1px solid #1e293b' : 'none' }}>
+                                                                        <tr key={mov.id || index} style={{ borderBottom: index < group.movements.length - 1 ? '1px solid var(--border-strong, #1e293b)' : 'none' }}>
                                                                             <td style={{ padding: '10px 12px', color: '#e2e8f0' }}>
                                                                                 {new Date(mov.fecha).toLocaleDateString('es-AR')}
                                                                             </td>
@@ -433,7 +433,7 @@ export default function ReporteConsumoDetalladoPage() {
                     {/* Mobile Horizontal Bar Chart at the Bottom */}
                     {isMobile && barChartData.length > 0 && (
                         <Card style={{ padding: '20px', marginTop: '10px' }}>
-                            <h3 style={{ color: '#f3f4f6', fontSize: '14px', margin: '0 0 15px 0', fontWeight: 700 }}>
+                            <h3 style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: '14px', margin: '0 0 15px 0', fontWeight: 700 }}>
                                 📊 Consumo por Material (Kilos)
                             </h3>
                             <ResponsiveContainer width="100%" height={300}>
@@ -442,12 +442,12 @@ export default function ReporteConsumoDetalladoPage() {
                                     layout="vertical"
                                     margin={{ left: 10, right: 20, top: 0, bottom: 5 }}
                                 >
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" horizontal={false} />
+                                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-strong, #1e293b)" horizontal={false} />
                                     <XAxis type="number" stroke="#64748b" fontSize={11} />
                                     <YAxis dataKey="name" type="category" stroke="#64748b" fontSize={11} width={80} />
                                     <Tooltip 
-                                        cursor={{ fill: '#1e293b' }}
-                                        contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }}
+                                        cursor={{ fill: 'var(--border-strong, #1e293b)' }}
+                                        contentStyle={{ background: 'var(--bg-primary, #0f172a)', border: '1px solid var(--border-strong, #334155)', borderRadius: '8px', color: '#fff' }}
                                     />
                                     <Bar dataKey="qty" fill="#38bdf8" radius={[0, 4, 4, 0]} barSize={20} />
                                 </BarChart>

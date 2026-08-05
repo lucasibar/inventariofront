@@ -27,7 +27,7 @@ const BoxPreview = ({ l, w, h }: { l: number, w: number, h: number }) => {
                 width: `${sL}px`, height: `${sH}px`, position: 'relative', transformStyle: 'preserve-3d',
                 transform: 'rotateX(-25deg) rotateY(45deg)', transition: 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)'
             }}>
-                <div style={{ position: 'absolute', inset: 0, background: '#6366f1', border: '1px solid #ffffff40', transform: `translateZ(${sW/2}px)`, boxShadow: 'inset 0 0 20px rgba(0,0,0,0.2)' }} />
+                <div style={{ position: 'absolute', inset: 0, background: '#6366f1', border: '1px solid #ffffff40', transform: `translateZ(${sW/2}px)`, boxShadow: 'inset 0 0 20px var(--bg-alt-row, rgba(0,0,0,0.2))' }} />
                 <div style={{ position: 'absolute', inset: 0, background: '#4338ca', border: '1px solid #ffffff20', transform: `translateZ(${-sW/2}px) rotateY(180deg)` }} />
                 <div style={{ position: 'absolute', inset: 0, width: `${sW}px`, left: `calc(50% - ${sW/2}px)`, background: '#4f46e5', border: '1px solid #ffffff30', transform: `rotateY(90deg) translateZ(${sL/2}px)` }} />
                 <div style={{ position: 'absolute', inset: 0, width: `${sW}px`, left: `calc(50% - ${sW/2}px)`, background: '#3730a3', border: '1px solid #ffffff20', transform: `rotateY(-90deg) translateZ(${sL/2}px)` }} />
@@ -56,18 +56,18 @@ const AssignedItemsModal = ({ boxId, boxName, onClose }: { boxId: string, boxNam
         <Modal title={`Materiales con: ${boxName}`} onClose={onClose}>
             <div style={{ minWidth: '400px' }}>
                 {isLoading ? <Spinner /> : items.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>No hay materiales asignados a esta caja.</div>
+                    <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-subtle, #6b7280)' }}>No hay materiales asignados a esta caja.</div>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '400px', overflowY: 'auto' }}>
                         {items.map((it: any) => (
                             <div key={it.id} style={{ 
-                                background: '#0f1117', padding: '12px 16px', borderRadius: '8px', 
+                                background: 'var(--bg-primary, #0f1117)', padding: '12px 16px', borderRadius: '8px', 
                                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                border: '1px solid #1e2133'
+                                border: '1px solid var(--border-subtle, #1e2133)'
                             }}>
                                 <div>
-                                    <div style={{ color: '#f3f4f6', fontSize: '14px', fontWeight: 600 }}>{it.descripcion}</div>
-                                    <div style={{ color: '#6b7280', fontSize: '11px' }}>{it.codigoInterno} • {it.supplier?.name || 'S/P'}</div>
+                                    <div style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: '14px', fontWeight: 600 }}>{it.descripcion}</div>
+                                    <div style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '11px' }}>{it.codigoInterno} • {it.supplier?.name || 'S/P'}</div>
                                 </div>
                                 <Btn small variant="danger" onClick={() => handleUnlink(it.id)}>Desvincular</Btn>
                             </div>
@@ -120,27 +120,27 @@ const BulkAssignModal = ({ onClose, boxTypes }: { onClose: () => void, boxTypes:
         <Modal title="Gestión de Embalaje por Reglas" onClose={onClose}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxHeight: '80vh', overflowY: 'auto' }}>
                 <section>
-                    <h4 style={{ color: '#f3f4f6', fontSize: '14px', marginBottom: '8px' }}>1. Formato Destino</h4>
+                    <h4 style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: '14px', marginBottom: '8px' }}>1. Formato Destino</h4>
                     <Select value={targetBoxId} onChange={setTargetBoxId} options={boxTypes.map(b => ({ value: b.id, label: `${b.nombre} (${parseFloat(b.volumenM3).toFixed(3)} m³)` }))} />
                 </section>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <section>
-                        <h4 style={{ color: '#f3f4f6', fontSize: '14px', marginBottom: '8px' }}>2. Proveedor</h4>
+                        <h4 style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: '14px', marginBottom: '8px' }}>2. Proveedor</h4>
                         <Select value={supplierId} onChange={v => { setSupplierId(v); setSelectedItemId(''); }} options={[{ value: '', label: 'Todos' }, ...suppliers.map(s => ({ value: s.id, label: s.name }))]} />
                     </section>
                     <section>
-                        <h4 style={{ color: '#f3f4f6', fontSize: '14px', marginBottom: '8px' }}>3. Categoría</h4>
+                        <h4 style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: '14px', marginBottom: '8px' }}>3. Categoría</h4>
                         <Select value={categoryId} onChange={v => { setCategoryId(v); setSelectedItemId(''); }} options={[{ value: '', label: 'Todas' }, ...categories]} />
                     </section>
                 </div>
                 <section>
-                    <h4 style={{ color: '#f3f4f6', fontSize: '14px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>4. Ítems <span style={{ fontSize: '11px', color: '#6b7280' }}>{filteredItems.length}</span></h4>
-                    <div style={{ background: '#0f1117', borderRadius: '8px', border: '1px solid #1e2133', maxHeight: '180px', overflowY: 'auto' }}>
+                    <h4 style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: '14px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>4. Ítems <span style={{ fontSize: '11px', color: 'var(--text-subtle, #6b7280)' }}>{filteredItems.length}</span></h4>
+                    <div style={{ background: 'var(--bg-primary, #0f1117)', borderRadius: '8px', border: '1px solid var(--border-subtle, #1e2133)', maxHeight: '180px', overflowY: 'auto' }}>
                         {loadingItems ? <Spinner /> : filteredItems.map(it => (
-                            <div key={it.id} onClick={() => setSelectedItemId(it.id === selectedItemId ? '' : it.id)} style={{ padding: '8px 12px', borderBottom: '1px solid #1e2133', cursor: 'pointer', background: it.id === selectedItemId ? 'rgba(99, 102, 241, 0.2)' : 'transparent', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column' }}><span style={{ fontSize: '12px', color: '#d1d5db' }}>{it.descripcion}</span><span style={{ fontSize: '10px', color: '#4b5563' }}>{it.codigoInterno}</span></div>
+                            <div key={it.id} onClick={() => setSelectedItemId(it.id === selectedItemId ? '' : it.id)} style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-subtle, #1e2133)', cursor: 'pointer', background: it.id === selectedItemId ? 'rgba(99, 102, 241, 0.2)' : 'transparent', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}><span style={{ fontSize: '12px', color: 'var(--text-secondary, #d1d5db)' }}>{it.descripcion}</span><span style={{ fontSize: '10px', color: 'var(--text-dimmed, #4b5563)' }}>{it.codigoInterno}</span></div>
                                 {it.boxType && (
-                                    <Badge color={it.boxTypeId === targetBoxId ? '#34d399' : '#6b7280'}>
+                                    <Badge color={it.boxTypeId === targetBoxId ? '#34d399' : 'var(--text-subtle, #6b7280)'}>
                                         {it.boxType.nombre}
                                     </Badge>
                                 )}
@@ -195,7 +195,7 @@ const BoxTypesPage: React.FC = () => {
             
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 400px) 1fr', gap: '32px', alignItems: 'start' }}>
                 <Card style={{ padding: '24px', position: 'sticky', top: '24px' }}>
-                    <h3 style={{ margin: '0 0 20px', color: '#f3f4f6', fontSize: '16px' }}>{editingId ? 'Editar Formato' : 'Nuevo Formato'}</h3>
+                    <h3 style={{ margin: '0 0 20px', color: 'var(--text-primary, #f3f4f6)', fontSize: '16px' }}>{editingId ? 'Editar Formato' : 'Nuevo Formato'}</h3>
                     <BoxPreview l={form.largoCm} w={form.anchoCm} h={form.altoCm} />
                     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <Input label="Nombre" value={form.nombre} onChange={v => setForm({...form, nombre: v})} />
@@ -225,19 +225,19 @@ const BoxTypesPage: React.FC = () => {
                             <div style={{ padding: '20px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
                                     <div>
-                                        <h4 style={{ margin: 0, color: '#f3f4f6', fontSize: '15px' }}>{bt.nombre}</h4>
+                                        <h4 style={{ margin: 0, color: 'var(--text-primary, #f3f4f6)', fontSize: '15px' }}>{bt.nombre}</h4>
                                         <div style={{ color: '#34d399', fontSize: '12px', fontWeight: 600, marginTop: '2px' }}>
                                             Capacidad: {Number(bt.capacidadKilos || 0).toFixed(1)} kg
                                         </div>
                                     </div>
                                     <Badge color="#818cf8">{parseFloat(bt.volumenM3).toFixed(4)} m³</Badge>
                                 </div>
-                                <div style={{ background: '#0f1117', borderRadius: '8px', padding: '12px', display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: '10px', color: '#4b5563' }}>Largo</div><div style={{ color: '#d1d5db', fontSize: '13px', fontWeight: 600 }}>{bt.largoCm}</div></div>
-                                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: '10px', color: '#4b5563' }}>Ancho</div><div style={{ color: '#d1d5db', fontSize: '13px', fontWeight: 600 }}>{bt.anchoCm}</div></div>
-                                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: '10px', color: '#4b5563' }}>Alto</div><div style={{ color: '#d1d5db', fontSize: '13px', fontWeight: 600 }}>{bt.altoCm}</div></div>
+                                <div style={{ background: 'var(--bg-primary, #0f1117)', borderRadius: '8px', padding: '12px', display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: '10px', color: 'var(--text-dimmed, #4b5563)' }}>Largo</div><div style={{ color: 'var(--text-secondary, #d1d5db)', fontSize: '13px', fontWeight: 600 }}>{bt.largoCm}</div></div>
+                                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: '10px', color: 'var(--text-dimmed, #4b5563)' }}>Ancho</div><div style={{ color: 'var(--text-secondary, #d1d5db)', fontSize: '13px', fontWeight: 600 }}>{bt.anchoCm}</div></div>
+                                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: '10px', color: 'var(--text-dimmed, #4b5563)' }}>Alto</div><div style={{ color: 'var(--text-secondary, #d1d5db)', fontSize: '13px', fontWeight: 600 }}>{bt.altoCm}</div></div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid #2a2d3e', paddingTop: '16px' }}>
+                                <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid var(--border-color, #2a2d3e)', paddingTop: '16px' }}>
                                     <Btn small variant="secondary" onClick={() => setViewItemsBox({ id: bt.id, name: bt.nombre })} style={{ flex: 1 }}>📦 Items</Btn>
                                     <Btn small variant="secondary" onClick={() => { 
                                         setEditingId(bt.id); 

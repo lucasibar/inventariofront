@@ -155,18 +155,18 @@ export default function MaterialesCriticosPage() {
             <style>{`
                 .combos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
                 .combo-card { 
-                    background: #1f2937; border: 1px solid #374151; border-radius: 12px; padding: 20px;
+                    background: #1f2937; border: 1px solid var(--border-strong, #374151); border-radius: 12px; padding: 20px;
                     display: flex; flex-direction: column; gap: 16px; transition: transform 0.2s, border-color 0.2s;
                     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
                 }
                 .combo-card:hover { transform: translateY(-2px); border-color: #6366f1; }
                 
                 .mobile-combo-row {
-                    background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 12px 16px;
+                    background: #1f2937; border: 1px solid var(--border-strong, #374151); border-radius: 8px; padding: 12px 16px;
                     display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
                     cursor: pointer;
                 }
-                .mobile-combo-row:active { background: #374151; }
+                .mobile-combo-row:active { background: var(--border-strong, #374151); }
 
                 .metric-row { display: flex; align-items: center; gap: 12px; color: #d1d5db; }
                 .metric-icon { font-size: 18px; width: 24px; text-align: center; }
@@ -174,7 +174,7 @@ export default function MaterialesCriticosPage() {
                 .metric-label { font-size: 12px; color: #9ca3af; margin-left: auto; }
                 .editable-title { background: transparent; border: none; color: #fff; font-size: 18px; font-weight: 700; outline: none; width: 100%; border-bottom: 1px dashed transparent; }
                 .editable-title:hover, .editable-title:focus { border-bottom-color: #6366f1; }
-                .search-mini { background: #111827; border: 1px solid #374151; border-radius: 6px; padding: 8px 12px; color: white; width: 100%; box-sizing: border-box; outline: none; margin-bottom: 12px; }
+                .search-mini { background: var(--bg-secondary, #111827); border: 1px solid var(--border-strong, #374151); border-radius: 6px; padding: 8px 12px; color: white; width: 100%; box-sizing: border-box; outline: none; margin-bottom: 12px; }
             `}</style>
 
             <PageHeader title="Materiales Críticos" subtitle="Control de stock y reposición" hideTitleOnMobile>
@@ -183,7 +183,7 @@ export default function MaterialesCriticosPage() {
             </PageHeader>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? '16px' : '24px', gap: '16px', flexWrap: 'wrap' }}>
-                <h3 style={{ color: '#f3f4f6', fontSize: isMobile ? '16px' : '18px', fontWeight: 600, margin: 0 }}>📦 Mis Combos</h3>
+                <h3 style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: isMobile ? '16px' : '18px', fontWeight: 600, margin: 0 }}>📦 Mis Combos</h3>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flex: isMobile ? '1 1 100%' : 'none' }}>
                     <Select
                         value={depotId}
@@ -235,7 +235,7 @@ export default function MaterialesCriticosPage() {
                                         <strong key="t" onClick={() => setShowBreakdownId(combo.id)} style={{ cursor: 'pointer' }}>{combo.title}</strong>,
                                         combo.supplier?.name || 'Mixto',
                                         `${Number(combo.totalStock || 0).toFixed(1)} ${combo.unitLabel}`,
-                                        <span key="p" style={{ color: combo.pendingStock > 0 ? '#f59e0b' : '#6b7280' }}>{Number(combo.pendingStock || 0).toFixed(1)} {combo.unitLabel}</span>,
+                                        <span key="p" style={{ color: combo.pendingStock > 0 ? '#f59e0b' : 'var(--text-subtle, #6b7280)' }}>{Number(combo.pendingStock || 0).toFixed(1)} {combo.unitLabel}</span>,
                                         <span key="c" style={{ color: '#94a3b8' }}>{Number(combo.totalConsumed30Days || 0).toFixed(1)} {combo.unitLabel}</span>,
                                         <span key="s" style={{ color: combo.daysOfSupply < 15 ? '#ef4444' : '#10b981', fontWeight: 600 }}>{combo.daysOfSupply !== null ? `~ ${Math.ceil(combo.daysOfSupply)} días` : 'N/A'}</span>,
                                         <ActionMenu key="a" options={[
@@ -258,9 +258,9 @@ export default function MaterialesCriticosPage() {
                         <Select label="Depósito" value={newCombo.depositoId} onChange={v => setNewCombo({...newCombo, depositoId: v})} options={[{value: '', label: 'Seleccionar depósito...'}, ...depots.map(d => ({value: d.id, label: d.nombre}))]} />
                         <Select label="Proveedor (Opcional)" value={newCombo.supplierId} onChange={v => setNewCombo({...newCombo, supplierId: v})} options={[{value: '', label: 'Cualquier proveedor'}, ...partners.map(p => ({value: p.id, label: p.name}))]} />
                         <Input label="Buscar Materiales" value={materialSearch} onChange={setMaterialSearch} />
-                        <div style={{ maxHeight: '200px', overflow: 'auto', background: '#111827', borderRadius: '8px', padding: '10px' }}>
+                        <div style={{ maxHeight: '200px', overflow: 'auto', background: 'var(--bg-secondary, #111827)', borderRadius: '8px', padding: '10px' }}>
                             {filteredItems.map(item => (
-                                <label key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0', color: '#d1d5db', cursor: 'pointer' }}>
+                                <label key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0', color: 'var(--text-secondary, #d1d5db)', cursor: 'pointer' }}>
                                     <input type="checkbox" checked={newCombo.itemIds.includes(item.id)} onChange={e => {
                                         const ids = e.target.checked ? [...newCombo.itemIds, item.id] : newCombo.itemIds.filter(id => id !== item.id);
                                         setNewCombo({...newCombo, itemIds: ids});
@@ -284,14 +284,14 @@ function MobileComboRow({ combo, onClick }: any) {
     return (
         <div className="mobile-combo-row" onClick={onClick}>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ color: '#f3f4f6', fontWeight: 700, fontSize: '15px' }}>{combo.title}</span>
-                <span style={{ color: '#6b7280', fontSize: '11px' }}>{combo.supplier?.name || 'Varios Proveedores'}</span>
+                <span style={{ color: 'var(--text-primary, #f3f4f6)', fontWeight: 700, fontSize: '15px' }}>{combo.title}</span>
+                <span style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '11px' }}>{combo.supplier?.name || 'Varios Proveedores'}</span>
             </div>
             <div style={{ textAlign: 'right' }}>
                 <div style={{ color: combo.daysOfSupply < 15 ? '#ef4444' : '#10b981', fontWeight: 800, fontSize: '16px' }}>
                     {Number(combo.totalStock || 0).toLocaleString()} <small style={{ fontSize: '10px' }}>{combo.unitLabel}</small>
                 </div>
-                <div style={{ fontSize: '10px', color: '#9ca3af' }}>{combo.daysOfSupply !== null ? `${Math.ceil(combo.daysOfSupply)} días` : '---'}</div>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted, #9ca3af)' }}>{combo.daysOfSupply !== null ? `${Math.ceil(combo.daysOfSupply)} días` : '---'}</div>
             </div>
         </div>
     );
@@ -331,25 +331,25 @@ function ComboCard({ combo, onClick, onUpdateTitle, onEdit, onDelete }: any) {
                 <div className="metric-row">
                     <span className="metric-icon">⚖️</span>
                     <span className="metric-value">{Number(combo.totalStock || 0).toLocaleString()}</span>
-                    <span style={{ color: '#9ca3af', fontSize: '14px' }}>{combo.unitLabel}</span>
+                    <span style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '14px' }}>{combo.unitLabel}</span>
                     <span className="metric-label">STOCK TOTAL</span>
                 </div>
                 <div className="metric-row">
                     <span className="metric-icon">📦</span>
                     <span className="metric-value">{Number(combo.totalSecondaryStock || 0).toLocaleString()}</span>
-                    <span style={{ color: '#9ca3af', fontSize: '14px' }}>{combo.secondaryUnitLabel}</span>
+                    <span style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '14px' }}>{combo.secondaryUnitLabel}</span>
                     <span className="metric-label">UNIDADES</span>
                 </div>
                 <div className="metric-row">
                     <span className="metric-icon" style={{ color: '#f59e0b' }}>🛒</span>
                     <span className="metric-value" style={{ color: '#f59e0b' }}>{Number(combo.pendingStock || 0).toLocaleString()}</span>
-                    <span style={{ color: '#9ca3af', fontSize: '14px' }}>{combo.unitLabel}</span>
+                    <span style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '14px' }}>{combo.unitLabel}</span>
                     <span className="metric-label">PEDIDO</span>
                 </div>
                 <div className="metric-row">
                     <span className="metric-icon" style={{ color: '#94a3b8' }}>📤</span>
                     <span className="metric-value" style={{ color: '#94a3b8' }}>{Number(combo.totalConsumed30Days || 0).toLocaleString()}</span>
-                    <span style={{ color: '#9ca3af', fontSize: '14px' }}>{combo.unitLabel}</span>
+                    <span style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '14px' }}>{combo.unitLabel}</span>
                     <span className="metric-label">SALIDA (30D)</span>
                 </div>
                 <div className="metric-row">
@@ -361,7 +361,7 @@ function ComboCard({ combo, onClick, onUpdateTitle, onEdit, onDelete }: any) {
                 </div>
             </div>
 
-            <div style={{ marginTop: 'auto', borderTop: '1px solid #374151', paddingTop: '12px', textAlign: 'center' }}>
+            <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border-strong, #374151)', paddingTop: '12px', textAlign: 'center' }}>
                 <span style={{ 
                     fontSize: '14px', fontWeight: 600, 
                     color: combo.daysOfSupply < 15 ? '#ef4444' : combo.daysOfSupply > 60 ? '#10b981' : '#f59e0b'
@@ -383,30 +383,30 @@ function BreakdownModal({ id, onClose }: { id: string, onClose: () => void }) {
             {isLoading ? <Spinner /> : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {breakdown.map((item: any) => (
-                        <div key={item.itemId} style={{ background: '#1f2937', borderRadius: '10px', border: '1px solid #374151', overflow: 'hidden' }}>
+                        <div key={item.itemId} style={{ background: '#1f2937', borderRadius: '10px', border: '1px solid var(--border-strong, #374151)', overflow: 'hidden' }}>
                             <div 
-                                style={{ padding: '16px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: expandedItem === item.itemId ? '#374151' : 'transparent' }}
+                                style={{ padding: '16px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: expandedItem === item.itemId ? 'var(--border-strong, #374151)' : 'transparent' }}
                                 onClick={() => setExpandedItem(expandedItem === item.itemId ? null : item.itemId)}
                             >
                                 <div style={{ flex: 1 }}>
                                     <h4 style={{ color: '#fff', fontSize: '14px', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.description}</h4>
-                                    <code style={{ fontSize: '11px', color: '#9ca3af' }}>{item.code}</code>
+                                    <code style={{ fontSize: '11px', color: 'var(--text-muted, #9ca3af)' }}>{item.code}</code>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '20px' }}>
                                     <div style={{ textAlign: 'right' }}>
                                         <div style={{ color: '#10b981', fontWeight: 700, fontSize: isMobile ? '14px' : '16px' }}>{Number(item.total).toFixed(1)} {item.unitLabel}</div>
-                                        {!isMobile && <div style={{ fontSize: '11px', color: '#9ca3af' }}>{Number(item.totalSecondary).toFixed(0)} {item.secondaryUnitLabel}</div>}
+                                        {!isMobile && <div style={{ fontSize: '11px', color: 'var(--text-muted, #9ca3af)' }}>{Number(item.totalSecondary).toFixed(0)} {item.secondaryUnitLabel}</div>}
                                     </div>
                                     <span style={{ fontSize: '10px', transition: 'transform 0.2s', transform: expandedItem === item.itemId ? 'rotate(180deg)' : 'rotate(0)' }}>▼</span>
                                 </div>
                             </div>
                             
                             {expandedItem === item.itemId && (
-                                <div style={{ padding: isMobile ? '0' : '0 16px 16px', background: 'rgba(0,0,0,0.2)' }}>
+                                <div style={{ padding: isMobile ? '0' : '0 16px 16px', background: 'var(--bg-alt-row, rgba(0,0,0,0.2))' }}>
                                     <Table 
                                         cols={['Partida/Lote', 'Stock Acumulado']}
                                         rows={item.batches.map((b: any) => [
-                                            <strong key="l" style={{ color: '#f3f4f6' }}>{b.lotNumber}</strong>,
+                                            <strong key="l" style={{ color: 'var(--text-primary, #f3f4f6)' }}>{b.lotNumber}</strong>,
                                             <span key="q" style={{ color: '#fff', fontWeight: 600 }}>{b.qty.toFixed(1)} {item.unitLabel}</span>
                                         ])}
                                     />
@@ -437,9 +437,9 @@ function EditComboModal({ combo, items, onClose, onSave }: any) {
         <Modal title={`Configurar — ${combo.title}`} onClose={onClose}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <input type="text" className="search-mini" placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} />
-                <div style={{ maxHeight: '300px', overflow: 'auto', background: '#111827', borderRadius: '8px', padding: '8px' }}>
+                <div style={{ maxHeight: '300px', overflow: 'auto', background: 'var(--bg-secondary, #111827)', borderRadius: '8px', padding: '8px' }}>
                     {filtered.map((item: any) => (
-                        <label key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', borderBottom: '1px solid #1e2133', cursor: 'pointer', color: '#d1d5db' }}>
+                        <label key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', borderBottom: '1px solid var(--border-subtle, #1e2133)', cursor: 'pointer', color: 'var(--text-secondary, #d1d5db)' }}>
                             <input type="checkbox" checked={selectedIds.includes(item.id)} onChange={e => e.target.checked ? setSelectedIds([...selectedIds, item.id]) : setSelectedIds(selectedIds.filter(id => id !== item.id))} />
                             {item.descripcion}
                         </label>

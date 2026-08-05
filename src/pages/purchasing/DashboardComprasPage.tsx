@@ -66,16 +66,16 @@ import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.
 const colors = {
     primary: '#818cf8', // Indigo
     secondary: '#475569', // Slate
-    bg: '#0f1117',
-    cardBg: 'rgba(255, 255, 255, 0.03)',
+    bg: 'var(--bg-primary, #0f1117)',
+    cardBg: 'var(--bg-hover-row, rgba(255,255,255,0.03))',
     border: 'rgba(255, 255, 255, 0.08)',
-    text: '#f3f4f6',
-    textDim: '#9ca3af',
+    text: 'var(--text-primary, #f3f4f6)',
+    textDim: 'var(--text-muted, #9ca3af)',
     danger: '#f87171',
     success: '#34d399',
     info: '#60a5fa',
     warning: '#fbbf24',
-    inputBg: 'rgba(255, 255, 255, 0.05)'
+    inputBg: 'var(--bg-action-btn, rgba(255,255,255,0.05))'
 };
 
 const KPIButton = ({ label, value, icon: Icon, color, active, onClick }: any) => (
@@ -115,15 +115,15 @@ const ComboCard = ({ combo, onBuy }: any) => {
                 </Box>
             </Box>
             <Box sx={{ display: 'flex', gap: 2, mb: 1.5 }}>
-                <Box sx={{ flex: 1, bgcolor: 'rgba(255,255,255,0.03)', p: 1, borderRadius: 2, textAlign: 'center' }}>
+                <Box sx={{ flex: 1, bgcolor: 'var(--bg-hover-row, rgba(255,255,255,0.03))', p: 1, borderRadius: 2, textAlign: 'center' }}>
                     <Typography sx={{ fontWeight: 800, color: colors.text, fontSize: '0.95rem' }}>{Number(combo.totalStock || 0).toLocaleString()}</Typography>
                     <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.5rem', fontWeight: 700 }}>STOCK ({combo.unitLabel})</Typography>
                 </Box>
-                <Box sx={{ flex: 1, bgcolor: 'rgba(255,255,255,0.03)', p: 1, borderRadius: 2, textAlign: 'center' }}>
+                <Box sx={{ flex: 1, bgcolor: 'var(--bg-hover-row, rgba(255,255,255,0.03))', p: 1, borderRadius: 2, textAlign: 'center' }}>
                     <Typography sx={{ fontWeight: 800, color: colors.warning, fontSize: '0.95rem' }}>{Number(combo.pendingStock || 0).toLocaleString()}</Typography>
                     <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.5rem', fontWeight: 700 }}>PEDIDO ({combo.unitLabel})</Typography>
                 </Box>
-                <Box sx={{ flex: 1, bgcolor: 'rgba(255,255,255,0.03)', p: 1, borderRadius: 2, textAlign: 'center' }}>
+                <Box sx={{ flex: 1, bgcolor: 'var(--bg-hover-row, rgba(255,255,255,0.03))', p: 1, borderRadius: 2, textAlign: 'center' }}>
                     <Typography sx={{ fontWeight: 800, color: '#94a3b8', fontSize: '0.95rem' }}>{Number(combo.totalConsumed30Days || 0).toLocaleString()}</Typography>
                     <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.5rem', fontWeight: 700 }}>SALIDA 30D</Typography>
                 </Box>
@@ -421,7 +421,7 @@ const PurchaseOrderCard = ({ order, isExpanded, onToggleExpand }: any) => {
                         return (
                             <Box key={idx} sx={{ mb: 1.5, pb: 1.5, borderBottom: idx === order.lines.length - 1 ? 'none' : `1px solid ${colors.border}` }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}><Typography variant="caption" sx={{ fontWeight: 800, color: colors.text }}>{line.item?.descripcion}</Typography><Typography variant="caption" sx={{ fontWeight: 800, color: colors.primary }}>{line.qtyOrdered} {line.item?.unidadPrincipal}</Typography></Box>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}><Box sx={{ flex: 1 }}><LinearProgress variant="determinate" value={Math.min(100, progress)} sx={{ height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.05)', '& .MuiLinearProgress-bar': { bgcolor: progress >= 100 ? colors.success : colors.info } }} /></Box><Typography variant="caption" sx={{ color: colors.textDim, minWidth: 60, textAlign: 'right', fontSize: '0.6rem' }}>{line.qtyReceived} / {line.qtyOrdered}</Typography></Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}><Box sx={{ flex: 1 }}><LinearProgress variant="determinate" value={Math.min(100, progress)} sx={{ height: 4, borderRadius: 2, bgcolor: 'var(--bg-action-btn, rgba(255,255,255,0.05))', '& .MuiLinearProgress-bar': { bgcolor: progress >= 100 ? colors.success : colors.info } }} /></Box><Typography variant="caption" sx={{ color: colors.textDim, minWidth: 60, textAlign: 'right', fontSize: '0.6rem' }}>{line.qtyReceived} / {line.qtyOrdered}</Typography></Box>
                             </Box>
                         );
                     })}
@@ -549,11 +549,11 @@ const ConciliationDrawer = ({ open, onClose, movement, purchaseOrders }: { open:
     return (
         <Drawer anchor="bottom" open={open} onClose={onClose} PaperProps={{ sx: { bgcolor: colors.bg, color: colors.text, borderTop: `2px solid ${colors.info}`, borderTopLeftRadius: 24, borderTopRightRadius: 24, p: 3, pb: 6 } }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}><Typography variant="h5" sx={{ fontWeight: 900, color: colors.info }}>CONCILIAR REMITO</Typography><IconButton onClick={onClose} sx={{ color: colors.textDim }}><CloseIcon /></IconButton></Box>
-            <Box sx={{ bgcolor: 'rgba(255,255,255,0.02)', p: 2, borderRadius: 3, border: `1px solid ${colors.border}`, mb: 3 }}><Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 700 }}>REMITO FÍSICO:</Typography><Typography variant="h6" sx={{ fontWeight: 800 }}>{movement.item?.descripcion}</Typography><Typography variant="body2" sx={{ color: colors.success, fontWeight: 900 }}>CANTIDAD: {movement.qtyPrincipal} kg</Typography><Typography variant="caption" sx={{ color: colors.textDim }}>Proveedor: {movement.supplier?.name}</Typography></Box>
+            <Box sx={{ bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', p: 2, borderRadius: 3, border: `1px solid ${colors.border}`, mb: 3 }}><Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 700 }}>REMITO FÍSICO:</Typography><Typography variant="h6" sx={{ fontWeight: 800 }}>{movement.item?.descripcion}</Typography><Typography variant="body2" sx={{ color: colors.success, fontWeight: 900 }}>CANTIDAD: {movement.qtyPrincipal} kg</Typography><Typography variant="caption" sx={{ color: colors.textDim }}>Proveedor: {movement.supplier?.name}</Typography></Box>
             <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 900, mb: 1.5, display: 'block', textTransform: 'uppercase' }}>Órdenes de Compra Sugeridas</Typography>
             <List disablePadding>
                 {suggestedLines.length === 0 ? <Typography variant="body2" sx={{ color: colors.danger, textAlign: 'center', p: 4, fontWeight: 700 }}>No hay OCs abiertas para este proveedor y material.</Typography> : suggestedLines.map((line: any) => (
-                    <ListItem key={line.id} sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, mb: 1, p: 2, border: `1px solid ${colors.border}`, display: 'flex', justifyContent: 'space-between' }}>
+                    <ListItem key={line.id} sx={{ bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', borderRadius: 2, mb: 1, p: 2, border: `1px solid ${colors.border}`, display: 'flex', justifyContent: 'space-between' }}>
                         <Box><Typography variant="body2" sx={{ fontWeight: 800, color: colors.primary }}>OC: {line.orderNumero}</Typography><Typography variant="caption" sx={{ color: colors.textDim, display: 'block' }}>Pedido: {line.qtyOrdered} kg | Recibido: {line.qtyReceived} kg</Typography><Typography variant="caption" sx={{ color: colors.warning }}>Pendiente: {line.qtyOrdered - line.qtyReceived} kg</Typography></Box>
                         <Button variant="contained" size="small" disabled={linking} sx={{ bgcolor: colors.info, color: '#fff', fontWeight: 900, borderRadius: 2, textTransform: 'none' }} onClick={() => handleLink(line.id)}>{linking ? '...' : 'Vincular'}</Button>
                     </ListItem>

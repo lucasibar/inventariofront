@@ -9,7 +9,7 @@ export default function NotificationsPage() {
                 <h1 style={{
                     fontSize: isMobile ? '20px' : '24px',
                     fontWeight: 800,
-                    color: '#f3f4f6',
+                    color: 'var(--text-primary, #f3f4f6)',
                     margin: 0,
                     display: 'flex',
                     alignItems: 'center',
@@ -18,7 +18,7 @@ export default function NotificationsPage() {
                     <span style={{ fontSize: '28px' }}>🔔</span>
                     Notificaciones
                 </h1>
-                <p style={{ color: '#6b7280', fontSize: '13px', marginTop: '6px' }}>
+                <p style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '13px', marginTop: '6px' }}>
                     Próximamente...
                 </p>
             </div>
@@ -26,13 +26,13 @@ export default function NotificationsPage() {
             <div style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
                 justifyContent: 'center', padding: '80px 20px', textAlign: 'center',
-                border: '2px dashed #2a2d3e', borderRadius: '16px'
+                border: '2px dashed var(--border-color, #2a2d3e)', borderRadius: '16px'
             }}>
                 <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>🏗️</div>
-                <h2 style={{ color: '#9ca3af', fontSize: '18px', fontWeight: 600, margin: '0' }}>
+                <h2 style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '18px', fontWeight: 600, margin: '0' }}>
                     Módulo en construcción
                 </h2>
-                <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '8px' }}>
+                <p style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '14px', marginTop: '8px' }}>
                     Esta sección estará disponible próximamente con nuevas funcionalidades.
                 </p>
             </div>

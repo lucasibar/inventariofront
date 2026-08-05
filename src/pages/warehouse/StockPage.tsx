@@ -383,8 +383,8 @@ export default function StockPage() {
                     margin-top: 12px; 
                 }
                 .material-card { 
-                    background: #1a1d2e; 
-                    border: 1px solid #2a2d3e; 
+                    background: var(--bg-secondary, #1a1d2e); 
+                    border: 1px solid var(--border-color, #2a2d3e); 
                     border-radius: 12px; 
                     overflow: hidden; 
                     display: inline-block; 
@@ -395,15 +395,15 @@ export default function StockPage() {
                     break-inside: avoid;
                 }
                 .material-card:hover { transform: translateY(-2px); border-color: #6366f1; }
-                .material-header { padding: 14px 16px; background: rgba(255,255,255,0.01); }
+                .material-header { padding: 14px 16px; background: var(--bg-alt-row, rgba(255,255,255,0.01)); }
                 .material-title-line { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
                 .positions-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-                .positions-table th { text-align: left; padding: 10px 8px; color: #9ca3af; font-weight: 700; border-bottom: 1px solid #2a2d3e; background: rgba(0,0,0,0.2); text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; }
-                .positions-table td { padding: 8px; border-bottom: 1px solid #23263a; }
-                .metrics-banner { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 12px; background: rgba(99, 102, 241, 0.05); border: 1px solid #2a2d3e; border-radius: 12px; margin-bottom: 12px; }
+                .positions-table th { text-align: left; padding: 10px 8px; color: #9ca3af; font-weight: 700; border-bottom: 1px solid var(--border-color, #2a2d3e); background: var(--bg-alt-row, rgba(0,0,0,0.2)); text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; }
+                .positions-table td { padding: 8px; border-bottom: 1px solid var(--border-color, #23263a); }
+                .metrics-banner { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 12px; background: rgba(99, 102, 241, 0.05); border: 1px solid var(--border-color, #2a2d3e); border-radius: 12px; margin-bottom: 12px; }
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: #2a2d3e; border-radius: 10px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border-color, #2a2d3e); border-radius: 10px; }
                 .hoverable-row:hover { background: rgba(99, 102, 241, 0.05); }
             `}</style>
 
@@ -457,11 +457,11 @@ export default function StockPage() {
             {!isFetching && generalMetrics && rawStock.length > 0 && (
                 <div className="metrics-banner" style={{ gridTemplateColumns: '1fr 1fr' }}>
                     <div className="metric-item">
-                        <div style={{ fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 600 }}>Total Kilos</div>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted, #9ca3af)', textTransform: 'uppercase', fontWeight: 600 }}>Total Kilos</div>
                         <div style={{ fontSize: '18px', color: '#6366f1', fontWeight: 800 }}>{generalMetrics.kilos.toLocaleString('es-AR', { minimumFractionDigits: 1 })} <small style={{fontSize:'10px'}}>kg</small></div>
                     </div>
                     <div className="metric-item">
-                        <div style={{ fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 600 }}>Total Unidades</div>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted, #9ca3af)', textTransform: 'uppercase', fontWeight: 600 }}>Total Unidades</div>
                         <div style={{ fontSize: '18px', color: '#10b981', fontWeight: 800 }}>{generalMetrics.units.toLocaleString('es-AR')} <small style={{fontSize:'10px'}}>un</small></div>
                     </div>
                 </div>
@@ -490,7 +490,7 @@ export default function StockPage() {
                                                 }}>▸</span>
                                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                                     <div 
-                                                        style={{ fontWeight: 700, fontSize: '15px', color: '#f3f4f6', lineHeight: 1.2, cursor: 'pointer' }}
+                                                        style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-primary, #f3f4f6)', lineHeight: 1.2, cursor: 'pointer' }}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             setEditItemTarget(group.item);
@@ -498,11 +498,11 @@ export default function StockPage() {
                                                         }}
                                                         title="Hacé clic para editar este material"
                                                         onMouseEnter={(e) => (e.currentTarget.style.color = '#818cf8')}
-                                                        onMouseLeave={(e) => (e.currentTarget.style.color = '#f3f4f6')}
+                                                        onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-primary, #f3f4f6)')}
                                                     >
                                                         {titleText.charAt(0).toUpperCase() + titleText.slice(1)}
                                                     </div>
-                                                    <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+                                                    <div style={{ fontSize: '12px', color: 'var(--text-muted, #9ca3af)', marginTop: '4px' }}>
                                                         {subTitleText.charAt(0).toUpperCase() + subTitleText.slice(1)}
                                                     </div>
                                                 </div>
@@ -518,7 +518,7 @@ export default function StockPage() {
                                     </div>
 
                                     {isExpanded && (
-                                        <div style={{ background: 'rgba(255,255,255,0.02)', borderTop: '1px solid #2a2d3e' }}>
+                                        <div style={{ background: 'var(--bg-alt-row, rgba(255,255,255,0.02))', borderTop: '1px solid var(--border-color, #2a2d3e)' }}>
                                             <div className="custom-scrollbar">
                                                 <table className="positions-table">
                                                     <thead>
@@ -572,7 +572,7 @@ export default function StockPage() {
                                                                             )}
                                                                             <button 
                                                                                 onClick={() => setObsModal({ open: true, batchId: entry.batch?.id, text: entry.batch?.observaciones || '' })}
-                                                                                style={{ background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', fontSize: '10px', padding: '2px' }}
+                                                                                style={{ background: 'none', border: 'none', color: 'var(--text-dimmed, #4b5563)', cursor: 'pointer', fontSize: '10px', padding: '2px' }}
                                                                                 title="Editar observación"
                                                                             >
                                                                                 📝
@@ -725,8 +725,8 @@ export default function StockPage() {
                 <Modal title="Despacho Directo" onClose={() => setDespachoModal(false)}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                         <div style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '10px', padding: '12px' }}>
-                            <div style={{ fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', marginBottom: '4px' }}>Material seleccionado</div>
-                            <div style={{ color: '#f3f4f6', fontWeight: 700 }}>{despachoEntry.batch.item.descripcion}</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-subtle, #6b7280)', textTransform: 'uppercase', marginBottom: '4px' }}>Material seleccionado</div>
+                            <div style={{ color: 'var(--text-primary, #f3f4f6)', fontWeight: 700 }}>{despachoEntry.batch.item.descripcion}</div>
                             <div style={{ fontSize: '12px', color: '#a5b4fc', marginTop: '2px' }}>
                                 📍 {despachoEntry.posicion?.codigo || 'S/P'} &middot; Lote: {despachoEntry.batch.lotNumber || '—'} &middot; Disp: {Number(despachoEntry.qtyPrincipal).toFixed(1)} {despachoEntry.batch.item.unidadPrincipal}
                             </div>
@@ -766,11 +766,11 @@ export default function StockPage() {
                             )}
                         </div>
 
-                        <div style={{ fontSize: '11px', color: '#6b7280', fontStyle: 'italic' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-subtle, #6b7280)', fontStyle: 'italic' }}>
                             💡 Si ya existe un remito de salida para esta fecha y cliente, se agregará automáticamente.
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #2a2d3e', paddingTop: '12px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--border-color, #2a2d3e)', paddingTop: '12px' }}>
                             <Btn variant="secondary" onClick={() => setDespachoModal(false)}>Cancelar</Btn>
                             <Btn onClick={handleDespachoSubmit} disabled={despachoSaving || !despachoQty}>
                                 {despachoSaving ? 'Despachando...' : '📦 Despachar'}
@@ -787,8 +787,8 @@ export default function StockPage() {
                             onChange={e => setObsModal(p => ({ ...p, text: e.target.value }))}
                             placeholder="Escribí aquí cualquier nota sobre esta partida..."
                             style={{ 
-                                width: '100%', minHeight: '120px', background: '#0f1117', border: '1px solid #2a2d3e', 
-                                color: '#f3f4f6', borderRadius: '8px', padding: '12px', outline: 'none', fontFamily: 'inherit'
+                                width: '100%', minHeight: '120px', background: 'var(--bg-primary, #0f1117)', border: '1px solid var(--border-color, #2a2d3e)', 
+                                color: 'var(--text-primary, #f3f4f6)', borderRadius: '8px', padding: '12px', outline: 'none', fontFamily: 'inherit'
                             }}
                         />
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
@@ -805,12 +805,12 @@ export default function StockPage() {
                     onClose={() => setDetailGroupId(null)}
                 >
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #2a2d3e', paddingBottom: '12px' }}>
-                            <span style={{ fontSize: '13px', color: '#9ca3af' }}>
-                                Proveedor: <strong style={{ color: '#f3f4f6' }}>{detailGroup.supplier?.name || 'Sin proveedor'}</strong>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color, #2a2d3e)', paddingBottom: '12px' }}>
+                            <span style={{ fontSize: '13px', color: 'var(--text-muted, #9ca3af)' }}>
+                                Proveedor: <strong style={{ color: 'var(--text-primary, #f3f4f6)' }}>{detailGroup.supplier?.name || 'Sin proveedor'}</strong>
                             </span>
-                            <span style={{ fontSize: '13px', color: '#9ca3af' }}>
-                                Categoria: <strong style={{ color: '#f3f4f6' }}>{detailGroup.item.category?.nombre || detailGroup.item.categoria || 'General'}</strong>
+                            <span style={{ fontSize: '13px', color: 'var(--text-muted, #9ca3af)' }}>
+                                Categoria: <strong style={{ color: 'var(--text-primary, #f3f4f6)' }}>{detailGroup.item.category?.nombre || detailGroup.item.categoria || 'General'}</strong>
                             </span>
                         </div>
                         
@@ -864,7 +864,7 @@ export default function StockPage() {
                                                         )}
                                                         <button 
                                                             onClick={() => setObsModal({ open: true, batchId: entry.batch?.id, text: entry.batch?.observaciones || '' })}
-                                                            style={{ background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', fontSize: '10px', padding: '2px' }}
+                                                            style={{ background: 'none', border: 'none', color: 'var(--text-dimmed, #4b5563)', cursor: 'pointer', fontSize: '10px', padding: '2px' }}
                                                             title="Editar observación"
                                                         >
                                                             📝
@@ -920,7 +920,7 @@ export default function StockPage() {
                             </table>
                         </div>
                         
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #2a2d3e', paddingTop: '12px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid var(--border-color, #2a2d3e)', paddingTop: '12px' }}>
                             <Btn onClick={() => setDetailGroupId(null)}>Cerrar</Btn>
                         </div>
                     </div>

@@ -100,7 +100,7 @@ function CombinationRow({ row, onEdit, onDelete }: { row: any; onEdit: (d: EditD
                                 </TableHead>
                                 <TableBody>
                                     {row.details.map((d: any) => (
-                                        <TableRow key={d.id} hover sx={{ '&:hover': { bgcolor: '#111827' } }}>
+                                        <TableRow key={d.id} hover sx={{ '&:hover': { bgcolor: 'var(--bg-secondary, #111827)' } }}>
                                             <TableCell sx={{ color: 'white', borderBottom: '1px solid #1a2332', fontWeight: 600 }}>
                                                 Máq. {d.machineNumber}
                                             </TableCell>
@@ -262,7 +262,7 @@ export default function InformeCambiosPage() {
             />
 
             {/* Filters */}
-            <MuiCard sx={{ bgcolor: '#111827', borderRadius: 2, border: '1px solid #1f2937', mb: 3 }}>
+            <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid #1f2937', mb: 3 }}>
                 <CardContent sx={{ p: 2 }}>
                     <Grid container spacing={2} alignItems="center">
                         <Grid size={{ xs: 12, sm: 4 }}>
@@ -297,7 +297,7 @@ export default function InformeCambiosPage() {
             {/* Summary Cards */}
             <Grid container spacing={3} sx={{ mb: 3 }}>
                 <Grid size={{ xs: 12, md: 4 }}>
-                    <MuiCard sx={{ bgcolor: '#111827', borderRadius: 2, border: '1px solid #1f2937' }}>
+                    <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid #1f2937' }}>
                         <CardContent>
                             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', mb: 1 }}>Total Cambios</Typography>
                             <Typography variant="h4" sx={{ color: 'white', fontWeight: 700 }}>{totalChanges}</Typography>
@@ -305,7 +305,7 @@ export default function InformeCambiosPage() {
                     </MuiCard>
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                    <MuiCard sx={{ bgcolor: '#111827', borderRadius: 2, border: '1px solid #1f2937' }}>
+                    <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid #1f2937' }}>
                         <CardContent>
                             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', mb: 1 }}>Combinación Frecuente</Typography>
                             {mostCommon ? (
@@ -325,7 +325,7 @@ export default function InformeCambiosPage() {
                     </MuiCard>
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                    <MuiCard sx={{ bgcolor: '#111827', borderRadius: 2, border: '1px solid #1f2937' }}>
+                    <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid #1f2937' }}>
                         <CardContent>
                             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', mb: 1 }}>Promedio General</Typography>
                             <Typography variant="h4" sx={{ color: '#60a5fa', fontWeight: 700 }}>{formatDuration(totalAvgMs)}</Typography>
@@ -335,7 +335,7 @@ export default function InformeCambiosPage() {
             </Grid>
 
             {/* Table */}
-            <TableContainer component={Paper} sx={{ bgcolor: '#111827', borderRadius: 2, border: '1px solid #1f2937' }}>
+            <TableContainer component={Paper} sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid #1f2937' }}>
                 {loadingReport ? (
                     <Box sx={{ p: 4 }}><Spinner /></Box>
                 ) : report.length === 0 ? (
@@ -365,7 +365,7 @@ export default function InformeCambiosPage() {
             </TableContainer>
 
             {/* Edit Modal */}
-            <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { bgcolor: '#111827', color: 'white' } }}>
+            <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { bgcolor: 'var(--bg-secondary, #111827)', color: 'white' } }}>
                 <DialogTitle>Editar Cambio</DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>

@@ -181,7 +181,7 @@ export default function PedidosCompraPage() {
             </Card>
 
             {isLoading ? <Spinner /> : grouped.length === 0 ? (
-                <p style={{ color: '#4b5563', textAlign: 'center', padding: '32px', fontSize: '14px' }}>Todavía no hay compras cargadas</p>
+                <p style={{ color: 'var(--text-dimmed, #4b5563)', textAlign: 'center', padding: '32px', fontSize: '14px' }}>Todavía no hay compras cargadas</p>
             ) : grouped.map(group => (
                 <div key={group.supplierName} style={{ marginBottom: '24px' }}>
                     <h3 style={{ color: '#a5b4fc', fontSize: '14px', fontWeight: 700, margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -196,7 +196,7 @@ export default function PedidosCompraPage() {
                             >
                                 <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                                     <span style={{ color: '#a5b4fc', fontWeight: 700, fontSize: '13px' }}>{o.numero}</span>
-                                    <span style={{ color: '#6b7280', fontSize: '12px' }}>Emitido: {new Date(o.fechaEmision).toLocaleDateString()}</span>
+                                    <span style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '12px' }}>Emitido: {new Date(o.fechaEmision).toLocaleDateString()}</span>
                                     {o.fechaEntregaEsperada && (
                                         <span style={{ color: '#10b981', fontSize: '12px', fontWeight: 600 }}>Llega: {new Date(o.fechaEntregaEsperada).toLocaleDateString()}</span>
                                     )}
@@ -221,11 +221,11 @@ export default function PedidosCompraPage() {
                                     <Btn small variant="danger" onClick={e => { e.stopPropagation(); if (window.confirm('¿Eliminar esta orden de compra?')) deleteOrder(o.id); }}>
                                         🗑
                                     </Btn>
-                                    <span style={{ color: '#6b7280', marginLeft: '8px' }}>{selectedOrderId === o.id ? '▲' : '▼'}</span>
+                                    <span style={{ color: 'var(--text-subtle, #6b7280)', marginLeft: '8px' }}>{selectedOrderId === o.id ? '▲' : '▼'}</span>
                                 </div>
                             </div>
                             {selectedOrderId === o.id && (
-                                <div style={{ borderTop: '1px solid #2a2d3e', padding: '16px' }}>
+                                <div style={{ borderTop: '1px solid var(--border-color, #2a2d3e)', padding: '16px' }}>
                                     
                                     <div style={{ marginBottom: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                         {o.estado !== 'COMPLETADO' && o.estado !== 'CANCELADO' && (
@@ -246,10 +246,10 @@ export default function PedidosCompraPage() {
                                             return [
                                                 l.item?.descripcion ?? l.itemId,
                                                 <strong>{pedido.toFixed(2)}</strong>,
-                                                <span style={{ color: recibido > 0 ? '#10b981' : '#6b7280' }}>{recibido.toFixed(2)}</span>,
+                                                <span style={{ color: recibido > 0 ? '#10b981' : 'var(--text-subtle, #6b7280)' }}>{recibido.toFixed(2)}</span>,
                                                 <span style={{ color: pendiente > 0 ? '#ef4444' : '#10b981', fontWeight: 600 }}>{pendiente.toFixed(2)}</span>,
                                                 l.qtySecundaria ? `${Number(l.qtySecundaria).toFixed(0)} (${Number(l.qtyRecibidaSecundaria).toFixed(0)} rec)` : '—',
-                                                <span style={{ fontSize: '11px', color: '#9ca3af' }}>{l.observaciones || '—'}</span>
+                                                <span style={{ fontSize: '11px', color: 'var(--text-muted, #9ca3af)' }}>{l.observaciones || '—'}</span>
                                             ];
                                         })}
                                     />
@@ -264,14 +264,14 @@ export default function PedidosCompraPage() {
                 <Modal title={editOrderId ? "Editar Orden de Compra" : "Nueva Orden de Compra"} onClose={closeForm} wide>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                         <div>
-                            <label style={{ color: '#9ca3af', fontSize: '12px' }}>Depósito Destino</label>
+                            <label style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px' }}>Depósito Destino</label>
                             <div style={{ marginTop: '6px' }}>
                                 <Select value={depositoId} onChange={setDepositoId}
                                     options={[{ value: '', label: 'Seleccionar...' }, ...depots.map((d: any) => ({ value: d.id, label: d.nombre }))]} />
                             </div>
                         </div>
                         <div>
-                            <label style={{ color: '#9ca3af', fontSize: '12px' }}>Proveedor</label>
+                            <label style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px' }}>Proveedor</label>
                             <div style={{ marginTop: '6px' }}>
                                 <SearchSelect value={supplierId} onChange={setSupplierId}
                                     options={[{ value: '', label: 'Seleccionar...' }, ...suppliers.map((c: any) => ({ value: c.id, label: c.name }))]} placeholder="Buscar proveedor..." />
@@ -284,7 +284,7 @@ export default function PedidosCompraPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px', marginBottom: '16px', alignItems: 'center' }}>
                         <Input label="Observaciones de la Orden" value={observaciones} onChange={setObservaciones} />
                         <div>
-                            <label style={{ color: '#9ca3af', fontSize: '12px' }}>Número de Orden (Autogenerado)</label>
+                            <label style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px' }}>Número de Orden (Autogenerado)</label>
                             <div style={{ color: '#a5b4fc', fontWeight: 700, fontSize: '14px', marginTop: '10px' }}>
                                 {editOrderId ? orders.find((x: any) => x.id === editOrderId)?.numero : nextNumData?.numero ?? 'Generando consecutivo...'}
                             </div>
@@ -293,7 +293,7 @@ export default function PedidosCompraPage() {
 
                     <div style={{ marginBottom: '16px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                            <label style={{ color: '#9ca3af', fontSize: '12px', fontWeight: 600 }}>Materiales Solicitados</label>
+                            <label style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px', fontWeight: 600 }}>Materiales Solicitados</label>
                             <Btn small onClick={() => setLines(p => [...p, { itemId: '', qtyPedido: '', qtySecundaria: '', observaciones: '' }])}>
                                 + Agregar Material
                             </Btn>
@@ -418,7 +418,7 @@ function GenerateRemitoModal({ order, depots, onClose, onSuccess }: any) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                     <div>
-                        <label style={{ color: '#9ca3af', fontSize: '12px' }}>Depósito Destino (Recepción)</label>
+                        <label style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px' }}>Depósito Destino (Recepción)</label>
                         <Select value={depositoId} onChange={setDepositoId}
                             options={[{ value: '', label: 'Seleccionar depósito...' }, ...depots.map((d: any) => ({ value: d.id, label: d.nombre }))]} />
                     </div>
@@ -426,7 +426,7 @@ function GenerateRemitoModal({ order, depots, onClose, onSuccess }: any) {
                     <Input label="Observaciones del Remito" placeholder="Ej: Factura A-1234" value={observaciones} onChange={setObservaciones} />
                 </div>
 
-                <div style={{ background: '#111827', padding: '12px', borderRadius: '8px', border: '1px solid #1e2133' }}>
+                <div style={{ background: 'var(--bg-secondary, #111827)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-subtle, #1e2133)' }}>
                     <div style={{ color: '#a5b4fc', fontSize: '13px', fontWeight: 700, marginBottom: '8px' }}>
                         Detalle de Ingreso (Lotes y Cantidades)
                     </div>
@@ -434,8 +434,8 @@ function GenerateRemitoModal({ order, depots, onClose, onSuccess }: any) {
                         {lines.map((l: any, idx: number) => (
                             <div key={l.lineId} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1.2fr 1fr', gap: '8px', alignItems: 'center', background: '#1f2937', padding: '8px 12px', borderRadius: '6px' }}>
                                 <div>
-                                    <div style={{ color: '#f3f4f6', fontWeight: 600, fontSize: '13px' }}>{l.itemDesc}</div>
-                                    <small style={{ color: '#9ca3af', fontSize: '11px' }}>{l.itemCode} &middot; Pendiente: {l.pending.toFixed(1)} kg</small>
+                                    <div style={{ color: 'var(--text-primary, #f3f4f6)', fontWeight: 600, fontSize: '13px' }}>{l.itemDesc}</div>
+                                    <small style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '11px' }}>{l.itemCode} &middot; Pendiente: {l.pending.toFixed(1)} kg</small>
                                 </div>
                                 <Input label="N° de Partida / Lote" value={l.lotNumber} onChange={v => setLines((prev: any[]) => prev.map((x, i) => i === idx ? { ...x, lotNumber: v } : x))} />
                                 <Input label="Cant. Princ. (Kg)" type="number" value={l.qtyPrincipal} onChange={v => setLines((prev: any[]) => prev.map((x, i) => i === idx ? { ...x, qtyPrincipal: v } : x))} />

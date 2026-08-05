@@ -249,16 +249,16 @@ export default function HelpPage() {
     return (
         <Box sx={{ p: 4, maxWidth: '1000px', mx: 'auto', minHeight: '100vh', color: '#e6e1e5' }}>
             <Box sx={{ mb: 4 }}>
-                <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, letterSpacing: '-1.5px', color: '#f3f4f6' }}>
+                <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, letterSpacing: '-1.5px', color: 'var(--text-primary, #f3f4f6)' }}>
                     Centro de Ayuda y Soporte
                 </Typography>
-                <Typography variant="body1" sx={{ color: '#9ca3af', fontWeight: 500 }}>
+                <Typography variant="body1" sx={{ color: 'var(--text-muted, #9ca3af)', fontWeight: 500 }}>
                     Encontrá guías rápidas paso a paso para operar el sistema de inventariado, remitos, producción y mantenimiento.
                 </Typography>
             </Box>
 
             {/* Search Bar */}
-            <Card sx={{ mb: 4, background: '#1a1d2e', border: '1px solid #2a2d3e' }}>
+            <Card sx={{ mb: 4, background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-color, #2a2d3e)' }}>
                 <CardContent sx={{ p: '16px !important' }}>
                     <TextField
                         fullWidth
@@ -269,15 +269,15 @@ export default function HelpPage() {
                         InputProps={{
                             startAdornment: (
                                 <InputAdornment position="start">
-                                    <SearchIcon sx={{ color: '#9ca3af' }} />
+                                    <SearchIcon sx={{ color: 'var(--text-muted, #9ca3af)' }} />
                                 </InputAdornment>
                             ),
                             sx: {
-                                background: '#0f1117',
-                                color: '#f3f4f6',
+                                background: 'var(--bg-primary, #0f1117)',
+                                color: 'var(--text-primary, #f3f4f6)',
                                 borderRadius: '8px',
                                 '& .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: '#374151',
+                                    borderColor: 'var(--border-strong, #374151)',
                                 },
                                 '&:hover .MuiOutlinedInput-notchedOutline': {
                                     borderColor: '#6366f1',
@@ -293,9 +293,9 @@ export default function HelpPage() {
 
             {/* Accordions */}
             {filteredHelpData.length === 0 ? (
-                <Box sx={{ textAlignment: 'center', py: 8, color: '#9ca3af' }}>
-                    <InfoIcon sx={{ fontSize: 48, mb: 2, color: '#6b7280' }} />
-                    <Typography variant="h6" sx={{ color: '#f3f4f6' }}>No encontramos guías para tu búsqueda</Typography>
+                <Box sx={{ textAlignment: 'center', py: 8, color: 'var(--text-muted, #9ca3af)' }}>
+                    <InfoIcon sx={{ fontSize: 48, mb: 2, color: 'var(--text-subtle, #6b7280)' }} />
+                    <Typography variant="h6" sx={{ color: 'var(--text-primary, #f3f4f6)' }}>No encontramos guías para tu búsqueda</Typography>
                     <Typography variant="body2">Intentá con palabras clave como "stock", "remito", "picking" o "máquina".</Typography>
                 </Box>
             ) : (
@@ -306,8 +306,8 @@ export default function HelpPage() {
                             expanded={!!currentExpanded[section.id]}
                             onChange={() => handleAccordionToggle(section.id)}
                             sx={{
-                                background: '#1a1d2e',
-                                border: '1px solid #2a2d3e',
+                                background: 'var(--bg-secondary, #1a1d2e)',
+                                border: '1px solid var(--border-color, #2a2d3e)',
                                 borderRadius: '12px !important',
                                 overflow: 'hidden',
                                 color: '#e6e1e5',
@@ -320,9 +320,9 @@ export default function HelpPage() {
                                 sx={{
                                     px: 3,
                                     py: 1,
-                                    borderBottom: currentExpanded[section.id] ? '1px solid #2a2d3e' : 'none',
+                                    borderBottom: currentExpanded[section.id] ? '1px solid var(--border-color, #2a2d3e)' : 'none',
                                     '&:hover': {
-                                        background: 'rgba(255, 255, 255, 0.02)'
+                                        background: 'var(--bg-alt-row, rgba(255,255,255,0.02))'
                                     }
                                 }}
                             >
@@ -331,16 +331,16 @@ export default function HelpPage() {
                                         {section.icon}
                                     </Typography>
                                     <Box>
-                                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#f3f4f6', m: 0 }}>
+                                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'var(--text-primary, #f3f4f6)', m: 0 }}>
                                             {section.title}
                                         </Typography>
-                                        <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                                        <Typography variant="caption" sx={{ color: 'var(--text-muted, #9ca3af)' }}>
                                             {section.description}
                                         </Typography>
                                     </Box>
                                 </Box>
                             </AccordionSummary>
-                            <AccordionDetails sx={{ p: 3, background: '#131625' }}>
+                            <AccordionDetails sx={{ p: 3, background: 'var(--bg-accordion, #131625)' }}>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                                     {section.workflows.map((wf, wIndex) => (
                                         <Box key={wIndex}>
@@ -351,7 +351,7 @@ export default function HelpPage() {
                                                 {wf.details.map((detail, dIndex) => (
                                                     <Box key={dIndex} sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
                                                         <Box sx={{
-                                                            background: '#2a2d3e',
+                                                            background: 'var(--border-color, #2a2d3e)',
                                                             color: '#a5b4fc',
                                                             borderRadius: '50%',
                                                             width: '20px',
@@ -373,7 +373,7 @@ export default function HelpPage() {
                                                 ))}
                                             </Box>
                                             {wIndex < section.workflows.length - 1 && (
-                                                <Divider sx={{ mt: 3, borderColor: '#2a2d3e' }} />
+                                                <Divider sx={{ mt: 3, borderColor: 'var(--border-color, #2a2d3e)' }} />
                                             )}
                                         </Box>
                                     ))}

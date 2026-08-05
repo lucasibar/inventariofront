@@ -9,7 +9,7 @@ import { Card, Btn, Spinner, useIsMobile } from '../../shared/ui';
 type Tag = 'PENDIENTE' | 'CORRECTO' | 'A_CHEQUEAR' | 'POSICION_INCORRECTA';
 
 const TAG_CONFIG: Record<Tag, { label: string; icon: string; color: string; bg: string; border: string }> = {
-    PENDIENTE: { label: 'Pendiente', icon: '⏳', color: '#9ca3af', bg: 'rgba(156,163,175,0.1)', border: 'rgba(156,163,175,0.25)' },
+    PENDIENTE: { label: 'Pendiente', icon: '⏳', color: 'var(--text-muted, #9ca3af)', bg: 'rgba(156,163,175,0.1)', border: 'rgba(156,163,175,0.25)' },
     CORRECTO: { label: 'Correcto', icon: '✅', color: '#34d399', bg: 'rgba(52,211,153,0.1)', border: 'rgba(52,211,153,0.3)' },
     A_CHEQUEAR: { label: 'A Chequear', icon: '⚠️', color: '#fbbf24', bg: 'rgba(251,191,36,0.1)', border: 'rgba(251,191,36,0.3)' },
     POSICION_INCORRECTA: { label: 'Pos. Incorrecta', icon: '❌', color: '#f87171', bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.3)' },
@@ -60,7 +60,7 @@ export default function ReporteChequeoPage() {
         { label: 'Correctas', tagKey: 'CORRECTO', value: stats.correcto || 0, color: '#34d399', icon: '✅' },
         { label: 'A Chequear', tagKey: 'A_CHEQUEAR', value: stats.aChequear || 0, color: '#fbbf24', icon: '⚠️' },
         { label: 'Incorrectas', tagKey: 'POSICION_INCORRECTA', value: stats.incorrecta || 0, color: '#f87171', icon: '❌' },
-        { label: 'Pendientes', tagKey: 'PENDIENTE', value: stats.pendiente || 0, color: '#6b7280', icon: '⏳' },
+        { label: 'Pendientes', tagKey: 'PENDIENTE', value: stats.pendiente || 0, color: 'var(--text-subtle, #6b7280)', icon: '⏳' },
     ];
 
     const handleDownloadCSV = useCallback(() => {
@@ -103,10 +103,10 @@ export default function ReporteChequeoPage() {
             <Card style={{ padding: isMobile ? '16px' : '20px', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
                     <div>
-                        <h1 style={{ color: '#f3f4f6', fontSize: '18px', fontWeight: 800, margin: 0 }}>
+                        <h1 style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: '18px', fontWeight: 800, margin: 0 }}>
                             📋 Reporte de Chequeo
                         </h1>
-                        <p style={{ color: '#6b7280', fontSize: '12px', margin: '2px 0 0' }}>
+                        <p style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '12px', margin: '2px 0 0' }}>
                             Estado y detalle del chequeo por depósito
                         </p>
                     </div>
@@ -121,15 +121,15 @@ export default function ReporteChequeoPage() {
                 </div>
 
                 <div>
-                    <label style={{ display: 'block', color: '#9ca3af', fontSize: '12px', marginBottom: '6px' }}>
+                    <label style={{ display: 'block', color: 'var(--text-muted, #9ca3af)', fontSize: '12px', marginBottom: '6px' }}>
                         Seleccionar Depósito a Monitorear
                     </label>
                     <select
                         value={depotId}
                         onChange={e => setDepotId(e.target.value)}
                         style={{
-                            width: '100%', background: '#0f1117', border: '1px solid #374151', borderRadius: '10px',
-                            padding: '12px', color: '#f3f4f6', fontSize: '14px', outline: 'none',
+                            width: '100%', background: 'var(--bg-primary, #0f1117)', border: '1px solid var(--border-strong, #374151)', borderRadius: '10px',
+                            padding: '12px', color: 'var(--text-primary, #f3f4f6)', fontSize: '14px', outline: 'none',
                             boxSizing: 'border-box', colorScheme: 'dark',
                         }}
                     >
@@ -142,10 +142,10 @@ export default function ReporteChequeoPage() {
             {!depotId && (
                 <Card style={{ padding: '40px', textAlign: 'center' }}>
                     <div style={{ fontSize: '36px', marginBottom: '12px' }}>🏭</div>
-                    <h3 style={{ color: '#f3f4f6', fontSize: '16px', fontWeight: 700, margin: '0 0 4px' }}>
+                    <h3 style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: '16px', fontWeight: 700, margin: '0 0 4px' }}>
                         Seleccioná un depósito para ver su reporte
                     </h3>
-                    <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>
+                    <p style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '13px', margin: 0 }}>
                         Los cambios realizados desde la app de chequeo se actualizarán automáticamente acá.
                     </p>
                 </Card>
@@ -154,10 +154,10 @@ export default function ReporteChequeoPage() {
             {depotId && !activeCheck && (
                 <Card style={{ padding: '40px', textAlign: 'center' }}>
                     <div style={{ fontSize: '36px', marginBottom: '12px' }}>📭</div>
-                    <h3 style={{ color: '#f3f4f6', fontSize: '16px', fontWeight: 700, margin: '0 0 4px' }}>
+                    <h3 style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: '16px', fontWeight: 700, margin: '0 0 4px' }}>
                         No hay chequeos para este depósito
                     </h3>
-                    <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>
+                    <p style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '13px', margin: 0 }}>
                         Iniciá un chequeo desde la pantalla "Chequeo Inventario" para comenzar a recibir datos.
                     </p>
                 </Card>
@@ -173,7 +173,7 @@ export default function ReporteChequeoPage() {
                 <>
                     {/* Status badge */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                        <span style={{ color: '#9ca3af', fontSize: '13px' }}>
+                        <span style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '13px' }}>
                             Estado del chequeo: <strong style={{ color: activeCheck.status === 'COMPLETADO' ? '#34d399' : '#fbbf24' }}>
                                 {activeCheck.status === 'COMPLETADO' ? '✅ COMPLETADO' : '⏳ EN PROGRESO'}
                             </strong>
@@ -200,15 +200,15 @@ export default function ReporteChequeoPage() {
                                     onClick={() => setSelectedTagFilter(s.tagKey)}
                                     style={{
                                         padding: '14px', textAlign: 'center', cursor: 'pointer',
-                                        border: `2px solid ${isSelected ? s.color : '#2a2d3e'}`,
-                                        background: isSelected ? 'rgba(255,255,255,0.03)' : '#1a1d2e',
+                                        border: `2px solid ${isSelected ? s.color : 'var(--border-color, #2a2d3e)'}`,
+                                        background: isSelected ? 'var(--bg-hover-row, rgba(255,255,255,0.03))' : 'var(--bg-secondary, #1a1d2e)',
                                         transition: 'all 0.15s ease',
                                         transform: isSelected ? 'scale(1.02)' : 'scale(1)'
                                     }}
                                 >
                                     <div style={{ fontSize: '20px', marginBottom: '4px' }}>{s.icon}</div>
                                     <div style={{ color: s.color, fontSize: '24px', fontWeight: 800 }}>{s.value}</div>
-                                    <div style={{ color: isSelected ? '#f3f4f6' : '#6b7280', fontSize: '11px', fontWeight: 600, marginTop: '2px' }}>
+                                    <div style={{ color: isSelected ? 'var(--text-primary, #f3f4f6)' : 'var(--text-subtle, #6b7280)', fontSize: '11px', fontWeight: 600, marginTop: '2px' }}>
                                         {s.label}
                                     </div>
                                 </Card>
@@ -220,13 +220,13 @@ export default function ReporteChequeoPage() {
                     {filteredReportItems.length > 0 ? (
                         <Card style={{ padding: '0', overflow: 'hidden' }}>
                             <div style={{
-                                padding: '14px 16px', borderBottom: '1px solid #2a2d3e',
-                                background: 'rgba(255,255,255,0.02)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                                padding: '14px 16px', borderBottom: '1px solid var(--border-color, #2a2d3e)',
+                                background: 'var(--bg-alt-row, rgba(255,255,255,0.02))', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                             }}>
-                                <h3 style={{ color: '#f3f4f6', fontSize: '15px', fontWeight: 700, margin: 0 }}>
+                                <h3 style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: '15px', fontWeight: 700, margin: 0 }}>
                                     📌 Posiciones ({filteredReportItems.length})
                                 </h3>
-                                <span style={{ fontSize: '12px', color: '#9ca3af' }}>
+                                <span style={{ fontSize: '12px', color: 'var(--text-muted, #9ca3af)' }}>
                                     Filtrado por: <strong>{statCards.find(s => s.tagKey === selectedTagFilter)?.label}</strong>
                                 </span>
                             </div>
@@ -238,7 +238,7 @@ export default function ReporteChequeoPage() {
                                         padding: '14px 16px', borderBottom: i < filteredReportItems.length - 1 ? '1px solid #1f2233' : 'none',
                                     }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                                            <span style={{ color: '#f3f4f6', fontFamily: 'monospace', fontWeight: 700, fontSize: '16px' }}>
+                                            <span style={{ color: 'var(--text-primary, #f3f4f6)', fontFamily: 'monospace', fontWeight: 700, fontSize: '16px' }}>
                                                 {item.posicionCodigo}
                                             </span>
                                             <span style={{
@@ -255,18 +255,18 @@ export default function ReporteChequeoPage() {
                                             </div>
                                         )}
                                         {item.notaLibre && (
-                                            <div style={{ color: '#d1d5db', fontSize: '12px', fontStyle: 'italic', marginBottom: '4px' }}>
+                                            <div style={{ color: 'var(--text-secondary, #d1d5db)', fontSize: '12px', fontStyle: 'italic', marginBottom: '4px' }}>
                                                 💬 {item.notaLibre}
                                             </div>
                                         )}
                                         {item.stockSnapshot && item.stockSnapshot.length > 0 ? (
-                                            <div style={{ marginTop: '6px', fontSize: '12px', color: '#9ca3af', background: '#0f1117', padding: '6px 10px', borderRadius: '6px' }}>
+                                            <div style={{ marginTop: '6px', fontSize: '12px', color: 'var(--text-muted, #9ca3af)', background: 'var(--bg-primary, #0f1117)', padding: '6px 10px', borderRadius: '6px' }}>
                                                 <strong>Stock registrado:</strong> {item.stockSnapshot.map((s: any) =>
                                                     `${s.itemName || s.itemCodigo || 'Material'}${s.lotNumber ? ` (Lote: ${s.lotNumber})` : ''} - ${Number(s.qtyPrincipal).toLocaleString('es-AR')} ${s.unidadPrincipal || 'kg'}${s.qtySecundaria ? ` (${Number(s.qtySecundaria).toLocaleString('es-AR')} ${s.unidadSecundaria || 'unid.'})` : ''}`
                                                 ).join(' | ')}
                                             </div>
                                         ) : (
-                                            <div style={{ marginTop: '4px', fontSize: '11px', color: '#6b7280' }}>
+                                            <div style={{ marginTop: '4px', fontSize: '11px', color: 'var(--text-subtle, #6b7280)' }}>
                                                 <em>Sin stock registrado en sistema</em>
                                             </div>
                                         )}
@@ -277,7 +277,7 @@ export default function ReporteChequeoPage() {
                     ) : (
                         <Card style={{ padding: '40px', textAlign: 'center' }}>
                             <div style={{ fontSize: '36px', marginBottom: '12px' }}>🔍</div>
-                            <h3 style={{ color: '#9ca3af', fontSize: '16px', fontWeight: 600, margin: 0 }}>
+                            <h3 style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '16px', fontWeight: 600, margin: 0 }}>
                                 No hay posiciones con la etiqueta "{statCards.find(s => s.tagKey === selectedTagFilter)?.label}"
                             </h3>
                         </Card>

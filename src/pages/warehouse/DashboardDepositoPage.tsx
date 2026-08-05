@@ -64,15 +64,15 @@ import { useIsMobile } from '../../shared/ui';
 const colors = {
     primary: '#f59e0b', // Amber
     secondary: '#475569', // Slate
-    bg: '#0f1117',
-    cardBg: 'rgba(255, 255, 255, 0.03)',
+    bg: 'var(--bg-primary, #0f1117)',
+    cardBg: 'var(--bg-hover-row, rgba(255,255,255,0.03))',
     border: 'rgba(255, 255, 255, 0.08)',
-    text: '#f3f4f6',
-    textDim: '#9ca3af',
+    text: 'var(--text-primary, #f3f4f6)',
+    textDim: 'var(--text-muted, #9ca3af)',
     danger: '#ef4444',
     success: '#10b981',
     info: '#3b82f6',
-    inputBg: 'rgba(255, 255, 255, 0.05)'
+    inputBg: 'var(--bg-action-btn, rgba(255,255,255,0.05))'
 };
 
 const KPIButton = ({ label, value, unit, icon: Icon, color, active, onClick }: any) => (
@@ -104,7 +104,7 @@ const PositionContentModal = ({ open, onClose, depositoId, posicionId, positionN
                 {isLoading ? <Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress size={30} sx={{ color: colors.info }} /></Box> : (
                     <List sx={{ maxHeight: 400, overflow: 'auto' }}>
                         {stock.length === 0 ? <Typography sx={{ color: colors.textDim, textAlign: 'center', py: 4 }}>Esta posición está vacía</Typography> : stock.map((s: any, idx: number) => (
-                            <ListItem key={idx} sx={{ bgcolor: 'rgba(255,255,255,0.02)', mb: 1, borderRadius: 2, border: `1px solid ${colors.border}`, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', p: 1.5 }}>
+                            <ListItem key={idx} sx={{ bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', mb: 1, borderRadius: 2, border: `1px solid ${colors.border}`, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', p: 1.5 }}>
                                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: colors.text }}>{s.batch.item.descripcion}</Typography>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', mt: 0.5 }}>
                                     <Typography variant="caption" sx={{ color: colors.textDim }}>Lote: {s.batch.lotNumber}</Typography>
@@ -169,7 +169,7 @@ const MoveStockDrawer = ({ open, onClose, entry }: { open: boolean, onClose: () 
         <Drawer anchor="bottom" open={open} onClose={onClose} PaperProps={{ sx: { bgcolor: colors.bg, color: colors.text, borderTop: `1px solid ${colors.info}`, borderTopLeftRadius: 24, borderTopRightRadius: 24, p: 3, pb: 6 } }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}><Typography variant="h5" sx={{ fontWeight: 900, color: colors.info }}>MOVER MERCADERÍA</Typography><IconButton onClick={onClose} sx={{ color: colors.textDim }}><CloseIcon /></IconButton></Box>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Box sx={{ bgcolor: 'rgba(255,255,255,0.02)', p: 2, borderRadius: 2, border: `1px solid ${colors.border}` }}><Typography variant="caption" sx={{ color: colors.textDim }}>Origen:</Typography><Typography variant="subtitle1" sx={{ fontWeight: 800 }}>{entry.batch.item.descripcion}</Typography><Typography variant="body2" sx={{ color: colors.primary, fontWeight: 700 }}>Posición: {entry.posicion?.codigo} | Lote: {entry.batch.lotNumber}</Typography><Typography variant="caption" sx={{ color: colors.textDim }}>Disponible en origen: {entry.qtyPrincipal} {entry.batch.item.unidadPrincipal}</Typography></Box>
+                <Box sx={{ bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', p: 2, borderRadius: 2, border: `1px solid ${colors.border}` }}><Typography variant="caption" sx={{ color: colors.textDim }}>Origen:</Typography><Typography variant="subtitle1" sx={{ fontWeight: 800 }}>{entry.batch.item.descripcion}</Typography><Typography variant="body2" sx={{ color: colors.primary, fontWeight: 700 }}>Posición: {entry.posicion?.codigo} | Lote: {entry.batch.lotNumber}</Typography><Typography variant="caption" sx={{ color: colors.textDim }}>Disponible en origen: {entry.qtyPrincipal} {entry.batch.item.unidadPrincipal}</Typography></Box>
                 <TextField select label="Depósito Destino" fullWidth value={form.depositoId} onChange={(e) => setForm({...form, depositoId: e.target.value, posicionIdDestino: ''})} InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }}>{rawDepots.map((d: any) => <MenuItem key={d.id} value={d.id}>{d.nombre}</MenuItem>)}</TextField>
                 
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
@@ -179,7 +179,7 @@ const MoveStockDrawer = ({ open, onClose, entry }: { open: boolean, onClose: () 
                     <IconButton 
                         disabled={!form.posicionIdDestino} 
                         onClick={() => setViewerOpen(true)}
-                        sx={{ bgcolor: form.posicionIdDestino ? `${colors.info}20` : 'transparent', color: form.posicionIdDestino ? colors.info : colors.textDim, '&.Mui-disabled': { color: 'rgba(255,255,255,0.05)' } }}
+                        sx={{ bgcolor: form.posicionIdDestino ? `${colors.info}20` : 'transparent', color: form.posicionIdDestino ? colors.info : colors.textDim, '&.Mui-disabled': { color: 'var(--bg-action-btn, rgba(255,255,255,0.05))' } }}
                     >
                         <VisibilityIcon />
                     </IconButton>
@@ -241,7 +241,7 @@ const DespachoDirectoDrawer = ({ open, onClose, entry }: { open: boolean, onClos
         <Drawer anchor="bottom" open={open} onClose={onClose} PaperProps={{ sx: { bgcolor: colors.bg, color: colors.text, borderTop: `1px solid ${colors.danger}`, borderTopLeftRadius: 24, borderTopRightRadius: 24, p: 3, pb: 6 } }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}><Typography variant="h5" sx={{ fontWeight: 900, color: colors.danger }}>SALIDA DE MERCADERÍA</Typography><IconButton onClick={onClose} sx={{ color: colors.textDim }}><CloseIcon /></IconButton></Box>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Box sx={{ bgcolor: 'rgba(255,255,255,0.02)', p: 2, borderRadius: 2, border: `1px solid ${colors.border}` }}>
+                <Box sx={{ bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', p: 2, borderRadius: 2, border: `1px solid ${colors.border}` }}>
                     <Typography variant="caption" sx={{ color: colors.textDim }}>Material:</Typography>
                     <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>{entry.batch.item.descripcion}</Typography>
                     <Typography variant="body2" sx={{ color: colors.danger, fontWeight: 700 }}>📍 Posición: {entry.posicion?.codigo} | Lote: {entry.batch.lotNumber}</Typography>
@@ -327,7 +327,7 @@ const MaterialCard = ({ group, isPinned, onTogglePin, isExpanded, onToggleExpand
                     <Box sx={{ textAlign: 'right' }}><Typography variant="caption" sx={{ color: colors.textDim, display: 'flex', alignItems: 'center', gap: 0.5, fontWeight: 600 }}><CategoryIcon sx={{ fontSize: 12 }} /> {item.category?.nombre || 'General'}</Typography><Typography variant="caption" sx={{ color: colors.textDim, display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5, fontWeight: 600 }}><SwapHorizIcon sx={{ fontSize: 12 }} /> {entries.length} registros</Typography></Box>
                 </Box>
             </ListItem>
-            <Collapse in={isExpanded}><Divider sx={{ borderColor: colors.border }} /><Box sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.2)' }}><Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 900, mb: 1, display: 'block', textTransform: 'uppercase', fontSize: '0.6rem' }}>Desglose por Posición y Lote</Typography><List disablePadding>{entries.map((entry: any, idx: number) => (<Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: idx === entries.length - 1 ? 'none' : `1px solid ${colors.border}` }}><Box><Typography variant="body2" sx={{ fontWeight: 700 }}>{entry.posicion?.codigo || 'S/P'}</Typography><Typography variant="caption" sx={{ color: colors.textDim }}>Lote: {entry.batch?.lotNumber} | Proveedor: {entry.batch?.supplier?.name || 'S/D'}</Typography></Box><Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}><Box sx={{ textAlign: 'right' }}><Typography variant="body2" sx={{ fontWeight: 800, color: colors.primary }}>{entry.qtyPrincipal} {item.unidadPrincipal}</Typography><Typography variant="caption" sx={{ color: colors.textDim }}>{entry.qtySecundaria || 0} {item.unidadSecundaria || 'Un'}</Typography></Box><div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}><Button size="small" variant="outlined" startIcon={<SwapHorizIcon />} sx={{ borderColor: colors.info, color: colors.info, textTransform: 'none', fontWeight: 800, fontSize: '0.65rem', borderRadius: 1.5 }} onClick={() => onMoveRequest(entry)}>Mover</Button><Button size="small" variant="outlined" startIcon={<TrendingUpIcon />} sx={{ borderColor: colors.danger, color: colors.danger, textTransform: 'none', fontWeight: 800, fontSize: '0.65rem', borderRadius: 1.5 }} onClick={() => onSalidaRequest(entry)}>Salida</Button></div></Box></Box>))}</List></Box></Collapse>
+            <Collapse in={isExpanded}><Divider sx={{ borderColor: colors.border }} /><Box sx={{ p: 2, bgcolor: 'var(--bg-alt-row, rgba(0,0,0,0.2))' }}><Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 900, mb: 1, display: 'block', textTransform: 'uppercase', fontSize: '0.6rem' }}>Desglose por Posición y Lote</Typography><List disablePadding>{entries.map((entry: any, idx: number) => (<Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: idx === entries.length - 1 ? 'none' : `1px solid ${colors.border}` }}><Box><Typography variant="body2" sx={{ fontWeight: 700 }}>{entry.posicion?.codigo || 'S/P'}</Typography><Typography variant="caption" sx={{ color: colors.textDim }}>Lote: {entry.batch?.lotNumber} | Proveedor: {entry.batch?.supplier?.name || 'S/D'}</Typography></Box><Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}><Box sx={{ textAlign: 'right' }}><Typography variant="body2" sx={{ fontWeight: 800, color: colors.primary }}>{entry.qtyPrincipal} {item.unidadPrincipal}</Typography><Typography variant="caption" sx={{ color: colors.textDim }}>{entry.qtySecundaria || 0} {item.unidadSecundaria || 'Un'}</Typography></Box><div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}><Button size="small" variant="outlined" startIcon={<SwapHorizIcon />} sx={{ borderColor: colors.info, color: colors.info, textTransform: 'none', fontWeight: 800, fontSize: '0.65rem', borderRadius: 1.5 }} onClick={() => onMoveRequest(entry)}>Mover</Button><Button size="small" variant="outlined" startIcon={<TrendingUpIcon />} sx={{ borderColor: colors.danger, color: colors.danger, textTransform: 'none', fontWeight: 800, fontSize: '0.65rem', borderRadius: 1.5 }} onClick={() => onSalidaRequest(entry)}>Salida</Button></div></Box></Box>))}</List></Box></Collapse>
         </Box>
     );
 };
@@ -383,7 +383,7 @@ const PositionCard = ({ group, isPinned, onTogglePin, isExpanded, onToggleExpand
             </ListItem>
             <Collapse in={isExpanded}>
                 <Divider sx={{ borderColor: colors.border }} />
-                <Box sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.2)' }}>
+                <Box sx={{ p: 2, bgcolor: 'var(--bg-alt-row, rgba(0,0,0,0.2))' }}>
                     <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 900, mb: 1, display: 'block', textTransform: 'uppercase', fontSize: '0.6rem' }}>
                         Detalle de Materiales y Partidas en esta Posición
                     </Typography>
@@ -513,7 +513,7 @@ const EditStockLimitsDrawer = ({ open, onClose, initialItem }: { open: boolean, 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}><Typography variant="h5" sx={{ fontWeight: 900, color: colors.info }}>GESTIÓN DE LÍMITES</Typography><IconButton onClick={onClose} sx={{ color: colors.textDim }}><CloseIcon /></IconButton></Box>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <Autocomplete options={items} getOptionLabel={(option: any) => `${option.codigoInterno} - ${option.descripcion}`} value={selectedItem || null} renderInput={(params) => <TextField {...params} label="Seleccionar Material para configurar" InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ ...params.InputProps, sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} />} onChange={(_e, val: any) => setSelectedItem(val)} />
-                {selectedItem && (<Fade in><Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}><Box sx={{ bgcolor: 'rgba(255,255,255,0.02)', p: 2, borderRadius: 2, border: `1px solid ${colors.border}` }}><Typography variant="caption" sx={{ color: colors.textDim }}>Configurando:</Typography><Typography variant="subtitle1" sx={{ fontWeight: 800 }}>{selectedItem.descripcion}</Typography><Typography variant="caption" sx={{ color: colors.info }}>Stock actual en sistema se comparará con estos valores.</Typography></Box><Box sx={{ display: 'flex', gap: 2 }}><TextField label={`Stock Mínimo (${selectedItem.unidadPrincipal})`} type="number" fullWidth value={limits.minStock} onChange={(e) => setLimits({...limits, minStock: e.target.value})} InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} /><TextField label={`Stock Máximo (${selectedItem.unidadPrincipal})`} type="number" fullWidth value={limits.maxStock} onChange={(e) => setLimits({...limits, maxStock: e.target.value})} InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} /></Box><Button fullWidth variant="contained" size="large" disabled={isSaving} startIcon={isSaving ? <CircularProgress size={20} /> : <SaveIcon />} sx={{ mt: 2, bgcolor: colors.info, color: '#fff', fontWeight: 900, borderRadius: 3, py: 1.5 }} onClick={handleSave}>{isSaving ? 'GUARDANDO...' : 'ACTUALIZAR LÍMITES'}</Button></Box></Fade>)}
+                {selectedItem && (<Fade in><Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}><Box sx={{ bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', p: 2, borderRadius: 2, border: `1px solid ${colors.border}` }}><Typography variant="caption" sx={{ color: colors.textDim }}>Configurando:</Typography><Typography variant="subtitle1" sx={{ fontWeight: 800 }}>{selectedItem.descripcion}</Typography><Typography variant="caption" sx={{ color: colors.info }}>Stock actual en sistema se comparará con estos valores.</Typography></Box><Box sx={{ display: 'flex', gap: 2 }}><TextField label={`Stock Mínimo (${selectedItem.unidadPrincipal})`} type="number" fullWidth value={limits.minStock} onChange={(e) => setLimits({...limits, minStock: e.target.value})} InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} /><TextField label={`Stock Máximo (${selectedItem.unidadPrincipal})`} type="number" fullWidth value={limits.maxStock} onChange={(e) => setLimits({...limits, maxStock: e.target.value})} InputLabelProps={{ sx: { color: colors.textDim } }} InputProps={{ sx: { bgcolor: colors.inputBg, color: colors.text, borderRadius: 2 } }} /></Box><Button fullWidth variant="contained" size="large" disabled={isSaving} startIcon={isSaving ? <CircularProgress size={20} /> : <SaveIcon />} sx={{ mt: 2, bgcolor: colors.info, color: '#fff', fontWeight: 900, borderRadius: 3, py: 1.5 }} onClick={handleSave}>{isSaving ? 'GUARDANDO...' : 'ACTUALIZAR LÍMITES'}</Button></Box></Fade>)}
             </Box>
         </Drawer>
     );
@@ -665,7 +665,7 @@ export default function DashboardDepositoPage() {
 
     return (
         <Box sx={{ bgcolor: colors.bg, minHeight: '100vh', color: colors.text, pb: 10, maxWidth: '1400px', margin: '0 auto' }}>
-            {!isMobile && (<Box sx={{ display: 'flex', alignItems: 'center', p: 1.5, bgcolor: 'rgba(255,255,255,0.02)', borderBottom: `1px solid ${colors.border}`, position: 'sticky', top: 0, zIndex: 100, backdropFilter: 'blur(10px)' }}><IconButton onClick={() => document.dispatchEvent(new CustomEvent('open-sidebar-menu'))} sx={{ color: colors.textDim, mr: 1 }}><MoreVertIcon /></IconButton><Typography variant="h6" sx={{ flex: 1, fontWeight: 900, color: colors.primary, fontSize: '0.9rem', textTransform: 'uppercase' }}>Dashboard Depósito</Typography><IconButton onClick={() => setShowFilters(!showFilters)} sx={{ color: showFilters ? colors.primary : colors.textDim }}><FilterListIcon /></IconButton></Box>)}
+            {!isMobile && (<Box sx={{ display: 'flex', alignItems: 'center', p: 1.5, bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', borderBottom: `1px solid ${colors.border}`, position: 'sticky', top: 0, zIndex: 100, backdropFilter: 'blur(10px)' }}><IconButton onClick={() => document.dispatchEvent(new CustomEvent('open-sidebar-menu'))} sx={{ color: colors.textDim, mr: 1 }}><MoreVertIcon /></IconButton><Typography variant="h6" sx={{ flex: 1, fontWeight: 900, color: colors.primary, fontSize: '0.9rem', textTransform: 'uppercase' }}>Dashboard Depósito</Typography><IconButton onClick={() => setShowFilters(!showFilters)} sx={{ color: showFilters ? colors.primary : colors.textDim }}><FilterListIcon /></IconButton></Box>)}
             {isMobile && (<Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1, px: 2 }}><IconButton onClick={() => document.dispatchEvent(new CustomEvent('open-sidebar-menu'))} sx={{ color: colors.textDim }}><MoreVertIcon /></IconButton><IconButton onClick={() => setShowFilters(!showFilters)} sx={{ color: showFilters ? colors.primary : colors.textDim }}><FilterListIcon /></IconButton></Box>)}
             <Box sx={{ p: 2, pb: 1, display: 'flex', gap: 1 }}><TextField placeholder="Buscar material, código o lote..." size="small" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} fullWidth InputProps={{ startAdornment: <SearchIcon sx={{ color: colors.textDim, mr: 1 }} />, endAdornment: browserSupportsSpeechRecognition && (<IconButton size="small" onClick={toggleListening} sx={{ color: listening ? colors.danger : colors.textDim }}>{listening ? <MicIcon /> : <MicOffIcon sx={{ opacity: 0.5 }} />}</IconButton>), sx: { bgcolor: colors.inputBg, borderRadius: 2, color: 'white', border: `1px solid ${colors.border}` } }} /></Box>
             
@@ -676,7 +676,7 @@ export default function DashboardDepositoPage() {
             </Box>
             
             <Collapse in={showFilters}>
-                <Box sx={{ px: 2, pb: 2, display: 'flex', flexDirection: 'column', gap: 1.5, bgcolor: 'rgba(255,255,255,0.01)', borderRadius: 2, m: 2, p: 2, border: `1px solid ${colors.border}` }}>
+                <Box sx={{ px: 2, pb: 2, display: 'flex', flexDirection: 'column', gap: 1.5, bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.01))', borderRadius: 2, m: 2, p: 2, border: `1px solid ${colors.border}` }}>
                     <Box sx={{ display: 'flex', gap: 1.5 }}>
                         <TextField select label="Planta" value={plantId} onChange={(e) => setPlantId(e.target.value)} fullWidth size="small" InputProps={{ sx: { bgcolor: colors.inputBg, color: 'white' } }}>
                             {plants.map((p: any) => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}

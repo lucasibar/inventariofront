@@ -478,7 +478,7 @@ export default function MovimientosPage() {
                     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
                 }
                 .move-btn:disabled { 
-                    background: #1e2133; 
+                    background: var(--border-subtle, #1e2133); 
                     color: #4b5563; 
                     cursor: not-allowed; 
                     box-shadow: none;
@@ -490,7 +490,7 @@ export default function MovimientosPage() {
                 }
                 .panel-header {
                     padding: 12px 16px;
-                    border-bottom: 1px solid #2a2d3e;
+                    border-bottom: 1px solid var(--border-color, #2a2d3e);
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
@@ -533,7 +533,7 @@ export default function MovimientosPage() {
                         </div>
                         {posicionIdLeft && <Badge color="#6366f1">{stockLeft.length} Batchs</Badge>}
                     </div>
-                    <div style={{ padding: '12px 16px', borderBottom: '1px solid #1e2133', display: 'flex', gap: '10px', background: 'rgba(0,0,0,0.1)' }}>
+                    <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-subtle, #1e2133)', display: 'flex', gap: '10px', background: 'rgba(0,0,0,0.1)' }}>
                         <Select
                             label="Depósito"
                             value={depositoIdLeft}
@@ -554,7 +554,7 @@ export default function MovimientosPage() {
                         {depositoIdLeft && posicionIdLeft ? (
                             <Table loading={fetchingLeft} cols={buildCols('left')} rows={buildRows(stockLeft, 'left')} />
                         ) : (
-                            <div style={{ padding: '40px', textAlign: 'center', color: '#4b5563', fontSize: '13px' }}>Seleccioná un depósito y posición</div>
+                            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-dimmed, #4b5563)', fontSize: '13px' }}>Seleccioná un depósito y posición</div>
                         )}
                     </div>
                 </Card>
@@ -587,7 +587,7 @@ export default function MovimientosPage() {
                         </div>
                         {posicionIdRight && <Badge color="#10b981">{stockRight.length} Batchs</Badge>}
                     </div>
-                    <div style={{ padding: '12px 16px', borderBottom: '1px solid #1e2133', display: 'flex', gap: '10px', background: 'rgba(0,0,0,0.1)' }}>
+                    <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-subtle, #1e2133)', display: 'flex', gap: '10px', background: 'rgba(0,0,0,0.1)' }}>
                         <Select
                             label="Depósito"
                             value={depositoIdRight}
@@ -608,7 +608,7 @@ export default function MovimientosPage() {
                         {depositoIdRight && posicionIdRight ? (
                             <Table loading={fetchingRight} cols={buildCols('right')} rows={buildRows(stockRight, 'right')} />
                         ) : (
-                            <div style={{ padding: '40px', textAlign: 'center', color: '#4b5563', fontSize: '13px' }}>Seleccioná un depósito y posición</div>
+                            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-dimmed, #4b5563)', fontSize: '13px' }}>Seleccioná un depósito y posición</div>
                         )}
                     </div>
                 </Card>
@@ -661,29 +661,29 @@ export default function MovimientosPage() {
             {partialMoveModal && (
                 <Modal title="Confirmar Traslado" onClose={() => setPartialMoveModal(false)}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '70vh', overflowY: 'auto', paddingRight: '8px' }}>
-                        <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>Revisá las cantidades antes de confirmar el movimiento:</p>
+                        <p style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '13px', margin: 0 }}>Revisá las cantidades antes de confirmar el movimiento:</p>
                         
                         {pendingItems.map((item, idx) => (
                             <div key={item.batchId} style={{ 
-                                background: 'rgba(255,255,255,0.02)', 
-                                border: '1px solid #2a2d3e', 
+                                background: 'var(--bg-alt-row, rgba(255,255,255,0.02))', 
+                                border: '1px solid var(--border-color, #2a2d3e)', 
                                 padding: '12px', 
                                 borderRadius: '8px' 
                             }}>
                                 <div style={{ marginBottom: '12px' }}>
-                                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#f3f4f6' }}>{item.descripcion}</div>
+                                    <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary, #f3f4f6)' }}>{item.descripcion}</div>
                                     <div style={{ fontSize: '11px', color: '#6366f1' }}>Lote: {item.lotNumber}</div>
                                 </div>
 
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                     <div>
-                                        <label style={{ display: 'block', fontSize: '10px', color: '#6b7280', marginBottom: '4px', textTransform: 'uppercase' }}>
+                                        <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-subtle, #6b7280)', marginBottom: '4px', textTransform: 'uppercase' }}>
                                             {item.unidadP} (Max: {item.maxP})
                                         </label>
                                         <Input value={item.qtyP} type="number" onChange={(val) => updatePendingItem(idx, 'qtyP', val)} />
                                     </div>
                                     <div style={{ flex: 1 }}>
-                                        <label style={{ display: 'block', fontSize: '10px', color: '#6b7280', marginBottom: '4px', textTransform: 'uppercase' }}>
+                                        <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-subtle, #6b7280)', marginBottom: '4px', textTransform: 'uppercase' }}>
                                             {item.unidadS}
                                         </label>
                                         <Input value={item.qtyS} type="number" onChange={(val) => updatePendingItem(idx, 'qtyS', val)} />
@@ -711,8 +711,8 @@ export default function MovimientosPage() {
                 <Modal title="Despacho Directo" onClose={() => setDespachoModal(false)}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                         <div style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '10px', padding: '12px' }}>
-                            <div style={{ fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', marginBottom: '4px' }}>Material seleccionado</div>
-                            <div style={{ color: '#f3f4f6', fontWeight: 700 }}>{despachoEntry.batch.item.descripcion}</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-subtle, #6b7280)', textTransform: 'uppercase', marginBottom: '4px' }}>Material seleccionado</div>
+                            <div style={{ color: 'var(--text-primary, #f3f4f6)', fontWeight: 700 }}>{despachoEntry.batch.item.descripcion}</div>
                             <div style={{ fontSize: '12px', color: '#a5b4fc', marginTop: '2px' }}>
                                 📍 {despachoEntry.posicion?.codigo || 'S/P'} &middot; Lote: {despachoEntry.batch.lotNumber || '—'} &middot; Disp: {Number(despachoEntry.qtyPrincipal).toFixed(1)} {despachoEntry.batch.item.unidadPrincipal}
                             </div>
@@ -752,11 +752,11 @@ export default function MovimientosPage() {
                             )}
                         </div>
 
-                        <div style={{ fontSize: '11px', color: '#6b7280', fontStyle: 'italic' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-subtle, #6b7280)', fontStyle: 'italic' }}>
                             💡 Si ya existe un remito de salida para esta fecha y cliente, se agregará automáticamente.
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #2a2d3e', paddingTop: '12px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--border-color, #2a2d3e)', paddingTop: '12px' }}>
                             <Btn variant="secondary" onClick={() => setDespachoModal(false)}>Cancelar</Btn>
                             <Btn onClick={handleDespachoSubmit} disabled={despachoSaving || !despachoQty}>
                                 {despachoSaving ? 'Despachando...' : '📦 Despachar'}

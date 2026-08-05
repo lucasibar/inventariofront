@@ -80,7 +80,7 @@ export default function PedidosPage() {
             )}
 
             {isLoading ? <Spinner /> : grouped.length === 0 ? (
-                <p style={{ color: '#4b5563', textAlign: 'center', padding: '32px', fontSize: '14px' }}>Todavía no hay datos cargados</p>
+                <p style={{ color: 'var(--text-dimmed, #4b5563)', textAlign: 'center', padding: '32px', fontSize: '14px' }}>Todavía no hay datos cargados</p>
             ) : grouped.map((group: any) => (
                 <div key={group.clientName} style={{ marginBottom: '24px' }}>
                     <h3 style={{ color: '#a5b4fc', fontSize: '14px', fontWeight: 700, margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -95,16 +95,16 @@ export default function PedidosPage() {
                             >
                                 <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                                     <span style={{ color: '#a5b4fc', fontWeight: 700, fontSize: '13px' }}>{o.numero}</span>
-                                    <span style={{ color: '#6b7280', fontSize: '12px' }}>{new Date(o.fecha).toLocaleDateString('es-AR')}</span>
+                                    <span style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '12px' }}>{new Date(o.fecha).toLocaleDateString('es-AR')}</span>
                                     <Badge>{o.lines?.length ?? 0} materiales</Badge>
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ color: '#6b7280' }}>{selectedOrderId === o.id ? '▲' : '▼'}</span>
+                                    <span style={{ color: 'var(--text-subtle, #6b7280)' }}>{selectedOrderId === o.id ? '▲' : '▼'}</span>
                                     <Btn small variant="danger" onClick={e => { e.stopPropagation(); if (window.confirm('¿Eliminar esta orden?')) deleteOrder(o.id); }}>🗑</Btn>
                                 </div>
                             </div>
                             {selectedOrderId === o.id && (
-                                <div style={{ borderTop: '1px solid #2a2d3e' }}>
+                                <div style={{ borderTop: '1px solid var(--border-color, #2a2d3e)' }}>
                                     <Table
                                         cols={['Material', 'Categoría', 'Kilos pedidos', 'Stock actual', 'Estado']}
                                         rows={(o.lines ?? []).map((l: any) => {
@@ -132,7 +132,7 @@ export default function PedidosPage() {
                 <Modal title="Nueva Orden de Compra" onClose={() => setShowForm(false)} wide>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                         <div>
-                            <label style={{ color: '#9ca3af', fontSize: '12px' }}>Cliente</label>
+                            <label style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px' }}>Cliente</label>
                             <div style={{ marginTop: '6px' }}>
                                 <SearchSelect 
                                     value={newClient ? '__new__' : clientId} 
@@ -158,7 +158,7 @@ export default function PedidosPage() {
 
                     <div style={{ marginBottom: '16px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                            <label style={{ color: '#9ca3af', fontSize: '12px' }}>Materiales</label>
+                            <label style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px' }}>Materiales</label>
                             <Btn small onClick={() => setLines(p => [...p, { itemId: '', kilosPedidos: '' }])}>+ Material</Btn>
                         </div>
                         {lines.map((l: any, i: number) => (

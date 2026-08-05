@@ -20,7 +20,7 @@ const ProduccionNewDashboardPage: React.FC = () => {
     ];
 
     return (
-        <Box sx={{ p: 4, background: '#0f1117', minHeight: '100vh', color: '#f3f4f6' }}>
+        <Box sx={{ p: 4, background: 'var(--bg-primary, #0f1117)', minHeight: '100vh', color: 'var(--text-primary, #f3f4f6)' }}>
             <Typography variant="h4" sx={{ mb: 4, fontWeight: 800, color: '#f59e0b' }}>
                 Dashboard de Producción Real-Time
             </Typography>
@@ -31,22 +31,22 @@ const ProduccionNewDashboardPage: React.FC = () => {
                     <Grid size={{ xs: 12, sm: 6, md: 4 }} key={m.label}>
                         <Paper sx={{ 
                             p: 3, 
-                            background: 'rgba(255, 255, 255, 0.03)', 
+                            background: 'var(--bg-hover-row, rgba(255,255,255,0.03))', 
                             borderRadius: '16px',
-                            border: '1px solid rgba(255, 255, 255, 0.05)',
+                            border: '1px solid var(--bg-action-btn, rgba(255,255,255,0.05))',
                         }}>
-                            <Typography variant="subtitle2" sx={{ color: '#9ca3af', mb: 1, textTransform: 'uppercase', fontSize: '11px', fontWeight: 700 }}>
+                            <Typography variant="subtitle2" sx={{ color: 'var(--text-muted, #9ca3af)', mb: 1, textTransform: 'uppercase', fontSize: '11px', fontWeight: 700 }}>
                                 {m.label}
                             </Typography>
                             <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
                                 <Typography variant="h4" sx={{ fontWeight: 800, color: m.color }}>{m.value}</Typography>
-                                <Typography variant="body2" sx={{ color: '#6b7280' }}>{m.unit}</Typography>
+                                <Typography variant="body2" sx={{ color: 'var(--text-subtle, #6b7280)' }}>{m.unit}</Typography>
                             </Box>
                             {typeof m.value === 'number' && (
                                 <LinearProgress 
                                     variant="determinate" 
                                     value={m.value} 
-                                    sx={{ mt: 2, height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.05)', '& .MuiLinearProgress-bar': { bgcolor: m.color } }}
+                                    sx={{ mt: 2, height: 4, borderRadius: 2, bgcolor: 'var(--bg-action-btn, rgba(255,255,255,0.05))', '& .MuiLinearProgress-bar': { bgcolor: m.color } }}
                                 />
                             )}
                         </Paper>
@@ -57,9 +57,9 @@ const ProduccionNewDashboardPage: React.FC = () => {
                 <Grid size={{ xs: 12, md: 7 }}>
                     <Paper sx={{ 
                         p: 4, 
-                        background: 'rgba(255, 255, 255, 0.02)', 
+                        background: 'var(--bg-alt-row, rgba(255,255,255,0.02))', 
                         borderRadius: '24px',
-                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        border: '1px solid var(--bg-action-btn, rgba(255,255,255,0.05))',
                         height: '100%'
                     }}>
                         <Typography variant="h6" sx={{ mb: 4, fontWeight: 700 }}>Producción por Línea</Typography>
@@ -67,10 +67,10 @@ const ProduccionNewDashboardPage: React.FC = () => {
                             {productionByLine.map((line) => (
                                 <Box key={line.line}>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                        <Typography variant="body2" sx={{ color: '#9ca3af' }}>{line.line}</Typography>
+                                        <Typography variant="body2" sx={{ color: 'var(--text-muted, #9ca3af)' }}>{line.line}</Typography>
                                         <Typography variant="body2" sx={{ fontWeight: 700 }}>{line.value}%</Typography>
                                     </Box>
-                                    <Box sx={{ height: 30, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: '4px', overflow: 'hidden' }}>
+                                    <Box sx={{ height: 30, bgcolor: 'var(--bg-hover-row, rgba(255,255,255,0.03))', borderRadius: '4px', overflow: 'hidden' }}>
                                         <Box sx={{ height: '100%', width: `${line.value}%`, bgcolor: line.color, transition: 'width 1s ease-in-out' }} />
                                     </Box>
                                 </Box>
@@ -105,7 +105,7 @@ const ProduccionNewDashboardPage: React.FC = () => {
                             </Typography>
                         </Box>
                         <Typography variant="h6" sx={{ fontWeight: 700 }}>Eficiencia General (OEE)</Typography>
-                        <Typography variant="body2" sx={{ color: '#9ca3af', maxWidth: 250, mt: 1 }}>
+                        <Typography variant="body2" sx={{ color: 'var(--text-muted, #9ca3af)', maxWidth: 250, mt: 1 }}>
                             La planta está operando un 12% por debajo del objetivo ideal.
                         </Typography>
                     </Paper>

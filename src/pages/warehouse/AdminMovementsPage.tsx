@@ -79,25 +79,25 @@ export default function AdminMovementsPage() {
 
     const renderDesktopRow = (m: any) => {
         const isAnulado = m.status === 'ANULADO';
-        const style = typeStyles[m.tipo] || { color: '#9ca3af', label: m.tipo };
+        const style = typeStyles[m.tipo] || { color: 'var(--text-muted, #9ca3af)', label: m.tipo };
         
         return [
             <span style={{ fontSize: '13px' }}>{new Date(m.fecha).toLocaleDateString('es-AR')}</span>,
             <Badge color={style.color}>{style.label}</Badge>,
             <span style={{ fontWeight: 600 }}>{m.deposito?.nombre || '—'}</span>,
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontWeight: 600, color: '#f3f4f6', whiteSpace: 'normal', maxWidth: '180px', lineHeight: '1.2' }}>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary, #f3f4f6)', whiteSpace: 'normal', maxWidth: '180px', lineHeight: '1.2' }}>
                     {m.item?.categoria ? `[${m.item.categoria}] ` : ''}{m.item?.descripcion || '—'}
                 </span>
                 <code style={{ fontSize: '11px', color: '#a5b4fc' }}>Lote: {m.batch?.lotNumber || '—'}</code>
             </div>,
             <span style={{ fontWeight: 600 }}>{m.posicion?.codigo || 'S/P'}</span>,
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                <span style={{ color: '#f3f4f6', fontWeight: 600 }}>{Number(m.qtyPrincipal).toFixed(2)} {m.item?.unidadPrincipal}</span>
-                {m.qtySecundaria != null && <span style={{ fontSize: '11px', color: '#9ca3af' }}>{m.qtySecundaria} {m.item?.unidadSecundaria || ''}</span>}
+                <span style={{ color: 'var(--text-primary, #f3f4f6)', fontWeight: 600 }}>{Number(m.qtyPrincipal).toFixed(2)} {m.item?.unidadPrincipal}</span>
+                {m.qtySecundaria != null && <span style={{ fontSize: '11px', color: 'var(--text-muted, #9ca3af)' }}>{m.qtySecundaria} {m.item?.unidadSecundaria || ''}</span>}
             </div>,
-            <Badge color={isAnulado ? '#6b7280' : '#10b981'}>{isAnulado ? 'ANULADO' : 'ACTIVO'}</Badge>,
-            <div style={{ maxWidth: '150px', fontSize: '11px', color: '#6b7280', whiteSpace: 'normal', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.observaciones || '—'}</div>,
+            <Badge color={isAnulado ? 'var(--text-subtle, #6b7280)' : '#10b981'}>{isAnulado ? 'ANULADO' : 'ACTIVO'}</Badge>,
+            <div style={{ maxWidth: '150px', fontSize: '11px', color: 'var(--text-subtle, #6b7280)', whiteSpace: 'normal', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.observaciones || '—'}</div>,
             <ActionMenu options={[
                 { label: 'Revertir Movimiento', icon: '🔄', color: '#ef4444', onClick: () => handleReverse(m.id) }
             ].filter(() => !isAnulado)} />
@@ -106,40 +106,40 @@ export default function AdminMovementsPage() {
 
     const renderMobileCard = (m: any) => {
         const isAnulado = m.status === 'ANULADO';
-        const style = typeStyles[m.tipo] || { color: '#9ca3af', label: m.tipo };
+        const style = typeStyles[m.tipo] || { color: 'var(--text-muted, #9ca3af)', label: m.tipo };
 
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <Badge color={style.color}>{style.label}</Badge>
-                        <span style={{ color: '#9ca3af', fontSize: '12px' }}>{new Date(m.fecha).toLocaleDateString('es-AR')}</span>
+                        <span style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px' }}>{new Date(m.fecha).toLocaleDateString('es-AR')}</span>
                     </div>
                     {!isAnulado && <ActionMenu options={[{ label: 'Revertir', icon: '🔄', color: '#ef4444', onClick: () => handleReverse(m.id) }]} />}
                 </div>
 
-                <div style={{ fontWeight: 700, color: '#f3f4f6', fontSize: '14px' }}>{m.item?.descripcion || '—'}</div>
+                <div style={{ fontWeight: 700, color: 'var(--text-primary, #f3f4f6)', fontSize: '14px' }}>{m.item?.descripcion || '—'}</div>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', background: 'var(--bg-alt-row, rgba(0,0,0,0.2))', padding: '10px', borderRadius: '8px' }}>
                     <div>
-                        <div style={{ fontSize: '10px', color: '#6b7280', textTransform: 'uppercase' }}>Cantidad</div>
+                        <div style={{ fontSize: '10px', color: 'var(--text-subtle, #6b7280)', textTransform: 'uppercase' }}>Cantidad</div>
                         <div style={{ fontWeight: 600, color: '#10b981' }}>{Number(m.qtyPrincipal).toFixed(2)} {m.item?.unidadPrincipal}</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '10px', color: '#6b7280', textTransform: 'uppercase' }}>Lote</div>
+                        <div style={{ fontSize: '10px', color: 'var(--text-subtle, #6b7280)', textTransform: 'uppercase' }}>Lote</div>
                         <code style={{ color: '#a5b4fc' }}>{m.batch?.lotNumber || '—'}</code>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#9ca3af' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-muted, #9ca3af)' }}>
                     <span>📍 {m.deposito?.nombre} - {m.posicion?.codigo || 'S/P'}</span>
                     <span>👤 {m.user?.username || 'Sistema'}</span>
                 </div>
 
-                {m.observaciones && <div style={{ fontSize: '11px', color: '#6b7280', fontStyle: 'italic', borderTop: '1px solid #1e2133', paddingTop: '8px' }}>"{m.observaciones}"</div>}
+                {m.observaciones && <div style={{ fontSize: '11px', color: 'var(--text-subtle, #6b7280)', fontStyle: 'italic', borderTop: '1px solid var(--border-subtle, #1e2133)', paddingTop: '8px' }}>"{m.observaciones}"</div>}
                 
                 <div style={{ marginTop: '4px' }}>
-                    <Badge color={isAnulado ? '#4b5563' : '#10b981'}>{isAnulado ? 'MOVIMIENTO ANULADO' : 'ESTADO ACTIVO'}</Badge>
+                    <Badge color={isAnulado ? 'var(--text-dimmed, #4b5563)' : '#10b981'}>{isAnulado ? 'MOVIMIENTO ANULADO' : 'ESTADO ACTIVO'}</Badge>
                 </div>
             </div>
         );
@@ -158,7 +158,7 @@ export default function AdminMovementsPage() {
                     .filter-grid { grid-template-columns: 1fr; }
                 }
                 .date-input {
-                    background: #0f111a; border: 1px solid #2a2d3e; border-radius: 8px; color: white; padding: 10px; width: 100%; box-sizing: border-box; outline: none; transition: border-color 0.2s;
+                    background: #0f111a; border: 1px solid var(--border-color, #2a2d3e); border-radius: 8px; color: white; padding: 10px; width: 100%; box-sizing: border-box; outline: none; transition: border-color 0.2s;
                 }
                 .date-input:focus { border-color: #6366f1; }
             `}</style>
@@ -168,14 +168,14 @@ export default function AdminMovementsPage() {
                 subtitle="Registro histórico y reversión de stock"
             />
 
-            <Card style={{ marginBottom: '24px', padding: '16px', background: '#1a1d2e' }}>
+            <Card style={{ marginBottom: '24px', padding: '16px', background: 'var(--bg-secondary, #1a1d2e)' }}>
                 <div className="filter-grid">
                     <div>
-                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#9ca3af' }}>📅 Desde</label>
+                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: 'var(--text-muted, #9ca3af)' }}>📅 Desde</label>
                         <input type="date" className="date-input" value={desde} onChange={(e) => setDesde(e.target.value)} />
                     </div>
                     <div>
-                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#9ca3af' }}>📅 Hasta</label>
+                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: 'var(--text-muted, #9ca3af)' }}>📅 Hasta</label>
                         <input type="date" className="date-input" value={hasta} onChange={(e) => setHasta(e.target.value)} />
                     </div>
                     <Select

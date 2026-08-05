@@ -32,11 +32,11 @@ import {
 const colors = {
     primary: '#818cf8', // Indigo
     secondary: '#475569',
-    bg: '#0f1117',
-    cardBg: 'rgba(255, 255, 255, 0.03)',
+    bg: 'var(--bg-primary, #0f1117)',
+    cardBg: 'var(--bg-hover-row, rgba(255,255,255,0.03))',
     border: 'rgba(255, 255, 255, 0.08)',
-    text: '#f3f4f6',
-    textDim: '#9ca3af',
+    text: 'var(--text-primary, #f3f4f6)',
+    textDim: 'var(--text-muted, #9ca3af)',
     danger: '#f87171',
     success: '#34d399',
     warning: '#fbbf24',
@@ -562,7 +562,7 @@ export default function GraficoSierraPage() {
                             <Box sx={{ width: '100%', height: 400 }}>
                                 <ResponsiveContainer width="100%" height="100%">
                                     <LineChart data={chartData} margin={{ top: 10, right: 90, left: -15, bottom: 0 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                                        <CartesianGrid strokeDasharray="3 3" stroke="var(--bg-action-btn, rgba(255,255,255,0.05))" />
                                         <XAxis 
                                             dataKey="date" 
                                             stroke={colors.textDim} 
