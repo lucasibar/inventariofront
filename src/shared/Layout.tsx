@@ -113,6 +113,15 @@ const navGroups: NavGroup[] = [
                     { to: '/mantenimiento/informe-cambios', label: '📈 Informe Cambios' },
                 ]
             },
+            {
+                id: 'mantenimiento-kpi',
+                label: '📈 KPI',
+                isSubGroup: true,
+                items: [
+                    { to: '/mantenimiento/kpi/disponibilidad', label: '🏭 Disponibilidad Máquinas' },
+                    { to: '/mantenimiento/kpi/disponibilidad-v2', label: '📊 Disponibilidad Timeline (V2)' },
+                ]
+            },
         ]
     },
     {
@@ -277,6 +286,8 @@ export default function Layout() {
                 '/mantenimiento/registro', '/mantenimiento/cambios', '/mantenimiento/historial',
                 '/mantenimiento/buscador', '/mantenimiento/pendientes',
                 '/mantenimiento/informe-turnos', '/mantenimiento/informe-cambios',
+                '/mantenimiento/kpi/disponibilidad',
+                '/mantenimiento/kpi/disponibilidad-v2',
             ],
             PRODUCCION: ['/produccion/dashboard', '/produccion/cargar'],
             VENTAS: ['/ventas/dashboard'],

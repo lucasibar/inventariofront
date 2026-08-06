@@ -95,6 +95,64 @@ export interface MachineChange {
     };
 }
 
+export interface AvailabilityMachineData {
+    machineId: string;
+    number: number;
+    nombre: string;
+    currentStatus: string;
+    availability24h: number;
+    availabilityMonth: number;
+    downtimeNovedadesMs: number;
+    downtimeChangesMs: number;
+    totalDowntimeMs: number;
+    uptimeMs: number;
+    failureCount: number;
+    changeCount: number;
+}
+
+export interface AvailabilityDashboard {
+    summary: {
+        totalMachines: number;
+        activeMachines: number;
+        stoppedMachines: number;
+        avgAvailability24h: string;
+        avgAvailabilityMonth: string;
+        totalDowntimeNovedadesFormatted: string;
+        totalDowntimeChangesFormatted: string;
+        totalStopsNovedades: number;
+        totalChanges: number;
+        avgStopDurationFormatted: string;
+        avgChangeDurationFormatted: string;
+    };
+    machines: AvailabilityMachineData[];
+    topProblematic: Array<{
+        machineId: string;
+        number: number;
+        nombre: string;
+        availability24h: number;
+        failureCount: number;
+        currentStatus: string;
+    }>;
+    topPerformers: Array<{
+        machineId: string;
+        number: number;
+        nombre: string;
+        availability24h: number;
+        failureCount: number;
+        currentStatus: string;
+    }>;
+    byShift: {
+        day: { availability: number; stops: number; changes: number; };
+        night: { availability: number; stops: number; changes: number; };
+    };
+    dailyTrend: Array<{
+        date: string;
+        availability: number;
+        stops: number;
+        changes: number;
+    }>;
+}
+
 export interface MachineChangeReport {
     totalChanges: number;
     report: {
@@ -355,6 +413,31 @@ export const maintenanceApi = api.injectEndpoints({
             }),
             invalidatesTags: ['MachineChange'],
         }),
+        // Availability Dashboard
+        getAvailabilityDashboard: builder.query<AvailabilityDashboard, { plantId: string; typeId?: string; startDate?: string; endDate?: string }>({
+            query: ({ plantId, typeId, startDate, endDate }) => {
+                const params = new URLSearchParams();
+                params.append('plantId', plantId);
+                if (typeId && typeId !== 'ALL') params.append('typeId', typeId);
+                if (startDate) params.append('startDate', startDate);
+                if (endDate) params.append('endDate', endDate);
+                return `maintenance/availability-dashboard?${params.toString()}`;
+            },
+            providesTags: [{ type: 'Maintenance', id: 'Availability' }],
+        }),
+        // Availability Timeline (V2)
+        getAvailabilityTimeline: builder.query<any, { plantId: string; typeId?: string; period?: string; startDate?: string; endDate?: string }>({
+            query: ({ plantId, typeId, period, startDate, endDate }) => {
+                const params = new URLSearchParams();
+                params.append('plantId', plantId);
+                if (typeId && typeId !== 'ALL') params.append('typeId', typeId);
+                if (period) params.append('period', period);
+                if (startDate) params.append('startDate', startDate);
+                if (endDate) params.append('endDate', endDate);
+                return `maintenance/availability-timeline?${params.toString()}`;
+            },
+            providesTags: [{ type: 'Maintenance', id: 'AvailabilityTimeline' }],
+        }),
     }),
 });
 
@@ -378,4 +461,6 @@ export const {
     useGetMachineChangeReportQuery,
     useUpdateMachineChangeMutation,
     useDeleteMachineChangeMutation,
+    useGetAvailabilityDashboardQuery,
+    useGetAvailabilityTimelineQuery,
 } = maintenanceApi;

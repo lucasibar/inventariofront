@@ -47,6 +47,8 @@ const PendientesPage = lazy(() => import('../../pages/maintenance/PendientesPage
 const InformeTurnosPage = lazy(() => import('../../pages/maintenance/InformeTurnosPage'));
 const CambioArticuloPage = lazy(() => import('../../pages/maintenance/CambioArticuloPage'));
 const InformeCambiosPage = lazy(() => import('../../pages/maintenance/InformeCambiosPage'));
+const DisponibilidadMaquinaPage = lazy(() => import('../../pages/maintenance/DisponibilidadMaquinaPage'));
+const DisponibilidadMaquinaV2Page = lazy(() => import('../../pages/maintenance/DisponibilidadMaquinaV2Page'));
 
 // Sector: Production
 const CargarProduccionPage = lazy(() => import('../../pages/production/CargarProduccionPage'));
@@ -166,6 +168,8 @@ export const router = createBrowserRouter([
               { path: "mantenimiento/informe-turnos", element: <LazyRoute element={InformeTurnosPage} /> },
               { path: "mantenimiento/cambios", element: <LazyRoute element={CambioArticuloPage} /> },
               { path: "mantenimiento/informe-cambios", element: <LazyRoute element={InformeCambiosPage} /> },
+              { path: "mantenimiento/kpi/disponibilidad", element: <LazyRoute element={DisponibilidadMaquinaPage} /> },
+              { path: "mantenimiento/kpi/disponibilidad-v2", element: <LazyRoute element={DisponibilidadMaquinaV2Page} /> },
 
               { path: "produccion/cargar", element: <LazyRoute element={CargarProduccionPage} /> },
               { path: "produccion/dashboard", element: <LazyRoute element={ProduccionNewDashboardPage} /> },
