@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
     useGetAvailabilityTimelineQuery,
     useGetPlantsQuery,
     useGetMachineTypesQuery
 } from '../../entities/maintenance/api/maintenance.api';
-import { PageHeader, Card, Select, Spinner, useIsMobile, Input } from '../../shared/ui';
+import { PageHeader, Card, Select, Spinner, Input } from '../../shared/ui';
 import './DisponibilidadMaquinaV2Page.css';
 
 const getStatusColor = (status: string) => {
@@ -21,8 +21,6 @@ const getAvailabilityColor = (pct: number) => {
 };
 
 export default function DisponibilidadMaquinaV2Page() {
-    const isMobile = useIsMobile();
-
     const { data: plants } = useGetPlantsQuery();
     const { data: types } = useGetMachineTypesQuery();
 
@@ -100,7 +98,7 @@ export default function DisponibilidadMaquinaV2Page() {
                         placeholder="Buscar máquina..." 
                         style={{ width: 160 }} 
                     />
-                    {isFetching && <Spinner size={20} />}
+                    {isFetching && <Spinner size="20px" />}
                 </div>
             </PageHeader>
 

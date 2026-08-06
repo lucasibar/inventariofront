@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
     useGetAvailabilityDashboardQuery,
     useGetPlantsQuery,
     useGetMachineTypesQuery
 } from '../../entities/maintenance/api/maintenance.api';
-import { PageHeader, Card, Btn, Select, Spinner, useIsMobile, Input } from '../../shared/ui';
+import { PageHeader, Card, Btn, Select, Spinner, Input } from '../../shared/ui';
 import './DisponibilidadMaquinaPage.css';
 
 const getStatusColor = (status: string) => {
@@ -100,8 +100,6 @@ const MiniLineChart = ({ data, width = '100%', height = 200 }: any) => {
 };
 
 export default function DisponibilidadMaquinaPage() {
-    const isMobile = useIsMobile();
-    
     const { data: plants } = useGetPlantsQuery();
     const { data: types } = useGetMachineTypesQuery();
     
@@ -215,7 +213,7 @@ export default function DisponibilidadMaquinaPage() {
                         ]}
                         value={period} onChange={setPeriod} style={{ width: 180 }}
                     />
-                    {isFetching && <Spinner size={20} />}
+                    {isFetching && <Spinner size="20px" />}
                 </div>
             </PageHeader>
 
