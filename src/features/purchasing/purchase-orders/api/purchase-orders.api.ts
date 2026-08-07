@@ -118,6 +118,14 @@ export const purchaseOrdersApi = api.injectEndpoints({
             }),
             invalidatesTags: ['PurchaseOrders', 'Stock', 'Dashboard'],
         }),
+        updateCombo: builder.mutation<any, { id: string; title?: string; itemIds?: string[]; depositoId?: string | null; stockMinimo?: number | null; stockMaximo?: number | null }>({
+            query: ({ id, ...body }) => ({
+                url: `/combos-compra/${id}`,
+                method: 'PATCH',
+                body,
+            }),
+            invalidatesTags: ['PurchaseOrders', 'Stock', 'Dashboard'],
+        }),
     }),
     overrideExisting: false,
 });
@@ -145,4 +153,5 @@ export const {
     useUnlinkReceiptMutation,
     useGenerateRemitoFromPOMutation,
     useImportProyectadoMutation,
+    useUpdateComboMutation,
 } = purchaseOrdersApi;

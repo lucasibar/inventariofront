@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Fragment } from 'react';
 import { useSelector } from 'react-redux';
 import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
 import { useGetItemsQuery, useUpdateItemMutation } from '../../features/warehouse/materiales/api/items.api';
 import { useGetStockQuery, useGetRecentMovementsQuery } from '../../features/warehouse/stock/api/stock.api';
-import { useGetCombosQuery, useGetPurchaseOrdersQuery, useImportProyectadoMutation } from '../../features/purchasing/purchase-orders/api/purchase-orders.api';
+import { useGetCombosQuery, useGetPurchaseOrdersQuery, useImportProyectadoMutation, useUpdateComboMutation } from '../../features/purchasing/purchase-orders/api/purchase-orders.api';
 import * as xlsx from 'xlsx';
 import { selectCurrentUser, selectAllowedDepots } from '../../entities/auth/model/authSlice';
 import { PageHeader, Card, Table, Badge, Spinner, EditableCell, SearchBar } from '../../shared/ui';
@@ -503,8 +503,15 @@ export default function GraficoSierraPage() {
                 combos.filter((c: any) => selectedComboIds.includes(c.id)).forEach((combo: any) => {
                     const comboItems = activeSelectedItems.filter((it: any) => (combo.itemIds || []).includes(it.id));
                     const comboStock = comboItems.reduce((sum: number, it: any) => sum + (entry[`stock_${it.id}`] || 0), 0);
-                    const comboMin = comboItems.reduce((sum: number, it: any) => sum + Number(it.stockMinimo || 0), 0);
-                    const comboMax = comboItems.reduce((sum: number, it: any) => sum + Number(it.stockMaximo || 0), 0);
+                    
+                    const comboMin = (combo.stockMinimo !== null && combo.stockMinimo !== undefined)
+                        ? Number(combo.stockMinimo)
+                        : comboItems.reduce((sum: number, it: any) => sum + Number(it.stockMinimo || 0), 0);
+                        
+                    const comboMax = (combo.stockMaximo !== null && combo.stockMaximo !== undefined)
+                        ? Number(combo.stockMaximo)
+                        : comboItems.reduce((sum: number, it: any) => sum + Number(it.stockMaximo || 0), 0);
+                        
                     const comboRPoint = comboItems.reduce((sum: number, it: any) => sum + (entry[`rpoint_${it.id}`] || 0), 0);
 
                     entry[`combo_stock_${combo.id}`] = Number(comboStock.toFixed(1));
@@ -551,8 +558,15 @@ export default function GraficoSierraPage() {
             const cItems = items.filter((it: any) => (combo.itemIds || []).includes(it.id));
             const cStock = cItems.reduce((s: number, it: any) => s + (stockMap.get(it.id) || 0), 0);
             const cConsumption = cItems.reduce((s: number, it: any) => s + (dailyConsumptionMap[it.id] || 0), 0);
-            const cMin = cItems.reduce((s: number, it: any) => s + Number(it.stockMinimo || 0), 0);
-            const cMax = cItems.reduce((s: number, it: any) => s + Number(it.stockMaximo || 0), 0);
+            
+            const cMin = (combo.stockMinimo !== null && combo.stockMinimo !== undefined)
+                ? Number(combo.stockMinimo)
+                : cItems.reduce((s: number, it: any) => s + Number(it.stockMinimo || 0), 0);
+
+            const cMax = (combo.stockMaximo !== null && combo.stockMaximo !== undefined)
+                ? Number(combo.stockMaximo)
+                : cItems.reduce((s: number, it: any) => s + Number(it.stockMaximo || 0), 0);
+
             const cCoverage = cConsumption > 0 ? cStock / cConsumption : null;
 
             comboBreakdowns[combo.id] = {
@@ -635,6 +649,20 @@ export default function GraficoSierraPage() {
             }).unwrap();
         } catch (err) {
             console.error('Error guardando celda:', err);
+        }
+    };
+
+    const [updateCombo] = useUpdateComboMutation();
+
+    const handleSaveComboCell = async (comboId: string, field: string, value: string) => {
+        try {
+            const numericValue = value.trim() === '' ? null : Number(value);
+            await updateCombo({
+                id: comboId,
+                [field]: numericValue
+            }).unwrap();
+        } catch (err) {
+            console.error('Error guardando combo:', err);
         }
     };
 
@@ -1003,16 +1031,26 @@ export default function GraficoSierraPage() {
                                         {/* Combos Mode Plotting */}
                                         {selectionCategory === 'combos' && viewMode === 'individual' && combos.filter((c: any) => selectedComboIds.includes(c.id)).map((combo: any, idx: number) => {
                                             const comboColor = [colors.primary, colors.info, colors.warning, colors.success, colors.purple, colors.amber][idx % 6];
+                                            const minVal = chartData[0]?.[`combo_min_${combo.id}`];
                                             return (
-                                                <Line
-                                                    key={combo.id}
-                                                    type="monotone"
-                                                    dataKey={`combo_stock_${combo.id}`}
-                                                    name={`Grupo: ${combo.title}`}
-                                                    stroke={comboColor}
-                                                    strokeWidth={3}
-                                                    dot={false}
-                                                />
+                                                <Fragment key={combo.id}>
+                                                    {minVal > 0 && (
+                                                        <ReferenceLine 
+                                                            y={minVal} 
+                                                            label={{ value: `Mínimo ${combo.title}`, fill: colors.danger, position: 'right', fontSize: 10 }} 
+                                                            stroke={colors.danger} 
+                                                            strokeDasharray="3 3" 
+                                                        />
+                                                    )}
+                                                    <Line
+                                                        type="monotone"
+                                                        dataKey={`combo_stock_${combo.id}`}
+                                                        name={`Grupo: ${combo.title}`}
+                                                        stroke={comboColor}
+                                                        strokeWidth={3}
+                                                        dot={false}
+                                                    />
+                                                </Fragment>
                                             );
                                         })}
 
@@ -1090,9 +1128,12 @@ export default function GraficoSierraPage() {
                                     'Nombre del Grupo',
                                     'Materiales Integrantes',
                                     'Stock Consolidado',
+                                    'Stock Mínimo Grupo (Editar)',
+                                    'Stock Máximo Grupo (Editar)',
                                     'Consumo Diario',
                                     'Días de Cobertura',
                                     'OCs en Camino',
+                                    'Estado',
                                     'Acciones'
                                 ]}
                                 rows={filteredCombos.map((combo: any) => {
@@ -1102,6 +1143,8 @@ export default function GraficoSierraPage() {
                                         const pos = pendingPOsMap.get(itId) || [];
                                         return sum + pos.reduce((s, p) => s + p.qty, 0);
                                     }, 0);
+
+                                    const isComboLow = (bd.stockTotal || 0) < Number(bd.stockMinimo || 0);
 
                                     return [
                                         <Checkbox
@@ -1123,9 +1166,21 @@ export default function GraficoSierraPage() {
                                         <Badge key="cnt" color={colors.secondary}>
                                             {(combo.itemIds || []).length} materiales
                                         </Badge>,
-                                        <span key="st" style={{ fontWeight: 700, color: colors.primary }}>
+                                        <span key="st" style={{ fontWeight: 700, color: isComboLow ? colors.danger : colors.primary }}>
                                             {Number(bd.stockTotal || 0).toLocaleString('es-AR', { maximumFractionDigits: 1 })} {bd.unit}
                                         </span>,
+                                        <EditableCell
+                                            key="cmin"
+                                            value={combo.stockMinimo != null ? String(combo.stockMinimo) : (bd.stockMinimo != null ? String(bd.stockMinimo) : '')}
+                                            numeric
+                                            onSave={(val) => handleSaveComboCell(combo.id, 'stockMinimo', val)}
+                                        />,
+                                        <EditableCell
+                                            key="cmax"
+                                            value={combo.stockMaximo != null ? String(combo.stockMaximo) : (bd.stockMaximo != null ? String(bd.stockMaximo) : '')}
+                                            numeric
+                                            onSave={(val) => handleSaveComboCell(combo.id, 'stockMaximo', val)}
+                                        />,
                                         <span key="cons" style={{ color: colors.textDim }}>
                                             {Number(bd.dailyConsumption || 0).toFixed(1)} / día
                                         </span>,
@@ -1145,6 +1200,9 @@ export default function GraficoSierraPage() {
                                         ) : (
                                             <span key="inc" style={{ color: colors.textDim }}>—</span>
                                         ),
+                                        <Badge key="cst" color={isComboLow ? colors.danger : colors.success}>
+                                            {isComboLow ? 'Bajo Mínimo' : 'Saludable'}
+                                        </Badge>,
                                         <Button
                                             key="act"
                                             size="small"
