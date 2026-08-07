@@ -828,9 +828,9 @@ export default function Layout() {
                         <PageLoader />
                     </div>
                 )}
-                <ErrorBoundary>
-                    <Suspense fallback={<PageLoader />}>
-                        <Outlet key={location.pathname} />
+                <ErrorBoundary key={location.pathname}>
+                    <Suspense key={location.pathname} fallback={<PageLoader />}>
+                        <Outlet />
                     </Suspense>
                 </ErrorBoundary>
             </main>

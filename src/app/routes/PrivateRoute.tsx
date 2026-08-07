@@ -1,16 +1,14 @@
 import { useEffect, useRef, useReducer } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { selectIsAuthenticated, logout, selectCurrentUser } from '../../entities/auth/model/authSlice';
+import { useSelector } from 'react-redux';
+import { selectIsAuthenticated, selectCurrentUser } from '../../entities/auth/model/authSlice';
 import { useVerifySessionQuery } from '../../entities/auth/api/authApi';
-import { api } from '../../shared/api';
 import { PageLoader } from '../../shared/ui';
 
 export const PrivateRoute = () => {
-    const dispatch = useDispatch();
     const isAuthenticated = useSelector(selectIsAuthenticated);
 
-    const { isLoading, isError } = useVerifySessionQuery(undefined, {
+    const { isLoading } = useVerifySessionQuery(undefined, {
         skip: !isAuthenticated,
         // Always verify with the server on mount — never trust stale cache
         refetchOnMountOrArgChange: true,
@@ -29,12 +27,8 @@ export const PrivateRoute = () => {
         return () => clearTimeout(timer);
     }, [isLoading]);
 
-    useEffect(() => {
-        if (isError) {
-            dispatch(api.util.resetApiState());
-            dispatch(logout());
-        }
-    }, [isError, dispatch]);
+    // 401 errors are handled globally by baseQueryWithReauth (dispatches logout)
+    // No need for a separate useEffect here — it was causing infinite re-render loops
 
     // Not authenticated at all -> login
     if (!isAuthenticated) return <Navigate to="/login" replace />;

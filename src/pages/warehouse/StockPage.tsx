@@ -50,6 +50,8 @@ function DebouncedSearchInput({ value, onChange, delay = 300, ...props }: Deboun
     );
 }
 
+const EMPTY_STOCK: any[] = [];
+
 export default function StockPage() {
     const user = useSelector(selectCurrentUser);
     const sector = useSelector(selectUserSector);
@@ -305,7 +307,7 @@ export default function StockPage() {
         }
     };
 
-    const { data: rawStock = [], isFetching, isLoading } = useGetStockQuery({ 
+    const { data: rawStock = EMPTY_STOCK, isFetching, isLoading } = useGetStockQuery({ 
         depotId: depotId || undefined,
         positionId: positionId || undefined
     }, { skip: !depotId });

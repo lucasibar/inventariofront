@@ -7,8 +7,9 @@ import { api } from '../../shared/api';
 import { Card, Btn, Input, Spinner } from '../../shared/ui';
 
 const LoginPage: React.FC = () => {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
+    const [username, setUsername] = useState(() => localStorage.getItem('saved-username') || '');
+    const [password, setPassword] = useState(() => localStorage.getItem('saved-password') || '');
+    const [rememberMe, setRememberMe] = useState(() => localStorage.getItem('remember-me') === 'true');
     const [errorMsg, setErrorMsg] = useState('');
 
     const navigate = useNavigate();
@@ -45,6 +46,15 @@ const LoginPage: React.FC = () => {
 
         try {
             const userData = await login({ username, pass: password }).unwrap();
+            if (rememberMe) {
+                localStorage.setItem('saved-username', username);
+                localStorage.setItem('saved-password', password);
+                localStorage.setItem('remember-me', 'true');
+            } else {
+                localStorage.removeItem('saved-username');
+                localStorage.removeItem('saved-password');
+                localStorage.removeItem('remember-me');
+            }
             dispatch(api.util.resetApiState());
             dispatch(setCredentials({ user: userData.user, token: userData.access_token }));
             navigate(getLandingPage(userData.user.role));
@@ -115,6 +125,31 @@ const LoginPage: React.FC = () => {
                             placeholder="••••••••"
                             style={{ width: '100%' }}
                         />
+
+                        <label
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                                color: isLight ? 'var(--text-muted, #64748b)' : 'var(--text-muted, #9ca3af)',
+                                userSelect: 'none',
+                            }}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={rememberMe}
+                                onChange={(e) => setRememberMe(e.target.checked)}
+                                style={{
+                                    width: '16px',
+                                    height: '16px',
+                                    accentColor: '#6366f1',
+                                    cursor: 'pointer',
+                                }}
+                            />
+                            Recordar credenciales
+                        </label>
 
                         <Btn
                             style={{ height: '44px', marginTop: '8px', fontSize: '15px' }}
