@@ -114,7 +114,7 @@ export default function GraficoSierraPage() {
     }, [depots, depotId]);
 
     // Data fetching
-    const { data: items = [], isLoading: loadingItems } = useGetItemsQuery({ depositoId: depotId || undefined });
+    const { data: items = [], isLoading: loadingItems } = useGetItemsQuery({});
     const { data: allStock = [], isLoading: loadingStock } = useGetStockQuery({ depotId: depotId || undefined });
     const { data: combos = [], isLoading: loadingCombos } = useGetCombosQuery(undefined);
     const { data: purchaseOrders = [], isLoading: loadingPOs } = useGetPurchaseOrdersQuery(depotId || undefined);
