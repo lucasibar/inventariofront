@@ -110,6 +110,14 @@ export const purchaseOrdersApi = api.injectEndpoints({
             }),
             invalidatesTags: ['PurchaseOrders', 'Stock', 'Dashboard'],
         }),
+        importProyectado: builder.mutation<any, { depositoId?: string; rows: any[] }>({
+            query: (body) => ({
+                url: '/purchase-orders/import-proyectado',
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['PurchaseOrders', 'Stock', 'Dashboard'],
+        }),
     }),
     overrideExisting: false,
 });
@@ -136,4 +144,5 @@ export const {
     useCloseAdjustmentMutation,
     useUnlinkReceiptMutation,
     useGenerateRemitoFromPOMutation,
+    useImportProyectadoMutation,
 } = purchaseOrdersApi;
