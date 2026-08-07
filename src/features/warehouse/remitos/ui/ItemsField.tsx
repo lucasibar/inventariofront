@@ -77,15 +77,27 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                 const totalLinked = poLinks.reduce((sum: number, l: any) => sum + l.qtyAplicada, 0);
 
                 const selectedItem = allItems.find((it: any) => it.id === itemId);
-                const labelPrincipal = selectedItem?.unidadPrincipal 
-                    ? `Cantidad Principal (${selectedItem.unidadPrincipal})` 
-                    : 'Cantidad Principal';
-                const labelSecundaria = selectedItem?.unidadSecundaria 
-                    ? `Cantidad Secundaria (${selectedItem.unidadSecundaria})` 
-                    : 'Cantidad Secundaria';
+                const watchUnidadP = watch(`lines.${index}.unidadPrincipal`);
+                const watchUnidadS = watch(`lines.${index}.unidadSecundaria`);
+                const unitP = selectedItem?.unidadPrincipal || watchUnidadP;
+                const unitS = selectedItem?.unidadSecundaria || watchUnidadS;
+
+                const labelPrincipal = itemId
+                    ? (unitP ? `Cant. Principal (${unitP})` : 'Cant. Principal')
+                    : 'Cant. Principal';
+
+                const labelSecundaria = itemId
+                    ? (unitS ? `Cant. Secundaria (${unitS})` : 'Cant. Secundaria')
+                    : 'Cant. Secundaria';
 
                 return (
-                    <Box key={field.id} sx={{ mb: 3, p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', position: 'relative' }}>
+                    <Box key={field.id} sx={{
+                        mb: 3, p: 2, borderRadius: 2,
+                        border: '1px solid',
+                        borderColor: !itemId ? 'warning.main' : 'divider',
+                        position: 'relative',
+                        transition: 'border-color 0.2s'
+                    }}>
                         <Box sx={{
                             display: 'grid',
                             gridTemplateColumns: { xs: '1fr', sm: '3.5fr 1fr 1fr 1.5fr auto' },
@@ -179,6 +191,8 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                             {...params}
                                             label="Material / Descripción"
                                             size="small"
+                                            error={!itemId}
+                                            helperText={!itemId ? '⚠️ Seleccione un material primero' : ''}
                                             placeholder="Buscar por nombre o palabras (ej: caño redondo)..."
                                             InputLabelProps={{ shrink: true }}
                                         />
@@ -191,6 +205,8 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                     label={labelPrincipal}
                                     fullWidth
                                     size="small"
+                                    disabled={!itemId}
+                                    placeholder={!itemId ? 'Seleccionar item primero' : ''}
                                     inputProps={{ step: 'any' }}
                                     InputLabelProps={{ shrink: true }}
                                     {...register(`lines.${index}.qtyPrincipal` as const, { required: true, min: 0.01 })}
@@ -202,6 +218,8 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                     label={labelSecundaria}
                                     fullWidth
                                     size="small"
+                                    disabled={!itemId}
+                                    placeholder={!itemId ? 'Seleccionar item primero' : ''}
                                     inputProps={{ step: 'any' }}
                                     InputLabelProps={{ shrink: true }}
                                     {...register(`lines.${index}.qtySecundaria` as const, { min: 0 })}
@@ -212,7 +230,8 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                     label="Partida"
                                     fullWidth
                                     size="small"
-                                    placeholder="N° Lote"
+                                    disabled={!itemId}
+                                    placeholder={!itemId ? 'Seleccionar item primero' : 'N° Lote'}
                                     InputLabelProps={{ shrink: true }}
                                     error={!!(control as any)._formState.errors?.lines?.[index]?.lotNumber}
                                     {...register(`lines.${index}.lotNumber` as const, { required: true })}

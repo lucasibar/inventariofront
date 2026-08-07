@@ -316,6 +316,10 @@ export default function RemitosSalidaPage() {
                                   ) as [string, string][]).map(([value, label]) => ({ value, label }))
                                 : [];
 
+                            const selItem = items.find((it: any) => it.id === l.itemId);
+                            const unitP = selItem?.unidadPrincipal ? ` (${selItem.unidadPrincipal})` : '';
+                            const unitS = selItem?.unidadSecundaria ? ` (${selItem.unidadSecundaria})` : '';
+
                             return (
                                 <div key={i} style={{ display: 'grid', gridTemplateColumns: '2.5fr 2fr 2fr 1.2fr 1.2fr auto', gap: '8px', marginBottom: '8px', alignItems: 'end' }}>
                                     <SearchSelect label="Material" value={l.itemId} onChange={v => setLines(p => p.map((x: any, j: number) => j === i ? { ...x, itemId: v, lotId: '', posicionId: '' } : x))}
@@ -327,8 +331,8 @@ export default function RemitosSalidaPage() {
                                     <SearchSelect label="Posición" value={l.posicionId} onChange={v => setLines(p => p.map((x: any, j: number) => j === i ? { ...x, posicionId: v } : x))}
                                         options={[{ value: '', label: 'Cualquiera (FIFO)' }, ...availablePositions]} placeholder="Posición (Opcional)..." disabled={!l.itemId} />
 
-                                    <Input label="Cant. Princ." type="number" value={l.qtyPrincipal} onChange={v => setLines(p => p.map((x: any, j: number) => j === i ? { ...x, qtyPrincipal: v } : x))} />
-                                    <Input label="Secundaria" type="number" value={l.qtySecundaria} onChange={v => setLines(p => p.map((x: any, j: number) => j === i ? { ...x, qtySecundaria: v } : x))} />
+                                    <Input label={`Cant. Princ.${unitP}`} type="number" value={l.qtyPrincipal} disabled={!l.itemId} placeholder={!l.itemId ? 'Seleccionar item' : ''} onChange={v => setLines(p => p.map((x: any, j: number) => j === i ? { ...x, qtyPrincipal: v } : x))} />
+                                    <Input label={`Secundaria${unitS}`} type="number" value={l.qtySecundaria} disabled={!l.itemId} placeholder={!l.itemId ? 'Seleccionar item' : ''} onChange={v => setLines(p => p.map((x: any, j: number) => j === i ? { ...x, qtySecundaria: v } : x))} />
                                     <Btn small variant="danger" onClick={() => setLines(p => p.filter((_: any, j: number) => j !== i))} style={{ alignSelf: 'flex-end' }}>✕</Btn>
                                 </div>
                             );

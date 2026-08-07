@@ -115,9 +115,9 @@ export function Btn({ children, onClick, variant = 'primary', small, disabled, s
     );
 }
 
-export function Input({ label, value, onChange, type = 'text', placeholder, style }: {
+export function Input({ label, value, onChange, type = 'text', placeholder, style, disabled }: {
     label?: string; value: string; onChange: (v: string) => void;
-    type?: string; placeholder?: string; style?: React.CSSProperties;
+    type?: string; placeholder?: string; style?: React.CSSProperties; disabled?: boolean;
 }) {
     const [showPassword, setShowPassword] = useState(false);
     const isPassword = type === 'password';
@@ -128,10 +128,11 @@ export function Input({ label, value, onChange, type = 'text', placeholder, styl
             {label && <label style={{ display: 'block', color: 'var(--text-muted, #9ca3af)', fontSize: '12px', marginBottom: '4px' }}>{label}</label>}
             <div style={{ position: 'relative' }}>
                 <input
-                    type={currentType} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+                    type={currentType} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} disabled={disabled}
                     style={{
-                        width: '100%', background: 'var(--bg-primary, #0f1117)', border: '1px solid var(--border-strong, #374151)', borderRadius: '8px',
-                        padding: '8px 10px', paddingRight: isPassword ? '35px' : '10px', color: 'var(--text-primary, #f3f4f6)', fontSize: '13px', outline: 'none', boxSizing: 'border-box',
+                        width: '100%', background: disabled ? 'var(--bg-secondary, #1a1d2e)' : 'var(--bg-primary, #0f1117)', border: '1px solid var(--border-strong, #374151)', borderRadius: '8px',
+                        padding: '8px 10px', paddingRight: isPassword ? '35px' : '10px', color: disabled ? 'var(--text-dimmed, #4b5563)' : 'var(--text-primary, #f3f4f6)', fontSize: '13px', outline: 'none', boxSizing: 'border-box',
+                        cursor: disabled ? 'not-allowed' : 'text', opacity: disabled ? 0.6 : 1,
                     }}
                 />
                 {isPassword && (
