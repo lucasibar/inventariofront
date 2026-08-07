@@ -1320,8 +1320,3 @@ export default function GraficoSierraPage() {
         </div>
     );
 }
->
-            )}
-        </div>
-    );
-}
