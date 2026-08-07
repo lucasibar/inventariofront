@@ -358,7 +358,29 @@ export default function GraficoSierraPage() {
                 .filter((m: any) => new Date(m.fecha) >= thirtyDaysAgo && ['REMITO_SALIDA', 'AJUSTE_RESTA', 'ANULACION_AJUSTE_SUMA', 'ANULACION_ENTRADA'].includes(m.tipo))
                 .reduce((sum: number, m: any) => sum + Number(m.qtyPrincipal || 0), 0);
 
-            dailyConsumptionMap[item.id] = totalOut30d / 30;
+            let dailyConsumption = totalOut30d / 30;
+
+            // Fallback si el consumo registrado en los últimos 30 días es 0 (ej: ítems nuevos importados de Excel)
+            if (dailyConsumption === 0) {
+                const totalOutAll = itemMovs
+                    .filter((m: any) => ['REMITO_SALIDA', 'AJUSTE_RESTA', 'ANULACION_AJUSTE_SUMA', 'ANULACION_ENTRADA'].includes(m.tipo))
+                    .reduce((sum: number, m: any) => sum + Number(m.qtyPrincipal || 0), 0);
+
+                if (totalOutAll > 0) {
+                    dailyConsumption = totalOutAll / 60;
+                } else {
+                    // Estimación basada en el ritmo de llegada de las OCs pendientes
+                    const pos = pendingPOsMap.get(item.id) || [];
+                    const totalPOQty = pos.reduce((sum, p) => sum + p.qty, 0);
+                    if (totalPOQty > 0) {
+                        dailyConsumption = totalPOQty / 120; // prorrateo de consumo estimado para sostener las importaciones
+                    } else {
+                        dailyConsumption = 200; // baseline por defecto
+                    }
+                }
+            }
+
+            dailyConsumptionMap[item.id] = dailyConsumption;
 
             // Map movements by date
             const movsByDate: Record<string, any[]> = {};
