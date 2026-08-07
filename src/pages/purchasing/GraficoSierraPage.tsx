@@ -16,8 +16,7 @@ import {
     CartesianGrid,
     Tooltip,
     Legend,
-    ReferenceLine,
-    Dot
+    ReferenceLine
 } from 'recharts';
 import {
     Box,
@@ -41,13 +40,12 @@ import {
     IconButton,
     Tabs,
     Tab,
-    Tooltip as MuiTooltip
+    Tooltip as MuiTooltip,
+    Divider
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import AutorenewIcon from '@mui/icons-material/Autorenew';
 
 // Theme colors matching dashboard
 const colors = {
