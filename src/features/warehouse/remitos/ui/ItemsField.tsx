@@ -18,6 +18,7 @@ const CREATE_OPTION = { __isCreateOption: true, codigoInterno: '', descripcion: 
 export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
     const { control, register, setValue, watch } = useFormContext();
     const supplierName = watch('supplierName');
+    const depositoId = watch('depositoId');
     const { fields, prepend, remove } = useFieldArray({
         control,
         name: 'lines'
@@ -295,6 +296,7 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                 onSuccess={handleMaterialCreated}
                 initialSupplierId={supplierId}
                 initialSupplierName={supplierName}
+                depositoId={depositoId}
             />
 
             {/* Modal de vinculación */}

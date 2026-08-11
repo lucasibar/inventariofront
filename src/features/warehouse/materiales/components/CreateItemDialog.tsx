@@ -57,12 +57,13 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
 
     useEffect(() => {
         if (open) {
+            const initialDepot = editTarget?.category?.depositoId || editTarget?.depositoId || depositoId || (depots.length === 1 ? depots[0].id : '');
             if (editTarget) {
                 setForm({
                     codigoInterno: editTarget.codigoInterno || '',
                     descripcion: editTarget.descripcion || '',
                     categoryId: editTarget.categoryId || '',
-                    depositoId: editTarget.category?.depositoId || '',
+                    depositoId: initialDepot,
                     rotacion: editTarget.rotacion || 'MEDIA',
                     stockMinimo: editTarget.stockMinimo != null ? String(editTarget.stockMinimo) : '',
                     stockMaximo: editTarget.stockMaximo != null ? String(editTarget.stockMaximo) : '',
@@ -79,7 +80,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                     codigoInterno: '',
                     descripcion: '',
                     categoryId: '',
-                    depositoId: depositoId || '',
+                    depositoId: initialDepot,
                     rotacion: 'MEDIA',
                     stockMinimo: '',
                     stockMaximo: '',
@@ -95,7 +96,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
             setError('');
             setFieldErrors({});
         }
-    }, [open, initialSupplierId, initialSupplierName, editTarget, depositoId]);
+    }, [open, initialSupplierId, initialSupplierName, editTarget, depositoId, depots]);
 
     const { data: allItems = [] } = useGetItemsQuery({});
     const [error, setError] = useState('');
@@ -113,7 +114,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
             setNewCategoryName('');
             setCategoryDialogOpen(false);
         } catch (e: any) {
-            alert(e?.data?.message || 'Error al crear la categoría');
+            alert(e?.data?.message || e?.message || 'Error al crear la categoría');
         } finally {
             setIsCreatingCategory(false);
         }
@@ -122,7 +123,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
     const handleSave = async () => {
         const errors: Record<string, string> = {};
         if (!form.depositoId) {
-            errors.depositoId = 'Falta llenar el depósito';
+            errors.depositoId = 'Falta seleccionar el depósito';
         }
         if (!form.codigoInterno.trim()) {
             errors.codigoInterno = 'Falta llenar el código interno';
@@ -138,7 +139,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
         if (!form.descripcion.trim()) {
             errors.descripcion = 'Falta llenar la descripción';
         }
-        if (!form.categoryId) {
+        if (!form.categoryId && categories.length > 0) {
             errors.categoryId = 'Falta seleccionar la categoría';
         }
         if (!form.unidadPrincipal.trim()) {
@@ -186,7 +187,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                 supplierName: '',
             });
         } catch (err: any) {
-            setError(err?.data?.message || 'Error al crear el material');
+            setError(err?.data?.message || err?.message || 'Error al crear el material');
         }
     };
 

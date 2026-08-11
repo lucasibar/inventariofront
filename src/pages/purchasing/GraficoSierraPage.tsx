@@ -697,42 +697,6 @@ export default function GraficoSierraPage() {
                 subtitle="Simulador de nivel de inventario, consumo diario, puntos de pedido y reabastecimiento"
             />
 
-            {/* Import Excel Banner / Action Controls */}
-            <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', bgcolor: 'rgba(129, 140, 248, 0.08)', p: 2, borderRadius: 3, border: `1px solid rgba(129, 140, 248, 0.2)` }}>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: colors.primary, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <LocalShippingIcon fontSize="small" /> Cargar Datos Reales de Importación desde Excel:
-                </Typography>
-
-                <Button
-                    variant="contained"
-                    size="small"
-                    disabled={importing}
-                    onClick={loadProyectadoComprasDefault}
-                    sx={{ bgcolor: colors.primary, color: '#fff', textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
-                >
-                    ⚡ Cargar 'PROYECTADO DE COMPRAS.xlsx' (20 Importaciones)
-                </Button>
-
-                <Button
-                    variant="outlined"
-                    size="small"
-                    component="label"
-                    disabled={importing}
-                    sx={{ color: colors.text, borderColor: colors.border, textTransform: 'none', fontWeight: 600, borderRadius: 2 }}
-                >
-                    📁 Seleccionar otro archivo Excel
-                    <input type="file" hidden accept=".xlsx, .xls" onChange={handleFileUpload} />
-                </Button>
-
-                {importStatusMsg && (
-                    <Chip 
-                        label={importStatusMsg} 
-                        onDelete={() => setImportStatusMsg(null)}
-                        sx={{ bgcolor: colors.cardBg, color: colors.text, fontWeight: 700, ml: 'auto' }} 
-                    />
-                )}
-            </Box>
-
             {/* Main Mode & Warehouse Bar */}
             <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'center', bgcolor: colors.cardBg, p: 2, borderRadius: 3, border: `1px solid ${colors.border}` }}>
                 {/* Mode Selector */}
