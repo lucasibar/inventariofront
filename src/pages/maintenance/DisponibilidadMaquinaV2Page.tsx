@@ -62,11 +62,27 @@ export default function DisponibilidadMaquinaV2Page() {
 
     const filteredMachines = useMemo(() => {
         if (!data?.machines) return [];
-        if (!searchFilter.trim()) return data.machines;
-        const q = searchFilter.toLowerCase().trim();
-        return data.machines.filter((m: any) => 
-            m.number.toString().includes(q) || m.nombre.toLowerCase().includes(q)
-        );
+        let list = [...data.machines];
+
+        if (searchFilter.trim()) {
+            const q = searchFilter.toLowerCase().trim();
+            list = list.filter((m: any) => 
+                m.number.toString().includes(q) || m.nombre.toLowerCase().includes(q)
+            );
+        }
+
+        // Sort: Machines with non-pure-active time (Reducida, Parada, Cambio) at top,
+        // ordered from highest non-active/affected time to lowest.
+        // 100% pure active machines at the bottom, ordered by machine number ASC.
+        return list.sort((a: any, b: any) => {
+            const nonPureA = (a.stats?.reducedMs || 0) + (a.stats?.downtimeNovedadesMs || 0) + (a.stats?.downtimeChangesMs || 0);
+            const nonPureB = (b.stats?.reducedMs || 0) + (b.stats?.downtimeNovedadesMs || 0) + (b.stats?.downtimeChangesMs || 0);
+
+            if (nonPureA !== nonPureB) {
+                return nonPureB - nonPureA; // Highest non-active/affected time first
+            }
+            return a.number - b.number; // Tie-breaker by machine number ASC
+        });
     }, [data, searchFilter]);
 
     if (!plants || !types) return <div style={{ padding: 40 }}><Spinner /></div>;
