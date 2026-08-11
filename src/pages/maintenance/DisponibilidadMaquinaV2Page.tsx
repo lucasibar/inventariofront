@@ -73,7 +73,7 @@ export default function DisponibilidadMaquinaV2Page() {
 
     return (
         <div className="disponibilidad-v2-container">
-            <PageHeader title="Disponibilidad de Máquinas - Vista Timeline (V2)" subtitle="Línea de tiempo detallada por máquina con marcas de turno a las 6am y 6pm">
+            <PageHeader title="Disponibilidad de Máquinas - Vista Timeline (V2)" subtitle="Línea de tiempo detallada por máquina">
                 <div className="disponibilidad-v2-filters">
                     <Select
                         options={plants.map((p: any) => ({ value: p.id, label: p.name }))}
@@ -183,7 +183,7 @@ export default function DisponibilidadMaquinaV2Page() {
                             <span>Gris: Sin Datos / Fuera de Registro</span>
                         </div>
                         <div style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)' }}>
-                            línea azul vertical = <strong>Cambio de turno (6am / 6pm)</strong>
+                            línea azul vertical = <strong>Cambio de turno</strong>
                         </div>
                     </div>
 
@@ -198,11 +198,7 @@ export default function DisponibilidadMaquinaV2Page() {
                                         {tm.label}
                                     </div>
                                 ))}
-                                {data.shiftMarkers?.map((sm: any, i: number) => (
-                                    <div key={i} className="disponibilidad-v2-shift-marker-header" style={{ left: `${sm.pct}%` }}>
-                                        <div className="disponibilidad-v2-shift-badge">⏱️ {sm.label}</div>
-                                    </div>
-                                ))}
+
                             </div>
                             <div style={{ width: 220, minWidth: 220, fontSize: 12, fontWeight: 700, color: 'var(--text-muted)' }}>
                                 Desglose de Tiempo
