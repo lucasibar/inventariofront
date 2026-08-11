@@ -3,8 +3,7 @@ import { useSelector } from 'react-redux';
 import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
 import { useGetItemsQuery, useUpdateItemMutation } from '../../features/warehouse/materiales/api/items.api';
 import { useGetStockQuery, useGetRecentMovementsQuery } from '../../features/warehouse/stock/api/stock.api';
-import { useGetCombosQuery, useGetPurchaseOrdersQuery, useImportProyectadoMutation, useUpdateComboMutation } from '../../features/purchasing/purchase-orders/api/purchase-orders.api';
-import * as xlsx from 'xlsx';
+import { useGetCombosQuery, useGetPurchaseOrdersQuery, useUpdateComboMutation } from '../../features/purchasing/purchase-orders/api/purchase-orders.api';
 import { selectCurrentUser, selectAllowedDepots } from '../../entities/auth/model/authSlice';
 import { PageHeader, Card, Table, Badge, Spinner, EditableCell, SearchBar } from '../../shared/ui';
 import {
@@ -45,7 +44,6 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 
 // Theme colors matching dashboard
 const colors = {
@@ -132,77 +130,7 @@ export default function GraficoSierraPage() {
     });
 
     const [updateItem] = useUpdateItemMutation();
-    const [importProyectado, { isLoading: importing }] = useImportProyectadoMutation();
-    const [importStatusMsg, setImportStatusMsg] = useState<string | null>(null);
 
-    const handleImportExcelRows = async (rows: any[]) => {
-        try {
-            const res = await importProyectado({
-                depositoId: depotId || undefined,
-                rows
-            }).unwrap();
-
-            setImportStatusMsg(`✅ ¡Éxito! Se crearon ${res.createdOrders} Órdenes de Compra y ${res.createdItems} ítems.`);
-        } catch (err: any) {
-            console.error('Error importando compras:', err);
-            setImportStatusMsg(`❌ Error al importar compras: ${err?.data?.message || err.message}`);
-        }
-    };
-
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = async (evt) => {
-            try {
-                const bstr = evt.target?.result;
-                const wb = xlsx.read(bstr, { type: 'binary' });
-                const sheet = wb.Sheets[wb.SheetNames[0]];
-                const jsonRows: any[] = xlsx.utils.sheet_to_json(sheet, { raw: false });
-
-                const formattedRows = jsonRows.map(r => ({
-                    proveedor: r['PROVEEDOR/PAIS'] || r['PROVEEDOR'] || r['Proveedor'] || 'PROVEEDOR IMPORTACION',
-                    codigoInterno: r['CODIGO INTERNO'] || r['Codigo Interno'] || r['CODIGO'],
-                    titulo: r['TITULO'] || r['Titulo'],
-                    producto: r['PRODUCTO/INSUMO'] || r['PRODUCTO'] || r['Producto'],
-                    kg: parseFloat(String(r['KG'] || r['kg'] || r['Kg'] || '0').replace(/,/g, '')),
-                    arriboEstimado: r['ARRIBO ESTIMADO'] || r['ARRIBO'] || r['FECHA ARRIBO'] || r['Fecha Arribo']
-                })).filter(r => r.codigoInterno && r.kg > 0 && r.arriboEstimado);
-
-                await handleImportExcelRows(formattedRows);
-            } catch (err) {
-                console.error('Error leyendo archivo excel:', err);
-            }
-        };
-        reader.readAsBinaryString(file);
-    };
-
-    const loadProyectadoComprasDefault = async () => {
-        const defaultRows = [
-            { proveedor: "WINSOME - KCTEX", codigoInterno: "A16/1KC-negro", titulo: "ALGODON 16/1", producto: "Ne 16/1 100% Cotton Carded BCI Black 8DY50903", kg: 14800, arriboEstimado: "2026-10-15" },
-            { proveedor: "WINSOME - KCTEX", codigoInterno: "A16/1KC-blanco", titulo: "ALGODON 16/1", producto: "Ne 16/1 100% Cotton Carded BCI Optical White 0DY54720", kg: 7400, arriboEstimado: "2026-10-15" },
-            { proveedor: "WINSOME - KCTEX", codigoInterno: "A16/1KC-negro", titulo: "ALGODON 16/1", producto: "Ne 16/1 100% Cotton Carded BCI Black 8DY50903", kg: 7400, arriboEstimado: "2026-10-15" },
-            { proveedor: "WINSOME - KCTEX", codigoInterno: "A16/1KC-blanco", titulo: "ALGODON 16/1", producto: "Ne 16/1 100% Cotton Carded BCI Optical White 0DY54720", kg: 14800, arriboEstimado: "2026-11-11" },
-            { proveedor: "WINSOME - KCTEX", codigoInterno: "A16/1KC-negro", titulo: "ALGODON 16/1", producto: "Ne 16/1 100% Cotton Carded BCI Black 8DY50903", kg: 14800, arriboEstimado: "2026-11-22" },
-            { proveedor: "WINSOME - KCTEX", codigoInterno: "A16/1KC-blanco", titulo: "ALGODON 16/1", producto: "Ne 16/1 100% Cotton Carded BCI Optical White 0DY54720", kg: 14800, arriboEstimado: "2026-11-30" },
-            { proveedor: "WINSOME - KCTEX", codigoInterno: "A16/1KC-negro", titulo: "ALGODON 16/1", producto: "Ne 16/1 100% Cotton Carded BCI Black 8DY50903", kg: 14800, arriboEstimado: "2026-12-09" },
-            { proveedor: "WINSOME - KCTEX", codigoInterno: "A16/1KC-blanco", titulo: "ALGODON 16/1", producto: "Ne 16/1 100% Cotton Carded BCI Optical White 0DY54720", kg: 7400, arriboEstimado: "2026-12-19" },
-            { proveedor: "WINSOME - KCTEX", codigoInterno: "A16/1KC-negro", titulo: "ALGODON 16/1", producto: "Ne 16/1 100% Cotton Carded BCI Black 8DY50903", kg: 7400, arriboEstimado: "2026-12-19" },
-            { proveedor: "WINSOME - KCTEX", codigoInterno: "A16/1KC-negro", titulo: "ALGODON 16/1", producto: "Ne 16/1 100% Cotton Carded BCI Black 8DY50903", kg: 14800, arriboEstimado: "2026-12-29" },
-            { proveedor: "WINSOME - KCTEX", codigoInterno: "A16/1KC-blanco", titulo: "ALGODON 16/1", producto: "Ne 16/1 100% Cotton Carded BCI Optical White 0DY54720", kg: 14800, arriboEstimado: "2026-01-03" },
-            { proveedor: "WINSOME - KCTEX", codigoInterno: "A16/1KC-negro", titulo: "ALGODON 16/1", producto: "Ne 16/1 100% Cotton Carded BCI Black 8DY50903", kg: 14800, arriboEstimado: "2026-01-28" },
-            { proveedor: "WINSOME - KCTEX", codigoInterno: "A16/1KC-blanco", titulo: "ALGODON 16/1", producto: "Ne 16/1 100% Cotton Carded BCI Optical White 0DY54720", kg: 14800, arriboEstimado: "2026-02-02" },
-            { proveedor: "WINSOME - KCTEX", codigoInterno: "A16/1KC-blanco", titulo: "ALGODON 16/1", producto: "Ne 16/1 100% Cotton Carded BCI Optical White 0DY54720", kg: 14800, arriboEstimado: "2026-02-23" },
-            { proveedor: "WINSOME - KCTEX", codigoInterno: "A16/1KC-negro", titulo: "ALGODON 16/1", producto: "Ne 16/1 100% Cotton Carded BCI Black 8DY50903", kg: 14800, arriboEstimado: "2026-02-23" },
-            { proveedor: "WINSOME - KCTEX", codigoInterno: "A16/1KC-blanco", titulo: "ALGODON 16/1", producto: "Ne 16/1 100% Cotton Carded BCI Optical White 0DY54720", kg: 7400, arriboEstimado: "2026-02-23" },
-            { proveedor: "WINSOME - KCTEX", codigoInterno: "A16/1KC-negro", titulo: "ALGODON 16/1", producto: "Ne 16/1 100% Cotton Carded BCI Black 8DY50903", kg: 7400, arriboEstimado: "2026-02-23" },
-            { proveedor: "WINSOME - KCTEX", codigoInterno: "A16/1BG-melange5%", titulo: "MELANGE 16/1 5%", producto: "95% cotton + 5% black polyester melange yarn ne 16/1", kg: 19800, arriboEstimado: "2026-11-24" },
-            { proveedor: "SAO JOAO", codigoInterno: "A16/1SJ-blanco", titulo: "ALGODÓN 16/1", producto: "Ne 16/1 100% Cotton Carded BCI Optical White 0DY54720", kg: 9000, arriboEstimado: "2026-09-15" },
-            { proveedor: "SAO JOAO", codigoInterno: "A16/1SJ-negro", titulo: "ALGODÓN 16/1", producto: "Ne 16/1 100% Cotton Carded BCI Black 8DY50903", kg: 9000, arriboEstimado: "2026-09-15" }
-        ];
-        await handleImportExcelRows(defaultRows);
-    };
 
     // Controls & Selection States
     const [selectionCategory, setSelectionCategory] = useState<'items' | 'combos'>('items');
