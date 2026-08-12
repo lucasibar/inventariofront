@@ -61,8 +61,13 @@ export const RemitoDetailModal = ({ open, onClose, remito }: RemitoDetailModalPr
                 sx: { borderRadius: 3 }
             }}
         >
-            <DialogTitle sx={{ fontWeight: 800, pt: 3, px: 3 }}>
-                Detalle de Remito: {remito.numero || remito.documentId}
+            <DialogTitle sx={{ fontWeight: 800, pt: 3, px: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+                <span>Detalle de Remito: {remito.numero || remito.documentId}</span>
+                {remito.status === 'ANULADO' ? (
+                    <Chip label="ANULADO" color="error" size="small" sx={{ fontWeight: 700 }} />
+                ) : (
+                    <Chip label="ACTIVO" color="success" size="small" sx={{ fontWeight: 700 }} />
+                )}
             </DialogTitle>
             <DialogContent sx={{ px: 3 }}>
                 <Box sx={{ mb: 4, display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(5, 1fr)' }, gap: 2 }}>

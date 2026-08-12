@@ -236,21 +236,27 @@ export default function RemitosSalidaPage() {
                     <Table
                         loading={isLoading}
                         onRowClick={(i) => handleRowClick(filteredRemitos[i])}
-                        cols={['Número', 'Fecha', 'Cliente', 'Items', 'Cantidades', '']}
+                        cols={['Número', 'Fecha', 'Cliente', 'Estado', 'Items', 'Cantidades', '']}
                         rows={filteredRemitos.map((r: any) => {
                             const lines = r.lines || [];
                             const totalPrincipal = lines.reduce((sum: number, l: any) => sum + Number(l.qtyPrincipal || 0), 0);
                             const totalSecundario = lines.reduce((sum: number, l: any) => sum + Number(l.qtySecundaria || 0), 0);
+                            const isAnulado = r.status === 'ANULADO';
                             return [
-                                <span key="num" style={{ color: '#a5b4fc', fontWeight: 600 }}>{r.numero}</span>,
+                                <span key="num" style={{ color: isAnulado ? '#f87171' : '#a5b4fc', fontWeight: 600, textDecoration: isAnulado ? 'line-through' : 'none' }}>{r.numero}</span>,
                                 new Date(r.fecha).toLocaleDateString('es-AR'),
                                 (r.partner?.name || r.client?.name) ?? '—',
+                                <Badge key="status" color={isAnulado ? '#ef4444' : '#10b981'}>{isAnulado ? 'ANULADO' : 'ACTIVO'}</Badge>,
                                 <Badge key="badge">{lines.length} ítems</Badge>,
                                 <div key="qty" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                     <span style={{ fontWeight: 600, color: '#38bdf8', fontSize: '13px' }}>{totalPrincipal.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg</span>
                                     {totalSecundario > 0 && <span style={{ color: '#a78bfa', fontSize: '11px', fontWeight: 500 }}>{totalSecundario.toLocaleString('es-AR', { minimumFractionDigits: 0 })} un</span>}
                                 </div>,
-                                <Btn key="del" small variant="danger" onClick={(e: any) => { e.stopPropagation(); if (window.confirm('¿Anular este remito de salida?')) deleteRemito(r.id); }}>🗑</Btn>
+                                <div key="actions" style={{ textAlign: 'right' }}>
+                                    {!isAnulado && (
+                                        <Btn small variant="danger" onClick={(e: any) => { e.stopPropagation(); if (window.confirm('¿Anular este remito de salida?')) deleteRemito(r.id); }}>🗑</Btn>
+                                    )}
+                                </div>
                             ];
                         })}
                     />
