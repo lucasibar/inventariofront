@@ -50,8 +50,10 @@ export const CreateRemitoForm = () => {
             // Filter out completely empty lines
             const activeLines = (data.lines || []).filter(line => {
                 const hasItemId = !!line.itemId;
-                const hasQtyPrincipal = line.qtyPrincipal !== 0 && line.qtyPrincipal !== '' && line.qtyPrincipal != null;
-                const hasQtySecundaria = line.qtySecundaria !== 0 && line.qtySecundaria !== '' && line.qtySecundaria != null;
+                const qtyP = Number(line.qtyPrincipal);
+                const hasQtyPrincipal = line.qtyPrincipal != null && qtyP !== 0 && !isNaN(qtyP);
+                const qtyS = line.qtySecundaria != null ? Number(line.qtySecundaria) : NaN;
+                const hasQtySecundaria = line.qtySecundaria != null && qtyS !== 0 && !isNaN(qtyS);
                 const hasLotNumber = !!line.lotNumber && line.lotNumber.trim() !== '';
 
                 return hasItemId || hasQtyPrincipal || hasQtySecundaria || hasLotNumber;
@@ -69,7 +71,8 @@ export const CreateRemitoForm = () => {
                     alert(`El registro ${i + 1} está incompleto: debe seleccionar un material.`);
                     return;
                 }
-                if (line.qtyPrincipal === undefined || line.qtyPrincipal === null || line.qtyPrincipal === '' || Number(line.qtyPrincipal) <= 0) {
+                const qtyP = Number(line.qtyPrincipal);
+                if (line.qtyPrincipal === undefined || line.qtyPrincipal === null || isNaN(qtyP) || qtyP <= 0) {
                     alert(`El registro ${i + 1} está incompleto: debe ingresar una cantidad principal válida.`);
                     return;
                 }
@@ -81,11 +84,14 @@ export const CreateRemitoForm = () => {
 
             const payload: any = {
                 ...data,
-                lines: activeLines.map(line => ({
-                    ...line,
-                    qtyPrincipal: Number(line.qtyPrincipal),
-                    qtySecundaria: line.qtySecundaria != null && line.qtySecundaria !== '' ? Number(line.qtySecundaria) : undefined
-                }))
+                lines: activeLines.map(line => {
+                    const qtyS = line.qtySecundaria != null ? Number(line.qtySecundaria) : NaN;
+                    return {
+                        ...line,
+                        qtyPrincipal: Number(line.qtyPrincipal),
+                        qtySecundaria: line.qtySecundaria != null && !isNaN(qtyS) && qtyS !== 0 ? qtyS : undefined
+                    };
+                })
             };
 
             if (payload.supplierId) {
