@@ -8,7 +8,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import LinkIcon from '@mui/icons-material/Link';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { CreateItemDialog } from '../../materiales/components/CreateItemDialog';
 import { useGetItemsQuery } from '../../materiales/api/items.api';
 import PurchaseOrderLinkDialog from '../../../purchasing/purchase-orders/ui/PurchaseOrderLinkDialog';
@@ -27,6 +27,36 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
     const [linkIndex, setLinkIndex] = useState<number | null>(null);
+
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [focusRowIndex, setFocusRowIndex] = useState<number | null>(null);
+
+    const focusField = (rowIndex: number, fieldName: string) => {
+        setTimeout(() => {
+            const input = containerRef.current?.querySelector(
+                `input[data-row-index="${rowIndex}"][data-field-name="${fieldName}"]`
+            ) as HTMLInputElement | null;
+            if (input) {
+                input.focus();
+                input.select();
+            }
+        }, 100);
+    };
+
+    const isRowEmpty = (idx: number) => {
+        const id = watch(`lines.${idx}.itemId`);
+        const qp = watch(`lines.${idx}.qtyPrincipal`);
+        const qs = watch(`lines.${idx}.qtySecundaria`);
+        const lot = watch(`lines.${idx}.lotNumber`);
+        return !id && (qp === 0 || qp === '' || qp == null) && (qs === 0 || qs === '' || qs == null) && (!lot || lot.trim() === '');
+    };
+
+    useEffect(() => {
+        if (focusRowIndex !== null) {
+            focusField(focusRowIndex, 'itemId');
+            setFocusRowIndex(null);
+        }
+    }, [focusRowIndex, fields.length]);
 
     const { data: allItems = [] } = useGetItemsQuery({});
 
@@ -47,7 +77,7 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
     };
 
     return (
-        <Box sx={{ mt: 2 }}>
+        <Box ref={containerRef} sx={{ mt: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', letterSpacing: '-0.5px' }}>
                     Items del Documento
@@ -186,16 +216,36 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                         setValue(`lines.${index}.unidadPrincipal`, newValue.unidadPrincipal);
                                         setValue(`lines.${index}.unidadSecundaria`, newValue.unidadSecundaria);
                                         setValue(`lines.${index}.purchaseOrderLinks`, []);
+                                        // Focus the qtyPrincipal field of this row automatically after selecting a material
+                                        focusField(index, 'qtyPrincipal');
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            const inputEl = e.currentTarget.querySelector('input') || (e.target as HTMLInputElement);
+                                            const isPopupOpen = inputEl.getAttribute('aria-expanded') === 'true';
+                                            if (!isPopupOpen) {
+                                                const currentItemId = watch(`lines.${index}.itemId`);
+                                                if (currentItemId) {
+                                                    e.preventDefault();
+                                                    focusField(index, 'qtyPrincipal');
+                                                }
+                                            }
+                                        }
                                     }}
                                     renderInput={(params) => (
                                         <TextField
                                             {...params}
                                             label="Material / Descripción"
                                             size="small"
-                                            error={!itemId}
-                                            helperText={!itemId ? '⚠️ Seleccione un material primero' : ''}
+                                            error={!itemId && !isRowEmpty(index)}
+                                            helperText={!itemId && !isRowEmpty(index) ? '⚠️ Seleccione un material primero' : ''}
                                             placeholder="Buscar por nombre o palabras (ej: caño redondo)..."
                                             InputLabelProps={{ shrink: true }}
+                                            inputProps={{
+                                                ...params.inputProps,
+                                                'data-row-index': index,
+                                                'data-field-name': 'itemId'
+                                            }}
                                         />
                                     )}
                                 />
@@ -208,9 +258,20 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                     size="small"
                                     disabled={!itemId}
                                     placeholder={!itemId ? 'Seleccionar item primero' : ''}
-                                    inputProps={{ step: 'any' }}
+                                    error={itemId && (!qtyPrincipal || Number(qtyPrincipal) <= 0) && !isRowEmpty(index)}
+                                    inputProps={{
+                                        step: 'any',
+                                        'data-row-index': index,
+                                        'data-field-name': 'qtyPrincipal'
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            focusField(index, 'qtySecundaria');
+                                        }
+                                    }}
                                     InputLabelProps={{ shrink: true }}
-                                    {...register(`lines.${index}.qtyPrincipal` as const, { required: true, min: 0.01 })}
+                                    {...register(`lines.${index}.qtyPrincipal` as const)}
                                 />
                             </Box>
                             <Box>
@@ -221,9 +282,19 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                     size="small"
                                     disabled={!itemId}
                                     placeholder={!itemId ? 'Seleccionar item primero' : ''}
-                                    inputProps={{ step: 'any' }}
+                                    inputProps={{
+                                        step: 'any',
+                                        'data-row-index': index,
+                                        'data-field-name': 'qtySecundaria'
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            focusField(index, 'lotNumber');
+                                        }
+                                    }}
                                     InputLabelProps={{ shrink: true }}
-                                    {...register(`lines.${index}.qtySecundaria` as const, { min: 0 })}
+                                    {...register(`lines.${index}.qtySecundaria` as const)}
                                 />
                             </Box>
                             <Box>
@@ -234,8 +305,31 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                     disabled={!itemId}
                                     placeholder={!itemId ? 'Seleccionar item primero' : 'N° Lote'}
                                     InputLabelProps={{ shrink: true }}
-                                    error={!!(control as any)._formState.errors?.lines?.[index]?.lotNumber}
-                                    {...register(`lines.${index}.lotNumber` as const, { required: true })}
+                                    error={itemId && (!watch(`lines.${index}.lotNumber`) || watch(`lines.${index}.lotNumber`).trim() === '') && !isRowEmpty(index)}
+                                    inputProps={{
+                                        'data-row-index': index,
+                                        'data-field-name': 'lotNumber'
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            if (index === 0) {
+                                                prepend({
+                                                    codigoInterno: '',
+                                                    descripcion: '',
+                                                    qtyPrincipal: 0,
+                                                    qtySecundaria: 0,
+                                                    categoria: 'SUPPLY',
+                                                    lotNumber: '',
+                                                    purchaseOrderLinks: []
+                                                });
+                                                setFocusRowIndex(0);
+                                            } else {
+                                                focusField(index - 1, 'itemId');
+                                            }
+                                        }
+                                    }}
+                                    {...register(`lines.${index}.lotNumber` as const)}
                                 />
                             </Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', pt: { xs: 0, sm: 0.5 } }}>

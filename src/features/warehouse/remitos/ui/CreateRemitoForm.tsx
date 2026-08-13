@@ -47,17 +47,44 @@ export const CreateRemitoForm = () => {
                 return;
             }
 
-            if (!data.lines || data.lines.length === 0) {
+            // Filter out completely empty lines
+            const activeLines = (data.lines || []).filter(line => {
+                const hasItemId = !!line.itemId;
+                const hasQtyPrincipal = line.qtyPrincipal !== 0 && line.qtyPrincipal !== '' && line.qtyPrincipal != null;
+                const hasQtySecundaria = line.qtySecundaria !== 0 && line.qtySecundaria !== '' && line.qtySecundaria != null;
+                const hasLotNumber = !!line.lotNumber && line.lotNumber.trim() !== '';
+
+                return hasItemId || hasQtyPrincipal || hasQtySecundaria || hasLotNumber;
+            });
+
+            if (activeLines.length === 0) {
                 alert('Debe agregar al menos un item al remito');
                 return;
             }
 
+            // Validate that active lines are complete
+            for (let i = 0; i < activeLines.length; i++) {
+                const line = activeLines[i];
+                if (!line.itemId) {
+                    alert(`El registro ${i + 1} está incompleto: debe seleccionar un material.`);
+                    return;
+                }
+                if (line.qtyPrincipal === undefined || line.qtyPrincipal === null || line.qtyPrincipal === '' || Number(line.qtyPrincipal) <= 0) {
+                    alert(`El registro ${i + 1} está incompleto: debe ingresar una cantidad principal válida.`);
+                    return;
+                }
+                if (!line.lotNumber || line.lotNumber.trim() === '') {
+                    alert(`El registro ${i + 1} está incompleto: debe ingresar el número de partida/lote.`);
+                    return;
+                }
+            }
+
             const payload: any = {
                 ...data,
-                lines: data.lines.map(line => ({
+                lines: activeLines.map(line => ({
                     ...line,
                     qtyPrincipal: Number(line.qtyPrincipal),
-                    qtySecundaria: line.qtySecundaria != null ? Number(line.qtySecundaria) : undefined
+                    qtySecundaria: line.qtySecundaria != null && line.qtySecundaria !== '' ? Number(line.qtySecundaria) : undefined
                 }))
             };
 
@@ -72,7 +99,7 @@ export const CreateRemitoForm = () => {
                 numero: '',
                 fecha: new Date().toISOString().split('T')[0],
                 observaciones: '',
-                lines: []
+                lines: [{ itemId: '', qtyPrincipal: 0, qtySecundaria: 0, lotNumber: '' } as any]
             });
             setSelectedPlanta('');
         } catch (err: any) {
@@ -94,7 +121,18 @@ export const CreateRemitoForm = () => {
             </Box>
 
             <FormProvider {...methods}>
-                <Box component="form" onSubmit={methods.handleSubmit(onSubmit)}>
+                <Box
+                    component="form"
+                    onSubmit={methods.handleSubmit(onSubmit)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            const target = e.target as HTMLElement;
+                            if (target.tagName !== 'BUTTON' && target.tagName !== 'TEXTAREA') {
+                                e.preventDefault();
+                            }
+                        }
+                    }}
+                >
                     {/* Seccion 1: Datos del Comprobante */}
                     <Paper variant="outlined" sx={{ p: 3, mb: 4, borderRadius: 3, backgroundColor: 'background.paper' }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2.5, color: 'primary.main', textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: '0.75rem' }}>
@@ -276,7 +314,7 @@ export const CreateRemitoForm = () => {
                                 const errors = methods.formState.errors;
                                 if (Object.keys(errors).length > 0) {
                                     console.log('Form errors:', errors);
-                                    alert('Por favor, complete todos los campos requeridos (Remito, Fecha, Depósito y Partidas en los items)');
+                                    alert('Por favor, complete todos los campos requeridos (Remito, Fecha y Depósito)');
                                 }
                             }}
                             sx={{
