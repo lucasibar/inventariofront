@@ -155,6 +155,8 @@ export interface AvailabilityDashboard {
 
 export interface MachineChangeReport {
     totalChanges: number;
+    totalMedianDurationMs: number;
+    totalMedianDurationFormatted: string;
     report: {
         combination: string[];
         combinationLabel: string;
@@ -162,6 +164,8 @@ export interface MachineChangeReport {
         percentage: number;
         avgDurationMs: number;
         avgDurationFormatted: string;
+        medianDurationMs: number;
+        medianDurationFormatted: string;
         minDurationMs: number;
         minDurationFormatted: string;
         maxDurationMs: number;

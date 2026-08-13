@@ -70,6 +70,9 @@ function CombinationRow({ row, onEdit, onDelete }: { row: any; onEdit: (d: EditD
                 <TableCell align="center" sx={{ borderBottom: '1px solid var(--border-dynamic, #1f2937)', color: '#60a5fa', fontWeight: 600 }}>
                     {row.avgDurationFormatted}
                 </TableCell>
+                <TableCell align="center" sx={{ borderBottom: '1px solid var(--border-dynamic, #1f2937)', color: '#a855f7', fontWeight: 600 }}>
+                    {row.medianDurationFormatted}
+                </TableCell>
                 <TableCell align="center" sx={{ borderBottom: '1px solid var(--border-dynamic, #1f2937)', color: 'rgba(255,255,255,0.5)' }}>
                     {row.minDurationFormatted}
                 </TableCell>
@@ -79,7 +82,7 @@ function CombinationRow({ row, onEdit, onDelete }: { row: any; onEdit: (d: EditD
             </TableRow>
 
             <TableRow>
-                <TableCell colSpan={7} sx={{ p: 0, borderBottom: open ? '1px solid var(--border-dynamic, #1f2937)' : 'none' }}>
+                <TableCell colSpan={8} sx={{ p: 0, borderBottom: open ? '1px solid var(--border-dynamic, #1f2937)' : 'none' }}>
                     <Collapse in={open} timeout="auto" unmountOnExit>
                         <Box sx={{ p: 2, bgcolor: '#0d1520' }}>
                             <Typography variant="subtitle2" sx={{ mb: 1, color: 'rgba(255,255,255,0.7)' }}>
@@ -296,7 +299,7 @@ export default function InformeCambiosPage() {
 
             {/* Summary Cards */}
             <Grid container spacing={3} sx={{ mb: 3 }}>
-                <Grid size={{ xs: 12, md: 4 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid var(--border-dynamic, #1f2937)' }}>
                         <CardContent>
                             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', mb: 1 }}>Total Cambios</Typography>
@@ -304,7 +307,7 @@ export default function InformeCambiosPage() {
                         </CardContent>
                     </MuiCard>
                 </Grid>
-                <Grid size={{ xs: 12, md: 4 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid var(--border-dynamic, #1f2937)' }}>
                         <CardContent>
                             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', mb: 1 }}>Combinación Frecuente</Typography>
@@ -324,11 +327,19 @@ export default function InformeCambiosPage() {
                         </CardContent>
                     </MuiCard>
                 </Grid>
-                <Grid size={{ xs: 12, md: 4 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid var(--border-dynamic, #1f2937)' }}>
                         <CardContent>
                             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', mb: 1 }}>Promedio General</Typography>
                             <Typography variant="h4" sx={{ color: '#60a5fa', fontWeight: 700 }}>{formatDuration(totalAvgMs)}</Typography>
+                        </CardContent>
+                    </MuiCard>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid var(--border-dynamic, #1f2937)' }}>
+                        <CardContent>
+                            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', mb: 1 }}>Mediana General</Typography>
+                            <Typography variant="h4" sx={{ color: '#a855f7', fontWeight: 700 }}>{reportData?.totalMedianDurationFormatted || '0s'}</Typography>
                         </CardContent>
                     </MuiCard>
                 </Grid>
@@ -351,6 +362,7 @@ export default function InformeCambiosPage() {
                                 <TableCell align="center" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>Cantidad</TableCell>
                                 <TableCell align="center" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>% Total</TableCell>
                                 <TableCell align="center" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>Tiempo Promedio</TableCell>
+                                <TableCell align="center" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>Mediana</TableCell>
                                 <TableCell align="center" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>Mínimo</TableCell>
                                 <TableCell align="center" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>Máximo</TableCell>
                             </TableRow>
