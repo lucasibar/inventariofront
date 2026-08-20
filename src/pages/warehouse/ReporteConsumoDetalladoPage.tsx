@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useGetRecentMovementsQuery, useGetCombosQuery, useUpdateComboMutation } from '../../features/warehouse/stock/api/stock.api';
 import { useLazyGetRemitoSalidaQuery } from '../../features/warehouse/remitosSalida/api/remitos-salida.api';
 import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.api';
+import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
 import { RemitoDetailModal } from '../../features/warehouse/remitos/ui/RemitoDetailModal';
 import { EditComboModal } from '../purchasing/EditComboModal';
 import { PageHeader, Card, Input, Spinner, Btn } from '../../shared/ui';
@@ -51,8 +52,10 @@ export default function ReporteConsumoDetalladoPage() {
         return d.toISOString().split('T')[0];
     });
     const [hasta, setHasta] = useState(() => new Date().toISOString().split('T')[0]);
+    const [depositoId, setDepositoId] = useState<string>('');
 
-    const { data: movements = [], isFetching } = useGetRecentMovementsQuery({ desde, hasta, tipo: 'REMITO_SALIDA' });
+    const { data: depositos = [] } = useGetDepotsQuery();
+    const { data: movements = [], isFetching } = useGetRecentMovementsQuery({ desde, hasta, tipo: 'REMITO_SALIDA', depositoId: depositoId || undefined });
     const [triggerGetRemitoDetail] = useLazyGetRemitoSalidaQuery();
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -342,6 +345,32 @@ export default function ReporteConsumoDetalladoPage() {
                             value={hasta} 
                             onChange={setHasta} 
                         />
+                    </div>
+                    {/* Depot Filter */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted, #9ca3af)', letterSpacing: '0.03em' }}>
+                            Depósito
+                        </label>
+                        <select
+                            value={depositoId}
+                            onChange={(e) => setDepositoId(e.target.value)}
+                            style={{
+                                background: 'var(--bg-secondary, #111827)',
+                                border: '1px solid var(--border-strong, #1e293b)',
+                                borderRadius: '8px',
+                                color: 'var(--text-primary, #f3f4f6)',
+                                padding: '10px 14px',
+                                fontSize: '14px',
+                                outline: 'none',
+                                cursor: 'pointer',
+                                width: '100%',
+                            }}
+                        >
+                            <option value="">Todos los depósitos</option>
+                            {depositos.map((dep: any) => (
+                                <option key={dep.id} value={dep.id}>{dep.nombre}</option>
+                            ))}
+                        </select>
                     </div>
                     <DebouncedSearchInput 
                         label="Buscar por proveedor, lote, material, descripción, categoría o código (múltiples palabras)" 
