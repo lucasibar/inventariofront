@@ -43,7 +43,7 @@ export default function ReporteChequeoPage() {
     });
 
     const activeDepots = useMemo(() =>
-        depots.filter((d: any) => d.activo).map((d: any) => ({ value: d.id, label: d.nombre })),
+        depots.filter((d: any) => d.activo !== false).map((d: any) => ({ value: d.id, label: d.nombre })),
         [depots]
     );
 

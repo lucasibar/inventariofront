@@ -295,7 +295,6 @@ export default function DepositoPage() {
                                     <div style={{ flex: 1 }}>
                                         <EditableCell 
                                             value={d.nombre} 
-                                            options={[{ value: '', label: 'Seleccionar...' }, ...depots.map((d: any) => ({ value: d.id, label: d.nombre }))]} 
                                             onSave={v => handleUpdateDepot(d.id, 'nombre', v)} 
                                             label="Depósito"
                                         />

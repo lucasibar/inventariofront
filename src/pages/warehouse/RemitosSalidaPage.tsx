@@ -171,7 +171,7 @@ export default function RemitosSalidaPage() {
                         }}
                     >
                         <option value="">Todos los depósitos</option>
-                        {depots.map(d => (
+                        {depots.filter(d => d.activo !== false).map(d => (
                             <option key={d.id} value={d.id}>{d.nombre}</option>
                         ))}
                     </select>

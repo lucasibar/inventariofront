@@ -201,7 +201,7 @@ export default function AdminMovementsPage() {
                         label="📦 Depósito"
                         value={depositoId}
                         onChange={setDepositoId}
-                        options={[{ value: '', label: 'Todos los depósitos' }, ...rawDepots.map((d: any) => ({ value: d.id, label: d.nombre }))]}
+                        options={[{ value: '', label: 'Todos los depósitos' }, ...rawDepots.filter((d: any) => d.activo !== false).map((d: any) => ({ value: d.id, label: d.nombre }))]}
                     />
                     <SearchSelect
                         label="🏷️ Material"

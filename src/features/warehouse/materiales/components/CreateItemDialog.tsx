@@ -31,7 +31,8 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
     const [createItem, { isLoading: isCreating }] = useCreateItemMutation();
     const [updateItem, { isLoading: isUpdating }] = useUpdateItemMutation();
     const isLoading = isCreating || isUpdating;
-    const { data: depots = [] } = useGetDepotsQuery();
+    const { data: rawDepots = [] } = useGetDepotsQuery();
+    const depots = useMemo(() => rawDepots.filter((d: any) => d.activo !== false), [rawDepots]);
     
     const [form, setForm] = useState({
         codigoInterno: '',

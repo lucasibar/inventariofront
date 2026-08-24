@@ -10,7 +10,8 @@ import { PageHeader, Card, Table, Btn, Modal, Input, Badge, EditableCell } from 
 
 export default function UsersPage() {
     const { data: users = [], isLoading: loadingUsers } = useGetUsersQuery();
-    const { data: depots = [] } = useGetDepotsQuery();
+    const { data: rawDepots = [] } = useGetDepotsQuery();
+    const depots = useMemo(() => rawDepots.filter((d: any) => d.activo !== false), [rawDepots]);
     
     const [createUser] = useCreateUserMutation();
     const [updateUser] = useUpdateUserMutation();

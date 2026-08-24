@@ -113,10 +113,11 @@ export default function StockPage() {
 
     const { data: rawDepots = [] } = useGetDepotsQuery();
     const depots = useMemo(() => {
-        // If allowedDepots is null, it's an admin (see all)
+        // If allowedDepots is null, it's an admin (see all active)
         // If it's an array, filter by it
-        if (!allowedDepots) return rawDepots;
-        return rawDepots.filter((d: any) => allowedDepots.includes(d.id));
+        const active = rawDepots.filter((d: any) => d.activo !== false);
+        if (!allowedDepots) return active;
+        return active.filter((d: any) => allowedDepots.includes(d.id));
     }, [rawDepots, allowedDepots]);
 
     useEffect(() => {

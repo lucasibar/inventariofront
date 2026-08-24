@@ -160,8 +160,9 @@ export default function DashboardDepositoPage() {
 
     const { data: rawDepots = [] } = useGetDepotsQuery();
     const depots = useMemo(() => {
-        if (!allowedDepots) return rawDepots;
-        return rawDepots.filter((d: any) => allowedDepots.includes(d.id));
+        const active = rawDepots.filter((d: any) => d.activo !== false);
+        if (!allowedDepots) return active;
+        return active.filter((d: any) => allowedDepots.includes(d.id));
     }, [rawDepots, allowedDepots]);
 
     useEffect(() => {

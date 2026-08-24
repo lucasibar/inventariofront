@@ -46,8 +46,9 @@ export default function MovimientosPage() {
     const { data: rawDepots = [] } = useGetDepotsQuery();
 
     const availableDepots = useMemo(() => {
-        if (isAdmin) return rawDepots;
-        return rawDepots.filter((d: any) => allowedDepots.includes(d.id));
+        const active = rawDepots.filter((d: any) => d.activo !== false);
+        if (isAdmin) return active;
+        return active.filter((d: any) => allowedDepots.includes(d.id));
     }, [rawDepots, allowedDepots, isAdmin]);
 
     useEffect(() => {

@@ -28,15 +28,17 @@ export const CreateRemitoForm = () => {
         triggerSearch({});
     }, [triggerSearch]);
 
+    const activeDepots = useMemo(() => allDepots.filter((d: any) => d.activo !== false), [allDepots]);
+
     const plants = useMemo(() => {
-        const unique = new Set(allDepots.map((d: any) => d.planta).filter(Boolean));
+        const unique = new Set(activeDepots.map((d: any) => d.planta).filter(Boolean));
         return Array.from(unique);
-    }, [allDepots]);
+    }, [activeDepots]);
 
     const filteredDepots = useMemo(() => {
         if (!selectedPlanta) return [];
-        return allDepots.filter((d: any) => d.planta === selectedPlanta);
-    }, [allDepots, selectedPlanta]);
+        return activeDepots.filter((d: any) => d.planta === selectedPlanta);
+    }, [activeDepots, selectedPlanta]);
 
     const selectedSupplierId = methods.watch('supplierId' as any);
 

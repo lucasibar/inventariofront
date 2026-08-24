@@ -367,7 +367,7 @@ export default function ReporteConsumoDetalladoPage() {
                             }}
                         >
                             <option value="">Todos los depósitos</option>
-                            {depositos.map((dep: any) => (
+                            {depositos.filter((dep: any) => dep.activo !== false).map((dep: any) => (
                                 <option key={dep.id} value={dep.id}>{dep.nombre}</option>
                             ))}
                         </select>
