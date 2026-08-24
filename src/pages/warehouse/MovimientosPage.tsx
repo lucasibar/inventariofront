@@ -209,6 +209,7 @@ export default function MovimientosPage() {
             lotNumber: m.batch.lotNumber,
             unidadP: m.batch.item.unidadPrincipal,
             unidadS: m.batch.item.unidadSecundaria,
+            kilosPorCaja: m.batch.item.kilosPorCaja ?? null,
             maxP: Number(m.qtyPrincipal),
             qtyP: String(m.qtyPrincipal),
             qtyS: String(m.qtySecundaria || 0),
@@ -686,12 +687,23 @@ export default function MovimientosPage() {
                                         <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-subtle, #6b7280)', marginBottom: '4px', textTransform: 'uppercase' }}>
                                             {item.unidadS}
                                         </label>
-                                        <Input value={item.qtyS} type="number" onChange={(val) => updatePendingItem(idx, 'qtyS', val)} />
-                                        {Number(item.qtyS) > 0 && Number(item.totalSecundaria) > 0 && (
-                                            <div style={{ fontSize: '10px', color: '#6366f1', marginTop: '4px', textAlign: 'right' }}>
-                                                ≈ {((Number(item.totalPrincipal) / Number(item.totalSecundaria)) * Number(item.qtyS)).toFixed(2)} {item.unidadP}
-                                            </div>
-                                        )}
+                                        <Input value={item.qtyS} type="text" onChange={(val) => updatePendingItem(idx, 'qtyS', val)} />
+                                        {(() => {
+                                            const cajas = parseFloat(item.qtyS);
+                                            if (isNaN(cajas) || cajas <= 0) return null;
+                                            let kilosEquiv: number | null = null;
+                                            if (item.kilosPorCaja != null && Number(item.kilosPorCaja) > 0) {
+                                                kilosEquiv = Number(item.kilosPorCaja) * cajas;
+                                            } else if (Number(item.totalSecundaria) > 0) {
+                                                kilosEquiv = (Number(item.totalPrincipal) / Number(item.totalSecundaria)) * cajas;
+                                            }
+                                            if (kilosEquiv == null) return null;
+                                            return (
+                                                <div style={{ fontSize: '10px', color: '#6366f1', marginTop: '4px', textAlign: 'right' }}>
+                                                    ≈ {kilosEquiv.toFixed(2)} {item.unidadP}
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                 </div>
                             </div>
@@ -742,12 +754,24 @@ export default function MovimientosPage() {
                             <Input label={`Cantidad (${despachoEntry.batch.item.unidadPrincipal})`} type="number" value={despachoQty} onChange={setDespachoQty} style={{ flex: 1 }} />
                             {despachoEntry.batch.item.unidadSecundaria && (
                                 <div style={{ flex: 1 }}>
-                                    <Input label={`Sec. (${despachoEntry.batch.item.unidadSecundaria})`} type="number" value={despachoQtySec} onChange={setDespachoQtySec} />
-                                    {Number(despachoQtySec) > 0 && Number(despachoEntry.qtySecundaria) > 0 && (
-                                        <div style={{ fontSize: '10px', color: '#6366f1', marginTop: '4px', textAlign: 'right' }}>
-                                            ≈ {((Number(despachoEntry.qtyPrincipal) / Number(despachoEntry.qtySecundaria)) * Number(despachoQtySec)).toFixed(2)} {despachoEntry.batch.item.unidadPrincipal}
-                                        </div>
-                                    )}
+                                    <Input label={`Sec. (${despachoEntry.batch.item.unidadSecundaria})`} type="text" value={despachoQtySec} onChange={setDespachoQtySec} />
+                                    {(() => {
+                                        const cajas = parseFloat(despachoQtySec);
+                                        if (isNaN(cajas) || cajas <= 0) return null;
+                                        let kilosEquiv: number | null = null;
+                                        const kpc = despachoEntry.batch.item.kilosPorCaja;
+                                        if (kpc != null && Number(kpc) > 0) {
+                                            kilosEquiv = Number(kpc) * cajas;
+                                        } else if (Number(despachoEntry.qtySecundaria) > 0) {
+                                            kilosEquiv = (Number(despachoEntry.qtyPrincipal) / Number(despachoEntry.qtySecundaria)) * cajas;
+                                        }
+                                        if (kilosEquiv == null) return null;
+                                        return (
+                                            <div style={{ fontSize: '10px', color: '#6366f1', marginTop: '4px', textAlign: 'right' }}>
+                                                ≈ {kilosEquiv.toFixed(2)} {despachoEntry.batch.item.unidadPrincipal}
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                             )}
                         </div>
