@@ -59,24 +59,15 @@ const navGroups: NavGroup[] = [
             { to: '/deposito/dashboard', label: '📊 Dashboard Depo' },
             { to: '/stock', label: '📋 Stock' },
             { to: '/movimientos', label: '🔄 Movimientos' },
-            { to: '/tasks', label: '📝 Tareas' },
-            { to: '/chequeo-inventario', label: '🔍 Chequeo Inventario' },
-            { to: '/reporte-chequeo', label: '📊 Reporte Chequeo' },
             {
                 id: 'informes',
                 label: '📊 Informes',
                 isSubGroup: true,
                 items: [
                     { to: '/deposito/informes', label: '📈 Informe Inventariados' },
-                ]
-            },
-            {
-                id: 'remitos',
-                label: '📄 Remitos',
-                isSubGroup: true,
-                items: [
-                    { to: '/remitos-entrada', label: '📥 Remitos Entrada' },
-                    { to: '/remitos-salida', label: '📤 Remitos Salida' },
+                    { to: '/tasks', label: '📝 Tareas' },
+                    { to: '/chequeo-inventario', label: '🔍 Chequeo Inventario' },
+                    { to: '/reporte-chequeo', label: '📊 Reporte Chequeo' },
                 ]
             },
             {
@@ -139,21 +130,29 @@ const navGroups: NavGroup[] = [
         icon: '🛒',
         items: [
             { to: '/dashboard', label: '📊 Comando Compras' },
-            { to: '/pedidos-compra', label: '📝 Pedidos de Compra' },
+            {
+                id: 'remitos',
+                label: '📄 Remitos',
+                isSubGroup: true,
+                items: [
+                    { to: '/remitos-entrada', label: '📥 Remitos Entrada' },
+                    { to: '/remitos-salida', label: '📤 Remitos Salida' },
+                    { to: '/pedidos-compra', label: '📝 Pedidos de Compra' },
+                    { to: '/compras/conciliacion', label: '🔗 Conciliación' },
+                ]
+            },
             {
                 id: 'compras-informes',
                 label: '📊 Informes',
                 isSubGroup: true,
                 items: [
                     { to: '/compras/grafico-sierra', label: '📈 Gráfico de Sierra' },
+                    { to: '/compras/materiales-criticos', label: '🧵 Grupos de Materiales' },
+                    { to: '/compras/alertas-stock', label: '⚠️ Alertas de Stock' },
+                    { to: '/dashboard/capacity', label: '📈 Capacidad' },
+                    { to: '/reporte-consumo-detallado', label: '📊 Consumo Detallado' },
                 ]
             },
-            { to: '/compras/conciliacion', label: '🔗 Conciliación' },
-            { to: '/compras/materiales-criticos', label: '🧵 Grupos de Materiales' },
-            { to: '/compras/alertas-stock', label: '⚠️ Alertas de Stock' },
-            { to: '/dashboard/capacity', label: '📈 Capacidad' },
-            { to: '/dashboard/volumes', label: '📦 Volúmenes' },
-            { to: '/reporte-consumo-detallado', label: '📊 Consumo Detallado' },
         ]
     },
     {
@@ -275,11 +274,13 @@ export default function Layout() {
                 '/deposito/dashboard', '/stock', '/movimientos',
                 '/remitos-entrada', '/remitos-salida',
                 '/reporte-consumo-detallado', '/tasks',
+                '/chequeo-inventario', '/reporte-chequeo', '/deposito/informes',
             ],
             COMPRAS: [
                 '/dashboard', '/pedidos-compra', '/compras/materiales-criticos',
                 '/compras/alertas-stock', '/compras/conciliacion', '/compras/grafico-sierra',
                 '/dashboard/capacity', '/dashboard/volumes', '/reporte-consumo-detallado',
+                '/remitos-entrada', '/remitos-salida',
             ],
             MANTENIMIENTO: [
                 '/mantenimiento/dashboard', '/mantenimiento/monitoreo',

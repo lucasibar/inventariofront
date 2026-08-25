@@ -33,7 +33,6 @@ const MaterialesCriticosPage = lazy(() => import('../../pages/purchasing/Materia
 const ConciliacionPage = lazy(() => import('../../pages/purchasing/ConciliacionPage'));
 const AlertaStockPage = lazy(() => import('../../pages/purchasing/AlertaStockPage'));
 const CapacityDashboardPage = lazy(() => import('../../pages/purchasing/CapacityDashboardPage'));
-const VolumenesDashboardPage = lazy(() => import('../../pages/purchasing/VolumenesDashboardPage'));
 const PedidosCompraPage = lazy(() => import('../../pages/purchasing/PedidosCompraPage'));
 const GraficoSierraPage = lazy(() => import('../../pages/purchasing/GraficoSierraPage'));
 
@@ -123,7 +122,7 @@ export const router = createBrowserRouter([
               { path: "compras/conciliacion", element: <LazyRoute element={ConciliacionPage} /> },
               { path: "compras/grafico-sierra", element: <LazyRoute element={GraficoSierraPage} /> },
               { path: "dashboard/capacity", element: <LazyRoute element={CapacityDashboardPage} /> },
-              { path: "dashboard/volumes", element: <LazyRoute element={VolumenesDashboardPage} /> },
+              { path: "dashboard/volumes", element: <Navigate to="/dashboard/capacity" replace /> },
               { path: "items", element: <LazyRoute element={MaterialesPage} /> },
               { path: "items/box-types", element: <LazyRoute element={BoxTypesPage} /> },
               { path: "socios", element: <LazyRoute element={SociosPage} /> },
