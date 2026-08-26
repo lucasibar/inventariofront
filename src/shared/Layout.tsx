@@ -130,15 +130,16 @@ const navGroups: NavGroup[] = [
         icon: '🛒',
         items: [
             { to: '/dashboard', label: '📊 Comando Compras' },
+            { to: '/compras/movimientos', label: '📋 Documentos' },
+            { to: '/compras/convertidor', label: '🔄 Convertidor de Pedidos' },
             {
                 id: 'remitos',
-                label: '📄 Remitos',
+                label: '📄 Remitos y Órdenes',
                 isSubGroup: true,
                 items: [
                     { to: '/remitos-entrada', label: '📥 Remitos Entrada' },
                     { to: '/remitos-salida', label: '📤 Remitos Salida' },
-                    { to: '/pedidos-compra', label: '📝 Pedidos de Compra' },
-                    { to: '/compras/conciliacion', label: '🔗 Conciliación' },
+                    { to: '/pedidos-compra', label: '📝 Órdenes de Compra' },
                 ]
             },
             {
@@ -146,6 +147,7 @@ const navGroups: NavGroup[] = [
                 label: '📊 Informes',
                 isSubGroup: true,
                 items: [
+                    { to: '/compras/proyeccion-stock', label: '📈 Proyección de Stock' },
                     { to: '/compras/grafico-sierra', label: '📈 Gráfico de Sierra' },
                     { to: '/compras/materiales-criticos', label: '🧵 Grupos de Materiales' },
                     { to: '/compras/alertas-stock', label: '⚠️ Alertas de Stock' },
@@ -281,6 +283,7 @@ export default function Layout() {
                 '/compras/alertas-stock', '/compras/conciliacion', '/compras/grafico-sierra',
                 '/dashboard/capacity', '/dashboard/volumes', '/reporte-consumo-detallado',
                 '/remitos-entrada', '/remitos-salida',
+                '/compras/movimientos', '/compras/convertidor', '/compras/proyeccion-stock',
             ],
             MANTENIMIENTO: [
                 '/mantenimiento/dashboard', '/mantenimiento/monitoreo',

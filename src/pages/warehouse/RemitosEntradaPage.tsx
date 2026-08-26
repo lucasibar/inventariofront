@@ -5,8 +5,8 @@ import {
     useLazyGetRemitoEntradaQuery
 } from '../../features/warehouse/remitosEntrada/api/remitos-entrada.api';
 import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
-import { CreateRemitoForm } from '../../features/warehouse/remitos/ui/CreateRemitoForm';
 import { RemitoDetailModal } from '../../features/warehouse/remitos/ui/RemitoDetailModal';
+import { NuevoRemitoEntradaModal } from '../../features/warehouse/remitosEntrada/ui/NuevoRemitoEntradaModal';
 import { PageHeader, Card, Btn, Table, Badge, SearchBar } from '../../shared/ui';
 
 export default function RemitosEntradaPage() {
@@ -76,14 +76,10 @@ export default function RemitosEntradaPage() {
 
     if (showForm) {
         return (
-            <div style={{ padding: '24px' }}>
-                <Btn variant="secondary" onClick={() => setShowForm(false)} style={{ marginBottom: '20px' }}>
-                    ← Volver al Listado
-                </Btn>
-                <Card>
-                    <CreateRemitoForm />
-                </Card>
-            </div>
+            <NuevoRemitoEntradaModal
+                onClose={() => setShowForm(false)}
+                onSuccess={() => { setShowForm(false); }}
+            />
         );
     }
 

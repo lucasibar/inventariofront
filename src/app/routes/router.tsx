@@ -30,11 +30,13 @@ const InformesInventariadoPage = lazy(() => import('../../pages/warehouse/Inform
 // Sector: Purchasing
 const DashboardComprasPage = lazy(() => import('../../pages/purchasing/DashboardComprasPage'));
 const MaterialesCriticosPage = lazy(() => import('../../pages/purchasing/MaterialesCriticosPage'));
-const ConciliacionPage = lazy(() => import('../../pages/purchasing/ConciliacionPage'));
 const AlertaStockPage = lazy(() => import('../../pages/purchasing/AlertaStockPage'));
 const CapacityDashboardPage = lazy(() => import('../../pages/purchasing/CapacityDashboardPage'));
 const PedidosCompraPage = lazy(() => import('../../pages/purchasing/PedidosCompraPage'));
 const GraficoSierraPage = lazy(() => import('../../pages/purchasing/GraficoSierraPage'));
+const ProyeccionStockPage = lazy(() => import('../../pages/purchasing/ProyeccionStockPage'));
+const ConvertidorPedidosPage = lazy(() => import('../../pages/purchasing/ConvertidorPedidosPage'));
+const MovimientosComprasPage = lazy(() => import('../../pages/purchasing/MovimientosComprasPage'));
 
 // Sector: Maintenance
 const DashboardMantenimientoPage = lazy(() => import('../../pages/maintenance/DashboardMantenimientoPage'));
@@ -119,7 +121,7 @@ export const router = createBrowserRouter([
               { path: "dashboard", element: <LazyRoute element={DashboardComprasPage} /> },
               { path: "compras/materiales-criticos", element: <LazyRoute element={MaterialesCriticosPage} /> },
               { path: "compras/alertas-stock", element: <LazyRoute element={AlertaStockPage} /> },
-              { path: "compras/conciliacion", element: <LazyRoute element={ConciliacionPage} /> },
+              { path: "compras/conciliacion", element: <Navigate to="/compras/movimientos" replace /> },
               { path: "compras/grafico-sierra", element: <LazyRoute element={GraficoSierraPage} /> },
               { path: "dashboard/capacity", element: <LazyRoute element={CapacityDashboardPage} /> },
               { path: "dashboard/volumes", element: <Navigate to="/dashboard/capacity" replace /> },
@@ -127,6 +129,9 @@ export const router = createBrowserRouter([
               { path: "items/box-types", element: <LazyRoute element={BoxTypesPage} /> },
               { path: "socios", element: <LazyRoute element={SociosPage} /> },
               { path: "pedidos-compra", element: <LazyRoute element={PedidosCompraPage} /> },
+              { path: "compras/proyeccion-stock", element: <LazyRoute element={ProyeccionStockPage} /> },
+              { path: "compras/convertidor", element: <LazyRoute element={ConvertidorPedidosPage} /> },
+              { path: "compras/movimientos", element: <LazyRoute element={MovimientosComprasPage} /> },
             ]
           },
           // ADMIN

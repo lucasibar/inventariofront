@@ -10,6 +10,7 @@ import {
 } from '../../features/purchasing/purchase-orders/api/purchase-orders.api';
 import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
 import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.api';
+import { useGetStockQuery } from '../../features/warehouse/stock/api/stock.api';
 import { PageHeader, Card, Badge, Btn, Input, SearchSelect, Modal, Table, Spinner, Select } from '../../shared/ui';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser, selectAllowedDepots } from '../../entities/auth/model/authSlice';
@@ -42,7 +43,7 @@ export default function PedidosCompraPage() {
 
     const { data: orders = [], isLoading } = useGetPurchaseOrdersQuery(depotId || undefined);
     const { data: suppliers = [] } = useGetPartnersQuery({ type: 'SUPPLIER' });
-    const { data: items = [] } = useGetItemsQuery({ depositoId: depotId || undefined });
+    const { data: allItems = [] } = useGetItemsQuery({});
     
     // Preview del próximo número (para el formulario de alta)
     const { data: nextNumData } = useGetNextNumberQuery(undefined, { skip: isLoading });
@@ -51,7 +52,6 @@ export default function PedidosCompraPage() {
     const [updateOrder] = useUpdatePurchaseOrderMutation();
     const [deleteOrder] = useDeletePurchaseOrderMutation();
     const [updateStatus] = useUpdatePurchaseOrderStatusMutation();
-
 
     const [showForm, setShowForm] = useState(false);
     const [editOrderId, setEditOrderId] = useState<string | null>(null);
@@ -62,6 +62,11 @@ export default function PedidosCompraPage() {
     
     const [supplierId, setSupplierId] = useState('');
     const [depositoId, setDepositoId] = useState(depotId || '');
+
+    const { data: formStock = [] } = useGetStockQuery(
+        { depotId: depositoId || undefined },
+        { skip: !depositoId }
+    );
 
     useEffect(() => {
         if (depotId && !editOrderId) {
@@ -75,13 +80,40 @@ export default function PedidosCompraPage() {
     const [lines, setLines] = useState<{ id?: string; itemId: string; qtyPedido: string; qtySecundaria: string; observaciones: string; minQty?: number }[]>([
         { itemId: '', qtyPedido: '', qtySecundaria: '', observaciones: '' }
     ]);
+    const [arrivals, setArrivals] = useState<{ fecha: string; kgEstimados: string; observaciones: string }[]>([]);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
 
     const filteredItems = useMemo(() => {
-        if (!supplierId) return items;
-        return items.filter((i: any) => !i.supplierId || i.supplierId === supplierId);
-    }, [items, supplierId]);
+        let list = allItems;
+
+        // 1. Filtrar por proveedor seleccionado en el formulario
+        if (supplierId) {
+            list = list.filter((i: any) => i.supplierId === supplierId || !i.supplierId);
+        }
+
+        // 2. Filtrar por depósito destino seleccionado en el formulario
+        if (depositoId) {
+            const depotStockItemIds = new Set<string>();
+            formStock.forEach((s: any) => {
+                if (s.itemId) depotStockItemIds.add(s.itemId);
+                if (s.item?.id) depotStockItemIds.add(s.item.id);
+                if (s.batch?.itemId) depotStockItemIds.add(s.batch.itemId);
+                if (s.batch?.item?.id) depotStockItemIds.add(s.batch.item.id);
+            });
+
+            const inDepot = list.filter((i: any) =>
+                depotStockItemIds.has(i.id) ||
+                i.category?.depositoId === depositoId ||
+                i.depositoId === depositoId
+            );
+            if (inDepot.length > 0) {
+                list = inDepot;
+            }
+        }
+
+        return list;
+    }, [allItems, supplierId, depositoId, formStock]);
 
     const grouped = useMemo(() => {
         const map = new Map<string, { supplierName: string; orders: any[] }>();
@@ -119,6 +151,13 @@ export default function PedidosCompraPage() {
                 fechaEntregaEsperada: fechaEntregaEsperada || null,
                 observaciones,
                 lines: linesPayload,
+                arrivals: arrivals
+                    .filter(a => a.fecha)
+                    .map(a => ({
+                        fecha: a.fecha,
+                        kgEstimados: a.kgEstimados ? Number(a.kgEstimados) : null,
+                        observaciones: a.observaciones || null,
+                    })),
             };
 
             if (editOrderId) {
@@ -158,6 +197,7 @@ export default function PedidosCompraPage() {
         setShowForm(false);
         setEditOrderId(null);
         setLines([{ itemId: '', qtyPedido: '', qtySecundaria: '', observaciones: '' }]);
+        setArrivals([]);
         setSupplierId(''); 
         setObservaciones(''); 
         setFechaEntregaEsperada('');
@@ -326,6 +366,34 @@ export default function PedidosCompraPage() {
                             </div>
                         ))}
                     </div>
+                    {/* ── Fechas de Arribo Estimadas ── */}
+                    <div style={{ marginBottom: '16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <label style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px', fontWeight: 600 }}>
+                                Fechas de Arribo Estimadas
+                                <span style={{ marginLeft: '8px', fontSize: '11px', fontWeight: 400, color: 'var(--text-subtle, #6b7280)' }}>
+                                    — Opcional. Permite múltiples entregas parciales.
+                                </span>
+                            </label>
+                            <Btn small onClick={() => setArrivals(p => [...p, { fecha: '', kgEstimados: '', observaciones: '' }])}>
+                                + Agregar Tramo
+                            </Btn>
+                        </div>
+                        {arrivals.length === 0 && (
+                            <div style={{ fontSize: '12px', color: 'var(--text-subtle, #6b7280)', fontStyle: 'italic' }}>
+                                Sin tramos definidos (se usa la Fecha Entrega del encabezado).
+                            </div>
+                        )}
+                        {arrivals.map((a, i) => (
+                            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr auto', gap: '8px', marginBottom: '8px', alignItems: 'end' }}>
+                                <Input label={`Tramo ${i + 1} — Fecha`} type="date" value={a.fecha} onChange={v => setArrivals(p => p.map((x, j) => j === i ? { ...x, fecha: v } : x))} />
+                                <Input label="Kg Estimados" type="number" placeholder="Opcional" value={a.kgEstimados} onChange={v => setArrivals(p => p.map((x, j) => j === i ? { ...x, kgEstimados: v } : x))} />
+                                <Input label="Observaciones del tramo" placeholder="Ej: 40% del total" value={a.observaciones} onChange={v => setArrivals(p => p.map((x, j) => j === i ? { ...x, observaciones: v } : x))} />
+                                <Btn small variant="danger" onClick={() => setArrivals(p => p.filter((_, j) => j !== i))} style={{ alignSelf: 'flex-end' }}>✕</Btn>
+                            </div>
+                        ))}
+                    </div>
+
                     {error && <p style={{ color: '#f87171', fontSize: '13px', margin: '8px 0' }}>⚠️ {error}</p>}
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                         <Btn variant="secondary" onClick={closeForm}>Cancelar</Btn>
