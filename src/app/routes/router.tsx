@@ -51,6 +51,9 @@ const InformeCambiosPage = lazy(() => import('../../pages/maintenance/InformeCam
 const DisponibilidadMaquinaPage = lazy(() => import('../../pages/maintenance/DisponibilidadMaquinaPage'));
 const DisponibilidadMaquinaV2Page = lazy(() => import('../../pages/maintenance/DisponibilidadMaquinaV2Page'));
 
+// Sector: Quality (Calidad)
+const ArticulosCalidadPage = lazy(() => import('../../pages/quality/ArticulosCalidadPage'));
+
 // Sector: Production
 const CargarProduccionPage = lazy(() => import('../../pages/production/CargarProduccionPage'));
 const ProduccionNewDashboardPage = lazy(() => import('../../pages/production/ProduccionNewDashboardPage'));
@@ -89,6 +92,7 @@ const getHome = (role?: string, sector?: string) => {
     if (s === 'VENTAS') return '/ventas/dashboard';
     if (s === 'FINANZAS') return '/finanzas/dashboard';
     if (s === 'RRHH') return '/rrhh/dashboard';
+    if (s === 'CALIDAD') return '/calidad/articulos';
     return '/deposito/dashboard';
 };
 
@@ -183,6 +187,7 @@ export const router = createBrowserRouter([
               { path: "finanzas/dashboard", element: <LazyRoute element={FinanzasDashboardPage} /> },
               { path: "rrhh/dashboard", element: <LazyRoute element={RRHHDashboardPage} /> },
               { path: "compras/dashboard", element: <LazyRoute element={DashboardComprasPage} /> },
+              { path: "calidad/articulos", element: <LazyRoute element={ArticulosCalidadPage} /> },
             ]
           },
           // Shared

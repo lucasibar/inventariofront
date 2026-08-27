@@ -108,6 +108,8 @@ export default function UsersPage() {
             <option value="OPERARIO_DEPOSITO">OPERARIO (Depósito)</option>
             <option value="SUPERVISOR_COMPRAS">SUPERVISOR (Compras)</option>
             <option value="OPERARIO_COMPRAS">OPERARIO (Compras)</option>
+            <option value="SUPERVISOR_CALIDAD">SUPERVISOR (Calidad)</option>
+            <option value="OPERARIO_CALIDAD">OPERARIO (Calidad)</option>
         </select>,
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', maxWidth: '300px' }}>
             {u.role === 'ADMIN' ? (
@@ -186,6 +188,8 @@ export default function UsersPage() {
                                 <option value="SUPERVISOR_DEPOSITO">SUPERVISOR (Depósito)</option>
                                 <option value="OPERARIO_COMPRAS">OPERARIO (Compras)</option>
                                 <option value="SUPERVISOR_COMPRAS">SUPERVISOR (Compras)</option>
+                                <option value="OPERARIO_CALIDAD">OPERARIO (Calidad)</option>
+                                <option value="SUPERVISOR_CALIDAD">SUPERVISOR (Calidad)</option>
                                 <option value="ADMIN">ADMIN</option>
                             </select>
                         </div>

@@ -116,6 +116,14 @@ const navGroups: NavGroup[] = [
         ]
     },
     {
+        id: 'calidad',
+        label: 'Calidad',
+        icon: '🎯',
+        items: [
+            { to: '/calidad/articulos', label: '📋 Artículos' },
+        ]
+    },
+    {
         id: 'produccion',
         label: 'Producción',
         icon: '⚙️',
@@ -294,6 +302,7 @@ export default function Layout() {
                 '/mantenimiento/kpi/disponibilidad-v2',
             ],
             PRODUCCION: ['/produccion/dashboard', '/produccion/cargar'],
+            CALIDAD: ['/calidad/articulos'],
             VENTAS: ['/ventas/dashboard'],
             FINANZAS: ['/finanzas/dashboard'],
             RRHH: ['/rrhh/dashboard'],
