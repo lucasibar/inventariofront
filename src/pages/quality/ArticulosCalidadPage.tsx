@@ -14,6 +14,8 @@ const ROL_LABELS: Record<string, string> = {
     COLOR_TALLE: '🎨 C.Talle',
     TRIANGULO: '🔺 Triáng.',
     TALON_PUNTERA: '👟 Talón/P.',
+    GOMA: '⭕ Goma',
+    LYCRA: '🧵 Lycra',
 };
 
 const ESTADO_CONFIG: Record<string, { label: string; color: string; bg: string }> = {

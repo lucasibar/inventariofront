@@ -18,6 +18,8 @@ const ROLES = [
     { value: 'COLOR_TALLE', label: 'Color de Talle' },
     { value: 'TRIANGULO', label: 'Triángulo' },
     { value: 'TALON_PUNTERA', label: 'Talón y Puntera' },
+    { value: 'GOMA', label: 'Goma (Puño/Elástico)' },
+    { value: 'LYCRA', label: 'Lycra (Elastano)' },
 ];
 
 const EMPTY_FORM = {
@@ -29,6 +31,7 @@ const EMPTY_FORM = {
     talle: '',
     talleDMedia: '',
     workingNumber: '',
+    desperdicio: '',
     observacion: '',
     programas: '',
 };
@@ -38,6 +41,9 @@ interface RefEntry {
     rol: string;
     itemId: string;
     orden: number;
+    esPreferenciaActual: boolean;
+    consumoGramos?: number | null;
+    desperdicio?: number | null;
     activo: boolean;
 }
 
@@ -78,6 +84,7 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
                 talle: editTarget.talle || '',
                 talleDMedia: editTarget.talleDMedia || '',
                 workingNumber: editTarget.workingNumber || '',
+                desperdicio: editTarget.desperdicio != null ? String(editTarget.desperdicio) : '',
                 observacion: editTarget.observacion || '',
                 programas: editTarget.programas || '',
             });
@@ -86,6 +93,9 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
                 rol: r.rol,
                 itemId: r.itemId,
                 orden: r.orden,
+                esPreferenciaActual: r.esPreferenciaActual ?? (r.orden === 1),
+                consumoGramos: r.consumoGramos,
+                desperdicio: r.desperdicio,
                 activo: r.activo,
             }));
             setItemRefs(refs);
@@ -110,7 +120,20 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
     const addRef = (rol: string) => {
         const existing = getRefsForRol(rol);
         if (existing.length >= 3) return;
-        setItemRefs(prev => [...prev, { rol, itemId: '', orden: existing.length + 1, activo: true }]);
+        const isFirst = existing.length === 0;
+        setItemRefs(prev => [...prev, {
+            rol,
+            itemId: '',
+            orden: existing.length + 1,
+            esPreferenciaActual: isFirst,
+            activo: true,
+        }]);
+    };
+
+    const setPreferenciaActual = (rol: string, orden: number) => {
+        setItemRefs(prev => prev.map(r =>
+            r.rol === rol ? { ...r, esPreferenciaActual: r.orden === orden } : r
+        ));
     };
 
     const updateRef = (rol: string, orden: number, field: string, value: any) => {
@@ -122,9 +145,18 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
     const removeRef = (rol: string, orden: number) => {
         setItemRefs(prev => {
             const filtered = prev.filter(r => !(r.rol === rol && r.orden === orden));
-            // re-index orden within the rol
             let idx = 1;
-            return filtered.map(r => r.rol === rol ? { ...r, orden: idx++ } : r);
+            return filtered.map(r => {
+                if (r.rol === rol) {
+                    const newOrd = idx++;
+                    return {
+                        ...r,
+                        orden: newOrd,
+                        esPreferenciaActual: r.esPreferenciaActual || (newOrd === 1 && !filtered.some(f => f.rol === rol && f.esPreferenciaActual)),
+                    };
+                }
+                return r;
+            });
         });
     };
 
@@ -165,6 +197,7 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
             talle: form.talle || null,
             talleDMedia: form.talleDMedia || null,
             workingNumber: form.workingNumber || null,
+            desperdicio: form.desperdicio ? Number(form.desperdicio) : null,
             observacion: form.observacion || null,
             programas: form.programas || null,
             imagen: null,
@@ -249,6 +282,7 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
                     <TextField label="Talle" value={form.talle} onChange={e => handleFieldChange('talle', e.target.value)} sx={fieldStyle} size="small" placeholder="Ej: 36-40, T1" />
                     <TextField label="Talle de Media" value={form.talleDMedia} onChange={e => handleFieldChange('talleDMedia', e.target.value)} sx={fieldStyle} size="small" />
                     <TextField label="Working Number" value={form.workingNumber} onChange={e => handleFieldChange('workingNumber', e.target.value)} sx={fieldStyle} size="small" />
+                    <TextField label="% Desperdicio" type="number" value={form.desperdicio} onChange={e => handleFieldChange('desperdicio', e.target.value)} sx={fieldStyle} size="small" placeholder="Ej: 5" />
                 </Box>
                 <TextField
                     label="Programas" multiline rows={2} fullWidth
@@ -269,7 +303,7 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
                 {/* ── Sección 2: Insumos por rol ── */}
                 {sectionTitle('🧵 Insumos (Items por Rol)')}
                 <Typography sx={{ color: '#6b7280', fontSize: '12px', mb: 2 }}>
-                    Asigná los items para cada rol. Podés agregar hasta 3 alternativas ordenadas por prioridad.
+                    Asigná las alternativas por rol. Tildá <b>⭐ En Uso</b> para marcar cuál es la preferencia activa actualmente.
                 </Typography>
                 {ROLES.map(({ value: rol, label }) => {
                     const refs = getRefsForRol(rol);
@@ -277,10 +311,10 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
                         <Box key={rol} sx={{ mb: 2, p: 1.5, border: '1px solid #2a2d3e', borderRadius: '8px', background: '#0d1020' }}>
                             <Typography sx={{ color: '#c4b5fd', fontWeight: 600, fontSize: '12px', mb: 1 }}>{label}</Typography>
                             {refs.map((ref) => (
-                                <Box key={ref.orden} sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1 }}>
+                                <Box key={ref.orden} sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1, flexWrap: 'wrap' }}>
                                     <Chip label={`#${ref.orden}`} size="small" sx={{ background: '#1a1d2e', color: '#6b7280', minWidth: '32px' }} />
                                     <TextField
-                                        select size="small" sx={{ ...fieldStyle, mb: 0, flex: 1 }}
+                                        select size="small" sx={{ ...fieldStyle, mb: 0, flex: 1, minWidth: '220px' }}
                                         value={ref.itemId}
                                         onChange={e => updateRef(rol, ref.orden, 'itemId', e.target.value)}
                                         label="Item"
@@ -292,6 +326,21 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
                                             </MenuItem>
                                         ))}
                                     </TextField>
+                                    <FormControlLabel
+                                        control={
+                                            <Checkbox
+                                                checked={ref.esPreferenciaActual}
+                                                onChange={() => setPreferenciaActual(rol, ref.orden)}
+                                                size="small"
+                                                sx={{ color: '#10b981', '&.Mui-checked': { color: '#10b981' } }}
+                                            />
+                                        }
+                                        label={
+                                            <Typography sx={{ fontSize: '11px', color: ref.esPreferenciaActual ? '#34d399' : '#9ca3af', fontWeight: ref.esPreferenciaActual ? 700 : 400 }}>
+                                                ⭐ En Uso
+                                            </Typography>
+                                        }
+                                    />
                                     <FormControlLabel
                                         control={<Checkbox checked={ref.activo} onChange={e => updateRef(rol, ref.orden, 'activo', e.target.checked)} size="small" sx={{ color: '#6366f1', '&.Mui-checked': { color: '#6366f1' } }} />}
                                         label={<Typography sx={{ fontSize: '12px', color: '#9ca3af' }}>Activo</Typography>}
