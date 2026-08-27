@@ -225,7 +225,7 @@ export default function ArticulosCalidadPage() {
             ) : (
                 <Card>
                     <Table
-                        cols={['Estado & Validación', 'Código & W#', 'Descripción & Cliente', 'Insumos', 'Talle & Máquinas', 'Acciones']}
+                        cols={['Estado & Validación', 'Código & Marca', 'Descripción & Tipo', 'Colores Planilla (Originales)', 'Insumos Inventario', 'Datos Técnicos', 'Acciones']}
                         onRowClick={(index) => handleEdit(filtered[index])}
                         rows={filtered.map((a: any) => {
                             const est = ESTADO_CONFIG[a.estadoRevision || 'PENDIENTE'] || ESTADO_CONFIG.PENDIENTE;
@@ -267,29 +267,54 @@ export default function ArticulosCalidadPage() {
                                     )}
                                 </div>,
 
-                                // Código & W#
+                                // Código & Marca
                                 <div key="cod" style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                                     <code style={{ color: '#818cf8', fontWeight: 700, fontSize: '13px' }}>{a.codigo}</code>
-                                    {a.workingNumber && (
-                                        <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 500 }}>
-                                            W#: {a.workingNumber}
-                                        </span>
-                                    )}
-                                </div>,
-
-                                // Descripción & Cliente
-                                <div key="desc" style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                    <div style={{ fontWeight: 600, color: 'var(--text-primary, #f3f4f6)' }}>{a.descripcion}</div>
-                                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                                         {(a.marca || a.cliente?.name) && (
                                             <Badge color="#4f46e5">{a.marca || a.cliente?.name}</Badge>
                                         )}
+                                        {a.workingNumber && (
+                                            <span style={{ fontSize: '10px', color: '#9ca3af', background: '#1e2130', padding: '1px 5px', borderRadius: '4px' }}>
+                                                W#: {a.workingNumber}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>,
+
+                                // Descripción & Tipo
+                                <div key="desc" style={{ display: 'flex', flexDirection: 'column', gap: '3px', maxWidth: '240px' }}>
+                                    <div style={{ fontWeight: 600, color: 'var(--text-primary, #f3f4f6)', fontSize: '13px' }}>{a.descripcion}</div>
+                                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                        {a.tipoPrenda && <Badge color="#0284c7">{a.tipoPrenda}</Badge>}
                                         {a.categoria && <Badge>{a.categoria.nombre}</Badge>}
                                     </div>
                                 </div>,
 
+                                // Colores Planilla (Originales)
+                                <div key="colors" style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '11px', minWidth: '150px' }}>
+                                    {a.colorBase && (
+                                        <div><span style={{ color: '#94a3b8' }}>Base:</span> <b style={{ color: '#f1f5f9' }}>{a.colorBase}</b></div>
+                                    )}
+                                    {a.colorLogo && (
+                                        <div><span style={{ color: '#94a3b8' }}>Logo:</span> <b style={{ color: '#cbd5e1' }}>{a.colorLogo}</b></div>
+                                    )}
+                                    {a.colorTalle && (
+                                        <div><span style={{ color: '#94a3b8' }}>Talle:</span> <b style={{ color: '#93c5fd' }}>{a.colorTalle}</b></div>
+                                    )}
+                                    {a.colorDetalle && (
+                                        <div><span style={{ color: '#94a3b8' }}>Detalle:</span> <b style={{ color: '#cbd5e1' }}>{a.colorDetalle}</b></div>
+                                    )}
+                                    {a.talonPuntera && (
+                                        <div><span style={{ color: '#94a3b8' }}>T/P:</span> <b style={{ color: '#cbd5e1' }}>{a.talonPuntera}</b></div>
+                                    )}
+                                    {!a.colorBase && !a.colorLogo && (
+                                        <span style={{ color: '#64748b', fontStyle: 'italic' }}>—</span>
+                                    )}
+                                </div>,
+
                                 // Insumos (itemRefs agrupados por rol)
-                                <div key="insumos" style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxWidth: '220px' }}>
+                                <div key="insumos" style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxWidth: '200px' }}>
                                     {Object.entries(
                                         (a.itemRefs || []).reduce((acc: any, ref: any) => {
                                             if (!acc[ref.rol]) acc[ref.rol] = [];
@@ -299,24 +324,27 @@ export default function ArticulosCalidadPage() {
                                     ).map(([rol, refs]: [string, any]) => {
                                         const active = refs.filter((r: any) => r.activo && r.item);
                                         if (active.length === 0) return null;
-                                        const first = active[0];
+                                        const pref = refs.find((r: any) => r.esPreferenciaActual) || active[0];
                                         return (
                                             <div key={rol} style={{ fontSize: '11px', lineHeight: '14px' }}>
                                                 <span style={{ color: '#6b7280', marginRight: '3px' }}>{ROL_LABELS[rol] || rol}:</span>
-                                                <span style={{ color: '#d1d5db' }}>{first.item?.descripcion || first.item?.codigoInterno || '—'}</span>
-                                                {active.length > 1 && <span style={{ color: '#6b7280' }}> +{active.length - 1}</span>}
+                                                <span style={{ color: '#d1d5db' }}>{pref.item?.descripcion || pref.item?.codigoInterno || '—'}</span>
+                                                {active.length > 1 && <span style={{ color: '#10b981', fontWeight: 600 }}> ({active.length} opc)</span>}
                                             </div>
                                         );
                                     })}
                                     {(!a.itemRefs || a.itemRefs.length === 0) && (
-                                        <span style={{ color: '#6b7280', fontSize: '11px', fontStyle: 'italic' }}>Sin insumos cargados</span>
+                                        <span style={{ color: '#6b7280', fontSize: '11px', fontStyle: 'italic' }}>Sin insumos vinculados</span>
                                     )}
                                 </div>,
 
-                                // Talle & Máquinas
-                                <div key="talle" style={{ fontSize: '12px', color: 'var(--text-secondary, #d1d5db)', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                    {a.talle && <div><span style={{ color: '#6b7280', fontSize: '11px' }}>Talle:</span> {a.talle}</div>}
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
+                                // Datos Técnicos (Pack, Peso, IM)
+                                <div key="tecnicos" style={{ fontSize: '11px', color: 'var(--text-secondary, #d1d5db)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    {a.unidadesPorPack && <div><span style={{ color: '#6b7280' }}>Pack:</span> {a.unidadesPorPack} pares</div>}
+                                    {a.pesoUnitario && <div><span style={{ color: '#6b7280' }}>Peso:</span> {a.pesoUnitario}g</div>}
+                                    {a.im && <div><span style={{ color: '#6b7280' }}>IM:</span> {a.im}</div>}
+                                    {a.talle && <div><span style={{ color: '#6b7280' }}>Talle:</span> {a.talle}</div>}
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', marginTop: '2px' }}>
                                         {(a.machineTypes || []).map((mt: any) => (
                                             <Badge key={mt.id} color="#0d9488">{mt.name}</Badge>
                                         ))}
