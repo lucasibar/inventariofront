@@ -2,11 +2,17 @@ import { api } from '../../../../shared/api';
 
 export const articulosApi = api.injectEndpoints({
     endpoints: (builder) => ({
-        getArticulos: builder.query<any[], { q?: string }>({
-            query: ({ q } = {}) => {
-                const params = new URLSearchParams();
-                if (q) params.set('q', q);
-                return `articulos?${params.toString()}`;
+        getArticulos: builder.query<any[], { q?: string; estadoRevision?: string; marca?: string; clienteId?: string } | void>({
+            query: (params = {}) => {
+                const searchParams = new URLSearchParams();
+                if (params && typeof params === 'object') {
+                    if (params.q) searchParams.set('q', params.q);
+                    if (params.estadoRevision) searchParams.set('estadoRevision', params.estadoRevision);
+                    if (params.marca) searchParams.set('marca', params.marca);
+                    if (params.clienteId) searchParams.set('clienteId', params.clienteId);
+                }
+                const queryString = searchParams.toString();
+                return `articulos${queryString ? `?${queryString}` : ''}`;
             },
             providesTags: ['Articulos'],
         }),
@@ -20,6 +26,14 @@ export const articulosApi = api.injectEndpoints({
         }),
         updateArticulo: builder.mutation<any, { id: string; data: any }>({
             query: ({ id, data }) => ({ url: `articulos/${id}`, method: 'PUT', body: data }),
+            invalidatesTags: ['Articulos'],
+        }),
+        updateArticuloStatus: builder.mutation<any, { id: string; estadoRevision: string; revisadoPor?: string }>({
+            query: ({ id, ...body }) => ({
+                url: `articulos/${id}/status`,
+                method: 'PATCH',
+                body,
+            }),
             invalidatesTags: ['Articulos'],
         }),
         deleteArticulo: builder.mutation<void, string>({
@@ -46,6 +60,7 @@ export const {
     useGetArticuloQuery,
     useCreateArticuloMutation,
     useUpdateArticuloMutation,
+    useUpdateArticuloStatusMutation,
     useDeleteArticuloMutation,
     useGetArticuloCategoriasQuery,
     useCreateArticuloCategoriaMutation,
