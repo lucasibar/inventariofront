@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Box, Typography, Button, TextField, Card as MuiCard,
     CardContent, Autocomplete, IconButton, List, ListItem,
@@ -10,6 +11,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SendIcon from '@mui/icons-material/Send';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import HistoryIcon from '@mui/icons-material/History';
 import {
     useGetPlantsQuery,
     useGetMachineTypesQuery,
@@ -32,6 +34,7 @@ interface PendingChange {
 }
 
 export default function CambioArticuloPage() {
+    const navigate = useNavigate();
     const machineSearchRef = useRef<HTMLInputElement>(null);
 
     // Selectors
@@ -200,7 +203,16 @@ export default function CambioArticuloPage() {
             <PageHeader
                 title="Cambios de Artículo"
                 subtitle="Registrar cambios de artículo en máquinas de tejeduría. Cargá múltiples cambios y envialos todos juntos."
-            />
+            >
+                <Button
+                    variant="outlined"
+                    startIcon={<HistoryIcon />}
+                    onClick={() => navigate('/mantenimiento/historial-cambios')}
+                    sx={{ color: '#60a5fa', borderColor: '#60a5fa44', '&:hover': { borderColor: '#60a5fa', bgcolor: '#60a5fa15' } }}
+                >
+                    Ver Historial de Cambios
+                </Button>
+            </PageHeader>
 
             <Grid container spacing={3}>
                 {/* Form Side */}
@@ -428,9 +440,18 @@ export default function CambioArticuloPage() {
                     {/* Recent History */}
                     <MuiCard sx={{ bgcolor: 'var(--bg-secondary, #111827)', borderRadius: 2, border: '1px solid var(--border-dynamic, #1f2937)' }}>
                         <CardContent sx={{ p: 3 }}>
-                            <Typography variant="h6" sx={{ color: 'var(--text-white-dynamic, white)', mb: 2 }}>
-                                Últimos Cambios Registrados
-                            </Typography>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                <Typography variant="h6" sx={{ color: 'var(--text-white-dynamic, white)' }}>
+                                    Últimos Cambios Registrados
+                                </Typography>
+                                <Button
+                                    size="small"
+                                    onClick={() => navigate('/mantenimiento/historial-cambios')}
+                                    sx={{ color: '#60a5fa', fontSize: '0.8rem', textTransform: 'none' }}
+                                >
+                                    Ver todos →
+                                </Button>
+                            </Box>
                             {loadingChanges ? <Spinner /> : (
                                 <List dense>
                                     {(recentChanges as any[]).slice(0, 20).map((change: any) => (

@@ -462,6 +462,7 @@ export const {
     useCreateMachineChangeMutation,
     useCreateMachineChangesBulkMutation,
     useGetMachineChangesQuery,
+    useLazyGetMachineChangesQuery,
     useGetMachineChangeReportQuery,
     useUpdateMachineChangeMutation,
     useDeleteMachineChangeMutation,

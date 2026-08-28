@@ -47,6 +47,7 @@ const BuscadorMaquinaPage = lazy(() => import('../../pages/maintenance/BuscadorM
 const PendientesPage = lazy(() => import('../../pages/maintenance/PendientesPage'));
 const InformeTurnosPage = lazy(() => import('../../pages/maintenance/InformeTurnosPage'));
 const CambioArticuloPage = lazy(() => import('../../pages/maintenance/CambioArticuloPage'));
+const HistorialCambiosPage = lazy(() => import('../../pages/maintenance/HistorialCambiosPage'));
 const InformeCambiosPage = lazy(() => import('../../pages/maintenance/InformeCambiosPage'));
 const DisponibilidadMaquinaPage = lazy(() => import('../../pages/maintenance/DisponibilidadMaquinaPage'));
 const DisponibilidadMaquinaV2Page = lazy(() => import('../../pages/maintenance/DisponibilidadMaquinaV2Page'));
@@ -175,6 +176,7 @@ export const router = createBrowserRouter([
               { path: "mantenimiento/pendientes", element: <LazyRoute element={PendientesPage} /> },
               { path: "mantenimiento/informe-turnos", element: <LazyRoute element={InformeTurnosPage} /> },
               { path: "mantenimiento/cambios", element: <LazyRoute element={CambioArticuloPage} /> },
+              { path: "mantenimiento/historial-cambios", element: <LazyRoute element={HistorialCambiosPage} /> },
               { path: "mantenimiento/informe-cambios", element: <LazyRoute element={InformeCambiosPage} /> },
               { path: "mantenimiento/kpi/disponibilidad", element: <LazyRoute element={DisponibilidadMaquinaPage} /> },
               { path: "mantenimiento/kpi/disponibilidad-v2", element: <LazyRoute element={DisponibilidadMaquinaV2Page} /> },

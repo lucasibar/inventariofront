@@ -92,7 +92,8 @@ const navGroups: NavGroup[] = [
             { to: '/mantenimiento/monitoreo', label: '📺 Monitoreo en Vivo' },
             { to: '/mantenimiento/registro', label: '📋 Registrar Novedades' },
             { to: '/mantenimiento/cambios', label: '🔄 Registrar Cambios' },
-            { to: '/mantenimiento/historial', label: '📜 Historial' },
+            { to: '/mantenimiento/historial', label: '📜 Historial Novedades' },
+            { to: '/mantenimiento/historial-cambios', label: '🔄 Historial de Cambios' },
             { to: '/mantenimiento/buscador', label: '🔍 Detalle' },
             { to: '/mantenimiento/pendientes', label: '📑 Pendientes' },
             {
