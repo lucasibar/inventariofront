@@ -4,6 +4,7 @@ import { useCreateRemitoEntradaMutation } from '../api/remitos-entrada.api';
 import { useGetDepotsQuery } from '../../deposito/api/deposito.api';
 import { useGetPartnersQuery } from '../../../config/partners/api/partners.api';
 import { useGetItemsQuery } from '../../materiales/api/items.api';
+import { CreateItemDialog } from '../../materiales/components/CreateItemDialog';
 import { Modal, Btn, Input, SearchSelect, Select, Badge } from '../../../../shared/ui';
 
 interface Line {
@@ -47,6 +48,20 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
     const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
     const [nroExterno, setNroExterno] = useState('');
     const [observaciones, setObservaciones] = useState('');
+
+    // ── Modal de nuevo material ──
+    const [isCreateItemOpen, setIsCreateItemOpen] = useState(false);
+    const [activeLineForCreate, setActiveLineForCreate] = useState<number | null>(null);
+    const [showAllMaterials, setShowAllMaterials] = useState(false);
+
+    // ── Materiales filtrados por proveedor seleccionado ──
+    const availableItems = useMemo(() => {
+        if (!supplierId || showAllMaterials) return items as any[];
+        const filtered = (items as any[]).filter(
+            (it: any) => it.supplierId === supplierId || it.supplier?.id === supplierId
+        );
+        return filtered;
+    }, [items, supplierId, showAllMaterials]);
 
     // ── Vinculación a OC ──
     const [mode, setMode] = useState<'libre' | 'oc'>('libre');
@@ -281,11 +296,32 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
 
                 {/* ── Líneas ── */}
                 <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                        <label style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase' }}>
-                            Líneas del Remito
-                        </label>
-                        <Btn small onClick={handleAddLineAndFocus}>+ Agregar línea</Btn>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <label style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase' }}>
+                                Líneas del Remito
+                            </label>
+                            {supplierId && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span style={{ fontSize: '11px', color: '#a5b4fc', background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)', padding: '2px 8px', borderRadius: '4px' }}>
+                                        {availableItems.length} materiales del proveedor
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowAllMaterials(!showAllMaterials)}
+                                        style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '11px', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}
+                                    >
+                                        {showAllMaterials ? 'Solo del proveedor' : 'Ver todos'}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <Btn small variant="secondary" onClick={() => { setActiveLineForCreate(lines.length - 1 >= 0 ? lines.length - 1 : 0); setIsCreateItemOpen(true); }}>
+                                ➕ Nuevo Material
+                            </Btn>
+                            <Btn small onClick={handleAddLineAndFocus}>+ Agregar línea</Btn>
+                        </div>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
@@ -310,13 +346,21 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
                                         <SearchSelect
                                             inputRef={el => { fieldRefs.current[`${i}-material`] = el; }}
                                             value={l.itemId}
-                                            onChange={v => updateLine(i, 'itemId', v)}
+                                            onChange={v => {
+                                                if (v === '__CREATE__') {
+                                                    setActiveLineForCreate(i);
+                                                    setIsCreateItemOpen(true);
+                                                    return;
+                                                }
+                                                updateLine(i, 'itemId', v);
+                                            }}
                                             onSelectNext={() => focusField(i, 'lotNumber')}
                                             options={[
                                                 { value: '', label: 'Seleccionar material...' },
-                                                ...(items as any[]).map(it => ({ value: it.id, label: `${it.codigoInterno} — ${it.descripcion}` }))
+                                                { value: '__CREATE__', label: '➕ Crear nuevo material...' },
+                                                ...(availableItems as any[]).map(it => ({ value: it.id, label: `${it.codigoInterno} — ${it.descripcion}` }))
                                             ]}
-                                            placeholder="Buscar material..."
+                                            placeholder={availableItems.length === 0 && supplierId ? 'Sin materiales para este proveedor' : 'Buscar material...'}
                                         />
                                     )}
                                 </div>
@@ -393,6 +437,23 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
                     </Btn>
                 </div>
             </div>
+
+            {isCreateItemOpen && (
+                <CreateItemDialog
+                    open={isCreateItemOpen}
+                    onClose={() => setIsCreateItemOpen(false)}
+                    initialSupplierId={supplierId || undefined}
+                    initialSupplierName={(suppliers as any[]).find(s => s.id === supplierId)?.name}
+                    depositoId={depositoId || undefined}
+                    onSuccess={(newItem: any) => {
+                        if (activeLineForCreate !== null && activeLineForCreate >= 0 && activeLineForCreate < lines.length) {
+                            updateLine(activeLineForCreate, 'itemId', newItem.id);
+                            focusField(activeLineForCreate, 'lotNumber');
+                        }
+                        setIsCreateItemOpen(false);
+                    }}
+                />
+            )}
         </Modal>
     );
 }

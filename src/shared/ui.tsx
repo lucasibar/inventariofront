@@ -386,6 +386,7 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
                     {filtered.map((o, i) => {
                         const isHighlighted = i === highlightedIndex;
                         const isSelected = o.value === value;
+                        const isCreateOption = o.value === '__CREATE__';
                         return (
                             <div
                                 key={o.value || `empty-${i}`}
@@ -395,10 +396,12 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
                                 }}
                                 style={{
                                     padding: '8px 12px', fontSize: '13px', cursor: 'pointer',
-                                    color: isSelected ? '#a5b4fc' : 'var(--text-secondary, #d1d5db)',
-                                    background: isHighlighted ? 'rgba(99, 102, 241, 0.2)' : (isSelected ? 'rgba(99, 102, 241, 0.1)' : 'transparent'),
+                                    color: isCreateOption ? '#818cf8' : (isSelected ? '#a5b4fc' : 'var(--text-secondary, #d1d5db)'),
+                                    fontWeight: isCreateOption ? 700 : (isSelected ? 600 : 400),
+                                    background: isHighlighted ? 'rgba(99, 102, 241, 0.2)' : (isSelected ? 'rgba(99, 102, 241, 0.1)' : (isCreateOption ? 'rgba(99, 102, 241, 0.06)' : 'transparent')),
                                     borderBottom: i === filtered.length - 1 ? 'none' : '1px solid var(--border-subtle, #1e2133)',
                                     transition: 'background 0.1s',
+                                    display: 'flex', alignItems: 'center', gap: '6px'
                                 }}
                                 onMouseEnter={() => setHighlightedIndex(i)}
                             >
