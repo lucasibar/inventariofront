@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 export function useIsMobile() {
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -186,22 +187,58 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
     const [search, setSearch] = useState('');
     const [open, setOpen] = useState(false);
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
+    const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number; placeAbove: boolean } | null>(null);
     const ref = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
 
     const selectedLabel = options.find(o => o.value === value)?.label || '';
 
+    const updatePosition = () => {
+        if (!ref.current) return;
+        const rect = ref.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        const dropdownMaxHeight = 220;
+        const placeAbove = spaceBelow < dropdownMaxHeight && spaceAbove > spaceBelow;
+
+        setDropdownPos({
+            top: placeAbove ? Math.max(8, rect.top - 4) : rect.bottom + 4,
+            left: Math.max(8, rect.left),
+            width: rect.width,
+            placeAbove,
+        });
+    };
+
     useEffect(() => {
+        if (!open) return;
+        updatePosition();
+
+        const handleScrollOrResize = () => {
+            updatePosition();
+        };
+
         const handleClickOutside = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
+            const target = e.target as Node;
+            if (
+                ref.current && !ref.current.contains(target) &&
+                listRef.current && !listRef.current.contains(target)
+            ) {
                 setOpen(false);
                 setSearch('');
             }
         };
+
+        window.addEventListener('scroll', handleScrollOrResize, true);
+        window.addEventListener('resize', handleScrollOrResize);
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+
+        return () => {
+            window.removeEventListener('scroll', handleScrollOrResize, true);
+            window.removeEventListener('resize', handleScrollOrResize);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [open]);
 
     const filtered = options.filter(o => {
         if (!search) return true;
@@ -283,7 +320,7 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
                     ref={inputRef}
                     value={open ? search : selectedLabel}
                     onChange={e => { setSearch(e.target.value); if (!open) setOpen(true); }}
-                    onFocus={() => setOpen(true)}
+                    onFocus={() => { setOpen(true); }}
                     onKeyDown={handleKeyDown}
                     placeholder={value ? selectedLabel : (placeholder || 'Buscar...')}
                     disabled={disabled}
@@ -294,20 +331,31 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
                     }}
                 />
                 {value && !open && (
-                    <button onClick={handleClear} style={{
+                    <button type="button" onClick={handleClear} style={{
                         background: 'none', border: 'none', color: 'var(--text-subtle, #6b7280)', cursor: 'pointer',
                         padding: '0 8px', fontSize: '14px', lineHeight: 1, display: 'flex', alignItems: 'center'
                     }}>✕</button>
                 )}
                 <span style={{ padding: '0 8px', color: 'var(--text-dimmed, #4b5563)', fontSize: '10px', pointerEvents: 'none' }}>▼</span>
             </div>
-            {open && (
-                <div ref={listRef} style={{
-                    position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '4px',
-                    background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-strong, #374151)', borderRadius: '8px',
-                    boxShadow: 'var(--shadow-dropdown, 0 10px 25px -5px rgba(0, 0, 0, 0.5))', zIndex: 200,
-                    maxHeight: '200px', overflowY: 'auto',
-                }}>
+            {open && dropdownPos && createPortal(
+                <div
+                    ref={listRef}
+                    style={{
+                        position: 'fixed',
+                        top: dropdownPos.placeAbove ? undefined : `${dropdownPos.top}px`,
+                        bottom: dropdownPos.placeAbove ? `${window.innerHeight - dropdownPos.top}px` : undefined,
+                        left: `${dropdownPos.left}px`,
+                        width: `${dropdownPos.width}px`,
+                        background: 'var(--bg-secondary, #1a1d2e)',
+                        border: '1px solid var(--border-strong, #374151)',
+                        borderRadius: '8px',
+                        boxShadow: 'var(--shadow-dropdown, 0 12px 30px 0 rgba(0, 0, 0, 0.75))',
+                        zIndex: 99999,
+                        maxHeight: '220px',
+                        overflowY: 'auto',
+                    }}
+                >
                     {filtered.length === 0 && (
                         <div style={{ padding: '12px', textAlign: 'center', color: 'var(--text-dimmed, #4b5563)', fontSize: '12px' }}>Sin resultados</div>
                     )}
@@ -317,7 +365,10 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
                         return (
                             <div
                                 key={o.value || `empty-${i}`}
-                                onClick={() => handleSelect(o.value)}
+                                onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    handleSelect(o.value);
+                                }}
                                 style={{
                                     padding: '8px 12px', fontSize: '13px', cursor: 'pointer',
                                     color: isSelected ? '#a5b4fc' : 'var(--text-secondary, #d1d5db)',
@@ -331,7 +382,8 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
                             </div>
                         );
                     })}
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
@@ -483,31 +535,64 @@ export function Table({ cols, rows, loading, minWidth = '100%', onRowClick }: {
 
 export function ActionMenu({ options }: { options: { label: string; onClick: () => void; icon?: string; color?: string }[] }) {
     const [open, setOpen] = useState(false);
+    const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
 
+    const updatePos = () => {
+        if (!buttonRef.current) return;
+        const rect = buttonRef.current.getBoundingClientRect();
+        setPos({
+            top: rect.bottom + 4,
+            right: window.innerWidth - rect.right,
+        });
+    };
+
     useEffect(() => {
+        if (!open) return;
+        updatePos();
+
+        const handleScrollOrResize = () => updatePos();
         const handleClickOutside = (e: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
+            const target = e.target as Node;
+            if (
+                buttonRef.current && !buttonRef.current.contains(target) &&
+                menuRef.current && !menuRef.current.contains(target)
+            ) {
+                setOpen(false);
+            }
         };
+
+        window.addEventListener('scroll', handleScrollOrResize, true);
+        window.addEventListener('resize', handleScrollOrResize);
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+
+        return () => {
+            window.removeEventListener('scroll', handleScrollOrResize, true);
+            window.removeEventListener('resize', handleScrollOrResize);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [open]);
 
     return (
-        <div ref={menuRef} style={{ position: 'relative' }}>
+        <div style={{ display: 'inline-block' }}>
             <button 
+                ref={buttonRef}
                 onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
                 style={{ background: 'var(--bg-action-trigger, rgba(255,255,255,0.05))', border: '1px solid var(--border-color, #2a2d3e)', borderRadius: '4px', cursor: 'pointer', padding: '4px 8px', color: 'var(--text-muted, #9ca3af)' }}
             >
                 •••
             </button>
-            {open && (
-                <div style={{
-                    position: 'absolute', right: 0, top: '100%', marginTop: '4px',
-                    background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-strong, #374151)', borderRadius: '8px',
-                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.4)', zIndex: 100, minWidth: '160px',
-                    overflow: 'hidden'
-                }}>
+            {open && pos && createPortal(
+                <div 
+                    ref={menuRef}
+                    style={{
+                        position: 'fixed', right: `${pos.right}px`, top: `${pos.top}px`,
+                        background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-strong, #374151)', borderRadius: '8px',
+                        boxShadow: '0 10px 25px -3px rgba(0, 0, 0, 0.6)', zIndex: 99999, minWidth: '160px',
+                        overflow: 'hidden'
+                    }}
+                >
                     {options.map((opt, i) => (
                         <div 
                             key={i} 
@@ -524,7 +609,8 @@ export function ActionMenu({ options }: { options: { label: string; onClick: () 
                         </div>
                     ))}
                     <style>{`.hoverable-option:hover { background: rgba(99, 102, 241, 0.1); }`}</style>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

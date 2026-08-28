@@ -145,10 +145,12 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
                 const partner = (suppliers as any[]).find(s => s.id === supplierId);
                 await createRemitoEntrada({
                     depositoId,
+                    depotId: depositoId,
                     supplierId: supplierId || undefined,
                     supplierName: partner?.name || undefined,
                     fecha,
-                    documentoNumero: nroExterno || undefined,
+                    numero: nroExterno?.trim() || undefined,
+                    documentoNumero: nroExterno?.trim() || undefined,
                     observaciones: observaciones || undefined,
                     lines: validLines.map(l => ({
                         itemId: l.itemId,
