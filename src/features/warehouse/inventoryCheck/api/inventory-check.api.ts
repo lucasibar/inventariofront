@@ -3,11 +3,11 @@ import { api } from '../../../../shared/api';
 export const inventoryCheckApi = api.injectEndpoints({
     endpoints: (builder) => ({
         getInventoryChecks: builder.query<any[], {
-            depositoId?: string; status?: string; desde?: string; hasta?: string;
+            depositoId?: string; categoryId?: string; status?: string; desde?: string; hasta?: string;
         }>({
             query: (f = {}) => {
                 const p = new URLSearchParams();
-                Object.entries(f).forEach(([k, v]) => { if (v) p.set(k, String(v)) });
+                Object.entries(f).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') p.set(k, String(v)) });
                 return `inventory-checks?${p.toString()}`;
             },
             providesTags: ['InventoryChecks'],
@@ -16,13 +16,14 @@ export const inventoryCheckApi = api.injectEndpoints({
             query: (id) => `inventory-checks/${id}`,
             providesTags: (_result, _error, id) => [{ type: 'InventoryChecks', id }],
         }),
-        createInventoryCheck: builder.mutation<any, { depositoId: string }>({
+        createInventoryCheck: builder.mutation<any, { depositoId: string; categoryId?: string }>({
             query: (body) => ({ url: 'inventory-checks', method: 'POST', body }),
             invalidatesTags: ['InventoryChecks'],
         }),
         updateCheckItem: builder.mutation<any, {
             checkId: string; itemId: string;
             tag: string; observacion?: string | null; notaLibre?: string | null;
+            realQtyPrincipal?: number | null; realQtySecundaria?: number | null;
         }>({
             query: ({ checkId, itemId, ...body }) => ({
                 url: `inventory-checks/${checkId}/items/${itemId}`,

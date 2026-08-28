@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useGetPurchaseOrdersQuery, useGenerateRemitoFromPOMutation } from '../../../purchasing/purchase-orders/api/purchase-orders.api';
 import { useCreateRemitoEntradaMutation } from '../api/remitos-entrada.api';
 import { useGetDepotsQuery } from '../../deposito/api/deposito.api';
@@ -29,6 +29,18 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
     const { data: suppliers = [] } = useGetPartnersQuery({ type: 'SUPPLIER' });
     const { data: items = [] } = useGetItemsQuery({});
 
+    const fieldRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+
+    const focusField = (index: number, field: string) => {
+        setTimeout(() => {
+            const el = fieldRefs.current[`${index}-${field}`];
+            if (el) {
+                el.focus();
+                if (el.select) el.select();
+            }
+        }, 40);
+    };
+
     // ── Datos del remito ──
     const [depositoId, setDepositoId] = useState('');
     const [supplierId, setSupplierId] = useState('');
@@ -56,6 +68,14 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
 
     const [createRemitoEntrada] = useCreateRemitoEntradaMutation();
     const [generateRemitoFromPO] = useGenerateRemitoFromPOMutation();
+
+    const handleAddLineAndFocus = () => {
+        setLines(prev => {
+            const nextIndex = prev.length;
+            setTimeout(() => focusField(nextIndex, 'material'), 60);
+            return [...prev, { itemId: '', itemDesc: '', itemCode: '', lotNumber: '', qtyPrincipal: '', qtySecundaria: '', observaciones: '' }];
+        });
+    };
 
     // ── Cuando se selecciona una OC, pre-llenar las líneas ──
     const selectedOC = useMemo(() =>
@@ -96,9 +116,6 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
         ]);
     };
 
-    const addLine = () => {
-        setLines(prev => [...prev, { itemId: '', itemDesc: '', itemCode: '', lotNumber: '', qtyPrincipal: '', qtySecundaria: '', observaciones: '' }]);
-    };
 
     const removeLine = (i: number) => {
         setLines(prev => prev.filter((_, j) => j !== i));
@@ -268,7 +285,7 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
                         <label style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase' }}>
                             Líneas del Remito
                         </label>
-                        <Btn small onClick={addLine}>+ Agregar línea</Btn>
+                        <Btn small onClick={handleAddLineAndFocus}>+ Agregar línea</Btn>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
@@ -291,8 +308,10 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
                                         </div>
                                     ) : (
                                         <SearchSelect
+                                            inputRef={el => { fieldRefs.current[`${i}-material`] = el; }}
                                             value={l.itemId}
                                             onChange={v => updateLine(i, 'itemId', v)}
+                                            onSelectNext={() => focusField(i, 'lotNumber')}
                                             options={[
                                                 { value: '', label: 'Seleccionar material...' },
                                                 ...(items as any[]).map(it => ({ value: it.id, label: `${it.codigoInterno} — ${it.descripcion}` }))
@@ -302,27 +321,59 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
                                     )}
                                 </div>
                                 <Input
+                                    inputRef={el => { fieldRefs.current[`${i}-lotNumber`] = el; }}
                                     label="Partida / Lote"
                                     value={l.lotNumber}
                                     onChange={v => updateLine(i, 'lotNumber', v)}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            focusField(i, 'qtyPrincipal');
+                                        }
+                                    }}
                                     placeholder="Ej: LOTE-001"
                                 />
                                 <Input
+                                    inputRef={el => { fieldRefs.current[`${i}-qtyPrincipal`] = el; }}
                                     label="Kg Recibidos *"
                                     type="number"
                                     value={l.qtyPrincipal}
                                     onChange={v => updateLine(i, 'qtyPrincipal', v)}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            focusField(i, 'qtySecundaria');
+                                        }
+                                    }}
                                 />
                                 <Input
+                                    inputRef={el => { fieldRefs.current[`${i}-qtySecundaria`] = el; }}
                                     label="Unidades (Opcional)"
                                     type="number"
                                     value={l.qtySecundaria}
                                     onChange={v => updateLine(i, 'qtySecundaria', v)}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            focusField(i, 'observaciones');
+                                        }
+                                    }}
                                 />
                                 <Input
+                                    inputRef={el => { fieldRefs.current[`${i}-observaciones`] = el; }}
                                     label="Observaciones"
                                     value={l.observaciones}
                                     onChange={v => updateLine(i, 'observaciones', v)}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            if (i === lines.length - 1) {
+                                                handleAddLineAndFocus();
+                                            } else {
+                                                focusField(i + 1, 'material');
+                                            }
+                                        }
+                                    }}
                                     placeholder="Notas de esta línea..."
                                 />
                                 <Btn small variant="danger" onClick={() => removeLine(i)} style={{ alignSelf: 'flex-end' }}>✕</Btn>

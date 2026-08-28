@@ -24,6 +24,7 @@ const WorkspaceTasksPage = lazy(() => import('../../pages/warehouse/WorkspaceTas
 const ReporteConsumoDetalladoPage = lazy(() => import('../../pages/warehouse/ReporteConsumoDetalladoPage'));
 const DashboardDepositoPage = lazy(() => import('../../pages/warehouse/DashboardDepositoPage'));
 const ChequeoInventarioPage = lazy(() => import('../../pages/warehouse/ChequeoInventarioPage'));
+const ChequeoCategoriaPage = lazy(() => import('../../pages/warehouse/ChequeoCategoriaPage'));
 const ReporteChequeoPage = lazy(() => import('../../pages/warehouse/ReporteChequeoPage'));
 const InformesInventariadoPage = lazy(() => import('../../pages/warehouse/InformesInventariadoPage'));
 
@@ -153,6 +154,7 @@ export const router = createBrowserRouter([
             children: [
               { path: "admin/movements", element: <LazyRoute element={AdminMovementsPage} /> },
               { path: "chequeo-inventario", element: <LazyRoute element={ChequeoInventarioPage} /> },
+              { path: "chequeo-categoria", element: <LazyRoute element={ChequeoCategoriaPage} /> },
               { path: "reporte-chequeo", element: <LazyRoute element={ReporteChequeoPage} /> },
               { path: "deposito/informes", element: <LazyRoute element={InformesInventariadoPage} /> },
             ]
@@ -162,6 +164,7 @@ export const router = createBrowserRouter([
             element: <RoleGuard allowedRoles={['ADMIN', 'SUPERVISOR', 'OPERARIO']} />,
             children: [
               { path: "deposito/dashboard", element: <LazyRoute element={DashboardDepositoPage} /> },
+              { path: "chequeo-categoria", element: <LazyRoute element={ChequeoCategoriaPage} /> },
               { path: "remitos-salida", element: <LazyRoute element={RemitosSalidaPage} /> },
               { path: "reporte-consumo-detallado", element: <LazyRoute element={ReporteConsumoDetalladoPage} /> },
               { path: "stock", element: <LazyRoute element={StockPage} /> },

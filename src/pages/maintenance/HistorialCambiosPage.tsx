@@ -83,7 +83,7 @@ export default function HistorialCambiosPage() {
     const [visibleCount, setVisibleCount] = useState(50);
 
     // Queries
-    const { data: plants = [], isLoading: loadingPlants } = useGetPlantsQuery();
+    const { data: plants = [] } = useGetPlantsQuery();
     const { data: changes = [], isLoading: loadingChanges, isFetching, refetch } = useGetMachineChangesQuery({
         plantId: appliedFilters.plantId || undefined,
         machineNumber: appliedFilters.machineNumber || undefined,

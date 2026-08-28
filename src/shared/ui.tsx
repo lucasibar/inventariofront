@@ -116,9 +116,12 @@ export function Btn({ children, onClick, variant = 'primary', small, disabled, s
     );
 }
 
-export function Input({ label, value, onChange, type = 'text', placeholder, style, disabled }: {
+export function Input({ label, value, onChange, type = 'text', placeholder, style, disabled, onKeyDown, inputRef, inputProps }: {
     label?: string; value: string; onChange: (v: string) => void;
     type?: string; placeholder?: string; style?: React.CSSProperties; disabled?: boolean;
+    onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+    inputRef?: React.Ref<HTMLInputElement>;
+    inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
 }) {
     const [showPassword, setShowPassword] = useState(false);
     const isPassword = type === 'password';
@@ -129,11 +132,15 @@ export function Input({ label, value, onChange, type = 'text', placeholder, styl
             {label && <label style={{ display: 'block', color: 'var(--text-muted, #9ca3af)', fontSize: '12px', marginBottom: '4px' }}>{label}</label>}
             <div style={{ position: 'relative' }}>
                 <input
+                    ref={inputRef}
                     type={currentType} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} disabled={disabled}
+                    onKeyDown={onKeyDown}
+                    {...inputProps}
                     style={{
                         width: '100%', background: disabled ? 'var(--bg-secondary, #1a1d2e)' : 'var(--bg-primary, #0f1117)', border: '1px solid var(--border-strong, #374151)', borderRadius: '8px',
                         padding: '8px 10px', paddingRight: isPassword ? '35px' : '10px', color: disabled ? 'var(--text-dimmed, #4b5563)' : 'var(--text-primary, #f3f4f6)', fontSize: '13px', outline: 'none', boxSizing: 'border-box',
                         cursor: disabled ? 'not-allowed' : 'text', opacity: disabled ? 0.6 : 1,
+                        ...inputProps?.style,
                     }}
                 />
                 {isPassword && (
@@ -179,17 +186,19 @@ export function Select({ label, value, onChange, options, style, disabled }: {
     );
 }
 
-export function SearchSelect({ label, value, onChange, options, style, disabled, placeholder }: {
+export function SearchSelect({ label, value, onChange, options, style, disabled, placeholder, onSelectNext, inputRef: externalInputRef }: {
     label?: string; value: string; onChange: (v: string) => void;
     options: { value: string; label: string }[]; style?: React.CSSProperties;
     disabled?: boolean; placeholder?: string;
+    onSelectNext?: () => void;
+    inputRef?: React.Ref<HTMLInputElement>;
 }) {
     const [search, setSearch] = useState('');
     const [open, setOpen] = useState(false);
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
     const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number; placeAbove: boolean } | null>(null);
     const ref = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const internalInputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
 
     const selectedLabel = options.find(o => o.value === value)?.label || '';
@@ -267,6 +276,9 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
         onChange(val);
         setOpen(false);
         setSearch('');
+        if (onSelectNext) {
+            setTimeout(onSelectNext, 40);
+        }
     };
 
     const handleClear = (e: React.MouseEvent) => {
@@ -278,9 +290,17 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (!open) {
-            if (e.key === 'ArrowDown' || e.key === 'Enter') {
+            if (e.key === 'ArrowDown') {
                 setOpen(true);
                 e.preventDefault();
+            } else if (e.key === 'Enter') {
+                if (value && onSelectNext) {
+                    e.preventDefault();
+                    onSelectNext();
+                } else {
+                    setOpen(true);
+                    e.preventDefault();
+                }
             }
             return;
         }
@@ -308,7 +328,7 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
         <div style={{ position: 'relative', ...style }} ref={ref}>
             {label && <label style={{ display: 'block', color: 'var(--text-muted, #9ca3af)', fontSize: '12px', marginBottom: '4px' }}>{label}</label>}
             <div
-                onClick={() => { if (!disabled) { setOpen(true); setTimeout(() => inputRef.current?.focus(), 50); } }}
+                onClick={() => { if (!disabled) { setOpen(true); setTimeout(() => internalInputRef.current?.focus(), 50); } }}
                 style={{
                     width: '100%', background: 'var(--bg-primary, #0f1117)', border: `1px solid ${open ? '#6366f1' : 'var(--border-strong, #374151)'}`, borderRadius: '8px',
                     padding: '0', color: 'var(--text-primary, #f3f4f6)', fontSize: '13px', boxSizing: 'border-box',
@@ -317,7 +337,11 @@ export function SearchSelect({ label, value, onChange, options, style, disabled,
                 }}
             >
                 <input
-                    ref={inputRef}
+                    ref={(node) => {
+                        (internalInputRef as any).current = node;
+                        if (typeof externalInputRef === 'function') externalInputRef(node);
+                        else if (externalInputRef) (externalInputRef as any).current = node;
+                    }}
                     value={open ? search : selectedLabel}
                     onChange={e => { setSearch(e.target.value); if (!open) setOpen(true); }}
                     onFocus={() => { setOpen(true); }}

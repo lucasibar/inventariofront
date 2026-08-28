@@ -6,13 +6,16 @@ import {
 } from '../../features/warehouse/inventoryCheck/api/inventory-check.api';
 import { Card, Btn, Spinner, useIsMobile } from '../../shared/ui';
 
-type Tag = 'PENDIENTE' | 'CORRECTO' | 'A_CHEQUEAR' | 'POSICION_INCORRECTA';
+type Tag = 'PENDIENTE' | 'CORRECTO' | 'FALTA' | 'SOBRA' | 'CANTIDAD_INCORRECTA' | 'A_CHEQUEAR' | 'POSICION_INCORRECTA';
 
 const TAG_CONFIG: Record<Tag, { label: string; icon: string; color: string; bg: string; border: string }> = {
     PENDIENTE: { label: 'Pendiente', icon: '⏳', color: 'var(--text-muted, #9ca3af)', bg: 'rgba(156,163,175,0.1)', border: 'rgba(156,163,175,0.25)' },
     CORRECTO: { label: 'Correcto', icon: '✅', color: '#34d399', bg: 'rgba(52,211,153,0.1)', border: 'rgba(52,211,153,0.3)' },
+    FALTA: { label: 'Falta Cant.', icon: '📉', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.3)' },
+    SOBRA: { label: 'Sobra Cant.', icon: '📈', color: '#60a5fa', bg: 'rgba(96,165,250,0.1)', border: 'rgba(96,165,250,0.3)' },
+    CANTIDAD_INCORRECTA: { label: 'Cant. Incorrecta', icon: '⚠️', color: '#f97316', bg: 'rgba(249,115,22,0.1)', border: 'rgba(249,115,22,0.3)' },
     A_CHEQUEAR: { label: 'A Chequear', icon: '⚠️', color: '#fbbf24', bg: 'rgba(251,191,36,0.1)', border: 'rgba(251,191,36,0.3)' },
-    POSICION_INCORRECTA: { label: 'Pos. Incorrecta', icon: '❌', color: '#f87171', bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.3)' },
+    POSICION_INCORRECTA: { label: 'Pos. Incorrecta / No Está', icon: '❌', color: '#f87171', bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.3)' },
 };
 
 export default function ReporteChequeoPage() {
