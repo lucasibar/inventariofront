@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import * as XLSX from 'xlsx';
 import { useGetItemsQuery, useDeleteItemMutation } from '../../features/warehouse/materiales/api/items.api';
 import { PageHeader, Card, Btn, Table, Badge, SearchBar, Spinner } from '../../shared/ui';
 import { CreateItemDialog } from '../../features/warehouse/materiales/components/CreateItemDialog';
@@ -74,12 +75,66 @@ export default function MaterialesPage() {
         }
     };
 
+    const handleExportExcel = () => {
+        const dataToExport = filteredItems.length > 0 ? filteredItems : items;
+        if (!dataToExport || dataToExport.length === 0) {
+            alert('No hay materiales para exportar.');
+            return;
+        }
+
+        const rows = dataToExport.map((it: any) => ({
+            'Código': it.codigoInterno || '',
+            'Descripción': it.descripcion || '',
+            'Tono': it.tono ? (TONO_LABELS[it.tono] ? TONO_LABELS[it.tono].replace(/^[^\s]+\s/, '') : it.tono) : '',
+            'Categoría': it.category?.nombre || it.categoria || '',
+            'Depósito': it.depot?.nombre || it.category?.depot?.nombre || '',
+            'Proveedor': it.supplier?.name || '',
+            'CUIT Proveedor': it.supplier?.taxId || '',
+            'Rotación': it.rotacion || '',
+            'Stock Mínimo': it.stockMinimo != null ? Number(it.stockMinimo) : '',
+            'Stock Máximo': it.stockMaximo != null ? Number(it.stockMaximo) : '',
+            'Tipo de Embalaje': it.boxType?.nombre || '',
+            'Kg por Caja': it.kilosPorCaja != null ? Number(it.kilosPorCaja) : '',
+            'Unidad Principal': it.unidadPrincipal || '',
+            'Unidad Secundaria': it.unidadSecundaria || '',
+            'Lead Time (Días)': it.leadTime != null ? Number(it.leadTime) : '',
+            'Estado': it.activo === false ? 'Inactivo' : 'Activo',
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(rows);
+
+        const colKeys = Object.keys(rows[0] || {});
+        worksheet['!cols'] = colKeys.map(key => {
+            const maxLen = Math.max(
+                key.length,
+                ...rows.map((row: any) => String(row[key] ?? '').length)
+            );
+            return { wch: Math.min(Math.max(maxLen + 3, 10), 45) };
+        });
+
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Materiales');
+
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        XLSX.writeFile(workbook, `materiales_${dateStr}.xlsx`);
+    };
+
     return (
         <div style={{ padding: '24px' }}>
             <PageHeader 
                 title="Configuración de Materiales" 
                 subtitle="Catálogo maestro de artículos. Hacé clic en cualquier material para ver y editar toda su información."
             >
+                <Btn 
+                    variant="secondary" 
+                    onClick={handleExportExcel} 
+                    disabled={isLoading || items.length === 0} 
+                    title="Descargar catálogo de materiales en formato Excel"
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                    📥 Exportar Excel
+                </Btn>
                 <Btn onClick={handleCreateNew}>+ Nuevo Material</Btn>
             </PageHeader>
 
