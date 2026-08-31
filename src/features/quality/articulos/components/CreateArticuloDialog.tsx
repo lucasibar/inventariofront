@@ -6,20 +6,20 @@ import {
 } from '@mui/material';
 import {
     useCreateArticuloMutation, useUpdateArticuloMutation,
-    useGetArticuloCategoriasQuery, useCreateArticuloCategoriaMutation,
+    useGetArticuloCategoriasQuery,
 } from '../api/articulos.api';
 import { useGetItemsQuery } from '../../../warehouse/materiales/api/items.api';
 import { useGetMachineTypesQuery } from '../../../../entities/maintenance/api/maintenance.api';
 
 const ROLES = [
-    { value: 'COLOR_BASE', label: 'Base (Color)' },
-    { value: 'LOGO', label: 'Logo' },
-    { value: 'DETALLE_MEDIA', label: 'Detalle de Media' },
-    { value: 'COLOR_TALLE', label: 'Color de Talle' },
-    { value: 'TRIANGULO', label: 'Triángulo' },
-    { value: 'TALON_PUNTERA', label: 'Talón y Puntera' },
-    { value: 'GOMA', label: 'Goma (Puño/Elástico)' },
-    { value: 'LYCRA', label: 'Lycra (Elastano)' },
+    { value: 'COLOR_BASE', label: '🎨 Base (Color)' },
+    { value: 'LOGO', label: '🏷️ Logo' },
+    { value: 'DETALLE_MEDIA', label: '🧷 Detalle de Media' },
+    { value: 'COLOR_TALLE', label: '🎨 Color de Talle' },
+    { value: 'TRIANGULO', label: '🔺 Triángulo' },
+    { value: 'TALON_PUNTERA', label: '👟 Talón y Puntera' },
+    { value: 'GOMA', label: '⭕ Goma (Puño/Elástico)' },
+    { value: 'LYCRA', label: '🧵 Lycra (Elastano)' },
 ];
 
 const EMPTY_FORM = {
@@ -39,6 +39,8 @@ const EMPTY_FORM = {
 interface RefEntry {
     id?: string;
     rol: string;
+    colorNombre?: string | null;
+    grupo: number;
     itemId: string;
     orden: number;
     esPreferenciaActual: boolean;
@@ -61,15 +63,12 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
     const isLoading = isCreating || isUpdating;
 
     const { data: categorias = [] } = useGetArticuloCategoriasQuery();
-    const [createCategoria] = useCreateArticuloCategoriaMutation();
     const { data: items = [] } = useGetItemsQuery({});
     const { data: machineTypes = [] } = useGetMachineTypesQuery();
 
     const [form, setForm] = useState({ ...EMPTY_FORM });
     const [itemRefs, setItemRefs] = useState<RefEntry[]>([]);
     const [machineTypeIds, setMachineTypeIds] = useState<string[]>([]);
-    const [newCatName, setNewCatName] = useState('');
-    const [showNewCat, setShowNewCat] = useState(false);
     const [error, setError] = useState('');
 
     useEffect(() => {
@@ -91,12 +90,14 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
             const refs: RefEntry[] = (editTarget.itemRefs || []).map((r: any) => ({
                 id: r.id,
                 rol: r.rol,
+                colorNombre: r.colorNombre || '',
+                grupo: r.grupo || 1,
                 itemId: r.itemId,
-                orden: r.orden,
+                orden: r.orden || 1,
                 esPreferenciaActual: r.esPreferenciaActual ?? (r.orden === 1),
                 consumoGramos: r.consumoGramos,
                 desperdicio: r.desperdicio,
-                activo: r.activo,
+                activo: r.activo ?? true,
             }));
             setItemRefs(refs);
             setMachineTypeIds((editTarget.machineTypes || []).map((mt: any) => mt.id));
@@ -106,53 +107,84 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
             setMachineTypeIds([]);
         }
         setError('');
-        setShowNewCat(false);
-        setNewCatName('');
     }, [open, editTarget]);
 
     const handleFieldChange = (field: string, value: string) => {
         setForm(prev => ({ ...prev, [field]: value }));
     };
 
-    // ─── Item Refs helpers ─────────────────────────────────────────────────────
-    const getRefsForRol = (rol: string) => itemRefs.filter(r => r.rol === rol);
+    // ─── Item Refs Multicolor helpers ──────────────────────────────────────────
+    const getGruposForRol = (rol: string) => {
+        const refs = itemRefs.filter(r => r.rol === rol);
+        const grupoNums = Array.from(new Set(refs.map(r => r.grupo || 1))).sort((a, b) => a - b);
+        if (grupoNums.length === 0) return [1];
+        return grupoNums;
+    };
 
-    const addRef = (rol: string) => {
-        const existing = getRefsForRol(rol);
-        if (existing.length >= 3) return;
-        const isFirst = existing.length === 0;
+    const getRefsForRolAndGrupo = (rol: string, grupo: number) => {
+        return itemRefs.filter(r => r.rol === rol && (r.grupo || 1) === grupo);
+    };
+
+    const addColorGrupo = (rol: string) => {
+        const grupos = getGruposForRol(rol);
+        const nextGrupo = Math.max(...grupos, 0) + 1;
         setItemRefs(prev => [...prev, {
             rol,
+            colorNombre: '',
+            grupo: nextGrupo,
             itemId: '',
-            orden: existing.length + 1,
-            esPreferenciaActual: isFirst,
+            orden: 1,
+            esPreferenciaActual: true,
             activo: true,
         }]);
     };
 
-    const setPreferenciaActual = (rol: string, orden: number) => {
+    const addOptionToGrupo = (rol: string, grupo: number) => {
+        const existing = getRefsForRolAndGrupo(rol, grupo);
+        if (existing.length >= 3) return;
+        const colorNom = existing[0]?.colorNombre || '';
+        setItemRefs(prev => [...prev, {
+            rol,
+            colorNombre: colorNom,
+            grupo,
+            itemId: '',
+            orden: existing.length + 1,
+            esPreferenciaActual: existing.length === 0,
+            activo: true,
+        }]);
+    };
+
+    const updateColorNombre = (rol: string, grupo: number, colorNombre: string) => {
         setItemRefs(prev => prev.map(r =>
-            r.rol === rol ? { ...r, esPreferenciaActual: r.orden === orden } : r
+            r.rol === rol && (r.grupo || 1) === grupo ? { ...r, colorNombre } : r
         ));
     };
 
-    const updateRef = (rol: string, orden: number, field: string, value: any) => {
+    const setPreferenciaActualInGrupo = (rol: string, grupo: number, orden: number) => {
         setItemRefs(prev => prev.map(r =>
-            r.rol === rol && r.orden === orden ? { ...r, [field]: value } : r
+            r.rol === rol && (r.grupo || 1) === grupo
+                ? { ...r, esPreferenciaActual: r.orden === orden }
+                : r
         ));
     };
 
-    const removeRef = (rol: string, orden: number) => {
+    const updateRef = (rol: string, grupo: number, orden: number, field: string, value: any) => {
+        setItemRefs(prev => prev.map(r =>
+            r.rol === rol && (r.grupo || 1) === grupo && r.orden === orden ? { ...r, [field]: value } : r
+        ));
+    };
+
+    const removeRef = (rol: string, grupo: number, orden: number) => {
         setItemRefs(prev => {
-            const filtered = prev.filter(r => !(r.rol === rol && r.orden === orden));
+            const filtered = prev.filter(r => !(r.rol === rol && (r.grupo || 1) === grupo && r.orden === orden));
             let idx = 1;
             return filtered.map(r => {
-                if (r.rol === rol) {
+                if (r.rol === rol && (r.grupo || 1) === grupo) {
                     const newOrd = idx++;
                     return {
                         ...r,
                         orden: newOrd,
-                        esPreferenciaActual: r.esPreferenciaActual || (newOrd === 1 && !filtered.some(f => f.rol === rol && f.esPreferenciaActual)),
+                        esPreferenciaActual: r.esPreferenciaActual || (newOrd === 1 && !filtered.some(f => f.rol === rol && (f.grupo || 1) === grupo && f.esPreferenciaActual)),
                     };
                 }
                 return r;
@@ -165,19 +197,6 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
         setMachineTypeIds(prev =>
             prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
         );
-    };
-
-    // ─── New category ──────────────────────────────────────────────────────────
-    const handleCreateCategoria = async () => {
-        if (!newCatName.trim()) return;
-        try {
-            const created = await createCategoria({ nombre: newCatName.trim() }).unwrap();
-            setForm(prev => ({ ...prev, categoriaId: created.id }));
-            setNewCatName('');
-            setShowNewCat(false);
-        } catch {
-            alert('Error al crear categoría');
-        }
     };
 
     // ─── Submit ────────────────────────────────────────────────────────────────
@@ -250,109 +269,194 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
                 {isEdit ? '✏️ Editar Artículo' : '➕ Nuevo Artículo'}
             </DialogTitle>
 
-            <DialogContent sx={{ pt: 3, overflowY: 'auto' }}>
-                {/* ── Sección 1: Datos principales ── */}
-                {sectionTitle('📋 Datos Principales')}
-                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                    <TextField label="Código *" value={form.codigo} onChange={e => handleFieldChange('codigo', e.target.value)} sx={fieldStyle} size="small" />
-                    <TextField label="Descripción *" value={form.descripcion} onChange={e => handleFieldChange('descripcion', e.target.value)} sx={fieldStyle} size="small" />
-                    <Box>
-                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                            <TextField
-                                select label="Categoría" value={form.categoriaId}
-                                onChange={e => handleFieldChange('categoriaId', e.target.value)}
-                                sx={{ ...fieldStyle, flex: 1 }} size="small"
-                            >
-                                <MenuItem value=""><em>Sin categoría</em></MenuItem>
-                                {categorias.map((c: any) => <MenuItem key={c.id} value={c.id}>{c.nombre}</MenuItem>)}
-                            </TextField>
-                            <Button onClick={() => setShowNewCat(v => !v)} size="small" sx={{ color: '#6366f1', minWidth: 'auto', mt: 0.5 }}>
-                                + Nueva
-                            </Button>
-                        </Box>
-                        {showNewCat && (
-                            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                                <TextField size="small" placeholder="Nombre de categoría" value={newCatName} onChange={e => setNewCatName(e.target.value)} sx={{ ...fieldStyle, mb: 0, flex: 1 }} />
-                                <Button onClick={handleCreateCategoria} size="small" variant="contained" sx={{ background: '#4f46e5', height: '40px' }}>Crear</Button>
-                            </Box>
-                        )}
-                    </Box>
-                    <TextField label="SSN" value={form.ssn} onChange={e => handleFieldChange('ssn', e.target.value)} sx={fieldStyle} size="small" />
-                    <TextField label="IM" value={form.im} onChange={e => handleFieldChange('im', e.target.value)} sx={fieldStyle} size="small" />
-                    <TextField label="Talle" value={form.talle} onChange={e => handleFieldChange('talle', e.target.value)} sx={fieldStyle} size="small" placeholder="Ej: 36-40, T1" />
-                    <TextField label="Talle de Media" value={form.talleDMedia} onChange={e => handleFieldChange('talleDMedia', e.target.value)} sx={fieldStyle} size="small" />
-                    <TextField label="Working Number" value={form.workingNumber} onChange={e => handleFieldChange('workingNumber', e.target.value)} sx={fieldStyle} size="small" />
-                    <TextField label="% Desperdicio" type="number" value={form.desperdicio} onChange={e => handleFieldChange('desperdicio', e.target.value)} sx={fieldStyle} size="small" placeholder="Ej: 5" />
+            <DialogContent sx={{ py: 2.5 }}>
+                {/* ── Sección 1: Datos Principales ── */}
+                {sectionTitle('📋 Datos Generales')}
+
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 1.5 }}>
+                    <TextField
+                        size="small"
+                        label="Código *"
+                        value={form.codigo}
+                        onChange={e => handleFieldChange('codigo', e.target.value)}
+                        sx={fieldStyle}
+                    />
+                    <TextField
+                        size="small"
+                        label="Descripción *"
+                        value={form.descripcion}
+                        onChange={e => handleFieldChange('descripcion', e.target.value)}
+                        sx={fieldStyle}
+                    />
                 </Box>
-                <TextField
-                    label="Programas" multiline rows={2} fullWidth
-                    value={form.programas}
-                    onChange={e => handleFieldChange('programas', e.target.value)}
-                    sx={fieldStyle} size="small"
-                    placeholder="Escribí las referencias de programas asociados..."
-                />
-                <TextField
-                    label="Observación" multiline rows={2} fullWidth
-                    value={form.observacion}
-                    onChange={e => handleFieldChange('observacion', e.target.value)}
-                    sx={fieldStyle} size="small"
-                />
+
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 1.5 }}>
+                    <TextField
+                        select
+                        size="small"
+                        label="Categoría"
+                        value={form.categoriaId}
+                        onChange={e => handleFieldChange('categoriaId', e.target.value)}
+                        sx={fieldStyle}
+                    >
+                        <MenuItem value=""><em>Sin Categoría</em></MenuItem>
+                        {categorias.map(c => (
+                            <MenuItem key={c.id} value={c.id}>{c.nombre}</MenuItem>
+                        ))}
+                    </TextField>
+
+                    <TextField
+                        size="small"
+                        label="Working Number (W#)"
+                        value={form.workingNumber}
+                        onChange={e => handleFieldChange('workingNumber', e.target.value)}
+                        sx={fieldStyle}
+                    />
+
+                    <TextField
+                        size="small"
+                        label="IM #"
+                        value={form.im}
+                        onChange={e => handleFieldChange('im', e.target.value)}
+                        sx={fieldStyle}
+                    />
+                </Box>
+
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 1.5 }}>
+                    <TextField
+                        size="small"
+                        label="SSN / Temporada"
+                        value={form.ssn}
+                        onChange={e => handleFieldChange('ssn', e.target.value)}
+                        sx={fieldStyle}
+                    />
+                    <TextField
+                        size="small"
+                        label="Talle"
+                        value={form.talle}
+                        onChange={e => handleFieldChange('talle', e.target.value)}
+                        sx={fieldStyle}
+                    />
+                    <TextField
+                        size="small"
+                        label="Talle D.Media"
+                        value={form.talleDMedia}
+                        onChange={e => handleFieldChange('talleDMedia', e.target.value)}
+                        sx={fieldStyle}
+                    />
+                    <TextField
+                        size="small"
+                        label="Desperdicio %"
+                        type="number"
+                        value={form.desperdicio}
+                        onChange={e => handleFieldChange('desperdicio', e.target.value)}
+                        sx={fieldStyle}
+                    />
+                </Box>
+
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+                    <TextField
+                        size="small"
+                        label="Programas"
+                        value={form.programas}
+                        onChange={e => handleFieldChange('programas', e.target.value)}
+                        sx={fieldStyle}
+                    />
+                    <TextField
+                        size="small"
+                        label="Observaciones"
+                        value={form.observacion}
+                        onChange={e => handleFieldChange('observacion', e.target.value)}
+                        sx={fieldStyle}
+                    />
+                </Box>
 
                 <Divider sx={{ borderColor: '#2a2d3e', my: 2 }} />
 
-                {/* ── Sección 2: Insumos por rol ── */}
-                {sectionTitle('🧵 Insumos (Items por Rol)')}
+                {/* ── Sección 2: Insumos por rol (Multicolor y Opciones) ── */}
+                {sectionTitle('🧵 Insumos y Estructura BOM (Multicolor & Opciones)')}
                 <Typography sx={{ color: '#6b7280', fontSize: '12px', mb: 2 }}>
-                    Asigná las alternativas por rol. Tildá <b>⭐ En Uso</b> para marcar cuál es la preferencia activa actualmente.
+                    Podés definir <b>múltiples colores</b> por componente (ej: Base Blanco y Base Negro) y hasta <b>3 alternativas de proveedor</b> por cada color. Tildá <b>⭐ En Uso</b> para marcar la opción activa.
                 </Typography>
+
                 {ROLES.map(({ value: rol, label }) => {
-                    const refs = getRefsForRol(rol);
+                    const grupos = getGruposForRol(rol);
+
                     return (
-                        <Box key={rol} sx={{ mb: 2, p: 1.5, border: '1px solid #2a2d3e', borderRadius: '8px', background: '#0d1020' }}>
-                            <Typography sx={{ color: '#c4b5fd', fontWeight: 600, fontSize: '12px', mb: 1 }}>{label}</Typography>
-                            {refs.map((ref) => (
-                                <Box key={ref.orden} sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1, flexWrap: 'wrap' }}>
-                                    <Chip label={`#${ref.orden}`} size="small" sx={{ background: '#1a1d2e', color: '#6b7280', minWidth: '32px' }} />
-                                    <TextField
-                                        select size="small" sx={{ ...fieldStyle, mb: 0, flex: 1, minWidth: '220px' }}
-                                        value={ref.itemId}
-                                        onChange={e => updateRef(rol, ref.orden, 'itemId', e.target.value)}
-                                        label="Item"
-                                    >
-                                        <MenuItem value=""><em>Seleccionar...</em></MenuItem>
-                                        {items.map((it: any) => (
-                                            <MenuItem key={it.id} value={it.id}>
-                                                {it.codigoInterno} — {it.descripcion}
-                                            </MenuItem>
-                                        ))}
-                                    </TextField>
-                                    <FormControlLabel
-                                        control={
-                                            <Checkbox
-                                                checked={ref.esPreferenciaActual}
-                                                onChange={() => setPreferenciaActual(rol, ref.orden)}
-                                                size="small"
-                                                sx={{ color: '#10b981', '&.Mui-checked': { color: '#10b981' } }}
-                                            />
-                                        }
-                                        label={
-                                            <Typography sx={{ fontSize: '11px', color: ref.esPreferenciaActual ? '#34d399' : '#9ca3af', fontWeight: ref.esPreferenciaActual ? 700 : 400 }}>
-                                                ⭐ En Uso
-                                            </Typography>
-                                        }
-                                    />
-                                    <FormControlLabel
-                                        control={<Checkbox checked={ref.activo} onChange={e => updateRef(rol, ref.orden, 'activo', e.target.checked)} size="small" sx={{ color: '#6366f1', '&.Mui-checked': { color: '#6366f1' } }} />}
-                                        label={<Typography sx={{ fontSize: '12px', color: '#9ca3af' }}>Activo</Typography>}
-                                    />
-                                    <IconButton size="small" onClick={() => removeRef(rol, ref.orden)} sx={{ color: '#ef4444' }}>✕</IconButton>
-                                </Box>
-                            ))}
-                            {refs.length < 3 && (
-                                <Button size="small" onClick={() => addRef(rol)} sx={{ color: '#6366f1', fontSize: '12px', mt: 0.5 }}>
-                                    + Agregar alternativa
+                        <Box key={rol} sx={{ mb: 2.5, p: 2, border: '1px solid #2a2d3e', borderRadius: '10px', background: '#0d1020' }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                                <Typography sx={{ color: '#c4b5fd', fontWeight: 700, fontSize: '13px' }}>{label}</Typography>
+                                <Button size="small" onClick={() => addColorGrupo(rol)} sx={{ color: '#818cf8', fontSize: '11px', textTransform: 'none' }}>
+                                    + Agregar Otro Color
                                 </Button>
-                            )}
+                            </Box>
+
+                            {grupos.map((grupoNum, gIdx) => {
+                                const refs = getRefsForRolAndGrupo(rol, grupoNum);
+                                const colorNom = refs[0]?.colorNombre || '';
+
+                                return (
+                                    <Box key={grupoNum} sx={{ mb: 1.5, p: 1.5, border: '1px dashed #3730a3', borderRadius: '8px', background: '#13172b' }}>
+                                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1.5 }}>
+                                            <Chip label={`Color ${gIdx + 1}`} size="small" sx={{ background: '#312e81', color: '#c7d2fe', fontWeight: 600 }} />
+                                            <TextField
+                                                size="small"
+                                                placeholder="Nombre del Color (ej: BLANCO, NEGRO, ICE BLUE)"
+                                                value={colorNom}
+                                                onChange={e => updateColorNombre(rol, grupoNum, e.target.value)}
+                                                sx={{ ...fieldStyle, mb: 0, flex: 1 }}
+                                            />
+                                        </Box>
+
+                                        {refs.map((ref) => (
+                                            <Box key={ref.orden} sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1, flexWrap: 'wrap' }}>
+                                                <Chip label={`Opción ${ref.orden}`} size="small" sx={{ background: '#1a1d2e', color: '#94a3b8', minWidth: '70px' }} />
+                                                <TextField
+                                                    select
+                                                    size="small"
+                                                    sx={{ ...fieldStyle, mb: 0, flex: 1, minWidth: '220px' }}
+                                                    value={ref.itemId}
+                                                    onChange={e => updateRef(rol, grupoNum, ref.orden, 'itemId', e.target.value)}
+                                                    label="Hilado / Material"
+                                                >
+                                                    <MenuItem value=""><em>Seleccionar...</em></MenuItem>
+                                                    {items.map((it: any) => (
+                                                        <MenuItem key={it.id} value={it.id}>
+                                                            {it.codigoInterno} — {it.descripcion}
+                                                        </MenuItem>
+                                                    ))}
+                                                </TextField>
+                                                <FormControlLabel
+                                                    control={
+                                                        <Checkbox
+                                                            checked={ref.esPreferenciaActual}
+                                                            onChange={() => setPreferenciaActualInGrupo(rol, grupoNum, ref.orden)}
+                                                            size="small"
+                                                            sx={{ color: '#10b981', '&.Mui-checked': { color: '#10b981' } }}
+                                                        />
+                                                    }
+                                                    label={
+                                                        <Typography sx={{ fontSize: '11px', color: ref.esPreferenciaActual ? '#34d399' : '#9ca3af', fontWeight: ref.esPreferenciaActual ? 700 : 400 }}>
+                                                            ⭐ En Uso
+                                                        </Typography>
+                                                    }
+                                                />
+                                                <FormControlLabel
+                                                    control={<Checkbox checked={ref.activo} onChange={e => updateRef(rol, grupoNum, ref.orden, 'activo', e.target.checked)} size="small" sx={{ color: '#6366f1', '&.Mui-checked': { color: '#6366f1' } }} />}
+                                                    label={<Typography sx={{ fontSize: '12px', color: '#9ca3af' }}>Activo</Typography>}
+                                                />
+                                                <IconButton size="small" onClick={() => removeRef(rol, grupoNum, ref.orden)} sx={{ color: '#ef4444' }}>✕</IconButton>
+                                            </Box>
+                                        ))}
+
+                                        {refs.length < 3 && (
+                                            <Button size="small" onClick={() => addOptionToGrupo(rol, grupoNum)} sx={{ color: '#6366f1', fontSize: '11px', mt: 0.5, textTransform: 'none' }}>
+                                                + Agregar alternativa de proveedor para este color
+                                            </Button>
+                                        )}
+                                    </Box>
+                                );
+                            })}
                         </Box>
                     );
                 })}
