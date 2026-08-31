@@ -123,6 +123,7 @@ const navGroups: NavGroup[] = [
         icon: '🎯',
         items: [
             { to: '/calidad/articulos', label: '📋 Artículos' },
+            { to: '/calidad/ordenes-produccion', label: '📑 Órdenes de Producción' },
         ]
     },
     {
@@ -303,8 +304,8 @@ export default function Layout() {
                 '/mantenimiento/kpi/disponibilidad',
                 '/mantenimiento/kpi/disponibilidad-v2',
             ],
-            PRODUCCION: ['/produccion/dashboard', '/produccion/cargar'],
-            CALIDAD: ['/calidad/articulos'],
+            PRODUCCION: ['/produccion/dashboard', '/produccion/cargar', '/calidad/ordenes-produccion'],
+            CALIDAD: ['/calidad/articulos', '/calidad/ordenes-produccion'],
             VENTAS: ['/ventas/dashboard'],
             FINANZAS: ['/finanzas/dashboard'],
             RRHH: ['/rrhh/dashboard'],

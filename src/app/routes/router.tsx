@@ -55,6 +55,7 @@ const DisponibilidadMaquinaV2Page = lazy(() => import('../../pages/maintenance/D
 
 // Sector: Quality (Calidad)
 const ArticulosCalidadPage = lazy(() => import('../../pages/quality/ArticulosCalidadPage'));
+const OrdenesProduccionPage = lazy(() => import('../../pages/quality/OrdenesProduccionPage'));
 
 // Sector: Production
 const CargarProduccionPage = lazy(() => import('../../pages/production/CargarProduccionPage'));
@@ -193,6 +194,7 @@ export const router = createBrowserRouter([
               { path: "rrhh/dashboard", element: <LazyRoute element={RRHHDashboardPage} /> },
               { path: "compras/dashboard", element: <LazyRoute element={DashboardComprasPage} /> },
               { path: "calidad/articulos", element: <LazyRoute element={ArticulosCalidadPage} /> },
+              { path: "calidad/ordenes-produccion", element: <LazyRoute element={OrdenesProduccionPage} /> },
             ]
           },
           // Shared
