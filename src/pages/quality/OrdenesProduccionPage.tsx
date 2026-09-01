@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react';
-import { PageHeader, Card } from '../../shared/ui';
+import { PageHeader, Card, Btn } from '../../shared/ui';
 import { useParseOrdenesProduccionMutation } from '../../features/quality/ordenes-produccion/api/ordenesProduccion.api';
-import type { ProduccionParseResult } from '../../features/quality/ordenes-produccion/types/ordenesProduccion.types';
+import type { ProduccionParseResult, ArticuloProduccionSummary } from '../../features/quality/ordenes-produccion/types/ordenesProduccion.types';
+import { useGetArticulosQuery } from '../../features/quality/articulos/api/articulos.api';
+import { CreateArticuloDialog } from '../../features/quality/articulos/components/CreateArticuloDialog';
 import { PdfUploader } from '../../features/quality/ordenes-produccion/components/PdfUploader';
 import { ArticulosTejidoTab } from '../../features/quality/ordenes-produccion/components/ArticulosTejidoTab';
 import { MaquinasTab } from '../../features/quality/ordenes-produccion/components/MaquinasTab';
@@ -14,8 +16,14 @@ type TabType = 'articulos' | 'maquinas' | 'colores' | 'materiales' | 'repartidor
 
 export default function OrdenesProduccionPage() {
     const [parseOrdenes, { isLoading }] = useParseOrdenesProduccionMutation();
+    const { data: dbArticulos = [], refetch: refetchDbArticulos } = useGetArticulosQuery();
+
     const [result, setResult] = useState<ProduccionParseResult | null>(null);
     const [activeTab, setActiveTab] = useState<TabType>('articulos');
+
+    // Dialog state for editing article
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [editArticleTarget, setEditArticleTarget] = useState<any | null>(null);
 
     // Global Filters
     const [selectedFecha, setSelectedFecha] = useState<string>('ALL');
@@ -47,6 +55,47 @@ export default function OrdenesProduccionPage() {
         setSelectedTurno('ALL');
         setSelectedArea('ALL');
         setActiveTab('articulos');
+    };
+
+    // Open article editor from anywhere (alert, badge, list)
+    const handleOpenArticleEditor = (target: string | ArticuloProduccionSummary) => {
+        let code = '';
+        let desc = '';
+        let talle = '';
+
+        if (typeof target === 'string') {
+            code = target.trim();
+        } else {
+            code = target.codigo || target.codigoOriginalPdf || '';
+            desc = target.descripcion || '';
+            talle = target.talles?.[0] || '';
+        }
+
+        // Look up in loaded DB articles
+        const found = dbArticulos.find(
+            (a: any) =>
+                a.codigo?.toUpperCase() === code.toUpperCase() ||
+                (a.workingNumber && a.workingNumber.toUpperCase() === code.toUpperCase()),
+        );
+
+        if (found) {
+            setEditArticleTarget(found);
+        } else {
+            // New draft article
+            setEditArticleTarget({
+                codigo: code,
+                descripcion: desc,
+                talle: talle,
+            });
+        }
+
+        setIsEditDialogOpen(true);
+    };
+
+    const handleCloseArticleDialog = () => {
+        setIsEditDialogOpen(false);
+        setEditArticleTarget(null);
+        refetchDbArticulos();
     };
 
     // Filtered data based on Date, Shift, and Area
@@ -201,7 +250,15 @@ export default function OrdenesProduccionPage() {
                 <PageHeader
                     title="Planificación y Órdenes de Producción — Tejeduría"
                     subtitle="Carga masiva de órdenes diarias en PDF, desglose por máquina/color, explosión de hilados (BOM) y listas para repartidor y picking."
-                />
+                >
+                    <Btn
+                        variant="secondary"
+                        onClick={() => window.open('/calidad/articulos', '_blank')}
+                        style={{ fontSize: '12px' }}
+                    >
+                        📋 Ir al Catálogo de Artículos ↗️
+                    </Btn>
+                </PageHeader>
             </div>
 
             {/* Uploader Section */}
@@ -230,19 +287,30 @@ export default function OrdenesProduccionPage() {
                                 marginBottom: '20px',
                                 display: 'flex',
                                 alignItems: 'center',
+                                justifyContent: 'space-between',
+                                flexWrap: 'wrap',
                                 gap: '12px',
                             }}
                         >
-                            <span style={{ fontSize: '24px' }}>⚠️</span>
-                            <div style={{ flex: 1 }}>
-                                <div style={{ fontWeight: 800, fontSize: '14px', color: '#ef4444' }}>
-                                    ¡ATENCIÓN! ARTÍCULOS PENDIENTES DE REVISIÓN EN ESTA PLANIFICACIÓN
-                                </div>
-                                <div style={{ fontSize: '13px', marginTop: '2px', color: 'var(--text-secondary, #d1d5db)' }}>
-                                    {result.resumenAlertas.mensajeAlerta} Los artículos no revisados están destacados con{' '}
-                                    <strong style={{ color: '#f87171' }}>⚠️ OJO: No Revisado</strong> en todas las pestañas y hojas.
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <span style={{ fontSize: '24px' }}>⚠️</span>
+                                <div>
+                                    <div style={{ fontWeight: 800, fontSize: '14px', color: '#ef4444' }}>
+                                        ¡ATENCIÓN! HAY {result.resumenAlertas.articulosNoRevisados} ARTÍCULO(S) PENDIENTES DE REVISIÓN EN ESTA PLANIFICACIÓN
+                                    </div>
+                                    <div style={{ fontSize: '13px', marginTop: '2px', color: 'var(--text-secondary, #d1d5db)' }}>
+                                        Hacé clic en cualquier etiqueta <strong>⚠️ OJO: Pendiente</strong> para abrir y completar su Ficha Técnica (BOM) y validar los hilados.
+                                    </div>
                                 </div>
                             </div>
+
+                            <Btn
+                                small
+                                onClick={() => setActiveTab('articulos')}
+                                style={{ background: '#ef4444', color: '#fff', fontSize: '12px', padding: '6px 14px' }}
+                            >
+                                🧵 Ver Artículos a Revisar
+                            </Btn>
                         </div>
                     )}
 
@@ -309,7 +377,7 @@ export default function OrdenesProduccionPage() {
 
                         <Card style={{ padding: '14px 18px', background: 'var(--bg-secondary, #1a1d2e)' }}>
                             <div style={{ fontSize: '11px', color: '#34d399', fontWeight: 600, textTransform: 'uppercase' }}>
-                                📦 Insumos / Hilados Requeridos
+                                📦 Insumos Requeridos
                             </div>
                             <div style={{ fontSize: '24px', fontWeight: 800, color: '#34d399', marginTop: '4px' }}>
                                 {filteredMateriales.length}
@@ -575,6 +643,7 @@ export default function OrdenesProduccionPage() {
                         <ArticulosTejidoTab
                             articulos={filteredArticulos}
                             onSelectMachine={handleSelectMachineFromTab}
+                            onEditArticle={handleOpenArticleEditor}
                         />
                     )}
 
@@ -583,6 +652,7 @@ export default function OrdenesProduccionPage() {
                             maquinas={filteredMaquinas}
                             selectedShift={selectedTurno}
                             selectedArea={selectedArea}
+                            onEditArticle={handleOpenArticleEditor}
                         />
                     )}
 
@@ -597,6 +667,7 @@ export default function OrdenesProduccionPage() {
                         <MaterialesAsignadosTab
                             materiales={filteredMateriales}
                             onSelectMachine={handleSelectMachineFromTab}
+                            onEditArticle={handleOpenArticleEditor}
                         />
                     )}
 
@@ -605,6 +676,7 @@ export default function OrdenesProduccionPage() {
                             items={filteredHojaRepartidor}
                             fecha={selectedFecha !== 'ALL' ? selectedFecha : result.fechas.join(', ')}
                             turnos={selectedTurno !== 'ALL' ? [selectedTurno] : result.turnos}
+                            onEditArticle={handleOpenArticleEditor}
                         />
                     )}
 
@@ -613,9 +685,19 @@ export default function OrdenesProduccionPage() {
                             items={filteredHojaPicking}
                             fecha={selectedFecha !== 'ALL' ? selectedFecha : result.fechas.join(', ')}
                             turnos={selectedTurno !== 'ALL' ? [selectedTurno] : result.turnos}
+                            onEditArticle={handleOpenArticleEditor}
                         />
                     )}
                 </div>
+            )}
+
+            {/* Dialog de Edición/Creación de Artículo integrado */}
+            {isEditDialogOpen && (
+                <CreateArticuloDialog
+                    open={isEditDialogOpen}
+                    onClose={handleCloseArticleDialog}
+                    editTarget={editArticleTarget}
+                />
             )}
         </div>
     );

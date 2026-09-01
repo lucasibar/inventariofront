@@ -7,6 +7,7 @@ interface MaquinasTabProps {
     maquinas: ParsedMachineEntry[];
     selectedShift?: string;
     selectedArea?: string;
+    onEditArticle?: (codigo: string) => void;
 }
 
 const AREAS_DEF = [
@@ -17,7 +18,7 @@ const AREAS_DEF = [
     { id: '5', name: 'Área 5', range: 'Máquinas 171 a 190', start: 171, end: 190 },
 ];
 
-export const MaquinasTab: React.FC<MaquinasTabProps> = ({ maquinas }) => {
+export const MaquinasTab: React.FC<MaquinasTabProps> = ({ maquinas, onEditArticle }) => {
     const [selectedAreaTab, setSelectedAreaTab] = useState<string>('ALL');
     const [filterOnlyUnreviewed, setFilterOnlyUnreviewed] = useState(false);
     const [selectedMachineModal, setSelectedMachineModal] = useState<{ machineNum: number; entries: ParsedMachineEntry[] } | null>(null);
@@ -178,7 +179,7 @@ export const MaquinasTab: React.FC<MaquinasTabProps> = ({ maquinas }) => {
                                                     M{mNum}
                                                 </span>
                                                 {hasUnreviewed ? (
-                                                    <span style={{ fontSize: '11px' }} title="Artículo no revisado en catálogo">
+                                                    <span style={{ fontSize: '11px' }} title="Artículo no revisado en catálogo. Clic para inspeccionar">
                                                         ⚠️
                                                     </span>
                                                 ) : hasEntries ? (
@@ -260,6 +261,8 @@ export const MaquinasTab: React.FC<MaquinasTabProps> = ({ maquinas }) => {
 
                                 {selectedMachineModal.entries.map((entry, idx) => {
                                     const matched = entry.matchedArticle;
+                                    const artCode = entry.articleCode || entry.articleRaw;
+
                                     return (
                                         <Card
                                             key={idx}
@@ -269,10 +272,10 @@ export const MaquinasTab: React.FC<MaquinasTabProps> = ({ maquinas }) => {
                                                 background: 'rgba(0,0,0,0.15)',
                                             }}
                                         >
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                     <span style={{ fontWeight: 800, color: '#818cf8', fontSize: '14px' }}>
-                                                        {entry.articleCode || entry.articleRaw}
+                                                        {artCode}
                                                     </span>
                                                     <span style={{ fontSize: '11px', padding: '2px 6px', background: 'rgba(255,255,255,0.08)', borderRadius: '4px' }}>
                                                         Turno {entry.shift === 'M' ? '☀️ Mañana' : '🌙 Noche'}
@@ -282,9 +285,15 @@ export const MaquinasTab: React.FC<MaquinasTabProps> = ({ maquinas }) => {
                                                     </span>
                                                 </div>
 
-                                                <div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                     {entry.isUnreviewed ? (
                                                         <span
+                                                            onClick={() => {
+                                                                if (onEditArticle) {
+                                                                    setSelectedMachineModal(null);
+                                                                    onEditArticle(artCode);
+                                                                }
+                                                            }}
                                                             style={{
                                                                 padding: '3px 8px',
                                                                 background: 'rgba(239, 68, 68, 0.2)',
@@ -292,14 +301,28 @@ export const MaquinasTab: React.FC<MaquinasTabProps> = ({ maquinas }) => {
                                                                 borderRadius: '6px',
                                                                 fontSize: '11px',
                                                                 fontWeight: 700,
+                                                                cursor: onEditArticle ? 'pointer' : 'default',
                                                             }}
+                                                            title="Clic para revisar ficha técnica"
                                                         >
-                                                            ⚠️ No Revisado
+                                                            ⚠️ No Revisado ✏️
                                                         </span>
                                                     ) : (
                                                         <span style={{ padding: '3px 8px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>
                                                             🟢 Chequeado
                                                         </span>
+                                                    )}
+                                                    {onEditArticle && (
+                                                        <Btn
+                                                            small
+                                                            onClick={() => {
+                                                                setSelectedMachineModal(null);
+                                                                onEditArticle(artCode);
+                                                            }}
+                                                            style={{ fontSize: '11px' }}
+                                                        >
+                                                            ✏️ Editar Artículo
+                                                        </Btn>
                                                     )}
                                                 </div>
                                             </div>
