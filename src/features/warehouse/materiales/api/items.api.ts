@@ -19,7 +19,7 @@ export const itemsApi = api.injectEndpoints({
         }),
         updateItem: builder.mutation<any, { id: string; data: any }>({
             query: ({ id, data }) => ({ url: `items/${id}`, method: 'PUT', body: data }),
-            invalidatesTags: ['Items', 'Stock'],
+            invalidatesTags: ['Items', 'Stock', 'RemitosEntrada', 'RemitosSalida', 'Dashboard'],
         }),
         bulkAssignBoxType: builder.mutation<number, { boxTypeId: string; supplierId?: string; categoryId?: string; itemId?: string }>({
             query: (body) => ({ url: 'items/bulk-box-type', method: 'POST', body }),
@@ -28,6 +28,10 @@ export const itemsApi = api.injectEndpoints({
         deleteItem: builder.mutation<void, string>({
             query: (id) => ({ url: `items/${id}`, method: 'DELETE' }),
             invalidatesTags: ['Items'],
+        }),
+        syncItemRelations: builder.mutation<{ batchesUpdated: number; stockUpdated: number; docsUpdated: number }, void>({
+            query: () => ({ url: 'items/sync-relations', method: 'POST' }),
+            invalidatesTags: ['Items', 'Stock', 'RemitosEntrada', 'RemitosSalida', 'Dashboard'],
         }),
         getItemCategories: builder.query<any[], string | void>({
             query: (depositoId) => `items/categories${depositoId ? `?depositoId=${depositoId}` : ''}`,
@@ -50,6 +54,7 @@ export const {
     useCreateItemMutation, 
     useUpdateItemMutation, 
     useDeleteItemMutation,
+    useSyncItemRelationsMutation,
     useBulkAssignBoxTypeMutation,
     useGetItemCategoriesQuery,
     useCreateItemCategoryMutation,

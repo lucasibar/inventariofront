@@ -89,7 +89,7 @@ export default function AdminMovementsPage() {
             <span style={{ fontWeight: 600 }}>{m.deposito?.nombre || '—'}</span>,
             <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontWeight: 600, color: 'var(--text-primary, #f3f4f6)', whiteSpace: 'normal', maxWidth: '180px', lineHeight: '1.2' }}>
-                    {m.item?.categoria ? `[${m.item.categoria}] ` : ''}{m.item?.descripcion || '—'}
+                    {(m.item?.categoria || m.item?.category?.nombre || m.categoria) ? `[${m.item?.categoria || m.item?.category?.nombre || m.categoria}] ` : ''}{m.item?.descripcion || '—'}
                 </span>
                 <code style={{ fontSize: '11px', color: '#a5b4fc' }}>Lote: {m.batch?.lotNumber || '—'}</code>
             </div>,
@@ -120,7 +120,9 @@ export default function AdminMovementsPage() {
                     {!isAnulado && <ActionMenu options={[{ label: 'Revertir', icon: '🔄', color: '#ef4444', onClick: () => handleReverse(m.id) }]} />}
                 </div>
 
-                <div style={{ fontWeight: 700, color: 'var(--text-primary, #f3f4f6)', fontSize: '14px' }}>{m.item?.descripcion || '—'}</div>
+                <div style={{ fontWeight: 700, color: 'var(--text-primary, #f3f4f6)', fontSize: '14px' }}>
+                    {(m.item?.categoria || m.item?.category?.nombre || m.categoria) ? `[${m.item?.categoria || m.item?.category?.nombre || m.categoria}] ` : ''}{m.item?.descripcion || '—'}
+                </div>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', background: 'var(--bg-alt-row, rgba(0,0,0,0.2))', padding: '10px', borderRadius: '8px' }}>
                     <div>

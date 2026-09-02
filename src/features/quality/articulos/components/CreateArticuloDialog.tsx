@@ -31,6 +31,10 @@ const EMPTY_FORM = {
     talle: '',
     talleDMedia: '',
     workingNumber: '',
+    tipoPrenda: '',
+    tipoTejido: '',
+    tiempoTejidoSeg: '',
+    tiempoDocenaMin: '',
     desperdicio: '',
     observacion: '',
     programas: '',
@@ -46,6 +50,7 @@ interface RefEntry {
     esPreferenciaActual: boolean;
     consumoGramos?: number | null;
     desperdicio?: number | null;
+    conosPreparacion?: number | null;
     activo: boolean;
 }
 
@@ -83,6 +88,10 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
                 talle: editTarget.talle || '',
                 talleDMedia: editTarget.talleDMedia || '',
                 workingNumber: editTarget.workingNumber || '',
+                tipoPrenda: editTarget.tipoPrenda || '',
+                tipoTejido: editTarget.tipoTejido || '',
+                tiempoTejidoSeg: editTarget.tiempoTejidoSeg != null ? String(editTarget.tiempoTejidoSeg) : '',
+                tiempoDocenaMin: editTarget.tiempoDocenaMin != null ? String(editTarget.tiempoDocenaMin) : '',
                 desperdicio: editTarget.desperdicio != null ? String(editTarget.desperdicio) : '',
                 observacion: editTarget.observacion || '',
                 programas: editTarget.programas || '',
@@ -97,6 +106,7 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
                 esPreferenciaActual: r.esPreferenciaActual ?? (r.orden === 1),
                 consumoGramos: r.consumoGramos,
                 desperdicio: r.desperdicio,
+                conosPreparacion: r.conosPreparacion,
                 activo: r.activo ?? true,
             }));
             setItemRefs(refs);
@@ -126,8 +136,8 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
     };
 
     const addColorGrupo = (rol: string) => {
-        const grupos = getGruposForRol(rol);
-        const nextGrupo = Math.max(...grupos, 0) + 1;
+        const grupos = itemRefs.filter(r => r.rol === rol).map(r => r.grupo || 1);
+        const nextGrupo = grupos.length === 0 ? 1 : Math.max(...grupos) + 1;
         setItemRefs(prev => [...prev, {
             rol,
             colorNombre: '',
@@ -216,6 +226,10 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
             talle: form.talle || null,
             talleDMedia: form.talleDMedia || null,
             workingNumber: form.workingNumber || null,
+            tipoPrenda: form.tipoPrenda || null,
+            tipoTejido: form.tipoTejido || null,
+            tiempoTejidoSeg: form.tiempoTejidoSeg ? Number(form.tiempoTejidoSeg) : null,
+            tiempoDocenaMin: form.tiempoDocenaMin ? Number(form.tiempoDocenaMin) : null,
             desperdicio: form.desperdicio ? Number(form.desperdicio) : null,
             observacion: form.observacion || null,
             programas: form.programas || null,
@@ -354,6 +368,41 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
                     />
                 </Box>
 
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 1.5 }}>
+                    <TextField
+                        size="small"
+                        label="Tipo de prenda"
+                        placeholder="Ej: FUTBOL, CREW"
+                        value={form.tipoPrenda}
+                        onChange={e => handleFieldChange('tipoPrenda', e.target.value)}
+                        sx={fieldStyle}
+                    />
+                    <TextField
+                        size="small"
+                        label="Tipo de tejido"
+                        placeholder="Ej: LISO, TOALLA"
+                        value={form.tipoTejido}
+                        onChange={e => handleFieldChange('tipoTejido', e.target.value)}
+                        sx={fieldStyle}
+                    />
+                    <TextField
+                        size="small"
+                        type="number"
+                        label="Segundos por media"
+                        value={form.tiempoTejidoSeg}
+                        onChange={e => handleFieldChange('tiempoTejidoSeg', e.target.value)}
+                        sx={fieldStyle}
+                    />
+                    <TextField
+                        size="small"
+                        type="number"
+                        label="Minutos por docena"
+                        value={form.tiempoDocenaMin}
+                        onChange={e => handleFieldChange('tiempoDocenaMin', e.target.value)}
+                        sx={fieldStyle}
+                    />
+                </Box>
+
                 <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
                     <TextField
                         size="small"
@@ -426,6 +475,31 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
                                                         </MenuItem>
                                                     ))}
                                                 </TextField>
+                                                <TextField
+                                                    size="small"
+                                                    type="number"
+                                                    label="g por media"
+                                                    value={ref.consumoGramos ?? ''}
+                                                    onChange={e => updateRef(rol, grupoNum, ref.orden, 'consumoGramos', e.target.value === '' ? null : Number(e.target.value))}
+                                                    sx={{ ...fieldStyle, mb: 0, width: '115px' }}
+                                                />
+                                                <TextField
+                                                    size="small"
+                                                    type="number"
+                                                    label="Merma %"
+                                                    value={ref.desperdicio ?? ''}
+                                                    onChange={e => updateRef(rol, grupoNum, ref.orden, 'desperdicio', e.target.value === '' ? null : Number(e.target.value))}
+                                                    sx={{ ...fieldStyle, mb: 0, width: '105px' }}
+                                                />
+                                                <TextField
+                                                    size="small"
+                                                    type="number"
+                                                    label="Conos"
+                                                    value={ref.conosPreparacion ?? ''}
+                                                    onChange={e => updateRef(rol, grupoNum, ref.orden, 'conosPreparacion', e.target.value === '' ? null : Math.max(0, Number(e.target.value)))}
+                                                    placeholder="Auto"
+                                                    sx={{ ...fieldStyle, mb: 0, width: '90px' }}
+                                                />
                                                 <FormControlLabel
                                                     control={
                                                         <Checkbox

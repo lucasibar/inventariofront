@@ -30,7 +30,7 @@ export const RemitoDetailModal = ({ open, onClose, remito }: RemitoDetailModalPr
             const desc = (l.item?.descripcion || l.descripcion || '').toLowerCase();
             const lot = (l.batch?.lotNumber || l.lotNumber || '').toLowerCase();
             const cat = (l.item?.category?.nombre || l.item?.categoria || l.categoria || '').toLowerCase();
-            const supplier = (l.item?.supplier?.name || l.item?.supplierName || l.supplierName || '').toLowerCase();
+            const supplier = (l.item?.supplier?.name || l.item?.supplierName || l.supplierName || l.batch?.supplier?.name || '').toLowerCase();
             const searchable = `${code} ${desc} ${lot} ${cat} ${supplier}`.toLowerCase();
             return tokens.every(token => searchable.includes(token));
         });

@@ -1,24 +1,37 @@
 import { useState, useRef, useEffect } from 'react';
-import { Box, Typography, TextField, Button, Grid, Divider, IconButton, Tooltip } from '@mui/material';
+import { Box, Typography, TextField, Button, Grid, Divider, IconButton, Tooltip, MenuItem } from '@mui/material';
 import { PageHeader, Card, Badge } from '../../shared/ui';
 import { useDispatch, useSelector } from 'react-redux';
-import { selectTempRecords, addRecord, clearRecords } from '../../entities/production/model/productionSlice';
+import { selectTempRecords, addRecord, clearRecords, removeRecord } from '../../entities/production/model/productionSlice';
 import type { ProductionRecord } from '../../entities/production/model/productionSlice';
+import { useCreateActualProductionMutation } from '../../entities/production/api/production.api';
 import { Delete as DeleteIcon, QrCode as QrCodeIcon, Save as SaveIcon, CloudUpload as CloudUploadIcon } from '@mui/icons-material';
+
+const todayLocal = () => {
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60_000;
+    return new Date(now.getTime() - offset).toISOString().slice(0, 10);
+};
 
 export default function CargarProduccionPage() {
     const dispatch = useDispatch();
     const tempRecords: ProductionRecord[] = useSelector(selectTempRecords);
+    const [createActualProduction, { isLoading: isUploading }] = useCreateActualProductionMutation();
 
     // Form state
+    const [recordDate, setRecordDate] = useState(todayLocal);
+    const [shift, setShift] = useState('M');
     const [machineCode, setMachineCode] = useState('');
+    const [articleCode, setArticleCode] = useState('');
     const [knitterCode, setKnitterCode] = useState('');
     const [bagCode, setBagCode] = useState('');
     const [firstQuality, setFirstQuality] = useState<string>('');
     const [secondQuality, setSecondQuality] = useState<string>('');
+    const [secondMechanical, setSecondMechanical] = useState<string>('');
 
     // Refs for auto-focus
     const machineRef = useRef<HTMLInputElement>(null);
+    const articleRef = useRef<HTMLInputElement>(null);
     const knitterRef = useRef<HTMLInputElement>(null);
     const bagRef = useRef<HTMLInputElement>(null);
     const firstQualityRef = useRef<HTMLInputElement>(null);
@@ -30,18 +43,28 @@ export default function CargarProduccionPage() {
     }, []);
 
     const handleAddRecord = () => {
-        if (!machineCode || !knitterCode || !bagCode || firstQuality === '' || secondQuality === '') {
-            alert('Por favor complete todos los campos');
+        if (!recordDate || !shift || !machineCode || !knitterCode || !bagCode || firstQuality === '') {
+            alert('Complete fecha, turno, máquina, tejedor, bolsa y docenas de primera. Las segundas pueden quedar en cero.');
+            return;
+        }
+
+        const parsedMachineNumber = machineCode.match(/\d+/)?.[0];
+        if (!parsedMachineNumber) {
+            alert('El código de máquina debe contener su número, por ejemplo 123 o MAC-123.');
             return;
         }
 
         const newRecord: ProductionRecord = {
             id: crypto.randomUUID(),
+            recordDate,
+            shift,
             machineCode,
+            articleCode,
             knitterCode,
             bagCode,
-            firstQuality: parseInt(firstQuality),
-            secondQuality: parseInt(secondQuality),
+            firstQuality: Math.max(0, Number(firstQuality)),
+            secondQuality: Math.max(0, Math.round(Number(secondQuality || 0))),
+            secondMechanical: Math.max(0, Math.round(Number(secondMechanical || 0))),
             timestamp: new Date().toLocaleTimeString('es-AR', { hour12: false }),
         };
 
@@ -51,17 +74,50 @@ export default function CargarProduccionPage() {
 
     const resetForm = () => {
         setMachineCode('');
+        setArticleCode('');
         setKnitterCode('');
         setBagCode('');
         setFirstQuality('');
         setSecondQuality('');
+        setSecondMechanical('');
         machineRef.current?.focus();
+    };
+
+    const handleUpload = async () => {
+        if (tempRecords.length === 0) return;
+
+        let uploaded = 0;
+        for (const record of [...tempRecords].reverse()) {
+            const machineNumber = Number(record.machineCode.match(/\d+/)?.[0]);
+            try {
+                await createActualProduction({
+                    recordDate: record.recordDate,
+                    shift: record.shift,
+                    machineNumber,
+                    employeeLegajo: record.knitterCode,
+                    articleCode: record.articleCode || null,
+                    goodDozens: record.firstQuality,
+                    secondSocks: record.secondQuality,
+                    secondMechanicalSocks: record.secondMechanical,
+                    sourceType: 'MANUAL',
+                    sourceReference: record.bagCode,
+                    notes: `Carga rápida · bolsa ${record.bagCode}`,
+                }).unwrap();
+                dispatch(removeRecord(record.id));
+                uploaded += 1;
+            } catch (error: any) {
+                const message = error?.data?.message ?? 'No se pudo guardar el registro.';
+                alert(`Se guardaron ${uploaded} registro(s). Falló la máquina ${record.machineCode}: ${message}`);
+                return;
+            }
+        }
+        alert(`Carga completada: ${uploaded} registro(s) guardados.`);
     };
 
     const simulateScan = (field: string, value: string) => {
         if (field === 'machine') {
             setMachineCode(value);
-            knitterRef.current?.focus();
+            articleRef.current?.focus();
         } else if (field === 'knitter') {
             setKnitterCode(value);
             bagRef.current?.focus();
@@ -80,7 +136,7 @@ export default function CargarProduccionPage() {
                 <Button 
                     variant="contained" 
                     startIcon={<CloudUploadIcon />}
-                    onClick={() => alert('Próximamente: Sincronización con el servidor')}
+                    onClick={handleUpload}
                     sx={{ 
                         bgcolor: '#6366f1', 
                         '&:hover': { bgcolor: '#4f46e5' },
@@ -91,9 +147,9 @@ export default function CargarProduccionPage() {
                         fontWeight: 600,
                         boxShadow: '0 4px 6px -1px rgba(99, 102, 241, 0.4)'
                     }}
-                    disabled={tempRecords.length === 0}
+                    disabled={tempRecords.length === 0 || isUploading}
                 >
-                    Subir Carga ({tempRecords.length})
+                    {isUploading ? 'Guardando...' : `Subir Carga (${tempRecords.length})`}
                 </Button>
             </PageHeader>
 
@@ -106,22 +162,60 @@ export default function CargarProduccionPage() {
                         </Typography>
 
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            <Grid container spacing={2}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
+                                    <TextField
+                                        label="Fecha de producción"
+                                        type="date"
+                                        fullWidth
+                                        value={recordDate}
+                                        onChange={(e) => setRecordDate(e.target.value)}
+                                        InputLabelProps={{ shrink: true }}
+                                    />
+                                </Grid>
+                                <Grid size={{ xs: 12, sm: 6 }}>
+                                    <TextField
+                                        select
+                                        label="Turno"
+                                        fullWidth
+                                        value={shift}
+                                        onChange={(e) => setShift(e.target.value)}
+                                    >
+                                        <MenuItem value="M">Día / Mañana</MenuItem>
+                                        <MenuItem value="N">Noche</MenuItem>
+                                    </TextField>
+                                </Grid>
+                            </Grid>
+
                             {/* Escaneos Secuenciales */}
                             <Grid container spacing={2}>
-                                <Grid size={{ xs: 12, sm: 4 }}>
+                                <Grid size={{ xs: 12, sm: 3 }}>
                                     <TextField
                                         label="Código Máquina"
                                         fullWidth
                                         value={machineCode}
                                         onChange={(e) => setMachineCode(e.target.value)}
                                         inputRef={machineRef}
-                                        onKeyDown={(e) => e.key === 'Enter' && knitterRef.current?.focus()}
+                                        onKeyDown={(e) => e.key === 'Enter' && articleRef.current?.focus()}
                                         autoComplete="off"
                                         placeholder="Escanee..."
                                         InputProps={{ sx: { borderRadius: '12px', bgcolor: 'var(--bg-hover-row, rgba(255,255,255,0.03))' } }}
                                     />
                                 </Grid>
-                                <Grid size={{ xs: 12, sm: 4 }}>
+                                <Grid size={{ xs: 12, sm: 3 }}>
+                                    <TextField
+                                        label="Artículo (opcional)"
+                                        fullWidth
+                                        value={articleCode}
+                                        onChange={(e) => setArticleCode(e.target.value)}
+                                        inputRef={articleRef}
+                                        onKeyDown={(e) => e.key === 'Enter' && knitterRef.current?.focus()}
+                                        autoComplete="off"
+                                        placeholder="Solo si hay más de uno"
+                                        InputProps={{ sx: { borderRadius: '12px', bgcolor: 'var(--bg-hover-row, rgba(255,255,255,0.03))' } }}
+                                    />
+                                </Grid>
+                                <Grid size={{ xs: 12, sm: 3 }}>
                                     <TextField
                                         label="Código Tejedor"
                                         fullWidth
@@ -134,7 +228,7 @@ export default function CargarProduccionPage() {
                                         InputProps={{ sx: { borderRadius: '12px', bgcolor: 'var(--bg-hover-row, rgba(255,255,255,0.03))' } }}
                                     />
                                 </Grid>
-                                <Grid size={{ xs: 12, sm: 4 }}>
+                                <Grid size={{ xs: 12, sm: 3 }}>
                                     <TextField
                                         label="Código Bolsa"
                                         fullWidth
@@ -153,9 +247,9 @@ export default function CargarProduccionPage() {
 
                             {/* Cantidades */}
                             <Grid container spacing={2}>
-                                <Grid size={{ xs: 12, sm: 6 }}>
+                                <Grid size={{ xs: 12, sm: 4 }}>
                                     <TextField
-                                        label="Docenas Primera"
+                                        label="Docenas de primera"
                                         type="number"
                                         fullWidth
                                         value={firstQuality}
@@ -165,14 +259,25 @@ export default function CargarProduccionPage() {
                                         InputProps={{ sx: { borderRadius: '12px', fontSize: '1.2rem', fontWeight: 600 } }}
                                     />
                                 </Grid>
-                                <Grid size={{ xs: 12, sm: 6 }}>
+                                <Grid size={{ xs: 12, sm: 4 }}>
                                     <TextField
-                                        label="Docenas Segunda"
+                                        label="Medias de segunda"
                                         type="number"
                                         fullWidth
                                         value={secondQuality}
                                         onChange={(e) => setSecondQuality(e.target.value)}
                                         inputRef={secondQualityRef}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleAddRecord()}
+                                        InputProps={{ sx: { borderRadius: '12px', fontSize: '1.2rem', fontWeight: 600 } }}
+                                    />
+                                </Grid>
+                                <Grid size={{ xs: 12, sm: 4 }}>
+                                    <TextField
+                                        label="Medias 2ª F.M."
+                                        type="number"
+                                        fullWidth
+                                        value={secondMechanical}
+                                        onChange={(e) => setSecondMechanical(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleAddRecord()}
                                         InputProps={{ sx: { borderRadius: '12px', fontSize: '1.2rem', fontWeight: 600 } }}
                                     />
@@ -264,13 +369,18 @@ export default function CargarProduccionPage() {
                                                     <Typography variant="caption" sx={{ color: '#10b981', fontWeight: 800 }}>{record.knitterCode}</Typography>
                                                 </Box>
                                                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                                    {record.firstQuality} <span style={{ color: 'var(--text-muted, #9ca3af)', fontWeight: 400 }}>prim.</span> / {record.secondQuality} <span style={{ color: 'var(--text-muted, #9ca3af)', fontWeight: 400 }}>seg.</span>
+                                                    {record.firstQuality} <span style={{ color: 'var(--text-muted, #9ca3af)', fontWeight: 400 }}>doc. prim.</span> / {record.secondQuality} <span style={{ color: 'var(--text-muted, #9ca3af)', fontWeight: 400 }}>medias seg.</span> / {record.secondMechanical} <span style={{ color: 'var(--text-muted, #9ca3af)', fontWeight: 400 }}>2ª F.M.</span>
                                                 </Typography>
+                                                {record.articleCode && (
+                                                    <Typography variant="caption" sx={{ color: '#a78bfa', display: 'block' }}>
+                                                        Artículo: {record.articleCode}
+                                                    </Typography>
+                                                )}
                                                 <Typography variant="caption" sx={{ color: 'var(--text-subtle, #6b7280)' }}>
-                                                    Bolsa: {record.bagCode} • {record.timestamp}
+                                                    {record.recordDate} · Turno {record.shift} · Bolsa: {record.bagCode} · {record.timestamp}
                                                 </Typography>
                                             </Box>
-                                            <IconButton size="small" onClick={() => alert('Eliminar registro')} sx={{ color: '#ef4444', opacity: 0.5, '&:hover': { opacity: 1 } }}>
+                                            <IconButton size="small" onClick={() => dispatch(removeRecord(record.id))} sx={{ color: '#ef4444', opacity: 0.5, '&:hover': { opacity: 1 } }}>
                                                 <DeleteIcon fontSize="small" />
                                             </IconButton>
                                         </Box>
@@ -294,11 +404,11 @@ export default function CargarProduccionPage() {
                                 color="primary" 
                                 fullWidth 
                                 startIcon={<CloudUploadIcon />}
-                                onClick={() => alert('Próximamente: Subir carga al servidor')}
-                                disabled={tempRecords.length === 0}
+                                onClick={handleUpload}
+                                disabled={tempRecords.length === 0 || isUploading}
                                 sx={{ borderRadius: '12px', bgcolor: '#6366f1', '&:hover': { bgcolor: '#4f46e5' } }}
                             >
-                                SUBIR CARGA
+                                {isUploading ? 'GUARDANDO...' : 'SUBIR CARGA'}
                             </Button>
                         </Box>
                     </Card>

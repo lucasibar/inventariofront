@@ -27,6 +27,7 @@ const ChequeoInventarioPage = lazy(() => import('../../pages/warehouse/ChequeoIn
 const ChequeoCategoriaPage = lazy(() => import('../../pages/warehouse/ChequeoCategoriaPage'));
 const ReporteChequeoPage = lazy(() => import('../../pages/warehouse/ReporteChequeoPage'));
 const InformesInventariadoPage = lazy(() => import('../../pages/warehouse/InformesInventariadoPage'));
+const MaterialesEstancadosPage = lazy(() => import('../../pages/warehouse/MaterialesEstancadosPage'));
 
 // Sector: Purchasing
 const DashboardComprasPage = lazy(() => import('../../pages/purchasing/DashboardComprasPage'));
@@ -62,6 +63,7 @@ const ProduccionNewDashboardPage = lazy(() => import('../../pages/production/Pro
 const RecursosTejeduriaPage = lazy(() => import('../../pages/production/RecursosTejeduriaPage'));
 const ImportarHistoricoTejeduriaPage = lazy(() => import('../../pages/production/ImportarHistoricoTejeduriaPage'));
 const OrdenesProduccionPage = lazy(() => import('../../pages/quality/OrdenesProduccionPage'));
+const ProgramacionesProduccionPage = lazy(() => import('../../pages/production/ProgramacionesProduccionPage'));
 
 // New Sectors Dashboards
 const AdminDashboardPage = lazy(() => import('../../pages/admin/AdminDashboardPage'));
@@ -173,6 +175,7 @@ export const router = createBrowserRouter([
               { path: "stock", element: <LazyRoute element={StockPage} /> },
               { path: "movimientos", element: <LazyRoute element={MovimientosPage} /> },
               { path: "tasks", element: <LazyRoute element={WorkspaceTasksPage} /> },
+              { path: "deposito/materiales-estancados", element: <LazyRoute element={MaterialesEstancadosPage} /> },
               
               { path: "mantenimiento/dashboard", element: <LazyRoute element={DashboardMantenimientoPage} /> },
               { path: "mantenimiento/monitoreo", element: <LazyRoute element={MonitoreoVivoPage} /> },
@@ -192,6 +195,7 @@ export const router = createBrowserRouter([
               { path: "produccion/recursos", element: <LazyRoute element={RecursosTejeduriaPage} /> },
               { path: "produccion/importar-historico", element: <LazyRoute element={ImportarHistoricoTejeduriaPage} /> },
               { path: "produccion/ordenes-produccion", element: <LazyRoute element={OrdenesProduccionPage} /> },
+              { path: "produccion/programaciones", element: <LazyRoute element={ProgramacionesProduccionPage} /> },
 
               { path: "produccion-nueva/dashboard", element: <LazyRoute element={ProduccionNewDashboardPage} /> },
               { path: "ventas/dashboard", element: <LazyRoute element={VentasDashboardPage} /> },

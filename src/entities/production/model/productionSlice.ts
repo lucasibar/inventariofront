@@ -3,11 +3,15 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 
 export interface ProductionRecord {
     id: string;
+    recordDate: string;
+    shift: string;
     machineCode: string;
+    articleCode: string;
     knitterCode: string;
     bagCode: string;
     firstQuality: number;
     secondQuality: number;
+    secondMechanical: number;
     timestamp: string;
 }
 

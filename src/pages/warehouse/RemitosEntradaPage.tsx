@@ -44,7 +44,7 @@ export default function RemitosEntradaPage() {
                 const itemDesc = l.descripcion || l.item?.descripcion || '';
                 const itemCat = l.categoria || l.item?.categoria || l.item?.category?.nombre || '';
                 const lotNum = l.lotNumber || l.batch?.lote || l.batch?.lotNumber || '';
-                const itemSupplier = l.item?.supplier?.name || l.item?.supplierName || l.supplierName || '';
+                const itemSupplier = l.item?.supplier?.name || l.item?.supplierName || l.supplierName || l.batch?.supplier?.name || '';
                 return `${itemCode} ${itemDesc} ${itemCat} ${lotNum} ${itemSupplier}`;
             }).join(' ');
 

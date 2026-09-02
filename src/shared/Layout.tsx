@@ -69,6 +69,7 @@ const navGroups: NavGroup[] = [
                     { to: '/chequeo-inventario', label: '🔍 Chequeo Inventario' },
                     { to: '/chequeo-categoria', label: '🏷️ Chequeo por Categoría' },
                     { to: '/reporte-chequeo', label: '📊 Reporte Chequeo' },
+                    { to: '/deposito/materiales-estancados', label: '🧊 Materiales Estancados' },
                 ]
             },
             {
@@ -135,6 +136,7 @@ const navGroups: NavGroup[] = [
             { to: '/produccion/recursos', label: '🏭 Recursos Tejeduría' },
             { to: '/produccion/importar-historico', label: '📂 Importar Histórico' },
             { to: '/produccion/ordenes-produccion', label: '📑 Órdenes de Producción' },
+            { to: '/produccion/programaciones', label: '🗓️ Programaciones' },
         ]
     },
     {
@@ -306,7 +308,7 @@ export default function Layout() {
                 '/mantenimiento/kpi/disponibilidad',
                 '/mantenimiento/kpi/disponibilidad-v2',
             ],
-            PRODUCCION: ['/produccion/dashboard', '/produccion/cargar', '/produccion/recursos', '/produccion/importar-historico', '/produccion/ordenes-produccion'],
+            PRODUCCION: ['/produccion/dashboard', '/produccion/cargar', '/produccion/recursos', '/produccion/importar-historico', '/produccion/ordenes-produccion', '/produccion/programaciones'],
             CALIDAD: ['/calidad/articulos'],
             VENTAS: ['/ventas/dashboard'],
             FINANZAS: ['/finanzas/dashboard'],

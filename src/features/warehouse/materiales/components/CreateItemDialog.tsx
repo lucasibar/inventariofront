@@ -43,6 +43,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
         stockMinimo: '',
         stockMaximo: '', // New
         kilosPorCaja: '', // New
+        pesoConoKg: '',
         unidadPrincipal: 'KG',
         unidadSecundaria: '',
         tono: '', // New
@@ -69,6 +70,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                     stockMinimo: editTarget.stockMinimo != null ? String(editTarget.stockMinimo) : '',
                     stockMaximo: editTarget.stockMaximo != null ? String(editTarget.stockMaximo) : '',
                     kilosPorCaja: editTarget.kilosPorCaja != null ? String(editTarget.kilosPorCaja) : '',
+                    pesoConoKg: editTarget.pesoConoKg != null ? String(editTarget.pesoConoKg) : '',
                     unidadPrincipal: editTarget.unidadPrincipal || 'KG',
                     unidadSecundaria: editTarget.unidadSecundaria || '',
                     tono: editTarget.tono || '',
@@ -86,6 +88,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                     stockMinimo: '',
                     stockMaximo: '',
                     kilosPorCaja: '',
+                    pesoConoKg: '',
                     unidadPrincipal: 'KG',
                     unidadSecundaria: '',
                     tono: '',
@@ -160,6 +163,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                 stockMinimo: form.stockMinimo ? Number(form.stockMinimo) : undefined,
                 stockMaximo: form.stockMaximo ? Number(form.stockMaximo) : undefined,
                 kilosPorCaja: form.kilosPorCaja ? Number(form.kilosPorCaja) : undefined,
+                pesoConoKg: form.pesoConoKg ? Number(form.pesoConoKg) : undefined,
             };
             
             let result;
@@ -180,6 +184,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                 stockMinimo: '',
                 stockMaximo: '',
                 kilosPorCaja: '',
+                pesoConoKg: '',
                 unidadPrincipal: 'KG',
                 unidadSecundaria: '',
                 tono: '',
@@ -226,6 +231,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                                         stockMinimo: newValue.stockMinimo != null ? String(newValue.stockMinimo) : '',
                                         stockMaximo: newValue.stockMaximo != null ? String(newValue.stockMaximo) : '',
                                         kilosPorCaja: newValue.kilosPorCaja != null ? String(newValue.kilosPorCaja) : '',
+                                        pesoConoKg: newValue.pesoConoKg != null ? String(newValue.pesoConoKg) : '',
                                         unidadPrincipal: newValue.unidadPrincipal || 'KG',
                                         unidadSecundaria: newValue.unidadSecundaria || '',
                                         tono: newValue.tono || '',
@@ -260,7 +266,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                             required
                             variant="filled"
                             value={form.depositoId}
-                            disabled={!!editTarget || !!depositoId}
+                            disabled={!!depositoId}
                             onChange={(e) => {
                                 setForm({ ...form, depositoId: e.target.value, categoryId: '' });
                                 setFieldErrors(prev => ({ ...prev, depositoId: '' }));
@@ -308,7 +314,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                     </Box>
                     <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' }, display: 'flex', gap: 1, alignItems: 'flex-end' }}>
                         <Autocomplete
-                            value={categories.find((c: any) => c.id === form.categoryId) || null}
+                            value={categories.find((c: any) => c.id === form.categoryId) || (editTarget?.category?.id === form.categoryId ? editTarget.category : null) || null}
                             onChange={(_, newValue) => {
                                 setForm({ ...form, categoryId: newValue?.id || '' });
                                 setFieldErrors(prev => ({ ...prev, categoryId: '' }));
@@ -422,6 +428,17 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                     </Box>
                     <Box>
                         <TextField
+                            label="Peso por Cono (kg)"
+                            type="number"
+                            fullWidth
+                            variant="filled"
+                            helperText="Producción usa este valor para preparar hilado"
+                            value={form.pesoConoKg}
+                            onChange={(e) => setForm({ ...form, pesoConoKg: e.target.value })}
+                        />
+                    </Box>
+                    <Box>
+                        <TextField
                             select
                             label="Tono"
                             fullWidth
@@ -475,7 +492,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                             options={partners}
                             getOptionLabel={(option: any) => `${option.name} ${option.taxId ? `(${option.taxId})` : ''}`}
                             isOptionEqualToValue={(option, value) => option.id === value?.id}
-                            value={partners.find((p: any) => p.id === form.supplierId) || null}
+                            value={partners.find((p: any) => p.id === form.supplierId) || (editTarget?.supplier?.id === form.supplierId ? editTarget.supplier : null) || null}
                             loading={isLoadingPartners}
                             onChange={(_, newValue) => {
                                 setForm({
