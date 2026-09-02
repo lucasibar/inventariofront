@@ -61,6 +61,7 @@ const OrdenesProduccionPage = lazy(() => import('../../pages/quality/OrdenesProd
 const CargarProduccionPage = lazy(() => import('../../pages/production/CargarProduccionPage'));
 const ProduccionNewDashboardPage = lazy(() => import('../../pages/production/ProduccionNewDashboardPage'));
 const RecursosTejeduriaPage = lazy(() => import('../../pages/production/RecursosTejeduriaPage'));
+const ImportarHistoricoTejeduriaPage = lazy(() => import('../../pages/production/ImportarHistoricoTejeduriaPage'));
 
 // New Sectors Dashboards
 const AdminDashboardPage = lazy(() => import('../../pages/admin/AdminDashboardPage'));
@@ -189,6 +190,7 @@ export const router = createBrowserRouter([
               { path: "produccion/cargar", element: <LazyRoute element={CargarProduccionPage} /> },
               { path: "produccion/dashboard", element: <LazyRoute element={ProduccionNewDashboardPage} /> },
               { path: "produccion/recursos", element: <LazyRoute element={RecursosTejeduriaPage} /> },
+              { path: "produccion/importar-historico", element: <LazyRoute element={ImportarHistoricoTejeduriaPage} /> },
 
               { path: "produccion-nueva/dashboard", element: <LazyRoute element={ProduccionNewDashboardPage} /> },
               { path: "ventas/dashboard", element: <LazyRoute element={VentasDashboardPage} /> },

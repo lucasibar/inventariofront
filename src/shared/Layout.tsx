@@ -134,6 +134,7 @@ const navGroups: NavGroup[] = [
             { to: '/produccion/dashboard', label: '📊 Dashboard Prod' },
             { to: '/produccion/cargar', label: '➕ Cargar' },
             { to: '/produccion/recursos', label: '🏭 Recursos Tejeduría' },
+            { to: '/produccion/importar-historico', label: '📂 Importar Histórico' },
         ]
     },
     {
@@ -305,7 +306,7 @@ export default function Layout() {
                 '/mantenimiento/kpi/disponibilidad',
                 '/mantenimiento/kpi/disponibilidad-v2',
             ],
-            PRODUCCION: ['/produccion/dashboard', '/produccion/cargar', '/produccion/recursos', '/calidad/ordenes-produccion'],
+            PRODUCCION: ['/produccion/dashboard', '/produccion/cargar', '/produccion/recursos', '/produccion/importar-historico', '/calidad/ordenes-produccion'],
             CALIDAD: ['/calidad/articulos', '/calidad/ordenes-produccion'],
             VENTAS: ['/ventas/dashboard'],
             FINANZAS: ['/finanzas/dashboard'],
