@@ -123,7 +123,6 @@ const navGroups: NavGroup[] = [
         icon: '🎯',
         items: [
             { to: '/calidad/articulos', label: '📋 Artículos' },
-            { to: '/calidad/ordenes-produccion', label: '📑 Órdenes de Producción' },
         ]
     },
     {
@@ -135,6 +134,7 @@ const navGroups: NavGroup[] = [
             { to: '/produccion/cargar', label: '➕ Cargar' },
             { to: '/produccion/recursos', label: '🏭 Recursos Tejeduría' },
             { to: '/produccion/importar-historico', label: '📂 Importar Histórico' },
+            { to: '/produccion/ordenes-produccion', label: '📑 Órdenes de Producción' },
         ]
     },
     {
@@ -306,8 +306,8 @@ export default function Layout() {
                 '/mantenimiento/kpi/disponibilidad',
                 '/mantenimiento/kpi/disponibilidad-v2',
             ],
-            PRODUCCION: ['/produccion/dashboard', '/produccion/cargar', '/produccion/recursos', '/produccion/importar-historico', '/calidad/ordenes-produccion'],
-            CALIDAD: ['/calidad/articulos', '/calidad/ordenes-produccion'],
+            PRODUCCION: ['/produccion/dashboard', '/produccion/cargar', '/produccion/recursos', '/produccion/importar-historico', '/produccion/ordenes-produccion'],
+            CALIDAD: ['/calidad/articulos'],
             VENTAS: ['/ventas/dashboard'],
             FINANZAS: ['/finanzas/dashboard'],
             RRHH: ['/rrhh/dashboard'],

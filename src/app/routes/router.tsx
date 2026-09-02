@@ -55,13 +55,13 @@ const DisponibilidadMaquinaV2Page = lazy(() => import('../../pages/maintenance/D
 
 // Sector: Quality (Calidad)
 const ArticulosCalidadPage = lazy(() => import('../../pages/quality/ArticulosCalidadPage'));
-const OrdenesProduccionPage = lazy(() => import('../../pages/quality/OrdenesProduccionPage'));
 
 // Sector: Production
 const CargarProduccionPage = lazy(() => import('../../pages/production/CargarProduccionPage'));
 const ProduccionNewDashboardPage = lazy(() => import('../../pages/production/ProduccionNewDashboardPage'));
 const RecursosTejeduriaPage = lazy(() => import('../../pages/production/RecursosTejeduriaPage'));
 const ImportarHistoricoTejeduriaPage = lazy(() => import('../../pages/production/ImportarHistoricoTejeduriaPage'));
+const OrdenesProduccionPage = lazy(() => import('../../pages/quality/OrdenesProduccionPage'));
 
 // New Sectors Dashboards
 const AdminDashboardPage = lazy(() => import('../../pages/admin/AdminDashboardPage'));
@@ -191,6 +191,7 @@ export const router = createBrowserRouter([
               { path: "produccion/dashboard", element: <LazyRoute element={ProduccionNewDashboardPage} /> },
               { path: "produccion/recursos", element: <LazyRoute element={RecursosTejeduriaPage} /> },
               { path: "produccion/importar-historico", element: <LazyRoute element={ImportarHistoricoTejeduriaPage} /> },
+              { path: "produccion/ordenes-produccion", element: <LazyRoute element={OrdenesProduccionPage} /> },
 
               { path: "produccion-nueva/dashboard", element: <LazyRoute element={ProduccionNewDashboardPage} /> },
               { path: "ventas/dashboard", element: <LazyRoute element={VentasDashboardPage} /> },
@@ -198,7 +199,7 @@ export const router = createBrowserRouter([
               { path: "rrhh/dashboard", element: <LazyRoute element={RRHHDashboardPage} /> },
               { path: "compras/dashboard", element: <LazyRoute element={DashboardComprasPage} /> },
               { path: "calidad/articulos", element: <LazyRoute element={ArticulosCalidadPage} /> },
-              { path: "calidad/ordenes-produccion", element: <LazyRoute element={OrdenesProduccionPage} /> },
+              { path: "calidad/ordenes-produccion", element: <Navigate to="/produccion/ordenes-produccion" replace /> },
             ]
           },
           // Shared
