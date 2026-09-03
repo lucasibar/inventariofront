@@ -48,17 +48,28 @@ const navGroups: NavGroup[] = [
         items: [
             { to: '/admin/dashboard', label: '📈 Dashboard General' },
             { to: '/users', label: '👥 Usuarios' },
-            { to: '/admin/movements', label: '🛡️ Auditoría' },
+            { to: '/admin/movements', label: '🛡️ Auditoría de stock' },
+            { to: '/admin/auditoria', label: '🔎 Auditoría del sistema' },
         ]
     },
     {
         id: 'deposito',
-        label: 'Inventariado',
+        label: 'Depósito',
         icon: '🏭',
         items: [
             { to: '/deposito/dashboard', label: '📊 Dashboard Depo' },
             { to: '/stock', label: '📋 Stock' },
             { to: '/movimientos', label: '🔄 Movimientos' },
+            {
+                id: 'deposito-operaciones',
+                label: '🚚 Operaciones',
+                isSubGroup: true,
+                items: [
+                    { to: '/remitos-entrada', label: '📥 Entrada de mercadería' },
+                    { to: '/remitos-salida', label: '📤 Salida de mercadería' },
+                    { to: '/produccion/materiales', label: '📦 Preparación Producción' },
+                ]
+            },
             {
                 id: 'informes',
                 label: '📊 Informes',
@@ -70,6 +81,8 @@ const navGroups: NavGroup[] = [
                     { to: '/chequeo-categoria', label: '🏷️ Chequeo por Categoría' },
                     { to: '/reporte-chequeo', label: '📊 Reporte Chequeo' },
                     { to: '/deposito/materiales-estancados', label: '🧊 Materiales Estancados' },
+                    { to: '/deposito/completitud-materiales', label: '✅ Completitud materiales' },
+                    { to: '/dashboard/capacity', label: '📐 Capacidad física' },
                 ]
             },
             {
@@ -124,6 +137,10 @@ const navGroups: NavGroup[] = [
         icon: '🎯',
         items: [
             { to: '/calidad/articulos', label: '📋 Artículos' },
+            { to: '/calidad/completitud-articulos', label: '✅ Completitud artículos' },
+            { to: '/calidad/importar-articulos', label: '📥 Importar artículos' },
+            { to: '/calidad/cuarentena', label: '🧪 Cuarentena y liberación' },
+            { to: '/calidad/lotes-producidos', label: '🧦 Lotes producidos' },
         ]
     },
     {
@@ -133,6 +150,8 @@ const navGroups: NavGroup[] = [
         items: [
             { to: '/produccion/dashboard', label: '📊 Dashboard Prod' },
             { to: '/produccion/cargar', label: '➕ Cargar' },
+            { to: '/produccion/historico', label: '🕘 Histórico y correcciones' },
+            { to: '/produccion/materiales', label: '📦 Materiales y FIFO' },
             { to: '/produccion/recursos', label: '🏭 Recursos Tejeduría' },
             { to: '/produccion/importar-historico', label: '📂 Importar Histórico' },
             { to: '/produccion/ordenes-produccion', label: '📑 Órdenes de Producción' },
@@ -145,18 +164,9 @@ const navGroups: NavGroup[] = [
         icon: '🛒',
         items: [
             { to: '/dashboard', label: '📊 Comando Compras' },
-            { to: '/compras/movimientos', label: '📋 Documentos' },
+            { to: '/pedidos-compra', label: '📝 Órdenes de Compra' },
+            { to: '/compras/movimientos', label: '🔗 Documentos y conciliación' },
             { to: '/compras/convertidor', label: '🔄 Convertidor de Pedidos' },
-            {
-                id: 'remitos',
-                label: '📄 Remitos y Órdenes',
-                isSubGroup: true,
-                items: [
-                    { to: '/remitos-entrada', label: '📥 Remitos Entrada' },
-                    { to: '/remitos-salida', label: '📤 Remitos Salida' },
-                    { to: '/pedidos-compra', label: '📝 Órdenes de Compra' },
-                ]
-            },
             {
                 id: 'compras-informes',
                 label: '📊 Informes',
@@ -166,7 +176,6 @@ const navGroups: NavGroup[] = [
                     { to: '/compras/grafico-sierra', label: '📈 Gráfico de Sierra' },
                     { to: '/compras/materiales-criticos', label: '🧵 Grupos de Materiales' },
                     { to: '/compras/alertas-stock', label: '⚠️ Alertas de Stock' },
-                    { to: '/dashboard/capacity', label: '📈 Capacidad' },
                     { to: '/reporte-consumo-detallado', label: '📊 Consumo Detallado' },
                 ]
             },
@@ -292,6 +301,8 @@ export default function Layout() {
                 '/remitos-entrada', '/remitos-salida',
                 '/reporte-consumo-detallado', '/tasks',
                 '/chequeo-inventario', '/reporte-chequeo', '/deposito/informes',
+                '/deposito/completitud-materiales',
+                '/produccion/materiales',
             ],
             COMPRAS: [
                 '/dashboard', '/pedidos-compra', '/compras/materiales-criticos',
@@ -308,8 +319,8 @@ export default function Layout() {
                 '/mantenimiento/kpi/disponibilidad',
                 '/mantenimiento/kpi/disponibilidad-v2',
             ],
-            PRODUCCION: ['/produccion/dashboard', '/produccion/cargar', '/produccion/recursos', '/produccion/importar-historico', '/produccion/ordenes-produccion', '/produccion/programaciones'],
-            CALIDAD: ['/calidad/articulos'],
+            PRODUCCION: ['/produccion/dashboard', '/produccion/cargar', '/produccion/historico', '/produccion/materiales', '/produccion/recursos', '/produccion/importar-historico', '/produccion/ordenes-produccion', '/produccion/programaciones'],
+            CALIDAD: ['/calidad/articulos', '/calidad/completitud-articulos', '/calidad/importar-articulos', '/calidad/cuarentena', '/calidad/lotes-producidos'],
             VENTAS: ['/ventas/dashboard'],
             FINANZAS: ['/finanzas/dashboard'],
             RRHH: ['/rrhh/dashboard'],

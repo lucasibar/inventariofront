@@ -213,6 +213,28 @@ export interface ProductionDashboardResponse {
     }>;
 }
 
+export interface ProductionOverviewRow {
+    machineNumber: number;
+    area: string;
+    currentStatus: string | null;
+    goodSocks: number;
+    goodDozens: number;
+    secondSocks: number;
+    availabilityPct: number | null;
+    fttPct: number | null;
+    performancePct: number | null;
+    oeePct: number | null;
+}
+
+export interface ProductionOverviewResponse {
+    from: string;
+    to: string;
+    daysWithProduction: number;
+    summary: Omit<ProductionOverviewRow, 'machineNumber' | 'area' | 'currentStatus'> & { machines: number };
+    areas: Array<Omit<ProductionOverviewRow, 'machineNumber' | 'currentStatus'> & { machines: number }>;
+    machines: ProductionOverviewRow[];
+}
+
 export interface CreateProductionScheduleLineRequest {
     scheduleId: string;
     machineNumber: number;
@@ -250,12 +272,92 @@ export interface ProductionActualEntry {
     machineNumberSnapshot: number;
     articleCodeSnapshot: string | null;
     employeeLegajoSnapshot: string | null;
+    employeeNameSnapshot?: string | null;
     goodSocks: number;
     secondSocks: number;
     secondMechanicalSocks: number;
     runSeconds: number | null;
     sourceType: 'MANUAL' | 'FILE' | 'PLAN_CONFIRMATION';
     status: 'DRAFT' | 'CONFIRMED' | 'CORRECTED' | 'ANNULLED';
+    notes?: string | null;
+    createdBy?: string | null;
+    correctionOfId?: string | null;
+    createdAt: string;
+}
+
+export interface ProductionActualPage {
+    data: ProductionActualEntry[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+}
+
+export interface ProductionActualFilters {
+    page?: number;
+    pageSize?: number;
+    from?: string;
+    to?: string;
+    status?: ProductionActualEntry['status'];
+    shift?: string;
+    machineNumber?: number;
+    q?: string;
+}
+
+export type ProductionMaterialRequestStatus = 'REQUESTED' | 'RESERVED' | 'PREPARING' | 'READY' | 'DELIVERED' | 'CONSUMED' | 'CANCELLED';
+
+export interface ProductionMaterialAllocation {
+    id: string;
+    lotId: string;
+    lotNumberSnapshot: string;
+    fifoDateSnapshot: string | null;
+    reservedKg: number;
+    deliveredKg: number;
+    position?: { id: string; codigo: string };
+}
+
+export interface ProductionMaterialRequestLine {
+    id: string;
+    itemId: string;
+    requestedKg: number;
+    reservedKg: number;
+    deliveredKg: number;
+    consumedKg: number;
+    item: { id: string; codigoInterno: string; descripcion: string; unidadPrincipal: string };
+    allocations: ProductionMaterialAllocation[];
+}
+
+export interface ProductionMaterialRequest {
+    id: string;
+    scheduleId: string;
+    sourceDepotId: string;
+    status: ProductionMaterialRequestStatus;
+    requestedBy: string | null;
+    reservedAt: string | null;
+    preparationStartedAt: string | null;
+    readyAt: string | null;
+    deliveredAt: string | null;
+    consumedAt: string | null;
+    notes: string | null;
+    sourceDepot: { id: string; nombre: string };
+    lines: ProductionMaterialRequestLine[];
+    createdAt: string;
+}
+
+export interface ProductionOutputLot {
+    id: string;
+    scheduleId: string;
+    articleId: string | null;
+    articleCodeSnapshot: string;
+    lotNumber: string;
+    goodSocks: number;
+    secondSocks: number;
+    qualityStatus: 'QUARANTINE' | 'RELEASED';
+    qualityTestedAt: string | null;
+    qualityTestedBy: string | null;
+    qualityNotes: string | null;
+    article?: { id: string; codigo: string; descripcion: string } | null;
+    schedule?: ProductionSchedule;
     createdAt: string;
 }
 
@@ -263,6 +365,10 @@ export const productionApi = api.injectEndpoints({
     endpoints: (builder) => ({
         getProductionDashboard: builder.query<ProductionDashboardResponse, { date?: string } | void>({
             query: (params) => `production/dashboard${params?.date ? `?date=${encodeURIComponent(params.date)}` : ''}`,
+            providesTags: ['Production'],
+        }),
+        getProductionOverview: builder.query<ProductionOverviewResponse, { from: string; to: string }>({
+            query: ({ from, to }) => `production/dashboard-overview?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
             providesTags: ['Production'],
         }),
         getProductionSchedules: builder.query<ProductionSchedule[], { from?: string; to?: string; status?: ProductionScheduleStatus } | void>({
@@ -303,6 +409,29 @@ export const productionApi = api.injectEndpoints({
             query: (scheduleId) => `production/schedules/${scheduleId}/actuals`,
             providesTags: ['Production'],
         }),
+        getProductionActualHistory: builder.query<ProductionActualPage, ProductionActualFilters | void>({
+            query: (params) => {
+                const search = new URLSearchParams();
+                if (params?.page) search.set('page', String(params.page));
+                if (params?.pageSize) search.set('pageSize', String(params.pageSize));
+                if (params?.from) search.set('from', params.from);
+                if (params?.to) search.set('to', params.to);
+                if (params?.status) search.set('status', params.status);
+                if (params?.shift) search.set('shift', params.shift);
+                if (params?.machineNumber) search.set('machineNumber', String(params.machineNumber));
+                if (params?.q) search.set('q', params.q);
+                return `production/actual${search.toString() ? `?${search}` : ''}`;
+            },
+            providesTags: ['Production'],
+        }),
+        correctActualProduction: builder.mutation<ProductionActualEntry, { id: string; body: CreateActualProductionRequest }>({
+            query: ({ id, body }) => ({ url: `production/actual/${id}/correct`, method: 'POST', body }),
+            invalidatesTags: ['Production'],
+        }),
+        annulActualProduction: builder.mutation<ProductionActualEntry, { id: string; reason: string }>({
+            query: ({ id, reason }) => ({ url: `production/actual/${id}/annul`, method: 'PATCH', body: { reason } }),
+            invalidatesTags: ['Production'],
+        }),
         verifyProductionPicking: builder.mutation<ProductionPickingItem[], { scheduleId: string; itemId: string }>({
             query: ({ scheduleId, itemId }) => ({
                 url: `production/schedules/${scheduleId}/picking/${itemId}/verify`,
@@ -313,6 +442,51 @@ export const productionApi = api.injectEndpoints({
         }),
         createActualProduction: builder.mutation<any, CreateActualProductionRequest>({
             query: (body) => ({ url: 'production/actual', method: 'POST', body }),
+            invalidatesTags: ['Production'],
+        }),
+        getProductionMaterialRequest: builder.query<ProductionMaterialRequest | null, string>({
+            query: (scheduleId) => `production/schedules/${scheduleId}/material-request`,
+            providesTags: ['Production'],
+        }),
+        createProductionMaterialRequest: builder.mutation<ProductionMaterialRequest, { scheduleId: string; sourceDepotId: string; notes?: string }>({
+            query: ({ scheduleId, ...body }) => ({ url: `production/schedules/${scheduleId}/material-request`, method: 'POST', body }),
+            invalidatesTags: ['Production'],
+        }),
+        reserveProductionMaterials: builder.mutation<ProductionMaterialRequest, string>({
+            query: (id) => ({ url: `production/material-requests/${id}/reserve`, method: 'POST', body: {} }),
+            invalidatesTags: ['Production', 'Stock'],
+        }),
+        startProductionPreparation: builder.mutation<ProductionMaterialRequest, string>({
+            query: (id) => ({ url: `production/material-requests/${id}/start-preparation`, method: 'POST', body: {} }),
+            invalidatesTags: ['Production'],
+        }),
+        readyProductionMaterials: builder.mutation<ProductionMaterialRequest, string>({
+            query: (id) => ({ url: `production/material-requests/${id}/ready`, method: 'POST', body: {} }),
+            invalidatesTags: ['Production'],
+        }),
+        deliverProductionMaterials: builder.mutation<ProductionMaterialRequest, string>({
+            query: (id) => ({ url: `production/material-requests/${id}/deliver`, method: 'POST', body: {} }),
+            invalidatesTags: ['Production', 'Stock', 'Dashboard'],
+        }),
+        consumeProductionMaterials: builder.mutation<ProductionMaterialRequest, { id: string; lines: Array<{ itemId: string; consumedKg: number }> }>({
+            query: ({ id, lines }) => ({ url: `production/material-requests/${id}/consume`, method: 'POST', body: { lines } }),
+            invalidatesTags: ['Production'],
+        }),
+        closeProductionSchedule: builder.mutation<{ schedule: ProductionSchedule; lots: ProductionOutputLot[] }, string>({
+            query: (scheduleId) => ({ url: `production/schedules/${scheduleId}/close`, method: 'POST', body: {} }),
+            invalidatesTags: ['Production'],
+        }),
+        getProductionOutputLots: builder.query<{ data: ProductionOutputLot[]; total: number; page: number; pageSize: number; totalPages: number }, { page: number; pageSize: number; status?: string; q?: string }>({
+            query: ({ page, pageSize, status, q }) => {
+                const search = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+                if (status) search.set('status', status);
+                if (q) search.set('q', q);
+                return `production/output-lots?${search}`;
+            },
+            providesTags: ['Production'],
+        }),
+        releaseProductionOutputLot: builder.mutation<ProductionOutputLot, { id: string; notes?: string }>({
+            query: ({ id, notes }) => ({ url: `production/output-lots/${id}/release`, method: 'PATCH', body: { notes } }),
             invalidatesTags: ['Production'],
         }),
         getProductionLogs: builder.query({
@@ -371,6 +545,7 @@ export const productionApi = api.injectEndpoints({
 
 export const {
     useGetProductionDashboardQuery,
+    useGetProductionOverviewQuery,
     useGetProductionSchedulesQuery,
     useGetProductionScheduleQuery,
     useImportProductionSchedulePdfMutation,
@@ -379,8 +554,21 @@ export const {
     useCreateProductionScheduleLineMutation,
     useGetProductionPickingQuery,
     useGetProductionActualsQuery,
+    useGetProductionActualHistoryQuery,
+    useCorrectActualProductionMutation,
+    useAnnulActualProductionMutation,
     useVerifyProductionPickingMutation,
     useCreateActualProductionMutation,
+    useGetProductionMaterialRequestQuery,
+    useCreateProductionMaterialRequestMutation,
+    useReserveProductionMaterialsMutation,
+    useStartProductionPreparationMutation,
+    useReadyProductionMaterialsMutation,
+    useDeliverProductionMaterialsMutation,
+    useConsumeProductionMaterialsMutation,
+    useCloseProductionScheduleMutation,
+    useGetProductionOutputLotsQuery,
+    useReleaseProductionOutputLotMutation,
     useGetProductionLogsQuery,
     useUpdateProductionRecordMutation,
     useDeleteProductionRecordMutation,

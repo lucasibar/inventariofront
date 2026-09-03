@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useGetInventoryCheckAnalyticsQuery } from '../../features/warehouse/inventoryCheck/api/inventory-check.api';
 import { PageHeader, Card, Btn, Spinner, useIsMobile } from '../../shared/ui';
 import { useNavigate } from 'react-router-dom';
+import { PaginationControls, useClientPagination } from '../../shared/pagination';
 
 export default function InformesInventariadoPage() {
     const isMobile = useIsMobile();
@@ -20,6 +21,7 @@ export default function InformesInventariadoPage() {
         if (statusFilter === 'ALL') return history;
         return history.filter(item => item.status === statusFilter);
     }, [history, statusFilter]);
+    const pagination = useClientPagination(filteredHistory, 25);
 
     if (isLoading) {
         return (
@@ -167,7 +169,7 @@ export default function InformesInventariadoPage() {
                             </thead>
                             <tbody>
                                 {filteredHistory.length > 0 ? (
-                                    filteredHistory.map((item) => (
+                                    pagination.pageItems.map((item) => (
                                         <tr key={item.id} style={{ borderBottom: '1px solid #1f2233' }}>
                                             <td style={{ padding: '12px 16px', color: 'var(--text-primary, #f3f4f6)', fontWeight: 700 }}>
                                                 🏢 {item.depositoNombre}
@@ -211,6 +213,7 @@ export default function InformesInventariadoPage() {
                             </tbody>
                         </table>
                     </div>
+                    <PaginationControls count={filteredHistory.length} page={pagination.page} pageSize={pagination.pageSize} onPageChange={pagination.setPage} onPageSizeChange={(value) => { pagination.setPageSize(value); pagination.setPage(0); }} />
                 </Card>
             </div>
         </div>

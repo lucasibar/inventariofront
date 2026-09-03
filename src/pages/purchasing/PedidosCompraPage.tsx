@@ -16,6 +16,7 @@ import { useSelector } from 'react-redux';
 import { selectCurrentUser, selectAllowedDepots } from '../../entities/auth/model/authSlice';
 import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
 import OrdenCompraDetailModal from '../../features/purchasing/purchase-orders/ui/OrdenCompraDetailModal';
+import { PaginationControls, useClientPagination } from '../../shared/pagination';
 
 export default function PedidosCompraPage() {
     const user = useSelector(selectCurrentUser);
@@ -115,15 +116,16 @@ export default function PedidosCompraPage() {
         return list;
     }, [allItems, supplierId, depositoId, formStock]);
 
+    const orderPagination = useClientPagination(orders, 25);
     const grouped = useMemo(() => {
         const map = new Map<string, { supplierName: string; orders: any[] }>();
-        orders.forEach((o: any) => {
+        orderPagination.pageItems.forEach((o: any) => {
             const key = o.supplier?.id ?? 'sin-proveedor';
             if (!map.has(key)) map.set(key, { supplierName: o.supplier?.name ?? 'Sin proveedor', orders: [] });
             map.get(key)!.orders.push(o);
         });
         return Array.from(map.values());
-    }, [orders]);
+    }, [orderPagination.pageItems]);
 
     const save = async () => {
         setSaving(true); setError('');
@@ -224,7 +226,7 @@ export default function PedidosCompraPage() {
 
             {isLoading ? <Spinner /> : grouped.length === 0 ? (
                 <p style={{ color: 'var(--text-dimmed, #4b5563)', textAlign: 'center', padding: '32px', fontSize: '14px' }}>Todavía no hay compras cargadas</p>
-            ) : grouped.map(group => (
+            ) : <>{grouped.map(group => (
                 <div key={group.supplierName} style={{ marginBottom: '24px' }}>
                     <h3 style={{ color: '#a5b4fc', fontSize: '14px', fontWeight: 700, margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         🏭 {group.supplierName}
@@ -300,7 +302,7 @@ export default function PedidosCompraPage() {
                         </Card>
                     ))}
                 </div>
-            ))}
+            ))}<PaginationControls count={orders.length} page={orderPagination.page} pageSize={orderPagination.pageSize} onPageChange={orderPagination.setPage} onPageSizeChange={(value) => { orderPagination.setPageSize(value); orderPagination.setPage(0); }} /></>}
 
             {showForm && (
                 <Modal title={editOrderId ? "Editar Orden de Compra" : "Nueva Orden de Compra"} onClose={closeForm} wide>

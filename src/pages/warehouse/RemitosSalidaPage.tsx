@@ -15,6 +15,7 @@ import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.
 import { useGetStockQuery } from '../../features/warehouse/stock/api/stock.api';
 import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
 import { PageHeader, Card, Btn, Input, SearchSelect, Modal, Table, Badge, HelpTooltip, SearchBar } from '../../shared/ui';
+import { PaginationControls, useClientPagination } from '../../shared/pagination';
 
 export default function RemitosSalidaPage() {
     const { data: remitos = [], isLoading } = useGetRemitosSalidaQuery();
@@ -86,6 +87,7 @@ export default function RemitosSalidaPage() {
             return tokens.every(token => searchableContent.includes(token));
         });
     }, [remitos, search, selectedDepotId, fechaDesde, fechaHasta]);
+    const pagination = useClientPagination(filteredRemitos, 25);
 
     const handleRowClick = async (remito: any) => {
         try {
@@ -235,9 +237,9 @@ export default function RemitosSalidaPage() {
                 <Card>
                     <Table
                         loading={isLoading}
-                        onRowClick={(i) => handleRowClick(filteredRemitos[i])}
+                        onRowClick={(i) => handleRowClick(pagination.pageItems[i])}
                         cols={['Número', 'Fecha', 'Cliente', 'Estado', 'Items', 'Cantidades', '']}
-                        rows={filteredRemitos.map((r: any) => {
+                        rows={pagination.pageItems.map((r: any) => {
                             const lines = r.lines || [];
                             const totalPrincipal = lines.reduce((sum: number, l: any) => sum + Number(l.qtyPrincipal || 0), 0);
                             const totalSecundario = lines.reduce((sum: number, l: any) => sum + Number(l.qtySecundaria || 0), 0);
@@ -260,6 +262,7 @@ export default function RemitosSalidaPage() {
                             ];
                         })}
                     />
+                    <PaginationControls count={filteredRemitos.length} page={pagination.page} pageSize={pagination.pageSize} onPageChange={pagination.setPage} onPageSizeChange={(value) => { pagination.setPageSize(value); pagination.setPage(0); }} />
                 </Card>
             )}
 

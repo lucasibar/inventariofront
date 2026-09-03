@@ -13,6 +13,25 @@ export const itemsApi = api.injectEndpoints({
             },
             providesTags: ['Items'],
         }),
+        getItemsCompleteness: builder.query<any, { page: number; pageSize: number; q?: string; depositoId?: string; level?: string }>({
+            query: ({ page, pageSize, q, depositoId, level }) => {
+                const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+                if (q) params.set('q', q);
+                if (depositoId) params.set('depositoId', depositoId);
+                if (level) params.set('level', level);
+                return `items/completeness?${params}`;
+            },
+            providesTags: ['Items'],
+            transformResponse: (response: any) => ({
+                ...response,
+                data: response.data.map((item: any) => ({
+                    ...item,
+                    code: item.codigoInterno,
+                    description: item.descripcion,
+                    context: [item.deposito, item.categoria, item.supplierName].filter(Boolean).join(' · '),
+                })),
+            }),
+        }),
         createItem: builder.mutation<any, any>({
             query: (body) => ({ url: 'items', method: 'POST', body }),
             invalidatesTags: ['Items', 'Stock'],
@@ -50,6 +69,7 @@ export const itemsApi = api.injectEndpoints({
 
 export const { 
     useGetItemsQuery, 
+    useGetItemsCompletenessQuery,
     useLazyGetItemsQuery, 
     useCreateItemMutation, 
     useUpdateItemMutation, 

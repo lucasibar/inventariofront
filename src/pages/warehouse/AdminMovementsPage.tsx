@@ -8,6 +8,7 @@ import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposit
 import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.api';
 import { PageHeader, Card, Badge, Btn, Select, SearchSelect, Input, useIsMobile, ActionMenu, ResponsiveTable } from '../../shared/ui';
 import { selectCurrentUser } from '../../entities/auth/model/authSlice';
+import { PaginationControls, useClientPagination } from '../../shared/pagination';
 
 export default function AdminMovementsPage() {
     const isMobile = useIsMobile();
@@ -40,6 +41,10 @@ export default function AdminMovementsPage() {
         tipo: tipo || undefined
     });
     const [reverseMovement] = useReverseMovementMutation();
+    const sortedMovements = useMemo(() =>
+        ([...movements].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())),
+    [movements]);
+    const pagination = useClientPagination(sortedMovements, 25);
 
     const handleReverse = async (id: string) => {
         if (!window.confirm('¿Estás seguro de que querés revertir este movimiento? Se generará una contrapartida y el movimiento original quedará anulado.')) return;
@@ -72,10 +77,6 @@ export default function AdminMovementsPage() {
         ANULACION_AJUSTE_SUMA: { color: '#ec4899', label: 'ANUL. AJUSTE (+)' },
         ANULACION_AJUSTE_RESTA: { color: '#ec4899', label: 'ANUL. AJUSTE (-)' },
     };
-
-    const sortedMovements = useMemo(() => 
-        ([...movements].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())), 
-    [movements]);
 
     const desktopCols = ['Fecha', 'Tipo', 'Depósito', 'Material / Partida', 'Posición', 'Cantidad', 'Estado', 'Obs', ''];
 
@@ -224,11 +225,12 @@ export default function AdminMovementsPage() {
 
             <ResponsiveTable 
                 loading={isFetching}
-                data={sortedMovements}
+                data={pagination.pageItems}
                 desktopCols={desktopCols}
                 renderDesktopRow={renderDesktopRow}
                 renderMobileCard={renderMobileCard}
             />
+            <PaginationControls count={sortedMovements.length} page={pagination.page} pageSize={pagination.pageSize} onPageChange={pagination.setPage} onPageSizeChange={(value) => { pagination.setPageSize(value); pagination.setPage(0); }} />
         </div>
     );
 }

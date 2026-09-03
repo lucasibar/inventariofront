@@ -32,6 +32,7 @@ import {
     useUpdateProductionScheduleLineMutation,
     useUpdateProductionScheduleStatusMutation,
 } from '../../entities/production/api/production.api';
+import { PaginationControls, useClientPagination } from '../../shared/pagination';
 
 const localDate = (days = 0) => {
     const value = new Date();
@@ -79,6 +80,7 @@ export default function ProgramacionesProduccionPage() {
     const [updateLine, { isLoading: isUpdatingLine }] = useUpdateProductionScheduleLineMutation();
     const [createLine, { isLoading: isCreatingLine }] = useCreateProductionScheduleLineMutation();
     const [createActual, { isLoading: isConfirmingActual }] = useCreateActualProductionMutation();
+    const schedulePagination = useClientPagination(schedules, 10);
 
     useEffect(() => {
         if (!selectedId && schedules.length > 0) setSelectedId(schedules[0].id);
@@ -165,7 +167,7 @@ export default function ProgramacionesProduccionPage() {
                         </Grid>
                         {isLoadingList ? <PageLoader text="Cargando programaciones..." /> : schedules.length === 0 ? (
                             <Alert severity="info">No hay programaciones en este período.</Alert>
-                        ) : schedules.map((item) => (
+                        ) : schedulePagination.pageItems.map((item) => (
                             <Button
                                 key={item.id}
                                 fullWidth
@@ -181,6 +183,7 @@ export default function ProgramacionesProduccionPage() {
                                 <Typography variant="caption" color="text.secondary">Revisión {item.revision} · {statusLabels[item.status]} · {item.linesCount ?? 0} líneas</Typography>
                             </Button>
                         ))}
+                        <PaginationControls count={schedules.length} page={schedulePagination.page} pageSize={schedulePagination.pageSize} onPageChange={schedulePagination.setPage} onPageSizeChange={(value) => { schedulePagination.setPageSize(value); schedulePagination.setPage(0); }} />
                     </Card>
                 </Grid>
 

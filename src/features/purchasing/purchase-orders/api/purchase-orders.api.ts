@@ -37,8 +37,8 @@ export const purchaseOrdersApi = api.injectEndpoints({
             }),
             invalidatesTags: ['PurchaseOrders', 'Dashboard'],
         }),
-        getDashboardStats: builder.query<any, void>({
-            query: () => '/purchase-orders/dashboard-stats',
+        getDashboardStats: builder.query<any, string | void>({
+            query: (depositoId) => `/purchase-orders/dashboard-stats${depositoId ? `?depositoId=${depositoId}` : ''}`,
             providesTags: ['Dashboard'],
         }),
         getUnlinkedMovements: builder.query<any[], void>({

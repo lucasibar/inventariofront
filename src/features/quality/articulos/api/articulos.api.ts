@@ -20,6 +20,31 @@ export const articulosApi = api.injectEndpoints({
             query: (id) => `articulos/${id}`,
             providesTags: ['Articulos'],
         }),
+        previewArticulosBulkImport: builder.mutation<any, { rows: any[] }>({
+            query: (body) => ({ url: 'articulos/bulk-import/preview', method: 'POST', body }),
+        }),
+        importArticulosBulk: builder.mutation<any, { rows: any[] }>({
+            query: (body) => ({ url: 'articulos/bulk-import', method: 'POST', body }),
+            invalidatesTags: ['Articulos'],
+        }),
+        getArticulosCompleteness: builder.query<any, { page: number; pageSize: number; q?: string; level?: string }>({
+            query: ({ page, pageSize, q, level }) => {
+                const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+                if (q) params.set('q', q);
+                if (level) params.set('level', level);
+                return `articulos/completeness?${params}`;
+            },
+            providesTags: ['Articulos'],
+            transformResponse: (response: any) => ({
+                ...response,
+                data: response.data.map((article: any) => ({
+                    ...article,
+                    code: article.codigo,
+                    description: article.descripcion,
+                    context: [article.categoria, article.marca, article.estadoRevision].filter(Boolean).join(' · '),
+                })),
+            }),
+        }),
         createArticulo: builder.mutation<any, any>({
             query: (body) => ({ url: 'articulos', method: 'POST', body }),
             invalidatesTags: ['Articulos'],
@@ -58,6 +83,9 @@ export const articulosApi = api.injectEndpoints({
 export const {
     useGetArticulosQuery,
     useGetArticuloQuery,
+    usePreviewArticulosBulkImportMutation,
+    useImportArticulosBulkMutation,
+    useGetArticulosCompletenessQuery,
     useCreateArticuloMutation,
     useUpdateArticuloMutation,
     useUpdateArticuloStatusMutation,

@@ -28,7 +28,6 @@ import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import AssignmentIcon from '@mui/icons-material/Assignment';
 import StoreIcon from '@mui/icons-material/Store';
 import CloseIcon from '@mui/icons-material/Close';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -39,7 +38,6 @@ import MicOffIcon from '@mui/icons-material/MicOff';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import LinkIcon from '@mui/icons-material/Link';
-import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -57,11 +55,13 @@ import {
     useCreatePurchaseOrderMutation,
     useDeletePurchaseOrderMutation,
     useUpdatePurchaseOrderStatusMutation,
-    useGetCombosQuery
+    useGetCombosQuery,
+    useGetDashboardStatsQuery,
 } from '../../features/purchasing/purchase-orders/api/purchase-orders.api';
 import { useGetAlertsQuery } from '../../features/warehouse/stock/api/stock.api';
 import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
 import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.api';
+import { PurchaseExecutiveSummary } from '../../features/purchasing/dashboard/ui/PurchaseExecutiveSummary';
 // Design System Colors - Purchasing Theme (Indigo/Purple)
 const colors = {
     primary: '#818cf8', // Indigo
@@ -77,22 +77,6 @@ const colors = {
     warning: '#fbbf24',
     inputBg: 'var(--bg-action-btn, rgba(255,255,255,0.05))'
 };
-
-const KPIButton = ({ label, value, icon: Icon, color, active, onClick }: any) => (
-    <Box 
-        onClick={onClick}
-        sx={{ 
-            flex: '1 1 0', minWidth: 90, height: 75, p: 1.5, borderRadius: 3, 
-            bgcolor: active ? `${color}25` : colors.cardBg, border: '1px solid', borderColor: active ? color : colors.border,
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s ease', position: 'relative'
-        }}
-    >
-        <Box sx={{ color: color, mb: 0.5, opacity: active ? 1 : 0.6 }}><Icon sx={{ fontSize: '1.1rem' }} /></Box>
-        <Typography sx={{ color: active ? 'var(--text-white-dynamic, #fff)' : color, fontWeight: 900, mb: 0.1, lineHeight: 1, fontSize: '1.1rem' }}>{value}</Typography>
-        <Typography variant="caption" sx={{ color: active ? 'var(--text-white-dynamic, #fff)' : colors.textDim, fontSize: '0.5rem', fontWeight: 800, textAlign: 'center', lineHeight: 1, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</Typography>
-        {active && (<Box sx={{ position: 'absolute', bottom: 0, left: '20%', right: '20%', height: 3, bgcolor: color, borderRadius: '2px 2px 0 0' }} />)}
-    </Box>
-);
 
 const ComboCard = ({ combo, onBuy }: any) => {
     const supplyColor = combo.daysOfSupply === null ? colors.textDim : combo.daysOfSupply < 15 ? colors.danger : combo.daysOfSupply < 30 ? colors.warning : colors.success;
@@ -155,6 +139,7 @@ export default function DashboardComprasPage() {
     const user = useSelector(selectCurrentUser);
     const allowedDepots = useSelector(selectAllowedDepots);
     const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+    const canManageOrders = ['ADMIN', 'SUPERVISOR'].includes(user?.role?.toUpperCase() ?? '');
 
     const { data: rawDepots = [] } = useGetDepotsQuery();
     const depots = useMemo(() => {
@@ -177,6 +162,7 @@ export default function DashboardComprasPage() {
 
     // API Data
     const { data: rawOrders = [], isLoading: loadingOrders } = useGetPurchaseOrdersQuery(depotId || undefined);
+    const { data: purchaseStats, isLoading: loadingStats } = useGetDashboardStatsQuery(depotId || undefined);
     const { data: rawAlerts = [], isLoading: loadingAlerts } = useGetAlertsQuery();
     const { data: unlinkedMovs = [], isLoading: loadingUnlinked, error: errorUnlinked } = useGetUnlinkedMovementsQuery();
     const { data: combos = [], isLoading: loadingCombos } = useGetCombosQuery(depotId || undefined);
@@ -210,19 +196,24 @@ export default function DashboardComprasPage() {
         
         const orders = rawOrders.filter((o: any) => match(`${o.numero} ${o.supplier?.name} ${(o.lines || []).map((l: any) => l.item?.descripcion).join(' ')}`));
         const rawMovs = Array.isArray(unlinkedMovs) ? unlinkedMovs : [];
-        const baseMovs = depotId ? rawMovs.filter((m: any) => m.depositoId === depotId) : rawMovs;
-        const movs = baseMovs.filter((m: any) => match(`${m.item?.descripcion} ${m.supplier?.name} ${m.documentoNumero}`));
+        const baseMovs = depotId ? rawMovs.filter((m: any) => m.posicion?.depositoId === depotId) : rawMovs;
+        const movs = baseMovs.filter((m: any) => match(`${m.item?.descripcion} ${m.item?.supplier?.name} ${m.documentoNumero}`));
         
-        const delayedCount = rawOrders.filter((o: any) => o.estado !== 'RECIBIDO' && o.estado !== 'COMPLETADO' && o.fechaEntregaEsperada && new Date(o.fechaEntregaEsperada) < new Date()).length;
+        const delayedCount = purchaseStats?.overdueOrdersCount ?? rawOrders.filter((o: any) => o.estado !== 'RECIBIDO' && o.estado !== 'COMPLETADO' && o.fechaEntregaEsperada && new Date(o.fechaEntregaEsperada) < new Date()).length;
 
         return { 
             filteredOrders: orders.sort((a: any, b: any) => new Date(b.fechaEmision).getTime() - new Date(a.fechaEmision).getTime()),
             filteredMovs: movs,
-            metrics: { pending: rawOrders.filter(o => o.estado === 'PENDIENTE').length, unlinked: movs.length, critical: alerts.length + combos.length, delayed: delayedCount }
+            metrics: {
+                pending: purchaseStats?.pendingOrdersCount ?? rawOrders.filter(o => o.estado === 'PENDIENTE' || o.estado === 'RECIBIDO_PARCIAL').length,
+                unlinked: movs.length,
+                critical: purchaseStats?.criticalMaterialsCount ?? alerts.length,
+                delayed: delayedCount,
+            }
         };
-    }, [rawOrders, unlinkedMovs, alerts, combos, searchQuery, depotId]);
+    }, [rawOrders, unlinkedMovs, alerts, purchaseStats, searchQuery, depotId]);
 
-    const isLoading = loadingOrders || loadingAlerts || loadingUnlinked || loadingCombos;
+    const isLoading = loadingOrders || loadingAlerts || loadingUnlinked || loadingCombos || loadingStats;
 
     return (
         <Box sx={{ bgcolor: colors.bg, minHeight: '100vh', color: colors.text, pb: 10, maxWidth: '1400px', margin: '0 auto' }}>
@@ -232,12 +223,7 @@ export default function DashboardComprasPage() {
                 <IconButton sx={{ color: colors.textDim }}><InventoryIcon /></IconButton>
             </Box>
 
-            {/* Summary Strip */}
-            <Box sx={{ px: 2, pb: 1.5, display: 'flex', gap: 1, overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' } }}>
-                <Chip label={`${rawOrders.length} OCs totales`} size="small" sx={{ bgcolor: `${colors.primary}15`, color: colors.primary, fontWeight: 800, fontSize: '0.65rem' }} />
-                <Chip label={`${combos.filter((c: any) => c.daysOfSupply !== null && c.daysOfSupply < 15).length} grupos urgentes`} size="small" sx={{ bgcolor: `${colors.danger}15`, color: colors.danger, fontWeight: 800, fontSize: '0.65rem' }} />
-                {metrics.delayed > 0 && <Chip label={`${metrics.delayed} demoradas`} size="small" sx={{ bgcolor: `${colors.warning}15`, color: colors.warning, fontWeight: 800, fontSize: '0.65rem' }} />}
-            </Box>
+            <PurchaseExecutiveSummary stats={purchaseStats} metrics={metrics} activeTab={tab} onTabChange={setTab} palette={colors} />
 
             <Box sx={{ p: 2, pb: 1, display: 'flex', gap: 1.5, flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
                 <TextField
@@ -289,14 +275,6 @@ export default function DashboardComprasPage() {
                 />
             </Box>
 
-            {/* Reordered KPIs */}
-            <Box sx={{ display: 'flex', overflowX: 'auto', gap: 1, p: 1.5, pt: 0, '&::-webkit-scrollbar': { display: 'none' } }}>
-                <KPIButton label="Críticos" value={metrics.critical} icon={NotificationsActiveIcon} color={colors.danger} active={tab === 2} onClick={() => setTab(2)} />
-                <KPIButton label="Por Conciliar" value={metrics.unlinked} icon={LinkIcon} color={colors.warning} active={tab === 1} onClick={() => setTab(1)} />
-                <KPIButton label="En Curso" value={metrics.pending} icon={AssignmentIcon} color={colors.primary} active={tab === 0} onClick={() => setTab(0)} />
-                <KPIButton label="Demoras" value={metrics.delayed} icon={HistoryIcon} color={colors.danger} active={tab === 3} onClick={() => setTab(3)} />
-            </Box>
-
             {isLoading ? <Box sx={{ display: 'flex', justifyContent: 'center', p: 10 }}><CircularProgress sx={{ color: colors.primary }} /></Box> : (
                 <Fade in timeout={400}>
                     <Box sx={{ px: 2 }}>
@@ -321,8 +299,8 @@ export default function DashboardComprasPage() {
                         <List disablePadding>
                             {tab === 2 && (
                                 <>
-                                    {combos.map((c: any) => <ComboCard key={c.id} combo={c} onBuy={() => setNewOrderOpen(true)} />)}
-                                    {alerts.map((a: any) => <ListItem key={a.id} sx={{ bgcolor: colors.cardBg, mb: 1.5, borderRadius: 3, p: 2, border: `1px solid ${colors.border}`, display: 'flex', flexDirection: 'column', gap: 1, width: '100%' }}>
+                                    {combos.slice(0, 3).map((c: any) => <ComboCard key={c.id} combo={c} onBuy={() => setNewOrderOpen(true)} />)}
+                                    {alerts.slice(0, 5).map((a: any) => <ListItem key={a.id} sx={{ bgcolor: colors.cardBg, mb: 1.5, borderRadius: 3, p: 2, border: `1px solid ${colors.border}`, display: 'flex', flexDirection: 'column', gap: 1, width: '100%' }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}><Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><WarningAmberIcon sx={{ color: colors.danger, fontSize: 16 }} /><Typography variant="caption" sx={{ color: colors.danger, fontWeight: 900 }}>STOCK BAJO</Typography></Box><Typography variant="caption" sx={{ color: colors.textDim }}>Min: {a.minStock} {a.item?.unidadPrincipal}</Typography></Box>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 800, color: colors.text }}>{a.item?.descripcion}</Typography>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}><Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}><Typography variant="h5" sx={{ fontWeight: 900, color: colors.warning }}>{a.currentStock?.toFixed(1)}</Typography><Typography variant="caption" sx={{ color: colors.textDim }}>{a.item?.unidadPrincipal}</Typography></Box><Button size="small" variant="contained" startIcon={<ShoppingCartIcon />} sx={{ bgcolor: colors.primary, color: '#000', fontWeight: 900, textTransform: 'none', borderRadius: 2, px: 2 }} onClick={() => setNewOrderOpen(true)}>Comprar</Button></Box>
@@ -331,11 +309,11 @@ export default function DashboardComprasPage() {
                                 </>
                             )}
 
-                            {tab === 1 && (filteredMovs.length > 0 ? filteredMovs.map((m: any) => <UnlinkedMovementCard key={m.id} movement={m} onLinkRequest={(mov: any) => { setSelectedMov(mov); setConciliationOpen(true); }} />) : <Typography variant="caption" sx={{ p: 4, textAlign: 'center', display: 'block', color: colors.textDim }}>{errorUnlinked ? "Error al cargar remitos." : "Depósito al día. No hay remitos por conciliar."}</Typography>)}
+                            {tab === 1 && (filteredMovs.length > 0 ? filteredMovs.slice(0, 5).map((m: any) => <UnlinkedMovementCard key={m.id} movement={m} onLinkRequest={(mov: any) => { setSelectedMov(mov); setConciliationOpen(true); }} />) : <Typography variant="caption" sx={{ p: 4, textAlign: 'center', display: 'block', color: colors.textDim }}>{errorUnlinked ? "Error al cargar remitos." : "Depósito al día. No hay remitos por conciliar."}</Typography>)}
 
                             {tab === 3 && (() => {
                                 const delayed = filteredOrders.filter((o: any) => o.estado !== 'RECIBIDO' && o.estado !== 'COMPLETADO' && o.fechaEntregaEsperada && new Date(o.fechaEntregaEsperada) < new Date());
-                                return delayed.length > 0 ? delayed.map((o: any) => {
+                                return delayed.length > 0 ? delayed.slice(0, 5).map((o: any) => {
                                     const daysLate = Math.floor((Date.now() - new Date(o.fechaEntregaEsperada).getTime()) / (1000 * 60 * 60 * 24));
                                     return (
                                         <Paper key={o.id} elevation={0} sx={{ bgcolor: `${colors.danger}08`, mb: 1.5, borderRadius: 3, border: `1px solid ${colors.danger}25`, overflow: 'hidden', p: 2 }}>
@@ -356,7 +334,7 @@ export default function DashboardComprasPage() {
                                             {o.lines?.map((line: any, idx: number) => (
                                                 <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5, borderTop: idx === 0 ? `1px solid ${colors.border}` : 'none' }}>
                                                     <Typography variant="caption" sx={{ color: colors.textDim }}>{line.item?.descripcion}</Typography>
-                                                    <Typography variant="caption" sx={{ color: colors.danger, fontWeight: 800 }}>{line.qtyReceived || 0}/{line.qtyOrdered} {line.item?.unidadPrincipal}</Typography>
+                                                    <Typography variant="caption" sx={{ color: colors.danger, fontWeight: 800 }}>{line.qtyRecibida || 0}/{line.qtyPedido} {line.item?.unidadPrincipal}</Typography>
                                                 </Box>
                                             ))}
                                         </Paper>
@@ -364,10 +342,10 @@ export default function DashboardComprasPage() {
                                 }) : <Typography variant="caption" sx={{ p: 4, textAlign: 'center', display: 'block', color: colors.success }}>✅ No hay órdenes demoradas</Typography>;
                             })()}
                             
-                            {tab === 0 && (filteredOrders.length > 0 ? filteredOrders.map((o: any) => (
+                            {tab === 0 && (filteredOrders.length > 0 ? filteredOrders.slice(0, 5).map((o: any) => (
                                 <Box key={o.id} sx={{ position: 'relative' }}>
                                     <PurchaseOrderCard order={o} isExpanded={expandedOrderId === o.id} onToggleExpand={() => setExpandedOrderId(expandedOrderId === o.id ? null : o.id)} />
-                                    {expandedOrderId === o.id && (
+                                    {expandedOrderId === o.id && canManageOrders && (
                                         <Box sx={{ display: 'flex', gap: 1, px: 2, pb: 2 }}>
                                             <Button size="small" startIcon={<CheckCircleIcon />} sx={{ bgcolor: `${colors.success}20`, color: colors.success, fontWeight: 800, textTransform: 'none', borderRadius: 2 }} onClick={() => updateStatus({ id: o.id, status: 'COMPLETADO' })}>Completar</Button>
                                             <Button size="small" startIcon={<DeleteIcon />} sx={{ bgcolor: `${colors.danger}20`, color: colors.danger, fontWeight: 800, textTransform: 'none', borderRadius: 2 }} onClick={() => { if (window.confirm('¿Eliminar OC?')) deleteOrder(o.id); }}>Eliminar</Button>
@@ -418,11 +396,11 @@ const PurchaseOrderCard = ({ order, isExpanded, onToggleExpand }: any) => {
                 <Divider sx={{ borderColor: colors.border }} />
                 <Box sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.15)' }}>
                     {order.lines?.map((line: any, idx: number) => {
-                        const progress = (line.qtyReceived / line.qtyOrdered) * 100;
+                        const progress = Number(line.qtyPedido) > 0 ? (Number(line.qtyRecibida) / Number(line.qtyPedido)) * 100 : 0;
                         return (
                             <Box key={idx} sx={{ mb: 1.5, pb: 1.5, borderBottom: idx === order.lines.length - 1 ? 'none' : `1px solid ${colors.border}` }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}><Typography variant="caption" sx={{ fontWeight: 800, color: colors.text }}>{line.item?.descripcion}</Typography><Typography variant="caption" sx={{ fontWeight: 800, color: colors.primary }}>{line.qtyOrdered} {line.item?.unidadPrincipal}</Typography></Box>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}><Box sx={{ flex: 1 }}><LinearProgress variant="determinate" value={Math.min(100, progress)} sx={{ height: 4, borderRadius: 2, bgcolor: 'var(--bg-action-btn, rgba(255,255,255,0.05))', '& .MuiLinearProgress-bar': { bgcolor: progress >= 100 ? colors.success : colors.info } }} /></Box><Typography variant="caption" sx={{ color: colors.textDim, minWidth: 60, textAlign: 'right', fontSize: '0.6rem' }}>{line.qtyReceived} / {line.qtyOrdered}</Typography></Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}><Typography variant="caption" sx={{ fontWeight: 800, color: colors.text }}>{line.item?.descripcion}</Typography><Typography variant="caption" sx={{ fontWeight: 800, color: colors.primary }}>{line.qtyPedido} {line.item?.unidadPrincipal}</Typography></Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}><Box sx={{ flex: 1 }}><LinearProgress variant="determinate" value={Math.min(100, progress)} sx={{ height: 4, borderRadius: 2, bgcolor: 'var(--bg-action-btn, rgba(255,255,255,0.05))', '& .MuiLinearProgress-bar': { bgcolor: progress >= 100 ? colors.success : colors.info } }} /></Box><Typography variant="caption" sx={{ color: colors.textDim, minWidth: 60, textAlign: 'right', fontSize: '0.6rem' }}>{line.qtyRecibida} / {line.qtyPedido}</Typography></Box>
                             </Box>
                         );
                     })}
@@ -440,7 +418,7 @@ const UnlinkedMovementCard = ({ movement, onLinkRequest }: any) => (
         </Box>
         <Typography variant="subtitle2" sx={{ fontWeight: 800, color: colors.text }}>{movement.item?.descripcion}</Typography>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-            <Box><Typography variant="caption" sx={{ color: colors.textDim, display: 'block' }}>PROVEEDOR: {movement.supplier?.name || 'S/P'}</Typography><Typography variant="caption" sx={{ color: colors.textDim }}>DOC: {movement.documentoNumero || 'S/N'}</Typography></Box>
+            <Box><Typography variant="caption" sx={{ color: colors.textDim, display: 'block' }}>PROVEEDOR: {movement.item?.supplier?.name || 'S/P'}</Typography><Typography variant="caption" sx={{ color: colors.textDim }}>DOC: {movement.documentoNumero || 'S/N'}</Typography></Box>
             <Box sx={{ textAlign: 'right' }}><Typography variant="subtitle1" sx={{ fontWeight: 900, color: colors.success }}>{movement.qtyPrincipal} kg</Typography><Button size="small" variant="contained" startIcon={<LinkIcon />} sx={{ mt: 0.5, bgcolor: colors.info, color: 'var(--text-white-dynamic, #fff)', fontWeight: 900, textTransform: 'none', borderRadius: 2, fontSize: '0.65rem' }} onClick={() => onLinkRequest(movement)}>Vincular</Button></Box>
         </Box>
     </ListItem>
@@ -543,19 +521,20 @@ const ConciliationDrawer = ({ open, onClose, movement, purchaseOrders }: { open:
     const [linkMovement, { isLoading: linking }] = useLinkMovementMutation();
     const suggestedLines = useMemo(() => {
         if (!movement) return [];
-        return purchaseOrders.filter((o: any) => o.supplierId === movement.supplierId && o.estado !== 'COMPLETADO').flatMap((o: any) => (o.lines || []).map((l: any) => ({ ...l, orderNumero: o.numero, orderId: o.id }))).filter((l: any) => l.itemId === movement.itemId);
+        const supplierId = movement.item?.supplierId ?? movement.item?.supplier?.id;
+        return purchaseOrders.filter((o: any) => o.supplierId === supplierId && o.estado !== 'COMPLETADO').flatMap((o: any) => (o.lines || []).map((l: any) => ({ ...l, orderNumero: o.numero, orderId: o.id }))).filter((l: any) => l.itemId === movement.itemId);
     }, [movement, purchaseOrders]);
     const handleLink = async (lineId: string) => { try { await linkMovement({ movementId: movement.id, purchaseOrderLineId: lineId }).unwrap(); alert('¡Vinculación exitosa!'); onClose(); } catch (e) { alert('Error al vincular'); } };
     if (!movement) return null;
     return (
         <Drawer anchor="bottom" open={open} onClose={onClose} PaperProps={{ sx: { bgcolor: colors.bg, color: colors.text, borderTop: `2px solid ${colors.info}`, borderTopLeftRadius: 24, borderTopRightRadius: 24, p: 3, pb: 6 } }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}><Typography variant="h5" sx={{ fontWeight: 900, color: colors.info }}>CONCILIAR REMITO</Typography><IconButton onClick={onClose} sx={{ color: colors.textDim }}><CloseIcon /></IconButton></Box>
-            <Box sx={{ bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', p: 2, borderRadius: 3, border: `1px solid ${colors.border}`, mb: 3 }}><Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 700 }}>REMITO FÍSICO:</Typography><Typography variant="h6" sx={{ fontWeight: 800 }}>{movement.item?.descripcion}</Typography><Typography variant="body2" sx={{ color: colors.success, fontWeight: 900 }}>CANTIDAD: {movement.qtyPrincipal} kg</Typography><Typography variant="caption" sx={{ color: colors.textDim }}>Proveedor: {movement.supplier?.name}</Typography></Box>
+            <Box sx={{ bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', p: 2, borderRadius: 3, border: `1px solid ${colors.border}`, mb: 3 }}><Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 700 }}>REMITO FÍSICO:</Typography><Typography variant="h6" sx={{ fontWeight: 800 }}>{movement.item?.descripcion}</Typography><Typography variant="body2" sx={{ color: colors.success, fontWeight: 900 }}>CANTIDAD: {movement.qtyPrincipal} kg</Typography><Typography variant="caption" sx={{ color: colors.textDim }}>Proveedor: {movement.item?.supplier?.name || 'S/P'}</Typography></Box>
             <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 900, mb: 1.5, display: 'block', textTransform: 'uppercase' }}>Órdenes de Compra Sugeridas</Typography>
             <List disablePadding>
                 {suggestedLines.length === 0 ? <Typography variant="body2" sx={{ color: colors.danger, textAlign: 'center', p: 4, fontWeight: 700 }}>No hay OCs abiertas para este proveedor y material.</Typography> : suggestedLines.map((line: any) => (
                     <ListItem key={line.id} sx={{ bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.02))', borderRadius: 2, mb: 1, p: 2, border: `1px solid ${colors.border}`, display: 'flex', justifyContent: 'space-between' }}>
-                        <Box><Typography variant="body2" sx={{ fontWeight: 800, color: colors.primary }}>OC: {line.orderNumero}</Typography><Typography variant="caption" sx={{ color: colors.textDim, display: 'block' }}>Pedido: {line.qtyOrdered} kg | Recibido: {line.qtyReceived} kg</Typography><Typography variant="caption" sx={{ color: colors.warning }}>Pendiente: {line.qtyOrdered - line.qtyReceived} kg</Typography></Box>
+                        <Box><Typography variant="body2" sx={{ fontWeight: 800, color: colors.primary }}>OC: {line.orderNumero}</Typography><Typography variant="caption" sx={{ color: colors.textDim, display: 'block' }}>Pedido: {line.qtyPedido} kg | Recibido: {line.qtyRecibida} kg</Typography><Typography variant="caption" sx={{ color: colors.warning }}>Pendiente: {Number(line.qtyPedido) - Number(line.qtyRecibida)} kg</Typography></Box>
                         <Button variant="contained" size="small" disabled={linking} sx={{ bgcolor: colors.info, color: 'var(--text-white-dynamic, #fff)', fontWeight: 900, borderRadius: 2, textTransform: 'none' }} onClick={() => handleLink(line.id)}>{linking ? '...' : 'Vincular'}</Button>
                     </ListItem>
                 ))}
