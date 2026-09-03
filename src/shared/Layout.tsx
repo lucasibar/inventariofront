@@ -42,6 +42,15 @@ const flattenItems = (items: (NavItem | NavSubGroup)[]): NavItem[] => {
 
 const navGroups: NavGroup[] = [
     {
+        id: 'devoluciones',
+        label: 'Devoluciones de línea',
+        icon: '↩️',
+        items: [
+            { to: '/produccion/devoluciones-linea', label: '📤 Declarar devolución' },
+            { to: '/deposito/devoluciones-linea', label: '📥 Control e ingreso' },
+        ]
+    },
+    {
         id: 'administracion',
         label: 'Administración',
         icon: '📊',
@@ -303,6 +312,7 @@ export default function Layout() {
                 '/chequeo-inventario', '/reporte-chequeo', '/deposito/informes',
                 '/deposito/completitud-materiales',
                 '/produccion/materiales',
+                '/produccion/devoluciones-linea', '/deposito/devoluciones-linea',
             ],
             COMPRAS: [
                 '/dashboard', '/pedidos-compra', '/compras/materiales-criticos',
@@ -319,7 +329,7 @@ export default function Layout() {
                 '/mantenimiento/kpi/disponibilidad',
                 '/mantenimiento/kpi/disponibilidad-v2',
             ],
-            PRODUCCION: ['/produccion/dashboard', '/produccion/cargar', '/produccion/historico', '/produccion/materiales', '/produccion/recursos', '/produccion/importar-historico', '/produccion/ordenes-produccion', '/produccion/programaciones'],
+            PRODUCCION: ['/produccion/dashboard', '/produccion/cargar', '/produccion/historico', '/produccion/materiales', '/produccion/devoluciones-linea', '/produccion/recursos', '/produccion/importar-historico', '/produccion/ordenes-produccion', '/produccion/programaciones'],
             CALIDAD: ['/calidad/articulos', '/calidad/completitud-articulos', '/calidad/importar-articulos', '/calidad/cuarentena', '/calidad/lotes-producidos'],
             VENTAS: ['/ventas/dashboard'],
             FINANZAS: ['/finanzas/dashboard'],

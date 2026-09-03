@@ -323,6 +323,8 @@ export interface ProductionMaterialRequestLine {
     reservedKg: number;
     deliveredKg: number;
     consumedKg: number;
+    pendingReturnKg: number;
+    returnedKg: number;
     item: { id: string; codigoInterno: string; descripcion: string; unidadPrincipal: string };
     allocations: ProductionMaterialAllocation[];
 }
@@ -338,6 +340,7 @@ export interface ProductionMaterialRequest {
     readyAt: string | null;
     deliveredAt: string | null;
     consumedAt: string | null;
+    returnedAt: string | null;
     notes: string | null;
     sourceDepot: { id: string; nombre: string };
     lines: ProductionMaterialRequestLine[];
@@ -356,9 +359,43 @@ export interface ProductionOutputLot {
     qualityTestedAt: string | null;
     qualityTestedBy: string | null;
     qualityNotes: string | null;
+    stockPostedAt: string | null;
+    stockPostedBy: string | null;
+    targetDepot?: { id: string; nombre: string } | null;
+    targetPosition?: { id: string; codigo: string } | null;
+    finishedItem?: { id: string; codigoInterno: string; descripcion: string } | null;
+    secondItem?: { id: string; codigoInterno: string; descripcion: string } | null;
     article?: { id: string; codigo: string; descripcion: string } | null;
     schedule?: ProductionSchedule;
     createdAt: string;
+}
+
+export type ProductionLineReturnStatus = 'DECLARED' | 'POSTED' | 'CANCELLED';
+
+export interface ProductionLineReturn {
+    id: string;
+    sourceMovementId: string;
+    sourceDocumentId: string;
+    requestLineId: string | null;
+    itemId: string;
+    lotId: string;
+    returnPositionId: string;
+    destinationPositionId: string | null;
+    quantity: number;
+    status: ProductionLineReturnStatus;
+    declaredBy: string | null;
+    postedAt: string | null;
+    postedBy: string | null;
+    cancelledAt: string | null;
+    cancelledBy: string | null;
+    cancellationReason: string | null;
+    createdAt: string;
+    item: { id: string; codigoInterno: string; descripcion: string; unidadPrincipal: string };
+    batch: { id: string; lotNumber: string };
+    sourceDocument: { id: string; numero: string; fecha: string };
+    returnPosition: { id: string; codigo: string; depositoId: string; depot?: { id: string; nombre: string } };
+    destinationPosition: { id: string; codigo: string } | null;
+    suggestedPosition: { id: string; codigo: string; depositoId: string } | null;
 }
 
 export const productionApi = api.injectEndpoints({
@@ -472,6 +509,30 @@ export const productionApi = api.injectEndpoints({
             query: ({ id, lines }) => ({ url: `production/material-requests/${id}/consume`, method: 'POST', body: { lines } }),
             invalidatesTags: ['Production'],
         }),
+        getProductionLineReturns: builder.query<
+            { data: ProductionLineReturn[]; total: number; page: number; pageSize: number; totalPages: number },
+            { page: number; pageSize: number; status?: ProductionLineReturnStatus; q?: string }
+        >({
+            query: ({ page, pageSize, status, q }) => {
+                const search = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+                if (status) search.set('status', status);
+                if (q) search.set('q', q);
+                return `production/line-returns?${search}`;
+            },
+            providesTags: ['Production'],
+        }),
+        declareProductionLineReturn: builder.mutation<ProductionLineReturn, { itemId: string; quantity: number }>({
+            query: (body) => ({ url: 'production/line-returns', method: 'POST', body }),
+            invalidatesTags: ['Production'],
+        }),
+        receiveProductionLineReturns: builder.mutation<ProductionLineReturn[], { lines: Array<{ returnId: string; destinationPositionId?: string }> }>({
+            query: (body) => ({ url: 'production/line-returns/receive', method: 'POST', body }),
+            invalidatesTags: ['Production', 'Stock', 'Dashboard'],
+        }),
+        cancelProductionLineReturn: builder.mutation<ProductionLineReturn, { id: string; reason: string }>({
+            query: ({ id, reason }) => ({ url: `production/line-returns/${id}/cancel`, method: 'PATCH', body: { reason } }),
+            invalidatesTags: ['Production', 'Stock', 'Dashboard'],
+        }),
         closeProductionSchedule: builder.mutation<{ schedule: ProductionSchedule; lots: ProductionOutputLot[] }, string>({
             query: (scheduleId) => ({ url: `production/schedules/${scheduleId}/close`, method: 'POST', body: {} }),
             invalidatesTags: ['Production'],
@@ -485,9 +546,9 @@ export const productionApi = api.injectEndpoints({
             },
             providesTags: ['Production'],
         }),
-        releaseProductionOutputLot: builder.mutation<ProductionOutputLot, { id: string; notes?: string }>({
-            query: ({ id, notes }) => ({ url: `production/output-lots/${id}/release`, method: 'PATCH', body: { notes } }),
-            invalidatesTags: ['Production'],
+        releaseProductionOutputLot: builder.mutation<ProductionOutputLot, { id: string; notes?: string; targetDepotId: string; targetPositionId: string }>({
+            query: ({ id, ...body }) => ({ url: `production/output-lots/${id}/release`, method: 'PATCH', body }),
+            invalidatesTags: ['Production', 'Stock', 'Dashboard'],
         }),
         getProductionLogs: builder.query({
             query: (params: any) => {
@@ -566,6 +627,10 @@ export const {
     useReadyProductionMaterialsMutation,
     useDeliverProductionMaterialsMutation,
     useConsumeProductionMaterialsMutation,
+    useGetProductionLineReturnsQuery,
+    useDeclareProductionLineReturnMutation,
+    useReceiveProductionLineReturnsMutation,
+    useCancelProductionLineReturnMutation,
     useCloseProductionScheduleMutation,
     useGetProductionOutputLotsQuery,
     useReleaseProductionOutputLotMutation,

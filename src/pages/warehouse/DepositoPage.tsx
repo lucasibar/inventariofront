@@ -401,6 +401,7 @@ export default function DepositoPage() {
                                                     <option value="">Todas las zonas</option>
                                                     <option value="STOCK">Stock</option>
                                                     <option value="PICKING">Picking</option>
+                                                    <option value="DEVOLUCION_LINEA">Devolución de línea</option>
                                                     <option value="PASILLO">Pasillo</option>
                                                     <option value="ENTRADA">Entrada</option>
                                                     <option value="CUARENTENA">Cuarentena</option>
@@ -463,6 +464,7 @@ export default function DepositoPage() {
                                                                 >
                                                                     <option value="STOCK">Stock General</option>
                                                                     <option value="PICKING">Picking</option>
+                                                                    <option value="DEVOLUCION_LINEA">Devolución de línea</option>
                                                                     <option value="PASILLO">Pasillo</option>
                                                                     <option value="ENTRADA">Entrada / Recepción</option>
                                                                     <option value="CUARENTENA">Cuarentena</option>
@@ -639,6 +641,7 @@ export default function DepositoPage() {
                                 >
                                     <option value="STOCK">Stock General</option>
                                     <option value="PICKING">Picking</option>
+                                    <option value="DEVOLUCION_LINEA">Devolución de línea</option>
                                     <option value="PASILLO">Pasillo</option>
                                     <option value="ENTRADA">Entrada / Recepción</option>
                                     <option value="CUARENTENA">Cuarentena</option>

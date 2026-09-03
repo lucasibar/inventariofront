@@ -29,6 +29,7 @@ const ReporteChequeoPage = lazy(() => import('../../pages/warehouse/ReporteChequ
 const InformesInventariadoPage = lazy(() => import('../../pages/warehouse/InformesInventariadoPage'));
 const MaterialesEstancadosPage = lazy(() => import('../../pages/warehouse/MaterialesEstancadosPage'));
 const MaterialesCompletitudPage = lazy(() => import('../../pages/warehouse/MaterialesCompletitudPage'));
+const ProcesarDevolucionesLineaPage = lazy(() => import('../../pages/warehouse/ProcesarDevolucionesLineaPage'));
 
 // Sector: Purchasing
 const DashboardComprasPage = lazy(() => import('../../pages/purchasing/DashboardComprasPage'));
@@ -71,6 +72,7 @@ const OrdenesProduccionPage = lazy(() => import('../../pages/quality/OrdenesProd
 const ProgramacionesProduccionPage = lazy(() => import('../../pages/production/ProgramacionesProduccionPage'));
 const HistoricoProduccionPage = lazy(() => import('../../pages/production/HistoricoProduccionPage'));
 const MaterialesProduccionPage = lazy(() => import('../../pages/production/MaterialesProduccionPage'));
+const DeclararDevolucionLineaPage = lazy(() => import('../../pages/production/DeclararDevolucionLineaPage'));
 
 // New Sectors Dashboards
 const AdminDashboardPage = lazy(() => import('../../pages/admin/AdminDashboardPage'));
@@ -208,6 +210,8 @@ export const router = createBrowserRouter([
               { path: "produccion/programaciones", element: <LazyRoute element={ProgramacionesProduccionPage} /> },
               { path: "produccion/historico", element: <LazyRoute element={HistoricoProduccionPage} /> },
               { path: "produccion/materiales", element: <LazyRoute element={MaterialesProduccionPage} /> },
+              { path: "produccion/devoluciones-linea", element: <LazyRoute element={DeclararDevolucionLineaPage} /> },
+              { path: "deposito/devoluciones-linea", element: <LazyRoute element={ProcesarDevolucionesLineaPage} /> },
 
               { path: "produccion-nueva/dashboard", element: <LazyRoute element={ProduccionNewDashboardPage} /> },
               { path: "ventas/dashboard", element: <LazyRoute element={VentasDashboardPage} /> },
