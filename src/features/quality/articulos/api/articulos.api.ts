@@ -20,10 +20,10 @@ export const articulosApi = api.injectEndpoints({
             query: (id) => `articulos/${id}`,
             providesTags: ['Articulos'],
         }),
-        previewArticulosBulkImport: builder.mutation<any, { rows: any[] }>({
+        previewArticulosBulkImport: builder.mutation<any, { rows: any[]; synchronize?: boolean }>({
             query: (body) => ({ url: 'articulos/bulk-import/preview', method: 'POST', body }),
         }),
-        importArticulosBulk: builder.mutation<any, { rows: any[] }>({
+        importArticulosBulk: builder.mutation<any, { rows: any[]; synchronize?: boolean }>({
             query: (body) => ({ url: 'articulos/bulk-import', method: 'POST', body }),
             invalidatesTags: ['Articulos'],
         }),
