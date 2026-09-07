@@ -57,7 +57,6 @@ const navGroups: NavGroup[] = [
         items: [
             { to: '/admin/dashboard', label: '📈 Dashboard General' },
             { to: '/users', label: '👥 Usuarios' },
-            { to: '/admin/movements', label: '🛡️ Auditoría de stock' },
             { to: '/admin/auditoria', label: '🔎 Auditoría del sistema' },
         ]
     },
@@ -69,6 +68,7 @@ const navGroups: NavGroup[] = [
             { to: '/deposito/dashboard', label: '📊 Dashboard Depo' },
             { to: '/stock', label: '📋 Stock' },
             { to: '/movimientos', label: '🔄 Movimientos' },
+            { to: '/admin/movements', label: '🛡️ Auditoría de stock' },
             {
                 id: 'deposito-operaciones',
                 label: '🚚 Operaciones',
