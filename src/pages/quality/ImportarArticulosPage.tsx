@@ -14,13 +14,14 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { PageHeader, PageLoader } from '../../shared/ui';
 import { useGetArticulosQuery, useImportArticulosBulkMutation, usePreviewArticulosBulkImportMutation } from '../../features/quality/articulos/api/articulos.api';
 
-const normalizeHeader = (value: unknown) => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+import { readArticleWorkbook, exportMaterialColumns, isMaterialDetailColumn } from '../../features/quality/articulos/articulosWorkbook';
+
 const aliases: Record<string, string> = {
     codigo: 'codigo', codigointerno: 'codigo', articulo: 'codigo', codarticulo: 'codigo',
     descripcion: 'descripcion', detalle: 'descripcion', marca: 'marca', clienteid: 'clienteId', categoria: 'categoria',
     ssn: 'ssn', im: 'im', talle: 'talle', tallecliente: 'talle', talledelcliente: 'talle',
     talledemedia: 'talleDMedia', tallemedia: 'talleDMedia', workingnumber: 'workingNumber',
-    tipoprenda: 'tipoPrenda', colorbase: 'colorBase', colorlogo: 'colorLogo',
+    tipoprenda: 'tipoPrenda', colorbase: 'colorBase', colorlogo: 'colorLogo', colordetalle: 'colorDetalle', colortalle: 'colorTalle',
     talonpuntera: 'talonPuntera', triangulo: 'triangulo', tipotejido: 'tipoTejido',
     pesounitario: 'pesoUnitario', pesodocena: 'pesoDocena', unidadesporpack: 'unidadesPorPack',
     tiempotejidoseg: 'tiempoTejidoSeg', tiempotejido: 'tiempoTejidoSeg', tiempodocenamin: 'tiempoDocenaMin',
@@ -29,22 +30,6 @@ const aliases: Record<string, string> = {
     porcentajeotros: 'porcentajeOtros', otros: 'porcentajeOtros', desperdicio: 'desperdicio', programas: 'programas',
     observacion: 'observacion', observaciones: 'observacion', estadorevision: 'estadoRevision',
 };
-
-const MATERIAL_COLUMNS = [
-    ...Array.from({ length: 4 }, (_, index) => ({ header: `Base ${index + 1}`, key: `base${index + 1}`, rol: 'COLOR_BASE', orden: index + 1 })),
-    ...Array.from({ length: 3 }, (_, index) => ({ header: `Logo ${index + 1}`, key: `logo${index + 1}`, rol: 'LOGO', orden: index + 1 })),
-    ...Array.from({ length: 2 }, (_, index) => ({ header: `Lycra ${index + 1}`, key: `lycra${index + 1}`, rol: 'LYCRA', orden: index + 1 })),
-    ...Array.from({ length: 4 }, (_, index) => ({ header: `Goma ${index + 1}`, key: `goma${index + 1}`, rol: 'GOMA', orden: index + 1 })),
-    { header: 'Color detalle', key: 'colordetalle', rol: 'DETALLE_MEDIA', orden: 1 },
-    { header: 'Color talle', key: 'colortalle', rol: 'COLOR_TALLE', orden: 1 },
-    { header: 'Triángulo material', key: 'triangulomaterial', rol: 'TRIANGULO', orden: 1 },
-    { header: 'Talón puntera material', key: 'talonpunteramaterial', rol: 'TALON_PUNTERA', orden: 1 },
-] as const;
-const materialColumnByKey = new Map<string, (typeof MATERIAL_COLUMNS)[number]>(
-    MATERIAL_COLUMNS.map((column) => [column.key, column]),
-);
-materialColumnByKey.set('colortallematerial', { header: 'Color talle', key: 'colortalle', rol: 'COLOR_TALLE', orden: 1 });
-materialColumnByKey.set('detallemedia', { header: 'Color detalle', key: 'colordetalle', rol: 'DETALLE_MEDIA', orden: 1 });
 
 const HEADER_GROUP_COLORS: Record<string, { bg: string; fontColor: string }> = {
     // 1. Información de la media (Azul)
@@ -63,30 +48,13 @@ const HEADER_GROUP_COLORS: Record<string, { bg: string; fontColor: string }> = {
     'Observación': { bg: '1F4E78', fontColor: 'FFFFFF' },
     'Estado revisión': { bg: '1F4E78', fontColor: 'FFFFFF' },
 
-    // 2. Colores que hay que matchear a un item (Púrpura / Violeta)
+    // 2. Descripciones de colores (Púrpura / Violeta)
     'Color base': { bg: '5B2C6F', fontColor: 'FFFFFF' },
-    'Base 1': { bg: '5B2C6F', fontColor: 'FFFFFF' },
-    'Base 2': { bg: '5B2C6F', fontColor: 'FFFFFF' },
-    'Base 3': { bg: '5B2C6F', fontColor: 'FFFFFF' },
-    'Base 4': { bg: '5B2C6F', fontColor: 'FFFFFF' },
     'Color logo': { bg: '5B2C6F', fontColor: 'FFFFFF' },
-    'Logo 1': { bg: '5B2C6F', fontColor: 'FFFFFF' },
-    'Logo 2': { bg: '5B2C6F', fontColor: 'FFFFFF' },
-    'Logo 3': { bg: '5B2C6F', fontColor: 'FFFFFF' },
     'Color detalle': { bg: '5B2C6F', fontColor: 'FFFFFF' },
     'Color talle': { bg: '5B2C6F', fontColor: 'FFFFFF' },
     'Triángulo': { bg: '5B2C6F', fontColor: 'FFFFFF' },
-    'Triángulo material': { bg: '5B2C6F', fontColor: 'FFFFFF' },
     'Talón puntera': { bg: '5B2C6F', fontColor: 'FFFFFF' },
-    'Talón puntera material': { bg: '5B2C6F', fontColor: 'FFFFFF' },
-
-    // 3. Lycra y Goma (Verde)
-    'Lycra 1': { bg: '196F3D', fontColor: 'FFFFFF' },
-    'Lycra 2': { bg: '196F3D', fontColor: 'FFFFFF' },
-    'Goma 1': { bg: '196F3D', fontColor: 'FFFFFF' },
-    'Goma 2': { bg: '196F3D', fontColor: 'FFFFFF' },
-    'Goma 3': { bg: '196F3D', fontColor: 'FFFFFF' },
-    'Goma 4': { bg: '196F3D', fontColor: 'FFFFFF' },
 
     // 4. Porcentajes y pesos (Naranja / Bronce)
     'Peso unitario': { bg: 'C55A11', fontColor: 'FFFFFF' },
@@ -101,32 +69,6 @@ const HEADER_GROUP_COLORS: Record<string, { bg: string; fontColor: string }> = {
     'Porcentaje otros': { bg: 'C55A11', fontColor: 'FFFFFF' },
     'Desperdicio': { bg: 'C55A11', fontColor: 'FFFFFF' },
 };
-
-function mapRows(rawRows: Record<string, unknown>[]) {
-    return rawRows.map((raw) => {
-        const mapped: Record<string, unknown> = {};
-        const itemRefsByCode: any[] = [];
-        Object.entries(raw).forEach(([header, value]) => {
-            const normalized = normalizeHeader(header);
-            const materialColumn = materialColumnByKey.get(normalized);
-            if (materialColumn && value !== undefined && value !== null && String(value).trim() !== '') {
-                itemRefsByCode.push({
-                    itemCode: String(value).trim(), rol: materialColumn.rol, grupo: 1,
-                    orden: materialColumn.orden, esPreferenciaActual: false, activo: true,
-                });
-                return;
-            }
-            const field = aliases[normalized];
-            if (field && value !== undefined && value !== null && value !== '') mapped[field] = value;
-        });
-        for (const rol of new Set(itemRefsByCode.map((ref) => ref.rol))) {
-            const first = itemRefsByCode.filter((ref) => ref.rol === rol).sort((left, right) => left.orden - right.orden)[0];
-            if (first) first.esPreferenciaActual = true;
-        }
-        mapped.itemRefsByCode = itemRefsByCode;
-        return mapped;
-    }).filter((row) => Object.keys(row).some((key) => key !== 'itemRefsByCode'));
-}
 
 export default function ImportarArticulosPage() {
     const inputRef = useRef<HTMLInputElement>(null);
@@ -143,9 +85,8 @@ export default function ImportarArticulosPage() {
         try {
             const XLSX = await import('xlsx');
             const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
-            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const mapped = mapRows(XLSX.utils.sheet_to_json<Record<string, unknown>>(firstSheet, { defval: null }));
-            if (!mapped.length) throw new Error('La primera hoja no tiene datos reconocibles.');
+            const mapped = readArticleWorkbook(workbook, aliases);
+            if (!mapped.length) throw new Error('La hoja Artículos no tiene datos reconocibles.');
             const result = await previewImport({ rows: mapped, synchronize: true }).unwrap();
             setRows(mapped); setPreview(result);
         } catch (error: any) {
@@ -169,14 +110,8 @@ export default function ImportarArticulosPage() {
         const XLSXModule = await import('xlsx-js-style');
         const XLSX = (XLSXModule as any).default || XLSXModule;
 
-        const getMaterialCode = (article: any, rol: string, orden = 1) => {
-            const ref = (article.itemRefs ?? [])
-                .filter((entry: any) => entry.activo !== false && entry.rol === rol && (entry.grupo ?? 1) === 1)
-                .find((entry: any) => (entry.orden ?? 1) === orden);
-            return ref?.item?.codigoInterno ?? '';
-        };
-
-        const rowsToExport = articles.map((article: any) => ({
+        const materials = exportMaterialColumns(articles);
+        const rowsToExport = articles.map((article: any, index: number) => ({
             // ── 1. Información de la media (Azul) ──
             Código: article.codigo,
             Descripción: article.descripcion,
@@ -195,28 +130,11 @@ export default function ImportarArticulosPage() {
 
             // ── 2. Colores que hay que matchear a un item (Púrpura / Violeta) ──
             'Color base': article.colorBase ?? '',
-            'Base 1': getMaterialCode(article, 'COLOR_BASE', 1),
-            'Base 2': getMaterialCode(article, 'COLOR_BASE', 2),
-            'Base 3': getMaterialCode(article, 'COLOR_BASE', 3),
-            'Base 4': getMaterialCode(article, 'COLOR_BASE', 4),
             'Color logo': article.colorLogo ?? '',
-            'Logo 1': getMaterialCode(article, 'LOGO', 1),
-            'Logo 2': getMaterialCode(article, 'LOGO', 2),
-            'Logo 3': getMaterialCode(article, 'LOGO', 3),
-            'Color detalle': getMaterialCode(article, 'DETALLE_MEDIA', 1),
-            'Color talle': getMaterialCode(article, 'COLOR_TALLE', 1),
+            'Color detalle': article.colorDetalle ?? '',
+            'Color talle': article.colorTalle ?? '',
             Triángulo: article.triangulo ?? '',
-            'Triángulo material': getMaterialCode(article, 'TRIANGULO', 1),
             'Talón puntera': article.talonPuntera ?? '',
-            'Talón puntera material': getMaterialCode(article, 'TALON_PUNTERA', 1),
-
-            // ── 3. Lycra y Goma (Verde) ──
-            'Lycra 1': getMaterialCode(article, 'LYCRA', 1),
-            'Lycra 2': getMaterialCode(article, 'LYCRA', 2),
-            'Goma 1': getMaterialCode(article, 'GOMA', 1),
-            'Goma 2': getMaterialCode(article, 'GOMA', 2),
-            'Goma 3': getMaterialCode(article, 'GOMA', 3),
-            'Goma 4': getMaterialCode(article, 'GOMA', 4),
 
             // ── 4. Porcentajes y pesos (Naranja / Bronce) ──
             'Peso unitario': article.pesoUnitario ?? '',
@@ -230,12 +148,13 @@ export default function ImportarArticulosPage() {
             'Porcentaje goma': article.porcentajeGoma ?? '',
             'Porcentaje otros': article.porcentajeOtros ?? '',
             Desperdicio: article.desperdicio ?? '',
+            ...materials.rows[index],
         }));
 
         const sheet = XLSX.utils.json_to_sheet(rowsToExport);
         sheet['!freeze'] = { xSplit: 2, ySplit: 1 };
         sheet['!autofilter'] = { ref: sheet['!ref'] || 'A1:A1' };
-        sheet['!rows'] = [{ hpt: 26 }];
+        sheet['!rows'] = [{ hpt: 44 }];
 
         const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1:A1');
         for (let col = range.s.c; col <= range.e.c; col++) {
@@ -243,7 +162,7 @@ export default function ImportarArticulosPage() {
             const cell = sheet[cellRef];
             if (!cell) continue;
             const header = String(cell.v ?? '');
-            const colorConfig = HEADER_GROUP_COLORS[header] || { bg: '1F4E78', fontColor: 'FFFFFF' };
+            const colorConfig = HEADER_GROUP_COLORS[header] || { bg: header.startsWith('Goma ') || header.startsWith('Lycra ') ? '196F3D' : '5B2C6F', fontColor: 'FFFFFF' };
             cell.s = {
                 fill: {
                     patternType: 'solid',
@@ -258,6 +177,7 @@ export default function ImportarArticulosPage() {
                 alignment: {
                     vertical: 'center',
                     horizontal: 'center',
+                    wrapText: true,
                 },
                 border: {
                     top: { style: 'thin', color: { rgb: 'D9D9D9' } },
@@ -270,6 +190,8 @@ export default function ImportarArticulosPage() {
 
         sheet['!cols'] = Object.keys(rowsToExport[0] ?? { Código: '', Descripción: '' }).map((header) => ({
             wch: Math.min(30, Math.max(12, header.length + 3)),
+            hidden: isMaterialDetailColumn(header),
+            level: isMaterialDetailColumn(header) ? 1 : 0,
         }));
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, sheet, 'Artículos');
@@ -283,10 +205,11 @@ export default function ImportarArticulosPage() {
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ sm: 'center' }}>
                 <Button variant="contained" startIcon={<UploadFileOutlinedIcon />} onClick={() => inputRef.current?.click()}>Elegir Excel</Button>
                 <Button variant="outlined" startIcon={<DownloadOutlinedIcon />} disabled={isExportLoading || !articles.length} onClick={downloadArticles}>{isExportLoading ? 'Preparando...' : 'Descargar todos'}</Button>
-                <Typography variant="body2" color="text.secondary">{fileName || 'Formatos admitidos: .xlsx, .xls y .csv'}</Typography>
-                <input ref={inputRef} hidden type="file" accept=".xlsx,.xls,.csv" onChange={(event) => event.target.files?.[0] && void readFile(event.target.files[0])} />
+                <Typography variant="body2" color="text.secondary">{fileName || 'Excel de una hoja: Base 1 / Alternativa 1, Base 1 / Alternativa 2…'}</Typography>
+                <input ref={inputRef} hidden type="file" accept=".xlsx,.xls" onChange={(event) => event.target.files?.[0] && void readFile(event.target.files[0])} />
             </Stack>
         </Paper>
+        <Alert severity="info" sx={{ mb: 2 }}>Una fila por artículo. En “Base 1 / Alternativa 1” y “Base 1 / Alternativa 2” cargá códigos de ítems del mismo color; “Base 2” corresponde a otro color. En “Base 1 / En uso” indicá 1 o 2; si queda vacío, se usa la primera alternativa activa. Podés agregar más columnas siguiendo esos nombres. Los campos de consumo, desperdicio, conos y Activo se conservan en columnas agrupadas al final, que podés mostrar en Excel. La sincronización reemplaza los materiales de cada artículo incluido: borrar sus códigos los quita del artículo.</Alert>
         {previewState.isLoading ? <PageLoader text="Validando artículos..." /> : preview && <Stack spacing={2}>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' }, gap: 1 }}>
                 {[['Filas', preview.totalRows, 'default'], ['Nuevos', preview.rowsToCreate, 'primary'], ['Actualizaciones', preview.rowsToUpdate, 'warning'], ['A desactivar', preview.rowsToDeactivate, preview.rowsToDeactivate ? 'error' : 'success'], ['Con errores', preview.invalidRows, preview.invalidRows ? 'error' : 'success']].map(([label, value, color]) => <Paper key={String(label)} variant="outlined" sx={{ p: 1.5, borderRadius: 3 }}><Typography variant="caption" color="text.secondary">{label}</Typography><Typography variant="h5" fontWeight={900}>{value}</Typography><Chip size="small" color={color as any} label={String(label)} /></Paper>)}

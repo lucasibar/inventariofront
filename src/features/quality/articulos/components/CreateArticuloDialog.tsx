@@ -179,14 +179,23 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
     };
 
     const updateRef = (rol: string, grupo: number, orden: number, field: string, value: any) => {
-        setItemRefs(prev => prev.map(r =>
-            r.rol === rol && (r.grupo || 1) === grupo && r.orden === orden ? { ...r, [field]: value } : r
-        ));
+        setItemRefs(prev => {
+            const updated = prev.map(r =>
+                r.rol === rol && (r.grupo || 1) === grupo && r.orden === orden ? { ...r, [field]: value } : r
+            );
+            if (field !== 'activo') return updated;
+            const active = updated.filter(r => r.rol === rol && r.grupo === grupo && r.activo);
+            const preferred = active.find(r => r.esPreferenciaActual) ?? active[0];
+            return updated.map(r => r.rol === rol && r.grupo === grupo
+                ? { ...r, esPreferenciaActual: r === preferred } : r);
+        });
     };
 
     const removeRef = (rol: string, grupo: number, orden: number) => {
         setItemRefs(prev => {
             const filtered = prev.filter(r => !(r.rol === rol && (r.grupo || 1) === grupo && r.orden === orden));
+            const active = filtered.filter(r => r.rol === rol && (r.grupo || 1) === grupo && r.activo);
+            const preferred = active.find(r => r.esPreferenciaActual) ?? active[0];
             let idx = 1;
             return filtered.map(r => {
                 if (r.rol === rol && (r.grupo || 1) === grupo) {
@@ -194,7 +203,7 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
                     return {
                         ...r,
                         orden: newOrd,
-                        esPreferenciaActual: r.esPreferenciaActual || (newOrd === 1 && !filtered.some(f => f.rol === rol && (f.grupo || 1) === grupo && f.esPreferenciaActual)),
+                        esPreferenciaActual: r === preferred,
                     };
                 }
                 return r;
@@ -435,7 +444,7 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
                         <Box key={rol} sx={{ mb: 2.5, p: 2, border: '1px solid #2a2d3e', borderRadius: '10px', background: '#0d1020' }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                                 <Typography sx={{ color: '#c4b5fd', fontWeight: 700, fontSize: '13px' }}>{label}</Typography>
-                                <Button size="small" onClick={() => addColorGrupo(rol)} sx={{ color: '#818cf8', fontSize: '11px', textTransform: 'none' }}>
+                                <Button size="small" disabled={rol === 'GOMA' && itemRefs.some(r => r.rol === 'GOMA' && r.activo)} onClick={() => addColorGrupo(rol)} sx={{ color: '#818cf8', fontSize: '11px', textTransform: 'none' }}>
                                     + Agregar Otro Color
                                 </Button>
                             </Box>
@@ -504,6 +513,7 @@ export const CreateArticuloDialog = ({ open, onClose, editTarget }: CreateArticu
                                                     control={
                                                         <Checkbox
                                                             checked={ref.esPreferenciaActual}
+                                                            disabled={!ref.activo}
                                                             onChange={() => setPreferenciaActualInGrupo(rol, grupoNum, ref.orden)}
                                                             size="small"
                                                             sx={{ color: '#10b981', '&.Mui-checked': { color: '#10b981' } }}
