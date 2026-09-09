@@ -723,12 +723,15 @@ export function EditableCell({ value, onSave, numeric, style, inputStyle }: { va
     const [saving, setSaving] = React.useState(false);
     const [lastSavedValue, setLastSavedValue] = React.useState<string | null>(null);
     const ref = React.useRef<HTMLInputElement>(null);
+    const isCommittingRef = React.useRef(false);
 
     React.useEffect(() => { if (editing) ref.current?.focus(); }, [editing]);
 
     React.useEffect(() => {
-        setDraft(value);
-    }, [value]);
+        if (!editing) {
+            setDraft(value);
+        }
+    }, [value, editing]);
 
     React.useEffect(() => {
         if (lastSavedValue === null) return;
@@ -759,11 +762,17 @@ export function EditableCell({ value, onSave, numeric, style, inputStyle }: { va
     }, [lastSavedValue]);
 
     const commit = async () => {
+        if (isCommittingRef.current) return;
+
         const isUnchanged = numeric
             ? Number(draft) === Number(value)
             : draft === value;
-        if (isUnchanged) { setEditing(false); return; }
+        if (isUnchanged) { 
+            setEditing(false); 
+            return; 
+        }
         
+        isCommittingRef.current = true;
         setSaving(true);
         try {
             await onSave(draft);
@@ -773,6 +782,7 @@ export function EditableCell({ value, onSave, numeric, style, inputStyle }: { va
             console.error("Error saving cell:", e);
         } finally {
             setSaving(false);
+            isCommittingRef.current = false;
         }
     };
 
@@ -827,7 +837,15 @@ export function EditableCell({ value, onSave, numeric, style, inputStyle }: { va
                 value={draft}
                 onChange={e => setDraft(e.target.value)}
                 onBlur={commit}
-                onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false); }}
+                onKeyDown={e => { 
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        commit();
+                    } 
+                    if (e.key === 'Escape') {
+                        setEditing(false);
+                    }
+                }}
                 disabled={saving}
                 style={{
                     width: '100%', minWidth: '60px', background: 'var(--bg-primary, #0f1117)', border: '1px solid #6366f1',

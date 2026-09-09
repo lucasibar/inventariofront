@@ -212,28 +212,28 @@ export default function StockPage() {
         const newQty = Number(newValue);
         if (isNaN(newQty) || newQty < 0) { alert('Valor inválido'); return; }
         const currentQty = field === 'principal' ? Number(entry.qtyPrincipal) : Number(entry.qtySecundaria || 0);
-        const diff = newQty - currentQty;
+        const diff = Math.round((newQty - currentQty) * 1000) / 1000;
         if (diff === 0) return;
         try {
             await adjustStock({
                 depositoId: entry.depositoId || depotId,
                 posicionId: entry.posicionId,
-                itemId: entry.batch.item.id,
-                lotId: entry.lotId,
+                itemId: entry.batch?.item?.id || entry.itemId,
+                lotId: entry.lotId || entry.batch?.id,
                 qtyPrincipal: field === 'principal' ? diff : 0,
                 qtySecundaria: field === 'secundaria' ? diff : null,
                 fecha: new Date().toISOString(),
-                observaciones: `Ajuste manual: ${currentQty} → ${newQty} (${field === 'principal' ? entry.batch.item.unidadPrincipal : entry.batch.item.unidadSecundaria})`,
+                observaciones: `Ajuste manual: ${currentQty} → ${newQty} (${field === 'principal' ? entry.batch?.item?.unidadPrincipal : entry.batch?.item?.unidadSecundaria})`,
             }).unwrap();
         } catch (e: any) { alert(e?.data?.message || 'Error al ajustar'); }
     };
 
     const handleReassignBatch = async (entry: any, newLotNumber: string) => {
         if (!newLotNumber.trim()) return;
-        if (newLotNumber === entry.batch.lotNumber) return;
+        if (newLotNumber === entry.batch?.lotNumber) return;
         const entryDepotId = entry.depositoId || depotId;
         try {
-            const result = await checkBatch({ itemId: entry.batch.item.id, lotNumber: newLotNumber, supplierId: entry.batch.supplier?.id }).unwrap();
+            const result = await checkBatch({ itemId: entry.batch?.item?.id || entry.itemId, lotNumber: newLotNumber, supplierId: entry.batch?.supplier?.id }).unwrap();
             if (result.exists) {
                 if (!window.confirm(`La partida "${newLotNumber}" ya existe. ¿Querés fusionar el stock con esa partida?`)) return;
             } else {
@@ -242,8 +242,8 @@ export default function StockPage() {
             await reassignBatch({
                 depositoId: entryDepotId,
                 posicionId: entry.posicionId,
-                itemId: entry.batch.item.id,
-                currentLotId: entry.lotId,
+                itemId: entry.batch?.item?.id || entry.itemId,
+                currentLotId: entry.lotId || entry.batch?.id,
                 newLotNumber: newLotNumber.trim(),
                 fecha: new Date().toISOString(),
             }).unwrap();
