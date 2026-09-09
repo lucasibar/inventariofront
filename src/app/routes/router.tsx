@@ -58,6 +58,7 @@ const DisponibilidadMaquinaV2Page = lazy(() => import('../../pages/maintenance/D
 
 // Sector: Quality (Calidad)
 const ArticulosCalidadPage = lazy(() => import('../../pages/quality/ArticulosCalidadPage'));
+const CatalogoEstructurasPage = lazy(() => import('../../pages/quality/CatalogoEstructurasPage'));
 const ArticulosCompletitudPage = lazy(() => import('../../pages/quality/ArticulosCompletitudPage'));
 const CuarentenaCalidadPage = lazy(() => import('../../pages/quality/CuarentenaCalidadPage'));
 const LotesProducidosCalidadPage = lazy(() => import('../../pages/quality/LotesProducidosCalidadPage'));
@@ -218,7 +219,9 @@ export const router = createBrowserRouter([
               { path: "finanzas/dashboard", element: <LazyRoute element={FinanzasDashboardPage} /> },
               { path: "rrhh/dashboard", element: <LazyRoute element={RRHHDashboardPage} /> },
               { path: "compras/dashboard", element: <LazyRoute element={DashboardComprasPage} /> },
-              { path: "calidad/articulos", element: <LazyRoute element={ArticulosCalidadPage} /> },
+              { path: "calidad/articulos", element: <LazyRoute element={CatalogoEstructurasPage} /> },
+              { path: "calidad/estructuras", element: <Navigate to="/calidad/articulos" replace /> },
+              { path: "calidad/articulos-anteriores", element: <LazyRoute element={ArticulosCalidadPage} /> },
               { path: "calidad/completitud-articulos", element: <LazyRoute element={ArticulosCompletitudPage} /> },
               { path: "calidad/cuarentena", element: <LazyRoute element={CuarentenaCalidadPage} /> },
               { path: "calidad/lotes-producidos", element: <LazyRoute element={LotesProducidosCalidadPage} /> },

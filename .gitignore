@@ -27,3 +27,17 @@ dist-ssr
 .env
 .env.production
 .env.local
+
+# Local imports, data exports, SQL batches and audit artifacts
+/outputs/
+/backups/
+*.xlsx
+*.xls
+*.xlsm
+*.xlsb
+
+# Deployment metadata and other local environment variants
+.vercel/
+.env.*
+!.env.example
+!.env.sample
