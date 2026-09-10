@@ -208,10 +208,14 @@ export default function RemitosEntradaPage() {
                                 </div>,
                                 <div key="actions" style={{ textAlign: 'right' }}>
                                     {!isAnulado && (
-                                        <Btn small variant="danger" onClick={(e: any) => {
+                                        <Btn small variant="danger" onClick={async (e: any) => {
                                             e.stopPropagation();
                                             if (window.confirm('¿Estás seguro de que querés anular este remito?')) {
-                                                deleteRemito(r.id);
+                                                try {
+                                                    await deleteRemito(r.id).unwrap();
+                                                } catch (err: any) {
+                                                    alert(err?.data?.message || err?.message || 'Error al anular el remito');
+                                                }
                                             }
                                         }}>🗑</Btn>
                                     )}

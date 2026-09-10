@@ -233,6 +233,151 @@ export default function RemitosSalidaPage() {
                 <Card style={{ textAlign: 'center', padding: '40px' }}>
                     <p style={{ color: 'var(--text-muted, #9ca3af)' }}>No se encontraron remitos de salida que coincidan con "{search}".</p>
                 </Card>
+
+    const handleRowClick = async (remito: any) => {
+        try {
+            const fullRemito = await triggerGetDetail(remito.id).unwrap();
+            setSelectedRemito(fullRemito);
+            setShowDetail(true);
+        } catch (err) {
+            console.error('Error al cargar detalle del remito', err);
+            setSelectedRemito(remito);
+            setShowDetail(true);
+        }
+    };
+
+
+
+    const goPreview = async () => {
+        setError('');
+        try {
+            const result = await previewRemito({ 
+                lines: lines.filter(l => l.itemId).map(l => ({ 
+                    itemId: l.itemId, 
+                    lotId: l.lotId || undefined, 
+                    posicionId: l.posicionId || undefined, 
+                    qtyPrincipal: Number(l.qtyPrincipal), 
+                    qtySecundaria: l.qtySecundaria ? Number(l.qtySecundaria) : undefined 
+                })) 
+            }).unwrap();
+            setPreviewData(result);
+            setStep('preview');
+        } catch (e: any) { setError(e?.data?.message ?? 'Error al generar preview'); }
+    };
+
+    const confirmSave = async () => {
+        setSaving(true); setError('');
+        try {
+            const dto: any = {
+                fecha, observaciones: observaciones || undefined,
+                numero: numero || undefined,
+                lines: lines.filter(l => l.itemId).map(l => ({ 
+                    itemId: l.itemId, 
+                    lotId: l.lotId || undefined, 
+                    posicionId: l.posicionId || undefined, 
+                    qtyPrincipal: Number(l.qtyPrincipal), 
+                    qtySecundaria: l.qtySecundaria ? Number(l.qtySecundaria) : undefined 
+                })),
+            };
+            dto.clientId = clientId;
+            await createRemito(dto).unwrap();
+            setStep(null); setLines([{ itemId: '', lotId: '', posicionId: '', qtyPrincipal: '', qtySecundaria: '' }]); setPreviewData(null);
+        } catch (e: any) { setError(e?.data?.message ?? 'Error al confirmar'); }
+        setSaving(false);
+    };
+
+    return (
+        <div style={{ padding: '24px' }}>
+            <PageHeader title="Remitos de Salida" subtitle="Egreso de mercadería con FIFO desde picking">
+                <HelpTooltip title="Egresos FIFO" content="Al confirmar, el sistema descuenta stock automáticamente de las posiciones PICKING, seleccionando primero las partidas más antiguas cargadas." style={{ marginRight: '12px' }} />
+                <Btn onClick={() => { setStep('form'); setError(''); }}>+ Nuevo Remito</Btn>
+            </PageHeader>
+
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <div style={{ flex: 1, minWidth: '250px' }}>
+                    <SearchBar
+                        value={search}
+                        onChange={setSearch}
+                        placeholder="Buscar por n° remito, cliente, código, descripción o partida..."
+                    />
+                </div>
+                <div style={{ width: '220px' }}>
+                    <select
+                        value={selectedDepotId}
+                        onChange={e => setSelectedDepotId(e.target.value)}
+                        style={{
+                            width: '100%',
+                            height: '42px',
+                            padding: '0 12px',
+                            background: 'var(--bg-secondary, #111827)',
+                            border: '1px solid var(--border-strong, #374151)',
+                            borderRadius: '8px',
+                            color: 'var(--text-primary, #f3f4f6)',
+                            outline: 'none',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <option value="">Todos los depósitos</option>
+                        {depots.filter(d => d.activo !== false).map(d => (
+                            <option key={d.id} value={d.id}>{d.nombre}</option>
+                        ))}
+                    </select>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                        type="date"
+                        value={fechaDesde}
+                        onChange={e => setFechaDesde(e.target.value)}
+                        style={{
+                            height: '42px',
+                            padding: '0 8px',
+                            background: 'var(--bg-secondary, #111827)',
+                            border: '1px solid var(--border-strong, #374151)',
+                            borderRadius: '8px',
+                            color: 'var(--text-primary, #f3f4f6)',
+                            fontSize: '13px',
+                            outline: 'none'
+                        }}
+                    />
+                    <span style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '13px' }}>al</span>
+                    <input
+                        type="date"
+                        value={fechaHasta}
+                        onChange={e => setFechaHasta(e.target.value)}
+                        style={{
+                            height: '42px',
+                            padding: '0 8px',
+                            background: 'var(--bg-secondary, #111827)',
+                            border: '1px solid var(--border-strong, #374151)',
+                            borderRadius: '8px',
+                            color: 'var(--text-primary, #f3f4f6)',
+                            fontSize: '13px',
+                            outline: 'none'
+                        }}
+                    />
+                    {(fechaDesde || fechaHasta) && (
+                        <button
+                            onClick={() => { setFechaDesde(''); setFechaHasta(''); }}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#fb7185',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                fontWeight: 'bold',
+                                padding: '0 4px'
+                            }}
+                        >
+                            Limpiar
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {filteredRemitos.length === 0 && search.trim() ? (
+                <Card style={{ textAlign: 'center', padding: '40px' }}>
+                    <p style={{ color: 'var(--text-muted, #9ca3af)' }}>No se encontraron remitos de salida que coincidan con "{search}".</p>
+                </Card>
             ) : (
                 <Card>
                     <Table
@@ -256,7 +401,16 @@ export default function RemitosSalidaPage() {
                                 </div>,
                                 <div key="actions" style={{ textAlign: 'right' }}>
                                     {!isAnulado && (
-                                        <Btn small variant="danger" onClick={(e: any) => { e.stopPropagation(); if (window.confirm('¿Anular este remito de salida?')) deleteRemito(r.id); }}>🗑</Btn>
+                                        <Btn small variant="danger" onClick={async (e: any) => {
+                                            e.stopPropagation();
+                                            if (window.confirm('¿Anular este remito de salida?')) {
+                                                try {
+                                                    await deleteRemito(r.id).unwrap();
+                                                } catch (err: any) {
+                                                    alert(err?.data?.message || err?.message || 'Error al anular el remito de salida');
+                                                }
+                                            }
+                                        }}>🗑</Btn>
                                     )}
                                 </div>
                             ];
