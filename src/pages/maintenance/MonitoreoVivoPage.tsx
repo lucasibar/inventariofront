@@ -27,9 +27,10 @@ const STATUS_LABELS_WITH_FALLBACK: Record<string, string> = {
     SIN_DATOS: 'Sin Datos'
 };
 
-const MachineNode = ({ number, status, onClick }: {
+const MachineNode = ({ number, status, activeChange, onClick }: {
     number: number | null,
     status: string,
+    activeChange?: any,
     onClick?: () => void
 }) => {
     if (number === null) return <Box sx={{ width: 42, height: 42 }} />;
@@ -37,8 +38,12 @@ const MachineNode = ({ number, status, onClick }: {
     const statusColor = STATUS_COLORS_WITH_FALLBACK[status] || STATUS_COLORS_WITH_FALLBACK.SIN_DATOS;
     const isSpecialStatus = status !== 'ACTIVA' && status !== 'SIN_DATOS';
 
+    const tooltipLabel = status === 'CAMBIO'
+        ? `Máquina ${number} - En Cambio${activeChange?.changeTypes?.length ? ` (${activeChange.changeTypes.join(', ')})` : ''}`
+        : `Máquina ${number} - ${STATUS_LABELS_WITH_FALLBACK[status] || status}`;
+
     return (
-        <Tooltip title={`Máquina ${number} - ${STATUS_LABELS_WITH_FALLBACK[status] || status}`} arrow>
+        <Tooltip title={tooltipLabel} arrow>
             <Box
                 onClick={onClick}
                 sx={{
@@ -50,7 +55,7 @@ const MachineNode = ({ number, status, onClick }: {
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: statusColor,
-                    bgcolor: 'transparent',
+                    bgcolor: status === 'CAMBIO' ? `${statusColor}22` : 'transparent',
                     fontSize: '18px',
                     fontWeight: 900,
                     cursor: 'pointer',
@@ -177,7 +182,7 @@ export default function MonitoreoVivoPage() {
     }, [machines]);
 
     const statusCounts = useMemo(() => {
-        const counts: any = { ACTIVA: 0, REVISAR: 0, VELOCIDAD_REDUCIDA: 0, MUESTRAS: 0, PARADA: 0, ELECTRONIC: 0, FALTA_COSTURA: 0, FALTA_PROGRAMA: 0, REPUESTOS: 0, OTRO: 0, SIN_DATOS: 0 };
+        const counts: any = { ACTIVA: 0, REVISAR: 0, VELOCIDAD_REDUCIDA: 0, MUESTRAS: 0, PARADA: 0, ELECTRONIC: 0, FALTA_COSTURA: 0, FALTA_PROGRAMA: 0, REPUESTOS: 0, OTRO: 0, CAMBIO: 0, SIN_DATOS: 0 };
         if (metrics?.byStatus) {
             metrics.byStatus.forEach((s: any) => { counts[s.status] = parseInt(s.count); });
         }
@@ -251,6 +256,7 @@ export default function MonitoreoVivoPage() {
 
     const paradasBreakdown = [
         { label: 'Parada', value: statusCounts.PARADA, color: STATUS_COLORS_WITH_FALLBACK.PARADA },
+        { label: 'Cambio Art.', value: statusCounts.CAMBIO, color: STATUS_COLORS_WITH_FALLBACK.CAMBIO },
         { label: 'Electrónica', value: statusCounts.ELECTRONIC, color: STATUS_COLORS_WITH_FALLBACK.ELECTRONIC },
         { label: 'Repuesto', value: statusCounts.REPUESTOS, color: STATUS_COLORS_WITH_FALLBACK.REPUESTOS },
         { label: 'Programa', value: statusCounts.FALTA_PROGRAMA, color: STATUS_COLORS_WITH_FALLBACK.FALTA_PROGRAMA },
@@ -345,6 +351,7 @@ export default function MonitoreoVivoPage() {
                                                             key={`${idx}-left-${i}-${n ?? `e-${j}`}`}
                                                             number={n}
                                                             status={machine?.status || 'SIN_DATOS'}
+                                                            activeChange={machine?.activeChange}
                                                             onClick={() => machine && handleMachineClick(machine)}
                                                         />
                                                     );
@@ -362,6 +369,7 @@ export default function MonitoreoVivoPage() {
                                                             key={`${idx}-right-${i}-${n ?? `e-${j}`}`}
                                                             number={n}
                                                             status={machine?.status || 'SIN_DATOS'}
+                                                            activeChange={machine?.activeChange}
                                                             onClick={() => machine && handleMachineClick(machine)}
                                                         />
                                                     );

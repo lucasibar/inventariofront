@@ -9,6 +9,7 @@ export const MAINTENANCE_STATUS_COLORS: Record<string, string> = {
     FALTA_PROGRAMA: '#00ffdd',
     REPUESTOS: 'var(--text-subtle, #94a3b8)',
     OTRO: 'var(--text-subtle, #6b7280)',
+    CAMBIO: '#f380d0',
 };
 
 export const MAINTENANCE_STATUS_LABELS: Record<string, string> = {
@@ -22,6 +23,7 @@ export const MAINTENANCE_STATUS_LABELS: Record<string, string> = {
     FALTA_PROGRAMA: 'Programa',
     REPUESTOS: 'Repuestos',
     OTRO: 'Otro',
+    CAMBIO: 'En Cambio',
 };
 
 export const FAILURE_TYPES = [

@@ -17,6 +17,7 @@ import AddIcon from '@mui/icons-material/Add';
 import TimerIcon from '@mui/icons-material/Timer';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
 import EventNoteIcon from '@mui/icons-material/EventNote';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 
 import { PageHeader, Spinner, Select } from '../../shared/ui';
 import {
@@ -43,6 +44,7 @@ interface EditChangeState {
     startDate: string;
     startHour: string;
     startMinute: string;
+    isOngoing: boolean;
     endDate: string;
     endHour: string;
     endMinute: string;
@@ -194,7 +196,7 @@ export default function HistorialCambiosPage() {
         const uniqueMachines = new Set<string>();
 
         changes.forEach((c: any) => {
-            const ms = c.durationMs || (new Date(c.endTime).getTime() - new Date(c.startTime).getTime()) || 0;
+            const ms = c.durationMs || (c.endTime ? (new Date(c.endTime).getTime() - new Date(c.startTime).getTime()) : 0) || 0;
             totalMs += ms;
             if (c.machineId) uniqueMachines.add(c.machineId);
         });
@@ -223,9 +225,10 @@ export default function HistorialCambiosPage() {
     }, [changes]);
 
     // Handle Edit Open
-    const handleOpenEdit = (change: MachineChange) => {
+    const handleOpenEdit = (change: MachineChange, defaultToFinish = false) => {
         const startDt = new Date(change.startTime);
-        const endDt = new Date(change.endTime);
+        const hasEnd = !!change.endTime;
+        const endDt = hasEnd ? new Date(change.endTime!) : new Date();
 
         const sYear = startDt.getFullYear();
         const sMonth = String(startDt.getMonth() + 1).padStart(2, '0');
@@ -250,6 +253,7 @@ export default function HistorialCambiosPage() {
             startDate: `${sYear}-${sMonth}-${sDay}`,
             startHour: sHours,
             startMinute: sMins,
+            isOngoing: defaultToFinish ? false : !hasEnd,
             endDate: `${eYear}-${eMonth}-${eDay}`,
             endHour: eHours,
             endMinute: eMins,
@@ -280,28 +284,40 @@ export default function HistorialCambiosPage() {
 
         const sH = parseInt(editData.startHour, 10);
         const sM = parseInt(editData.startMinute, 10);
-        const eH = parseInt(editData.endHour, 10);
-        const eM = parseInt(editData.endMinute, 10);
 
         if (isNaN(sH) || sH < 0 || sH > 23 || isNaN(sM) || sM < 0 || sM > 59) {
             return alert('Hora de inicio no válida (00-23 para hora, 00-59 para minutos).');
         }
-        if (isNaN(eH) || eH < 0 || eH > 23 || isNaN(eM) || eM < 0 || eM > 59) {
-            return alert('Hora de fin no válida (00-23 para hora, 00-59 para minutos).');
-        }
 
         const startStr = `${editData.startDate}T${String(sH).padStart(2, '0')}:${String(sM).padStart(2, '0')}:00`;
-        const endStr = `${editData.endDate}T${String(eH).padStart(2, '0')}:${String(eM).padStart(2, '0')}:00`;
-
         const startDt = new Date(startStr);
-        const endDt = new Date(endStr);
 
-        if (isNaN(startDt.getTime()) || isNaN(endDt.getTime())) {
+        if (isNaN(startDt.getTime())) {
             return alert('Las fechas ingresadas no son válidas.');
         }
 
-        if (endDt <= startDt) {
-            return alert('La hora de fin debe ser posterior a la hora de inicio.');
+        let endTimeIso: string | null = null;
+
+        if (!editData.isOngoing) {
+            const eH = parseInt(editData.endHour, 10);
+            const eM = parseInt(editData.endMinute, 10);
+
+            if (isNaN(eH) || eH < 0 || eH > 23 || isNaN(eM) || eM < 0 || eM > 59) {
+                return alert('Hora de arranque no válida (00-23 para hora, 00-59 para minutos).');
+            }
+
+            const endStr = `${editData.endDate}T${String(eH).padStart(2, '0')}:${String(eM).padStart(2, '0')}:00`;
+            const endDt = new Date(endStr);
+
+            if (isNaN(endDt.getTime())) {
+                return alert('Las fechas de arranque ingresadas no son válidas.');
+            }
+
+            if (endDt <= startDt) {
+                return alert('La hora de arranque debe ser posterior a la hora de inicio.');
+            }
+
+            endTimeIso = endDt.toISOString();
         }
 
         try {
@@ -310,7 +326,7 @@ export default function HistorialCambiosPage() {
                 machineId: editData.machineId,
                 changeTypes: editData.changeTypes,
                 startTime: startDt.toISOString(),
-                endTime: endDt.toISOString(),
+                endTime: endTimeIso,
                 observation: editData.observation || undefined,
                 generatedBy: editData.generatedBy || undefined,
             }).unwrap();
@@ -457,7 +473,7 @@ export default function HistorialCambiosPage() {
         }
     };
 
-    const formatDateTime = (iso: string) => {
+    const formatDateTime = (iso?: string | null) => {
         if (!iso) return '-';
         const d = new Date(iso);
         return d.toLocaleString('es-AR', {
@@ -784,12 +800,27 @@ export default function HistorialCambiosPage() {
 
                                                 {/* End Time */}
                                                 <TableCell sx={{ color: 'rgba(255,255,255,0.7)', borderBottom: '1px solid #1a2332', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
-                                                    {formatDateTime(change.endTime)}
+                                                    {change.endTime ? (
+                                                        formatDateTime(change.endTime)
+                                                    ) : (
+                                                        <Chip
+                                                            label="EN CURSO"
+                                                            size="small"
+                                                            sx={{
+                                                                bgcolor: '#38bdf825',
+                                                                color: '#38bdf8',
+                                                                fontWeight: 800,
+                                                                fontSize: '0.7rem',
+                                                                height: 22,
+                                                                border: '1px solid #38bdf855',
+                                                            }}
+                                                        />
+                                                    )}
                                                 </TableCell>
 
                                                 {/* Duration */}
-                                                <TableCell sx={{ color: '#60a5fa', fontWeight: 700, borderBottom: '1px solid #1a2332', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
-                                                    {change.durationFormatted || '—'}
+                                                <TableCell sx={{ color: change.endTime ? '#60a5fa' : '#38bdf8', fontWeight: 700, borderBottom: '1px solid #1a2332', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                                                    {change.durationFormatted || (change.endTime ? '—' : 'En curso')}
                                                 </TableCell>
 
                                                 {/* Change Types (Chips) */}
@@ -832,6 +863,17 @@ export default function HistorialCambiosPage() {
                                                 {/* Actions */}
                                                 <TableCell align="center" sx={{ borderBottom: '1px solid #1a2332' }}>
                                                     <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
+                                                        {!change.endTime && (
+                                                            <Tooltip title="Cargar Arranque (Cerrar Cambio)" arrow>
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={() => handleOpenEdit(change, true)}
+                                                                    sx={{ color: '#10b981', bgcolor: '#10b98118', '&:hover': { bgcolor: '#10b98133' } }}
+                                                                >
+                                                                    <PlayArrowIcon fontSize="small" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        )}
                                                         <Tooltip title="Editar Cambio" arrow>
                                                             <IconButton
                                                                 size="small"
@@ -994,15 +1036,57 @@ export default function HistorialCambiosPage() {
                                 </Box>
                             </Box>
 
+                            {/* Toggle cambio en curso */}
+                            <Box sx={{ bgcolor: editData.isOngoing ? 'rgba(56, 189, 248, 0.08)' : 'transparent', p: 1.5, borderRadius: 1, border: editData.isOngoing ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid #1f2937' }}>
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={editData.isOngoing}
+                                            onChange={e => {
+                                                const checked = e.target.checked;
+                                                setEditData(prev => {
+                                                    if (!prev) return null;
+                                                    const now = new Date();
+                                                    return {
+                                                        ...prev,
+                                                        isOngoing: checked,
+                                                        endDate: checked ? prev.endDate : now.toISOString().split('T')[0],
+                                                        endHour: checked ? prev.endHour : String(now.getHours()).padStart(2, '0'),
+                                                        endMinute: checked ? prev.endMinute : String(now.getMinutes()).padStart(2, '0'),
+                                                    };
+                                                });
+                                            }}
+                                            size="small"
+                                            sx={{ color: '#38bdf8', '&.Mui-checked': { color: '#38bdf8' } }}
+                                        />
+                                    }
+                                    label={
+                                        <Typography variant="body2" sx={{ color: editData.isOngoing ? '#38bdf8' : 'rgba(255,255,255,0.85)', fontWeight: editData.isOngoing ? 700 : 500 }}>
+                                            Cambio en curso (máquina parada, aún sin hora de arranque)
+                                        </Typography>
+                                    }
+                                />
+                                {editData.isOngoing ? (
+                                    <Typography variant="caption" sx={{ color: '#38bdf8', fontStyle: 'italic', display: 'block', mt: 0.5, pl: 4 }}>
+                                        ✓ La máquina continúa figurando como "En Cambio" (Parada). Desmarcá esta casilla para asentar el arranque.
+                                    </Typography>
+                                ) : (
+                                    <Typography variant="caption" sx={{ color: '#10b981', fontStyle: 'italic', display: 'block', mt: 0.5, pl: 4 }}>
+                                        ✓ Al guardar con hora de arranque, la máquina finalizará el cambio y volverá a estar operativa.
+                                    </Typography>
+                                )}
+                            </Box>
+
                             {/* End Date & Time */}
-                            <Box>
+                            <Box sx={{ opacity: editData.isOngoing ? 0.35 : 1, transition: 'opacity 0.2s' }}>
                                 <Typography variant="body2" sx={{ mb: 1, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
-                                    Fecha y Hora de Arranque (Fin)
+                                    Fecha y Hora de Arranque (Fin) {editData.isOngoing ? '(Deshabilitado mientras esté en curso)' : ''}
                                 </Typography>
                                 <Box sx={{ display: 'flex', gap: 1 }}>
                                     <TextField
                                         type="date"
                                         value={editData.endDate}
+                                        disabled={editData.isOngoing}
                                         onChange={e => setEditData(prev => prev ? { ...prev, endDate: e.target.value } : null)}
                                         size="small"
                                         sx={{ flex: 2 }}
@@ -1010,6 +1094,7 @@ export default function HistorialCambiosPage() {
                                     <TextField
                                         label="Hora"
                                         value={editData.endHour}
+                                        disabled={editData.isOngoing}
                                         onChange={e => setEditData(prev => prev ? { ...prev, endHour: e.target.value } : null)}
                                         size="small"
                                         sx={{ flex: 1 }}
@@ -1018,6 +1103,7 @@ export default function HistorialCambiosPage() {
                                     <TextField
                                         label="Min"
                                         value={editData.endMinute}
+                                        disabled={editData.isOngoing}
                                         onChange={e => setEditData(prev => prev ? { ...prev, endMinute: e.target.value } : null)}
                                         size="small"
                                         sx={{ flex: 1 }}
@@ -1091,7 +1177,7 @@ export default function HistorialCambiosPage() {
                                 Inicio: {formatDateTime(deleteItem.startTime)}
                             </Typography>
                             <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', display: 'block' }}>
-                                Arranque: {formatDateTime(deleteItem.endTime)}
+                                Arranque: {deleteItem.endTime ? formatDateTime(deleteItem.endTime) : 'En curso'}
                             </Typography>
                             <Typography variant="caption" sx={{ color: '#60a5fa', fontWeight: 600, display: 'block' }}>
                                 Duración: {deleteItem.durationFormatted || '—'}

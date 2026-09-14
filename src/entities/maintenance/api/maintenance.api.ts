@@ -81,7 +81,7 @@ export interface MachineChange {
     machineId: string;
     changeTypes: string[];
     startTime: string;
-    endTime: string;
+    endTime: string | null;
     observation?: string;
     generatedBy: string;
     createdAt: string;
@@ -371,13 +371,13 @@ export const maintenanceApi = api.injectEndpoints({
                 method: 'POST',
                 body,
             }),
-            invalidatesTags: ['MachineChange'],
+            invalidatesTags: ['MachineChange', 'Maintenance'],
         }),
         createMachineChangesBulk: builder.mutation<MachineChange[], { items: Array<{
             machineId: string;
             changeTypes: string[];
             startTime: string;
-            endTime: string;
+            endTime?: string | null;
             observation?: string;
             generatedBy: string;
         }> }>({
@@ -386,7 +386,7 @@ export const maintenanceApi = api.injectEndpoints({
                 method: 'POST',
                 body,
             }),
-            invalidatesTags: ['MachineChange'],
+            invalidatesTags: ['MachineChange', 'Maintenance'],
         }),
         getMachineChanges: builder.query<MachineChange[], any>({
             query: (params) => ({
@@ -408,14 +408,14 @@ export const maintenanceApi = api.injectEndpoints({
                 method: 'PATCH',
                 body,
             }),
-            invalidatesTags: ['MachineChange'],
+            invalidatesTags: ['MachineChange', 'Maintenance'],
         }),
         deleteMachineChange: builder.mutation<void, string>({
             query: (id) => ({
                 url: `maintenance/machine-changes/${id}`,
                 method: 'DELETE',
             }),
-            invalidatesTags: ['MachineChange'],
+            invalidatesTags: ['MachineChange', 'Maintenance'],
         }),
         // Availability Dashboard
         getAvailabilityDashboard: builder.query<AvailabilityDashboard, { plantId: string; typeId?: string; startDate?: string; endDate?: string }>({
