@@ -24,7 +24,6 @@ import {
     useGetMaterialAnalysisQuery,
     useUpdateMaterialReviewMutation,
 } from '../../features/warehouse/materialAnalysis/api/material-analysis.api';
-import { useGetArticulosQuery, useUpdateArticuloMutation } from '../../features/quality/articulos/api/articulos.api';
 
 const materialRoles = [
     ['COLOR_BASE', 'Base'], ['LOGO', 'Logo'], ['DETALLE_MEDIA', 'Detalle'], ['COLOR_TALLE', 'Color talle'],
@@ -42,10 +41,10 @@ export default function MaterialesEstancadosPage() {
     const [months, setMonths] = useState(6);
     const [tab, setTab] = useState(0);
     const [search, setSearch] = useState('');
-    const { data, isLoading, error, refetch } = useGetMaterialAnalysisQuery({ months });
+    const { data, isLoading, error } = useGetMaterialAnalysisQuery({ months });
     const [updateReview, { isLoading: isSaving }] = useUpdateMaterialReviewMutation();
-    const { data: articles = [] } = useGetArticulosQuery();
-    const [updateArticle, { isLoading: isAssigning }] = useUpdateArticuloMutation();
+    const articles: any[] = [];
+    const isAssigning = false;
     const [assigningMaterial, setAssigningMaterial] = useState<MaterialAnalysisRow | null>(null);
     const [articleId, setArticleId] = useState('');
     const [role, setRole] = useState('COLOR_BASE');
@@ -67,41 +66,7 @@ export default function MaterialesEstancadosPage() {
     };
 
     const assignToArticle = async () => {
-        if (!assigningMaterial || !articleId) return;
-        const article = articles.find((candidate: any) => candidate.id === articleId);
-        if (!article) return;
-        const refs = (article.itemRefs ?? []).map((ref: any) => ({
-            itemId: ref.itemId,
-            rol: ref.rol,
-            orden: ref.orden,
-            colorNombre: ref.colorNombre,
-            grupo: ref.grupo,
-            esPreferenciaActual: ref.esPreferenciaActual,
-            consumoGramos: ref.consumoGramos,
-            desperdicio: ref.desperdicio,
-            conosPreparacion: ref.conosPreparacion,
-            activo: ref.activo,
-        }));
-        if (refs.some((ref: any) => ref.itemId === assigningMaterial.itemId && ref.rol === role)) {
-            alert('Este material ya está vinculado al artículo con ese rol.');
-            return;
-        }
-        const sameRole = refs.filter((ref: any) => ref.rol === role);
-        const group = sameRole.length === 0 ? 1 : Math.max(...sameRole.map((ref: any) => Number(ref.grupo || 1))) + 1;
-        refs.push({
-            itemId: assigningMaterial.itemId,
-            rol: role,
-            orden: 1,
-            colorNombre: colorName.trim() || null,
-            grupo: group,
-            esPreferenciaActual: true,
-            consumoGramos: null,
-            desperdicio: null,
-            conosPreparacion: null,
-            activo: true,
-        });
-        await updateArticle({ id: articleId, data: { itemRefs: refs } }).unwrap();
-        await refetch();
+        alert('La funcionalidad de artículos se está reconfigurando.');
         setAssigningMaterial(null);
         setArticleId('');
         setColorName('');

@@ -1,14 +1,12 @@
 import { useState, useMemo, useRef } from 'react';
-import { useGetPurchaseOrdersQuery, useGenerateRemitoFromPOMutation } from '../../../purchasing/purchase-orders/api/purchase-orders.api';
 import { useCreateRemitoEntradaMutation } from '../api/remitos-entrada.api';
 import { useGetDepotsQuery } from '../../deposito/api/deposito.api';
 import { useGetPartnersQuery } from '../../../config/partners/api/partners.api';
 import { useGetItemsQuery } from '../../materiales/api/items.api';
 import { CreateItemDialog } from '../../materiales/components/CreateItemDialog';
-import { Modal, Btn, Input, SearchSelect, Select, Badge } from '../../../../shared/ui';
+import { Modal, Btn, Input, SearchSelect, Select } from '../../../../shared/ui';
 
 interface Line {
-    lineId?: string;
     itemId: string;
     itemDesc: string;
     itemCode: string;
@@ -16,7 +14,6 @@ interface Line {
     qtyPrincipal: string;
     qtySecundaria: string;
     observaciones: string;
-    pendingOC?: number;
 }
 
 interface Props {
@@ -63,16 +60,6 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
         return filtered;
     }, [items, supplierId, showAllMaterials]);
 
-    // ── Vinculación a OC ──
-    const [mode, setMode] = useState<'libre' | 'oc'>('libre');
-    const [selectedOCId, setSelectedOCId] = useState('');
-
-    const { data: allOCs = [] } = useGetPurchaseOrdersQuery(undefined);
-    const ocsActivas = useMemo(() =>
-        (allOCs as any[]).filter(o => o.estado !== 'CANCELADO' && o.estado !== 'COMPLETADO'),
-        [allOCs]
-    );
-
     // ── Líneas ──
     const [lines, setLines] = useState<Line[]>([
         { itemId: '', itemDesc: '', itemCode: '', lotNumber: '', qtyPrincipal: '', qtySecundaria: '', observaciones: '' }
@@ -82,7 +69,7 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
     const [saving, setSaving] = useState(false);
 
     const [createRemitoEntrada] = useCreateRemitoEntradaMutation();
-    const [generateRemitoFromPO] = useGenerateRemitoFromPOMutation();
+
 
     const handleAddLineAndFocus = () => {
         setLines(prev => {
@@ -91,46 +78,6 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
             return [...prev, { itemId: '', itemDesc: '', itemCode: '', lotNumber: '', qtyPrincipal: '', qtySecundaria: '', observaciones: '' }];
         });
     };
-
-    // ── Cuando se selecciona una OC, pre-llenar las líneas ──
-    const selectedOC = useMemo(() =>
-        ocsActivas.find((o: any) => o.id === selectedOCId),
-        [ocsActivas, selectedOCId]
-    );
-
-    const handleSelectOC = (ocId: string) => {
-        setSelectedOCId(ocId);
-        if (!ocId) {
-            setLines([{ itemId: '', itemDesc: '', itemCode: '', lotNumber: '', qtyPrincipal: '', qtySecundaria: '', observaciones: '' }]);
-            return;
-        }
-        const oc = ocsActivas.find((o: any) => o.id === ocId);
-        if (!oc) return;
-
-        // Pre-completar depósito y proveedor si no están seteados
-        if (!depositoId && oc.depositoId) setDepositoId(oc.depositoId);
-        if (!supplierId && oc.supplierId) setSupplierId(oc.supplierId);
-
-        // Pre-completar líneas con pendiente de la OC
-        const preFilled: Line[] = (oc.lines || []).map((l: any) => {
-            const pending = Math.max(0, Number(l.qtyPedido) - Number(l.qtyRecibida || 0));
-            return {
-                lineId: l.id,
-                itemId: l.itemId,
-                itemDesc: l.item?.descripcion || '',
-                itemCode: l.item?.codigoInterno || '',
-                lotNumber: `LOTE-${oc.numero?.replace(/^OC-/, '') || ''}`,
-                qtyPrincipal: pending > 0 ? String(pending) : '',
-                qtySecundaria: '',
-                observaciones: '',
-                pendingOC: pending,
-            };
-        });
-        setLines(preFilled.length ? preFilled : [
-            { itemId: '', itemDesc: '', itemCode: '', lotNumber: '', qtyPrincipal: '', qtySecundaria: '', observaciones: '' }
-        ]);
-    };
-
 
     const removeLine = (i: number) => {
         setLines(prev => prev.filter((_, j) => j !== i));
@@ -156,43 +103,24 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
 
         setSaving(true);
         try {
-            if (mode === 'oc' && selectedOCId) {
-                // Generar remito vinculado a la OC
-                await generateRemitoFromPO({
-                    id: selectedOCId,
-                    body: {
-                        depositoId,
-                        fecha,
-                        observaciones: observaciones || nroExterno,
-                        lines: validLines.map(l => ({
-                            lineId: l.lineId,
-                            lotNumber: l.lotNumber || `REM-${Date.now()}`,
-                            qtyPrincipal: Number(l.qtyPrincipal),
-                            qtySecundaria: l.qtySecundaria ? Number(l.qtySecundaria) : undefined,
-                        })),
-                    }
-                }).unwrap();
-            } else {
-                // Remito libre sin OC
-                const partner = (suppliers as any[]).find(s => s.id === supplierId);
-                await createRemitoEntrada({
-                    depositoId,
-                    depotId: depositoId,
-                    supplierId: supplierId || undefined,
-                    supplierName: partner?.name || undefined,
-                    fecha,
-                    numero: nroExterno?.trim() || undefined,
-                    documentoNumero: nroExterno?.trim() || undefined,
-                    observaciones: observaciones || undefined,
-                    lines: validLines.map(l => ({
-                        itemId: l.itemId,
-                        lotNumber: l.lotNumber || `REM-${Date.now()}`,
-                        qtyPrincipal: Number(l.qtyPrincipal),
-                        qtySecundaria: l.qtySecundaria ? Number(l.qtySecundaria) : undefined,
-                        observaciones: l.observaciones || undefined,
-                    })),
-                }).unwrap();
-            }
+            const partner = (suppliers as any[]).find(s => s.id === supplierId);
+            await createRemitoEntrada({
+                depositoId,
+                depotId: depositoId,
+                supplierId: supplierId || undefined,
+                supplierName: partner?.name || undefined,
+                fecha,
+                numero: nroExterno?.trim() || undefined,
+                documentoNumero: nroExterno?.trim() || undefined,
+                observaciones: observaciones || undefined,
+                lines: validLines.map(l => ({
+                    itemId: l.itemId,
+                    lotNumber: l.lotNumber || `REM-${Date.now()}`,
+                    qtyPrincipal: Number(l.qtyPrincipal),
+                    qtySecundaria: l.qtySecundaria ? Number(l.qtySecundaria) : undefined,
+                    observaciones: l.observaciones || undefined,
+                })),
+            }).unwrap();
             onSuccess();
         } catch (e: any) {
             setError(e?.data?.message || 'Error al guardar el remito');
@@ -204,66 +132,7 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
         <Modal title="📥 Nuevo Remito de Entrada" onClose={onClose} wide>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-                {/* ── Modo ── */}
-                <div style={{ display: 'flex', gap: '10px' }}>
-                    <button
-                        onClick={() => { setMode('libre'); setSelectedOCId(''); setLines([{ itemId: '', itemDesc: '', itemCode: '', lotNumber: '', qtyPrincipal: '', qtySecundaria: '', observaciones: '' }]); }}
-                        style={{
-                            flex: 1, padding: '12px', borderRadius: '8px', border: '2px solid',
-                            borderColor: mode === 'libre' ? '#6366f1' : 'var(--border-color, #2a2d3e)',
-                            background: mode === 'libre' ? 'rgba(99,102,241,0.1)' : 'transparent',
-                            color: mode === 'libre' ? '#818cf8' : 'var(--text-muted, #9ca3af)',
-                            cursor: 'pointer', fontSize: '13px', fontWeight: 700,
-                        }}
-                    >
-                        📋 Remito Libre<br />
-                        <span style={{ fontSize: '11px', fontWeight: 400 }}>Sin vinculación a OC</span>
-                    </button>
-                    <button
-                        onClick={() => setMode('oc')}
-                        style={{
-                            flex: 1, padding: '12px', borderRadius: '8px', border: '2px solid',
-                            borderColor: mode === 'oc' ? '#10b981' : 'var(--border-color, #2a2d3e)',
-                            background: mode === 'oc' ? 'rgba(16,185,129,0.1)' : 'transparent',
-                            color: mode === 'oc' ? '#10b981' : 'var(--text-muted, #9ca3af)',
-                            cursor: 'pointer', fontSize: '13px', fontWeight: 700,
-                        }}
-                    >
-                        🔗 Vinculado a OC<br />
-                        <span style={{ fontSize: '11px', fontWeight: 400 }}>Pre-completa desde Orden de Compra</span>
-                    </button>
-                </div>
 
-                {/* ── Búsqueda de OC ── */}
-                {mode === 'oc' && (
-                    <div style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '8px', padding: '14px' }}>
-                        <label style={{ color: '#10b981', fontSize: '12px', fontWeight: 700, display: 'block', marginBottom: '6px' }}>
-                            Buscar Orden de Compra
-                        </label>
-                        <SearchSelect
-                            value={selectedOCId}
-                            onChange={handleSelectOC}
-                            options={[
-                                { value: '', label: 'Seleccionar OC...' },
-                                ...ocsActivas.map((o: any) => ({
-                                    value: o.id,
-                                    label: `${o.numero} — ${o.supplier?.name || 'Sin proveedor'} — ${new Date(o.fechaEmision).toLocaleDateString('es-AR')}`
-                                }))
-                            ]}
-                            placeholder="Buscar por número o proveedor..."
-                        />
-                        {selectedOC && (
-                            <div style={{ marginTop: '10px', display: 'flex', gap: '12px', flexWrap: 'wrap', fontSize: '12px', color: 'var(--text-muted)' }}>
-                                <span>📦 {selectedOC.lines?.length} ítems</span>
-                                <span>🏭 {depots.find((d: any) => d.id === selectedOC.depositoId)?.nombre || '—'}</span>
-                                {selectedOC.fechaEntregaEsperada && (
-                                    <span>📅 Entrega est.: {new Date(selectedOC.fechaEntregaEsperada).toLocaleDateString('es-AR')}</span>
-                                )}
-                                <Badge color="#f59e0b">{selectedOC.estado}</Badge>
-                            </div>
-                        )}
-                    </div>
-                )}
 
                 {/* ── Datos del remito ── */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '12px' }}>
@@ -334,35 +203,25 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
                             }}>
                                 {/* Material */}
                                 <div>
-                                    {l.itemDesc ? (
-                                        <div>
-                                            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{l.itemDesc}</div>
-                                            <code style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{l.itemCode}</code>
-                                            {l.pendingOC !== undefined && (
-                                                <div style={{ fontSize: '11px', color: '#f59e0b' }}>Pendiente OC: {l.pendingOC.toFixed(1)} kg</div>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <SearchSelect
-                                            inputRef={el => { fieldRefs.current[`${i}-material`] = el; }}
-                                            value={l.itemId}
-                                            onChange={v => {
-                                                if (v === '__CREATE__') {
-                                                    setActiveLineForCreate(i);
-                                                    setIsCreateItemOpen(true);
-                                                    return;
-                                                }
-                                                updateLine(i, 'itemId', v);
-                                            }}
-                                            onSelectNext={() => focusField(i, 'lotNumber')}
-                                            options={[
-                                                { value: '', label: 'Seleccionar material...' },
-                                                { value: '__CREATE__', label: '➕ Crear nuevo material...' },
-                                                ...(availableItems as any[]).map(it => ({ value: it.id, label: `${it.codigoInterno} — ${it.descripcion}` }))
-                                            ]}
-                                            placeholder={availableItems.length === 0 && supplierId ? 'Sin materiales para este proveedor' : 'Buscar material...'}
-                                        />
-                                    )}
+                                    <SearchSelect
+                                        inputRef={el => { fieldRefs.current[`${i}-material`] = el; }}
+                                        value={l.itemId}
+                                        onChange={v => {
+                                            if (v === '__CREATE__') {
+                                                setActiveLineForCreate(i);
+                                                setIsCreateItemOpen(true);
+                                                return;
+                                            }
+                                            updateLine(i, 'itemId', v);
+                                        }}
+                                        onSelectNext={() => focusField(i, 'lotNumber')}
+                                        options={[
+                                            { value: '', label: 'Seleccionar material...' },
+                                            { value: '__CREATE__', label: '➕ Crear nuevo material...' },
+                                            ...(availableItems as any[]).map(it => ({ value: it.id, label: `${it.codigoInterno} — ${it.descripcion}` }))
+                                        ]}
+                                        placeholder={availableItems.length === 0 && supplierId ? 'Sin materiales para este proveedor' : 'Buscar material...'}
+                                    />
                                 </div>
                                 <Input
                                     inputRef={el => { fieldRefs.current[`${i}-lotNumber`] = el; }}

@@ -29,18 +29,6 @@ const ReporteChequeoPage = lazy(() => import('../../pages/warehouse/ReporteChequ
 const InformesInventariadoPage = lazy(() => import('../../pages/warehouse/InformesInventariadoPage'));
 const MaterialesEstancadosPage = lazy(() => import('../../pages/warehouse/MaterialesEstancadosPage'));
 const MaterialesCompletitudPage = lazy(() => import('../../pages/warehouse/MaterialesCompletitudPage'));
-const ProcesarDevolucionesLineaPage = lazy(() => import('../../pages/warehouse/ProcesarDevolucionesLineaPage'));
-
-// Sector: Purchasing
-const DashboardComprasPage = lazy(() => import('../../pages/purchasing/DashboardComprasPage'));
-const MaterialesCriticosPage = lazy(() => import('../../pages/purchasing/MaterialesCriticosPage'));
-const AlertaStockPage = lazy(() => import('../../pages/purchasing/AlertaStockPage'));
-const CapacityDashboardPage = lazy(() => import('../../pages/purchasing/CapacityDashboardPage'));
-const PedidosCompraPage = lazy(() => import('../../pages/purchasing/PedidosCompraPage'));
-const GraficoSierraPage = lazy(() => import('../../pages/purchasing/GraficoSierraPage'));
-const ProyeccionStockPage = lazy(() => import('../../pages/purchasing/ProyeccionStockPage'));
-const ConvertidorPedidosPage = lazy(() => import('../../pages/purchasing/ConvertidorPedidosPage'));
-const MovimientosComprasPage = lazy(() => import('../../pages/purchasing/MovimientosComprasPage'));
 
 // Sector: Maintenance
 const DashboardMantenimientoPage = lazy(() => import('../../pages/maintenance/DashboardMantenimientoPage'));
@@ -57,23 +45,9 @@ const DisponibilidadMaquinaPage = lazy(() => import('../../pages/maintenance/Dis
 const DisponibilidadMaquinaV2Page = lazy(() => import('../../pages/maintenance/DisponibilidadMaquinaV2Page'));
 
 // Sector: Quality (Calidad)
-const ArticulosCalidadPage = lazy(() => import('../../pages/quality/ArticulosCalidadPage'));
-const CatalogoEstructurasPage = lazy(() => import('../../pages/quality/CatalogoEstructurasPage'));
-const ArticulosCompletitudPage = lazy(() => import('../../pages/quality/ArticulosCompletitudPage'));
+const ArticulosPage = lazy(() => import('../../pages/quality/ArticulosPage'));
 const CuarentenaCalidadPage = lazy(() => import('../../pages/quality/CuarentenaCalidadPage'));
-const LotesProducidosCalidadPage = lazy(() => import('../../pages/quality/LotesProducidosCalidadPage'));
-const ImportarArticulosPage = lazy(() => import('../../pages/quality/ImportarArticulosPage'));
-
-// Sector: Production
-const CargarProduccionPage = lazy(() => import('../../pages/production/CargarProduccionPage'));
-const ProduccionNewDashboardPage = lazy(() => import('../../pages/production/ProduccionNewDashboardPage'));
-const RecursosTejeduriaPage = lazy(() => import('../../pages/production/RecursosTejeduriaPage'));
-const ImportarHistoricoTejeduriaPage = lazy(() => import('../../pages/production/ImportarHistoricoTejeduriaPage'));
 const OrdenesProduccionPage = lazy(() => import('../../pages/quality/OrdenesProduccionPage'));
-const ProgramacionesProduccionPage = lazy(() => import('../../pages/production/ProgramacionesProduccionPage'));
-const HistoricoProduccionPage = lazy(() => import('../../pages/production/HistoricoProduccionPage'));
-const MaterialesProduccionPage = lazy(() => import('../../pages/production/MaterialesProduccionPage'));
-const DeclararDevolucionLineaPage = lazy(() => import('../../pages/production/DeclararDevolucionLineaPage'));
 
 // New Sectors Dashboards
 const AdminDashboardPage = lazy(() => import('../../pages/admin/AdminDashboardPage'));
@@ -103,10 +77,8 @@ const getHome = (role?: string, sector?: string) => {
     const r = role?.toUpperCase();
     const s = sector?.toUpperCase();
     if (r === 'ADMIN') return '/admin/dashboard';
-    if (s === 'COMPRAS') return '/dashboard';
     if (s === 'DEPOSITO') return '/deposito/dashboard';
     if (s === 'MANTENIMIENTO') return '/mantenimiento/dashboard';
-    if (s === 'PRODUCCION') return '/produccion/dashboard';
     if (s === 'VENTAS') return '/ventas/dashboard';
     if (s === 'FINANZAS') return '/finanzas/dashboard';
     if (s === 'RRHH') return '/rrhh/dashboard';
@@ -135,25 +107,14 @@ export const router = createBrowserRouter([
             index: true,
             element: <RootRedirect />
           },
-          // Compras / Config
+          // Config & Operaciones
           {
             element: <RoleGuard allowedRoles={['ADMIN', 'SUPERVISOR', 'OPERARIO']} />,
             children: [
               { path: "remitos-entrada", element: <LazyRoute element={RemitosEntradaPage} /> },
-              { path: "dashboard", element: <LazyRoute element={DashboardComprasPage} /> },
-              { path: "compras/materiales-criticos", element: <LazyRoute element={MaterialesCriticosPage} /> },
-              { path: "compras/alertas-stock", element: <LazyRoute element={AlertaStockPage} /> },
-              { path: "compras/conciliacion", element: <Navigate to="/compras/movimientos" replace /> },
-              { path: "compras/grafico-sierra", element: <LazyRoute element={GraficoSierraPage} /> },
-              { path: "dashboard/capacity", element: <LazyRoute element={CapacityDashboardPage} /> },
-              { path: "dashboard/volumes", element: <Navigate to="/dashboard/capacity" replace /> },
               { path: "items", element: <LazyRoute element={MaterialesPage} /> },
               { path: "items/box-types", element: <LazyRoute element={BoxTypesPage} /> },
               { path: "socios", element: <LazyRoute element={SociosPage} /> },
-              { path: "pedidos-compra", element: <LazyRoute element={PedidosCompraPage} /> },
-              { path: "compras/proyeccion-stock", element: <LazyRoute element={ProyeccionStockPage} /> },
-              { path: "compras/convertidor", element: <LazyRoute element={ConvertidorPedidosPage} /> },
-              { path: "compras/movimientos", element: <LazyRoute element={MovimientosComprasPage} /> },
             ]
           },
           // ADMIN
@@ -176,12 +137,11 @@ export const router = createBrowserRouter([
               { path: "deposito/informes", element: <LazyRoute element={InformesInventariadoPage} /> },
             ]
           },
-          // Operario / Produccion / Deposito
+          // Deposito / Mantenimiento / Calidad
           {
             element: <RoleGuard allowedRoles={['ADMIN', 'SUPERVISOR', 'OPERARIO']} />,
             children: [
               { path: "deposito/dashboard", element: <LazyRoute element={DashboardDepositoPage} /> },
-              { path: "chequeo-categoria", element: <LazyRoute element={ChequeoCategoriaPage} /> },
               { path: "remitos-salida", element: <LazyRoute element={RemitosSalidaPage} /> },
               { path: "reporte-consumo-detallado", element: <LazyRoute element={ReporteConsumoDetalladoPage} /> },
               { path: "stock", element: <LazyRoute element={StockPage} /> },
@@ -203,30 +163,13 @@ export const router = createBrowserRouter([
               { path: "mantenimiento/kpi/disponibilidad", element: <LazyRoute element={DisponibilidadMaquinaPage} /> },
               { path: "mantenimiento/kpi/disponibilidad-v2", element: <LazyRoute element={DisponibilidadMaquinaV2Page} /> },
 
-              { path: "produccion/cargar", element: <LazyRoute element={CargarProduccionPage} /> },
-              { path: "produccion/dashboard", element: <LazyRoute element={ProduccionNewDashboardPage} /> },
-              { path: "produccion/recursos", element: <LazyRoute element={RecursosTejeduriaPage} /> },
-              { path: "produccion/importar-historico", element: <LazyRoute element={ImportarHistoricoTejeduriaPage} /> },
-              { path: "produccion/ordenes-produccion", element: <LazyRoute element={OrdenesProduccionPage} /> },
-              { path: "produccion/programaciones", element: <LazyRoute element={ProgramacionesProduccionPage} /> },
-              { path: "produccion/historico", element: <LazyRoute element={HistoricoProduccionPage} /> },
-              { path: "produccion/materiales", element: <LazyRoute element={MaterialesProduccionPage} /> },
-              { path: "produccion/devoluciones-linea", element: <LazyRoute element={DeclararDevolucionLineaPage} /> },
-              { path: "deposito/devoluciones-linea", element: <LazyRoute element={ProcesarDevolucionesLineaPage} /> },
-
-              { path: "produccion-nueva/dashboard", element: <LazyRoute element={ProduccionNewDashboardPage} /> },
               { path: "ventas/dashboard", element: <LazyRoute element={VentasDashboardPage} /> },
               { path: "finanzas/dashboard", element: <LazyRoute element={FinanzasDashboardPage} /> },
               { path: "rrhh/dashboard", element: <LazyRoute element={RRHHDashboardPage} /> },
-              { path: "compras/dashboard", element: <LazyRoute element={DashboardComprasPage} /> },
-              { path: "calidad/articulos", element: <LazyRoute element={CatalogoEstructurasPage} /> },
-              { path: "calidad/estructuras", element: <Navigate to="/calidad/articulos" replace /> },
-              { path: "calidad/articulos-anteriores", element: <LazyRoute element={ArticulosCalidadPage} /> },
-              { path: "calidad/completitud-articulos", element: <LazyRoute element={ArticulosCompletitudPage} /> },
+
+              { path: "calidad/articulos", element: <LazyRoute element={ArticulosPage} /> },
               { path: "calidad/cuarentena", element: <LazyRoute element={CuarentenaCalidadPage} /> },
-              { path: "calidad/lotes-producidos", element: <LazyRoute element={LotesProducidosCalidadPage} /> },
-              { path: "calidad/importar-articulos", element: <LazyRoute element={ImportarArticulosPage} /> },
-              { path: "calidad/ordenes-produccion", element: <Navigate to="/produccion/ordenes-produccion" replace /> },
+              { path: "calidad/ordenes-produccion", element: <LazyRoute element={OrdenesProduccionPage} /> },
             ]
           },
           // Shared

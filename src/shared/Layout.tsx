@@ -42,15 +42,6 @@ const flattenItems = (items: (NavItem | NavSubGroup)[]): NavItem[] => {
 
 const navGroups: NavGroup[] = [
     {
-        id: 'devoluciones',
-        label: 'Devoluciones de línea',
-        icon: '↩️',
-        items: [
-            { to: '/produccion/devoluciones-linea', label: '📤 Declarar devolución' },
-            { to: '/deposito/devoluciones-linea', label: '📥 Control e ingreso' },
-        ]
-    },
-    {
         id: 'administracion',
         label: 'Administración',
         icon: '📊',
@@ -76,7 +67,6 @@ const navGroups: NavGroup[] = [
                 items: [
                     { to: '/remitos-entrada', label: '📥 Entrada de mercadería' },
                     { to: '/remitos-salida', label: '📤 Salida de mercadería' },
-                    { to: '/produccion/materiales', label: '📦 Preparación Producción' },
                 ]
             },
             {
@@ -91,7 +81,7 @@ const navGroups: NavGroup[] = [
                     { to: '/reporte-chequeo', label: '📊 Reporte Chequeo' },
                     { to: '/deposito/materiales-estancados', label: '🧊 Materiales Estancados' },
                     { to: '/deposito/completitud-materiales', label: '✅ Completitud materiales' },
-                    { to: '/dashboard/capacity', label: '📐 Capacidad física' },
+                    { to: '/reporte-consumo-detallado', label: '📊 Consumo Detallado' },
                 ]
             },
             {
@@ -145,49 +135,9 @@ const navGroups: NavGroup[] = [
         label: 'Calidad',
         icon: '🎯',
         items: [
-            { to: '/calidad/articulos', label: '📋 Artículos y estructuras' },
-            { to: '/calidad/completitud-articulos', label: '✅ Completitud artículos' },
-            { to: '/calidad/importar-articulos', label: '📥 Importar artículos' },
+            { to: '/calidad/articulos', label: '📋 Artículos' },
+            { to: '/calidad/ordenes-produccion', label: '📑 Órdenes de Producción' },
             { to: '/calidad/cuarentena', label: '🧪 Cuarentena y liberación' },
-            { to: '/calidad/lotes-producidos', label: '🧦 Lotes producidos' },
-        ]
-    },
-    {
-        id: 'produccion',
-        label: 'Producción',
-        icon: '⚙️',
-        items: [
-            { to: '/produccion/dashboard', label: '📊 Dashboard Prod' },
-            { to: '/produccion/cargar', label: '➕ Cargar' },
-            { to: '/produccion/historico', label: '🕘 Histórico y correcciones' },
-            { to: '/produccion/materiales', label: '📦 Materiales y FIFO' },
-            { to: '/produccion/recursos', label: '🏭 Recursos Tejeduría' },
-            { to: '/produccion/importar-historico', label: '📂 Importar Histórico' },
-            { to: '/produccion/ordenes-produccion', label: '📑 Órdenes de Producción' },
-            { to: '/produccion/programaciones', label: '🗓️ Programaciones' },
-        ]
-    },
-    {
-        id: 'compras',
-        label: 'Compras',
-        icon: '🛒',
-        items: [
-            { to: '/dashboard', label: '📊 Comando Compras' },
-            { to: '/pedidos-compra', label: '📝 Órdenes de Compra' },
-            { to: '/compras/movimientos', label: '🔗 Documentos y conciliación' },
-            { to: '/compras/convertidor', label: '🔄 Convertidor de Pedidos' },
-            {
-                id: 'compras-informes',
-                label: '📊 Informes',
-                isSubGroup: true,
-                items: [
-                    { to: '/compras/proyeccion-stock', label: '📈 Proyección de Stock' },
-                    { to: '/compras/grafico-sierra', label: '📈 Gráfico de Sierra' },
-                    { to: '/compras/materiales-criticos', label: '🧵 Grupos de Materiales' },
-                    { to: '/compras/alertas-stock', label: '⚠️ Alertas de Stock' },
-                    { to: '/reporte-consumo-detallado', label: '📊 Consumo Detallado' },
-                ]
-            },
         ]
     },
     {
@@ -309,17 +259,8 @@ export default function Layout() {
                 '/deposito/dashboard', '/stock', '/movimientos',
                 '/remitos-entrada', '/remitos-salida',
                 '/reporte-consumo-detallado', '/tasks',
-                '/chequeo-inventario', '/reporte-chequeo', '/deposito/informes',
-                '/deposito/completitud-materiales',
-                '/produccion/materiales',
-                '/produccion/devoluciones-linea', '/deposito/devoluciones-linea',
-            ],
-            COMPRAS: [
-                '/dashboard', '/pedidos-compra', '/compras/materiales-criticos',
-                '/compras/alertas-stock', '/compras/conciliacion', '/compras/grafico-sierra',
-                '/dashboard/capacity', '/dashboard/volumes', '/reporte-consumo-detallado',
-                '/remitos-entrada', '/remitos-salida',
-                '/compras/movimientos', '/compras/convertidor', '/compras/proyeccion-stock',
+                '/chequeo-inventario', '/chequeo-categoria', '/reporte-chequeo', '/deposito/informes',
+                '/deposito/materiales-estancados', '/deposito/completitud-materiales',
             ],
             MANTENIMIENTO: [
                 '/mantenimiento/dashboard', '/mantenimiento/monitoreo',
@@ -329,8 +270,7 @@ export default function Layout() {
                 '/mantenimiento/kpi/disponibilidad',
                 '/mantenimiento/kpi/disponibilidad-v2',
             ],
-            PRODUCCION: ['/produccion/dashboard', '/produccion/cargar', '/produccion/historico', '/produccion/materiales', '/produccion/devoluciones-linea', '/produccion/recursos', '/produccion/importar-historico', '/produccion/ordenes-produccion', '/produccion/programaciones', '/calidad/articulos', '/calidad/estructuras'],
-            CALIDAD: ['/calidad/articulos', '/calidad/estructuras', '/calidad/completitud-articulos', '/calidad/importar-articulos', '/calidad/cuarentena', '/calidad/lotes-producidos'],
+            CALIDAD: ['/calidad/articulos', '/calidad/ordenes-produccion', '/calidad/cuarentena'],
             VENTAS: ['/ventas/dashboard'],
             FINANZAS: ['/finanzas/dashboard'],
             RRHH: ['/rrhh/dashboard'],

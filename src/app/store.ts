@@ -3,7 +3,6 @@ import { setupListeners } from '@reduxjs/toolkit/query';
 import { api } from '../shared/api';
 import authReducer from '../entities/auth/model/authSlice';
 import notificationsReducer from '../entities/notifications/notificationsSlice';
-import productionReducer from '../entities/production/model/productionSlice';
 import maintenanceReducer from '../entities/maintenance/model/maintenanceSlice';
 
 export const store = configureStore({
@@ -11,7 +10,6 @@ export const store = configureStore({
         [api.reducerPath]: api.reducer,
         auth: authReducer,
         notifications: notificationsReducer,
-        production: productionReducer,
         maintenance: maintenanceReducer,
     },
     middleware: (getDefaultMiddleware) =>

@@ -39,7 +39,7 @@ export const qualityLotsApi = api.injectEndpoints({
         }),
         releaseQualityLot: builder.mutation<QualityLot, { id: string; notes?: string }>({
             query: ({ id, notes }) => ({ url: `quality/lots/${id}/release`, method: 'PATCH', body: { notes } }),
-            invalidatesTags: ['Stock', 'Production', 'Dashboard'],
+            invalidatesTags: ['Stock', 'Dashboard'],
         }),
     }),
 });

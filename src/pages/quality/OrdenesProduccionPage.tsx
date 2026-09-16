@@ -1,9 +1,7 @@
 import { useState, useMemo } from 'react';
 import { PageHeader, Card, Btn } from '../../shared/ui';
 import { useParseOrdenesProduccionMutation } from '../../features/quality/ordenes-produccion/api/ordenesProduccion.api';
-import type { ProduccionParseResult, ArticuloProduccionSummary } from '../../features/quality/ordenes-produccion/types/ordenesProduccion.types';
-import { useGetArticulosQuery } from '../../features/quality/articulos/api/articulos.api';
-import { CreateArticuloDialog } from '../../features/quality/articulos/components/CreateArticuloDialog';
+import type { ProduccionParseResult } from '../../features/quality/ordenes-produccion/types/ordenesProduccion.types';
 import { PdfUploader } from '../../features/quality/ordenes-produccion/components/PdfUploader';
 import { ArticulosTejidoTab } from '../../features/quality/ordenes-produccion/components/ArticulosTejidoTab';
 import { MaquinasTab } from '../../features/quality/ordenes-produccion/components/MaquinasTab';
@@ -11,30 +9,14 @@ import { ColoresTab } from '../../features/quality/ordenes-produccion/components
 import { MaterialesAsignadosTab } from '../../features/quality/ordenes-produccion/components/MaterialesAsignadosTab';
 import { HojaRepartidorTab } from '../../features/quality/ordenes-produccion/components/HojaRepartidorTab';
 import { HojaPickingTab } from '../../features/quality/ordenes-produccion/components/HojaPickingTab';
-import {
-    type ProductionSchedule,
-    useGetProductionPickingQuery,
-    useImportProductionSchedulePdfMutation,
-    useVerifyProductionPickingMutation,
-} from '../../entities/production/api/production.api';
 
 type TabType = 'articulos' | 'maquinas' | 'colores' | 'materiales' | 'repartidor' | 'picking';
 
 export default function OrdenesProduccionPage() {
     const [parseOrdenes, { isLoading }] = useParseOrdenesProduccionMutation();
-    const [saveSchedule, { isLoading: isSavingSchedule }] = useImportProductionSchedulePdfMutation();
-    const [verifyPicking, { isLoading: isVerifyingPicking }] = useVerifyProductionPickingMutation();
-    const { data: dbArticulos = [], refetch: refetchDbArticulos } = useGetArticulosQuery();
 
     const [result, setResult] = useState<ProduccionParseResult | null>(null);
-    const [savedSchedule, setSavedSchedule] = useState<ProductionSchedule | null>(null);
-    const [scheduleSaveWarning, setScheduleSaveWarning] = useState<string | null>(null);
-    const { data: pickingWithStock = [] } = useGetProductionPickingQuery(savedSchedule?.id ?? '', { skip: !savedSchedule?.id });
     const [activeTab, setActiveTab] = useState<TabType>('articulos');
-
-    // Dialog state for editing article
-    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-    const [editArticleTarget, setEditArticleTarget] = useState<any | null>(null);
 
     // Global Filters
     const [selectedFecha, setSelectedFecha] = useState<string>('ALL');
@@ -50,18 +32,6 @@ export default function OrdenesProduccionPage() {
         try {
             const data = await parseOrdenes(formData).unwrap();
             setResult(data);
-            setScheduleSaveWarning(null);
-            try {
-                const scheduleForm = new FormData();
-                files.forEach((file) => scheduleForm.append('files', file));
-                const rawDate = data.fechas?.[0];
-                const dateMatch = rawDate?.match(/^(\d{2})-(\d{2})$/);
-                if (dateMatch) scheduleForm.append('planDate', `${new Date().getFullYear()}-${dateMatch[2]}-${dateMatch[1]}`);
-                const schedule = await saveSchedule(scheduleForm).unwrap();
-                setSavedSchedule(schedule);
-            } catch (saveError: any) {
-                setScheduleSaveWarning(saveError?.data?.message || 'Los PDF se analizaron, pero la programación no pudo guardarse.');
-            }
             if (data.fechas && data.fechas.length > 0) {
                 setSelectedFecha(data.fechas[0]);
             } else {
@@ -74,53 +44,10 @@ export default function OrdenesProduccionPage() {
 
     const handleReset = () => {
         setResult(null);
-        setSavedSchedule(null);
-        setScheduleSaveWarning(null);
         setSelectedFecha('ALL');
         setSelectedTurno('ALL');
         setSelectedArea('ALL');
         setActiveTab('articulos');
-    };
-
-    // Open article editor from anywhere (alert, badge, list)
-    const handleOpenArticleEditor = (target: string | ArticuloProduccionSummary) => {
-        let code = '';
-        let desc = '';
-        let talle = '';
-
-        if (typeof target === 'string') {
-            code = target.trim();
-        } else {
-            code = target.codigo || target.codigoOriginalPdf || '';
-            desc = target.descripcion || '';
-            talle = target.talles?.[0] || '';
-        }
-
-        // Look up in loaded DB articles
-        const found = dbArticulos.find(
-            (a: any) =>
-                a.codigo?.toUpperCase() === code.toUpperCase() ||
-                (a.workingNumber && a.workingNumber.toUpperCase() === code.toUpperCase()),
-        );
-
-        if (found) {
-            setEditArticleTarget(found);
-        } else {
-            // New draft article
-            setEditArticleTarget({
-                codigo: code,
-                descripcion: desc,
-                talle: talle,
-            });
-        }
-
-        setIsEditDialogOpen(true);
-    };
-
-    const handleCloseArticleDialog = () => {
-        setIsEditDialogOpen(false);
-        setEditArticleTarget(null);
-        refetchDbArticulos();
     };
 
     // Filtered data based on Date, Shift, and Area
@@ -290,7 +217,7 @@ export default function OrdenesProduccionPage() {
             <div className="no-print">
                 <PdfUploader
                     onUpload={handleUpload}
-                    isLoading={isLoading || isSavingSchedule}
+                    isLoading={isLoading}
                     hasData={!!result}
                     onReset={handleReset}
                 />
@@ -301,16 +228,6 @@ export default function OrdenesProduccionPage() {
                     </div>
                     <button disabled style={{ marginTop: '10px', padding: '8px 12px', borderRadius: '7px', opacity: 0.5 }}>Cargar PDF de cambios</button>
                 </Card>
-                {savedSchedule && (
-                    <div style={{ marginTop: '12px', padding: '12px 16px', borderRadius: '8px', background: 'rgba(16, 185, 129, .1)', border: '1px solid rgba(16, 185, 129, .35)', color: '#34d399', fontSize: '13px' }}>
-                        Programación guardada · {savedSchedule.planDate} · revisión {savedSchedule.revision} · estado {savedSchedule.status}.
-                    </div>
-                )}
-                {scheduleSaveWarning && (
-                    <div style={{ marginTop: '12px', padding: '12px 16px', borderRadius: '8px', background: 'rgba(245, 158, 11, .1)', border: '1px solid rgba(245, 158, 11, .35)', color: '#fbbf24', fontSize: '13px' }}>
-                        {scheduleSaveWarning} La vista previa sigue disponible y no se perdió el trabajo.
-                    </div>
-                )}
             </div>
 
             {/* Results Section */}
@@ -685,7 +602,6 @@ export default function OrdenesProduccionPage() {
                         <ArticulosTejidoTab
                             articulos={filteredArticulos}
                             onSelectMachine={handleSelectMachineFromTab}
-                            onEditArticle={handleOpenArticleEditor}
                         />
                     )}
 
@@ -694,7 +610,6 @@ export default function OrdenesProduccionPage() {
                             maquinas={filteredMaquinas}
                             selectedShift={selectedTurno}
                             selectedArea={selectedArea}
-                            onEditArticle={handleOpenArticleEditor}
                         />
                     )}
 
@@ -709,7 +624,6 @@ export default function OrdenesProduccionPage() {
                         <MaterialesAsignadosTab
                             materiales={filteredMateriales}
                             onSelectMachine={handleSelectMachineFromTab}
-                            onEditArticle={handleOpenArticleEditor}
                         />
                     )}
 
@@ -718,66 +632,17 @@ export default function OrdenesProduccionPage() {
                             items={filteredHojaRepartidor}
                             fecha={selectedFecha !== 'ALL' ? selectedFecha : result.fechas.join(', ')}
                             turnos={selectedTurno !== 'ALL' ? [selectedTurno] : result.turnos}
-                            onEditArticle={handleOpenArticleEditor}
                         />
                     )}
 
                     {activeTab === 'picking' && (
-                        <>
-                            {savedSchedule && (
-                                <Card style={{ padding: '18px', marginBottom: '16px', border: '1px solid rgba(56, 189, 248, .35)' }}>
-                                    <div style={{ fontWeight: 800, marginBottom: '4px' }}>Stock proyectado del pasillo principal</div>
-                                    <div style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px', marginBottom: '14px' }}>
-                                        Un saldo negativo indica que Producción consumirá más de lo disponible en picking y faltó reponer desde depósito. No modifica el stock real.
-                                    </div>
-                                    <div style={{ overflowX: 'auto' }}>
-                                        <table style={{ width: '100%', minWidth: '900px', borderCollapse: 'collapse', fontSize: '12px' }}>
-                                            <thead><tr style={{ textAlign: 'left', color: '#94a3b8', borderBottom: '1px solid #334155' }}>
-                                                {['Material', 'Roles', 'Conos', 'Necesario kg', 'Principal', 'Reserva', 'Proyectado', 'Alerta', 'Chequeo'].map((label) => <th key={label} style={{ padding: '9px 7px' }}>{label}</th>)}
-                                            </tr></thead>
-                                            <tbody>{pickingWithStock.map((item) => (
-                                                <tr key={item.itemId || item.codigo} style={{ borderBottom: '1px solid rgba(51,65,85,.55)' }}>
-                                                    <td style={{ padding: '9px 7px' }}><strong>{item.codigo}</strong><div style={{ color: '#94a3b8' }}>{item.descripcion}</div></td>
-                                                    <td style={{ padding: '9px 7px' }}>{item.roles.join(', ')}</td>
-                                                    <td style={{ padding: '9px 7px' }}>{item.setupCones}</td>
-                                                    <td style={{ padding: '9px 7px' }}>{item.requiredKg.toFixed(2)}</td>
-                                                    <td style={{ padding: '9px 7px' }}>{item.mainStockKg.toFixed(2)}</td>
-                                                    <td style={{ padding: '9px 7px' }}>{item.reserveStockKg.toFixed(2)}</td>
-                                                    <td style={{ padding: '9px 7px', fontWeight: 800, color: item.projectedMainKg < 0 ? '#ef4444' : '#34d399' }}>{item.projectedMainKg.toFixed(2)}</td>
-                                                    <td style={{ padding: '9px 7px' }}>{item.missedReplenishmentAlert ? `Faltan ${item.missingInPickingKg.toFixed(2)} kg` : 'OK'}</td>
-                                                    <td style={{ padding: '9px 7px' }}>
-                                                        <button
-                                                            disabled={!item.itemId || item.replenishmentVerified || isVerifyingPicking}
-                                                            onClick={() => item.itemId && verifyPicking({ scheduleId: savedSchedule.id, itemId: item.itemId })}
-                                                            style={{ padding: '5px 8px', borderRadius: '6px', cursor: 'pointer' }}
-                                                        >
-                                                            {item.replenishmentVerified ? 'Verificado' : 'Marcar repuesto'}
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}</tbody>
-                                        </table>
-                                    </div>
-                                </Card>
-                            )}
-                            <HojaPickingTab
-                                items={filteredHojaPicking}
-                                fecha={selectedFecha !== 'ALL' ? selectedFecha : result.fechas.join(', ')}
-                                turnos={selectedTurno !== 'ALL' ? [selectedTurno] : result.turnos}
-                                onEditArticle={handleOpenArticleEditor}
-                            />
-                        </>
+                        <HojaPickingTab
+                            items={filteredHojaPicking}
+                            fecha={selectedFecha !== 'ALL' ? selectedFecha : result.fechas.join(', ')}
+                            turnos={selectedTurno !== 'ALL' ? [selectedTurno] : result.turnos}
+                        />
                     )}
                 </div>
-            )}
-
-            {/* Dialog de Edición/Creación de Artículo integrado */}
-            {isEditDialogOpen && (
-                <CreateArticuloDialog
-                    open={isEditDialogOpen}
-                    onClose={handleCloseArticleDialog}
-                    editTarget={editArticleTarget}
-                />
             )}
         </div>
     );

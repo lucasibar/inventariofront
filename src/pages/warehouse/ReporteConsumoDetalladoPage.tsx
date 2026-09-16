@@ -4,7 +4,7 @@ import { useLazyGetRemitoSalidaQuery } from '../../features/warehouse/remitosSal
 import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.api';
 import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
 import { RemitoDetailModal } from '../../features/warehouse/remitos/ui/RemitoDetailModal';
-import { EditComboModal } from '../purchasing/EditComboModal';
+import { EditComboModal } from '../../features/warehouse/stock/ui/EditComboModal';
 import { PageHeader, Card, Input, Spinner, Btn } from '../../shared/ui';
 import { useIsMobile } from '../../shared/ui';
 import { 

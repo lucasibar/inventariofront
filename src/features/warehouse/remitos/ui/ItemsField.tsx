@@ -7,11 +7,9 @@ import { useFieldArray, useFormContext } from 'react-hook-form';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import LinkIcon from '@mui/icons-material/Link';
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { CreateItemDialog } from '../../materiales/components/CreateItemDialog';
 import { useGetItemsQuery } from '../../materiales/api/items.api';
-import PurchaseOrderLinkDialog from '../../../purchasing/purchase-orders/ui/PurchaseOrderLinkDialog';
 
 const CREATE_OPTION = { __isCreateOption: true, codigoInterno: '', descripcion: '+ Agregar nuevo material', id: '__CREATE__' };
 
@@ -26,7 +24,6 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
-    const [linkIndex, setLinkIndex] = useState<number | null>(null);
 
     const containerRef = useRef<HTMLDivElement>(null);
     const [focusRowIndex, setFocusRowIndex] = useState<number | null>(null);
@@ -93,7 +90,6 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                         qtySecundaria: 0,
                         categoria: 'SUPPLY',
                         lotNumber: '',
-                        purchaseOrderLinks: []
                     })}
                     sx={{ fontWeight: 600 }}
                 >
@@ -104,8 +100,6 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
             {fields.map((field, index) => {
                 const itemId = watch(`lines.${index}.itemId`);
                 const qtyPrincipal = watch(`lines.${index}.qtyPrincipal`) || 0;
-                const poLinks = watch(`lines.${index}.purchaseOrderLinks`) || [];
-                const totalLinked = poLinks.reduce((sum: number, l: any) => sum + l.qtyAplicada, 0);
 
                 const selectedItem = allItems.find((it: any) => it.id === itemId);
                 const watchUnidadP = watch(`lines.${index}.unidadPrincipal`);
@@ -321,7 +315,6 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                                     qtySecundaria: 0,
                                                     categoria: 'SUPPLY',
                                                     lotNumber: '',
-                                                    purchaseOrderLinks: []
                                                 });
                                                 setFocusRowIndex(0);
                                             } else {
@@ -338,31 +331,6 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                 </IconButton>
                             </Box>
                         </Box>
-
-                        {/* Fila de vinculación comercial opcional a Orden de Compra */}
-                        {itemId && supplierId && Number(qtyPrincipal) > 0 && (
-                            <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1.5, borderTop: '1px dashed rgba(255,255,255,0.03)', pt: 1 }}>
-                                <Button
-                                    size="small"
-                                    variant="outlined"
-                                    color="info"
-                                    startIcon={<LinkIcon />}
-                                    onClick={() => setLinkIndex(index)}
-                                    sx={{ py: 0.2, px: 1, fontSize: '11px', textTransform: 'none' }}
-                                >
-                                    Vincular a Orden de Compra
-                                </Button>
-                                {poLinks.length > 0 && (
-                                    <Chip
-                                        label={`Vinculado a ${poLinks.length} OC (${totalLinked.toFixed(1)} kg)`}
-                                        color="success"
-                                        size="small"
-                                        onDelete={() => setValue(`lines.${index}.purchaseOrderLinks`, [])}
-                                        sx={{ height: '20px', fontSize: '11px' }}
-                                    />
-                                )}
-                            </Box>
-                        )}
 
                         {index < fields.length - 1 && <Divider sx={{ mt: 2, display: { xs: 'block', sm: 'none' } }} />}
                     </Box>
@@ -392,22 +360,6 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                 initialSupplierName={supplierName}
                 depositoId={depositoId}
             />
-
-            {/* Modal de vinculación */}
-            {linkIndex !== null && (
-                <PurchaseOrderLinkDialog
-                    supplierId={supplierId || ''}
-                    itemId={watch(`lines.${linkIndex}.itemId`)}
-                    itemName={watch(`lines.${linkIndex}.descripcion`)}
-                    qtyAvailable={Number(watch(`lines.${linkIndex}.qtyPrincipal`)) || 0}
-                    initialLinks={watch(`lines.${linkIndex}.purchaseOrderLinks`) || []}
-                    onClose={() => setLinkIndex(null)}
-                    onConfirm={(links) => {
-                        setValue(`lines.${linkIndex}.purchaseOrderLinks`, links);
-                        setLinkIndex(null);
-                    }}
-                />
-            )}
         </Box>
     );
 };;

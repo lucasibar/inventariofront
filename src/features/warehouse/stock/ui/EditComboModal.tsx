@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Modal, Btn } from '../../shared/ui';
+import { Modal, Btn } from '../../../../shared/ui';
 
 export function EditComboModal({ combo, items, onClose, onSave }: any) {
     const [selectedIds, setSelectedIds] = useState<string[]>(combo?.itemIds || []);
