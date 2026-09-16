@@ -51,8 +51,8 @@ export default function CambioArticuloPage() {
     const [startMinute, setStartMinute] = useState('00');
     const [isOngoing, setIsOngoing] = useState(false);
     const [endDate, setEndDate] = useState(defaultDate);
-    const [endHour, setEndHour] = useState(String(new Date().getHours()).padStart(2, '0'));
-    const [endMinute, setEndMinute] = useState('00');
+    const [endHour, setEndHour] = useState('');
+    const [endMinute, setEndMinute] = useState('');
     const [observation, setObservation] = useState('');
     const [generatedBy, setGeneratedBy] = useState('');
 
@@ -125,13 +125,16 @@ export default function CambioArticuloPage() {
         }
 
         let endTimeIso: string | null = null;
+        const hasEndHour = endHour.trim() !== '';
+        const hasEndMinute = endMinute.trim() !== '';
+        const isActuallyOngoing = isOngoing || (!hasEndHour && !hasEndMinute);
 
-        if (!isOngoing) {
+        if (!isActuallyOngoing) {
             const eH = parseInt(endHour, 10);
             const eM = parseInt(endMinute, 10);
 
             if (isNaN(eH) || eH < 0 || eH > 23 || isNaN(eM) || eM < 0 || eM > 59) {
-                return alert('La hora de fin/arranque no es válida. Usá valores entre 00-23 para hora y 00-59 para minutos, o marcá "Cambio en curso".');
+                return alert('La hora de fin/arranque no es válida. Usá valores entre 00-23 para hora y 00-59 para minutos, o dejala vacía si el cambio sigue en curso.');
             }
 
             const endStr = `${endDate}T${String(eH).padStart(2, '0')}:${String(eM).padStart(2, '0')}:00`;
@@ -163,6 +166,8 @@ export default function CambioArticuloPage() {
         setSelectedMachineId(null);
         setObservation('');
         setSelectedChangeTypes([]);
+        setEndHour('');
+        setEndMinute('');
 
         setTimeout(() => machineSearchRef.current?.focus(), 50);
     };
@@ -189,9 +194,12 @@ export default function CambioArticuloPage() {
             setSelectedMachineId(null);
             setSelectedChangeTypes([]);
             setObservation('');
-        } catch (error) {
+            setEndHour('');
+            setEndMinute('');
+        } catch (error: any) {
             console.error('Error submitting changes:', error);
-            alert('Error al procesar los cambios.');
+            const errMsg = error?.data?.message || error?.message || 'Error al procesar los cambios.';
+            alert(`Error al procesar los cambios: ${errMsg}`);
         }
     };
 
@@ -332,7 +340,14 @@ export default function CambioArticuloPage() {
                                         control={
                                             <Checkbox
                                                 checked={isOngoing}
-                                                onChange={e => setIsOngoing(e.target.checked)}
+                                                onChange={e => {
+                                                    const checked = e.target.checked;
+                                                    setIsOngoing(checked);
+                                                    if (checked) {
+                                                        setEndHour('');
+                                                        setEndMinute('');
+                                                    }
+                                                }}
                                                 size="small"
                                                 sx={{ color: '#38bdf8', '&.Mui-checked': { color: '#38bdf8' } }}
                                             />
@@ -352,15 +367,19 @@ export default function CambioArticuloPage() {
 
                                 {/* End time */}
                                 <Box sx={{ opacity: isOngoing ? 0.4 : 1, transition: 'opacity 0.2s' }}>
-                                    <Typography variant="body2" sx={{ mb: 1, color: 'rgba(255,255,255,0.7)' }}>
-                                        Hora Arranque {isOngoing ? '(Opcional - En curso)' : '(Opcional)'}
+                                    <Typography variant="body2" sx={{ mb: 0.5, color: 'rgba(255,255,255,0.7)' }}>
+                                        Hora Arranque {isOngoing ? '(En curso - Máquina parada)' : '(Opcional - Dejar vacío si sigue en curso)'}
                                     </Typography>
                                     <Box sx={{ display: 'flex', gap: 1 }}>
                                         <TextField type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
                                             size="small" sx={{ flex: 2 }} disabled={isOngoing} />
                                         <TextField 
                                             value={endHour} 
-                                            onChange={e => setEndHour(e.target.value)}
+                                            onChange={e => {
+                                                setEndHour(e.target.value);
+                                                if (isOngoing && e.target.value) setIsOngoing(false);
+                                            }}
+                                            placeholder="HH"
                                             size="small" 
                                             sx={{ flex: 1 }} 
                                             label="Hora"
@@ -369,7 +388,11 @@ export default function CambioArticuloPage() {
                                         />
                                         <TextField 
                                             value={endMinute} 
-                                            onChange={e => setEndMinute(e.target.value)}
+                                            onChange={e => {
+                                                setEndMinute(e.target.value);
+                                                if (isOngoing && e.target.value) setIsOngoing(false);
+                                            }}
+                                            placeholder="MM"
                                             size="small" 
                                             sx={{ flex: 1 }} 
                                             label="Min"
@@ -377,6 +400,9 @@ export default function CambioArticuloPage() {
                                             inputProps={{ maxLength: 2, inputMode: 'numeric' }}
                                         />
                                     </Box>
+                                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.45)', display: 'block', mt: 0.5 }}>
+                                        Si la máquina sigue parada en cambio, no hace falta completar este horario.
+                                    </Typography>
                                 </Box>
 
                                 {/* Observation */}
