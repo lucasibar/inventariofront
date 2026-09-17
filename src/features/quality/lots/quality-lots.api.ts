@@ -41,7 +41,32 @@ export const qualityLotsApi = api.injectEndpoints({
             query: ({ id, notes }) => ({ url: `quality/lots/${id}/release`, method: 'PATCH', body: { notes } }),
             invalidatesTags: ['Stock', 'Dashboard'],
         }),
+        getQualityConfig: builder.query<{ quarantineEnabled: boolean }, void>({
+            query: () => 'quality/lots/config',
+            providesTags: ['Stock'],
+        }),
+        toggleQualityConfig: builder.mutation<{ quarantineEnabled: boolean }, { enabled: boolean }>({
+            query: (body) => ({
+                url: 'quality/lots/config',
+                method: 'PATCH',
+                body,
+            }),
+            invalidatesTags: ['Stock', 'Dashboard'],
+        }),
+        releaseAllQualityLots: builder.mutation<{ releasedCount: number }, void>({
+            query: () => ({
+                url: 'quality/lots/release-all',
+                method: 'POST',
+            }),
+            invalidatesTags: ['Stock', 'Dashboard'],
+        }),
     }),
 });
 
-export const { useGetQualityLotsQuery, useReleaseQualityLotMutation } = qualityLotsApi;
+export const {
+    useGetQualityLotsQuery,
+    useReleaseQualityLotMutation,
+    useGetQualityConfigQuery,
+    useToggleQualityConfigMutation,
+    useReleaseAllQualityLotsMutation,
+} = qualityLotsApi;
