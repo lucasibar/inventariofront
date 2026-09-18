@@ -59,7 +59,6 @@ const navGroups: NavGroup[] = [
             { to: '/deposito/dashboard', label: '📊 Dashboard Depo' },
             { to: '/stock', label: '📋 Stock' },
             { to: '/movimientos', label: '🔄 Movimientos' },
-            { to: '/admin/movements', label: '🛡️ Auditoría de stock' },
             {
                 id: 'deposito-operaciones',
                 label: '🚚 Operaciones',
@@ -70,18 +69,34 @@ const navGroups: NavGroup[] = [
                 ]
             },
             {
-                id: 'informes',
+                id: 'deposito-informes',
                 label: '📊 Informes',
                 isSubGroup: true,
                 items: [
-                    { to: '/deposito/informes', label: '📈 Informe Inventariados' },
-                    { to: '/tasks', label: '📝 Tareas' },
-                    { to: '/chequeo-inventario', label: '🔍 Chequeo Inventario' },
-                    { to: '/chequeo-categoria', label: '🏷️ Chequeo por Categoría' },
-                    { to: '/reporte-chequeo', label: '📊 Reporte Chequeo' },
+                    { to: '/deposito/capacidad', label: '📦 Medidores de Capacidad' },
                     { to: '/deposito/materiales-estancados', label: '🧊 Materiales Estancados' },
-                    { to: '/deposito/completitud-materiales', label: '✅ Completitud materiales' },
                     { to: '/reporte-consumo-detallado', label: '📊 Consumo Detallado' },
+                ]
+            },
+            {
+                id: 'deposito-sistema',
+                label: '🛡️ Sistema',
+                isSubGroup: true,
+                items: [
+                    { to: '/admin/auditoria', label: '🔎 Auditoría del sistema' },
+                    { to: '/admin/movements', label: '🛡️ Auditoría de stock' },
+                    { to: '/deposito/completitud-materiales', label: '✅ Completitud materiales' },
+                ]
+            },
+            {
+                id: 'deposito-inventario',
+                label: '📦 Inventario',
+                isSubGroup: true,
+                items: [
+                    { to: '/deposito/informes', label: '📈 Informe de inventariado' },
+                    { to: '/chequeo-inventario', label: '🔍 Chequeo de inventario' },
+                    { to: '/chequeo-categoria', label: '🏷️ Chequeo por catálogo' },
+                    { to: '/reporte-chequeo', label: '📊 Reporte de chequeo' },
                 ]
             },
             {
@@ -91,10 +106,21 @@ const navGroups: NavGroup[] = [
                 items: [
                     { to: '/items', label: '🏷️ Materiales' },
                     { to: '/items/box-types', label: '📦 Cajas/Embalaje' },
-                    { to: '/deposito', label: '🏢 Depositos' },
+                    { to: '/deposito', label: '🏢 Depósitos' },
                     { to: '/socios', label: '🤝 Socios' },
                 ]
             }
+        ]
+    },
+    {
+        id: 'compras',
+        label: 'Compras',
+        icon: '🛒',
+        items: [
+            { to: '/compras/dashboard', label: '📊 Dashboard Compras' },
+            { to: '/compras/alertas-stock', label: '🚦 Alertas de Stock' },
+            { to: '/compras/materiales-criticos-v2', label: '🔥 Materiales Críticos 2.0' },
+            { to: '/compras/materiales-criticos', label: '⚠️ Combos de Compra' },
         ]
     },
     {
@@ -258,9 +284,17 @@ export default function Layout() {
             DEPOSITO: [
                 '/deposito/dashboard', '/stock', '/movimientos',
                 '/remitos-entrada', '/remitos-salida',
+                '/deposito/capacidad',
                 '/reporte-consumo-detallado', '/tasks',
                 '/chequeo-inventario', '/chequeo-categoria', '/reporte-chequeo', '/deposito/informes',
                 '/deposito/materiales-estancados', '/deposito/completitud-materiales',
+            ],
+            COMPRAS: [
+                '/compras/dashboard',
+                '/compras/alertas-stock',
+                '/compras/materiales-criticos',
+                '/compras/materiales-criticos-v2',
+                '/stock',
             ],
             MANTENIMIENTO: [
                 '/mantenimiento/dashboard', '/mantenimiento/monitoreo',

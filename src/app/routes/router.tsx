@@ -29,6 +29,13 @@ const ReporteChequeoPage = lazy(() => import('../../pages/warehouse/ReporteChequ
 const InformesInventariadoPage = lazy(() => import('../../pages/warehouse/InformesInventariadoPage'));
 const MaterialesEstancadosPage = lazy(() => import('../../pages/warehouse/MaterialesEstancadosPage'));
 const MaterialesCompletitudPage = lazy(() => import('../../pages/warehouse/MaterialesCompletitudPage'));
+const CapacityDashboardPage = lazy(() => import('../../pages/warehouse/CapacityDashboardPage'));
+
+// Sector: Purchasing (Compras)
+const DashboardComprasPage = lazy(() => import('../../pages/purchasing/DashboardComprasPage'));
+const AlertaStockPage = lazy(() => import('../../pages/purchasing/AlertaStockPage'));
+const MaterialesCriticosPage = lazy(() => import('../../pages/purchasing/MaterialesCriticosPage'));
+const MaterialesCriticosV2Page = lazy(() => import('../../pages/purchasing/MaterialesCriticosV2Page'));
 
 // Sector: Maintenance
 const DashboardMantenimientoPage = lazy(() => import('../../pages/maintenance/DashboardMantenimientoPage'));
@@ -142,6 +149,7 @@ export const router = createBrowserRouter([
             element: <RoleGuard allowedRoles={['ADMIN', 'SUPERVISOR', 'OPERARIO']} />,
             children: [
               { path: "deposito/dashboard", element: <LazyRoute element={DashboardDepositoPage} /> },
+              { path: "deposito/capacidad", element: <LazyRoute element={CapacityDashboardPage} /> },
               { path: "remitos-salida", element: <LazyRoute element={RemitosSalidaPage} /> },
               { path: "reporte-consumo-detallado", element: <LazyRoute element={ReporteConsumoDetalladoPage} /> },
               { path: "stock", element: <LazyRoute element={StockPage} /> },
@@ -150,6 +158,11 @@ export const router = createBrowserRouter([
               { path: "deposito/materiales-estancados", element: <LazyRoute element={MaterialesEstancadosPage} /> },
               { path: "deposito/completitud-materiales", element: <LazyRoute element={MaterialesCompletitudPage} /> },
               
+              { path: "compras/dashboard", element: <LazyRoute element={DashboardComprasPage} /> },
+              { path: "compras/alertas-stock", element: <LazyRoute element={AlertaStockPage} /> },
+              { path: "compras/materiales-criticos", element: <LazyRoute element={MaterialesCriticosPage} /> },
+              { path: "compras/materiales-criticos-v2", element: <LazyRoute element={MaterialesCriticosV2Page} /> },
+
               { path: "mantenimiento/dashboard", element: <LazyRoute element={DashboardMantenimientoPage} /> },
               { path: "mantenimiento/monitoreo", element: <LazyRoute element={MonitoreoVivoPage} /> },
               { path: "mantenimiento/registro", element: <LazyRoute element={RegistroMaquinasPage} /> },

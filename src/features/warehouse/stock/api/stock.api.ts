@@ -18,9 +18,9 @@ export const stockApi = api.injectEndpoints({
                 'Stock'
             ],
         }),
-        getAlerts: builder.query<any[], void>({
-            query: () => 'stock/alerts',
-            providesTags: ['Stock'],
+        getAlerts: builder.query<any[], { all?: boolean } | void>({
+            query: (arg) => `stock/alerts${arg?.all ? '?all=true' : ''}`,
+            providesTags: ['Stock', 'Items'],
         }),
         getDashboardCompras: builder.query<any[], void>({
             query: () => 'dashboard/compras',
