@@ -51,11 +51,22 @@ export interface ArticuloEstructura {
     id: string;
     codigoPadre: string;
     codigoComponente: string;
-    secuencia?: number;
-    cantidadBase: number;
-    porcentajePerdida?: number;
-    almacenComponente?: string;
-    observaciones?: string;
+    posicion?: string;
+    secuencia?: string;
+    cantidad: number;
+    fechaInicio?: string;
+    fechaFin?: string;
+    observacion?: string;
+    tipoFijoVariable?: string;
+    revisionInicial?: string;
+    revisionFinal?: string;
+    detalleFalla?: string;
+    componenteAnterior?: string;
+    estadoRevision?: string;
+    fuenteControl?: string;
+    detalleRevision?: string;
+    estadoConsumo?: string;
+    descripcionInsumo?: string;
 }
 
 export const articulosApi = api.injectEndpoints({
@@ -165,7 +176,7 @@ export const articulosApi = api.injectEndpoints({
         }),
 
         getArticuloEstructuras: builder.query<ArticuloEstructura[], string>({
-            query: (codigoPadre) => `articulos/${codigoPadre}/estructuras`,
+            query: (codigoPadre) => `articulos/estructuras/${encodeURIComponent(codigoPadre)}`,
             providesTags: ['Estructuras'],
         }),
 
