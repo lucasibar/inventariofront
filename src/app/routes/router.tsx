@@ -56,6 +56,11 @@ const ArticulosPage = lazy(() => import('../../pages/quality/ArticulosPage'));
 const CuarentenaCalidadPage = lazy(() => import('../../pages/quality/CuarentenaCalidadPage'));
 const OrdenesProduccionPage = lazy(() => import('../../pages/quality/OrdenesProduccionPage'));
 
+// Sector: Desarrollo
+const DesarrolloArticulosPage = lazy(() => import('../../pages/desarrollo/ArticulosPage').then(m => ({ default: m.ArticulosPage })));
+const DesarrolloEstructurasPage = lazy(() => import('../../pages/desarrollo/EstructurasPage').then(m => ({ default: m.EstructurasPage })));
+const DesarrolloEquivalenciasPage = lazy(() => import('../../pages/desarrollo/EquivalenciasPage').then(m => ({ default: m.EquivalenciasPage })));
+
 // New Sectors Dashboards
 const AdminDashboardPage = lazy(() => import('../../pages/admin/AdminDashboardPage'));
 const AuditoriaSistemaPage = lazy(() => import('../../pages/admin/AuditoriaSistemaPage'));
@@ -183,6 +188,11 @@ export const router = createBrowserRouter([
               { path: "calidad/articulos", element: <LazyRoute element={ArticulosPage} /> },
               { path: "calidad/cuarentena", element: <LazyRoute element={CuarentenaCalidadPage} /> },
               { path: "calidad/ordenes-produccion", element: <LazyRoute element={OrdenesProduccionPage} /> },
+
+              // Sector: Desarrollo
+              { path: "desarrollo/equivalencias", element: <LazyRoute element={DesarrolloEquivalenciasPage} /> },
+              { path: "desarrollo/articulos", element: <LazyRoute element={DesarrolloArticulosPage} /> },
+              { path: "desarrollo/estructuras", element: <LazyRoute element={DesarrolloEstructurasPage} /> },
             ]
           },
           // Shared

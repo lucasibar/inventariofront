@@ -113,6 +113,16 @@ const navGroups: NavGroup[] = [
         ]
     },
     {
+        id: 'desarrollo',
+        label: 'Desarrollo',
+        icon: '🧪',
+        items: [
+            { to: '/desarrollo/equivalencias', label: '🔗 Equivalencias y Prioridades' },
+            { to: '/desarrollo/articulos', label: '📋 Catálogo Artículos TOTVS' },
+            { to: '/desarrollo/estructuras', label: '🌳 Estructuras (BOM)' },
+        ]
+    },
+    {
         id: 'compras',
         label: 'Compras',
         icon: '🛒',
@@ -308,12 +318,17 @@ export default function Layout() {
             VENTAS: ['/ventas/dashboard'],
             FINANZAS: ['/finanzas/dashboard'],
             RRHH: ['/rrhh/dashboard'],
+            DESARROLLO: ['/desarrollo/equivalencias', '/desarrollo/articulos', '/desarrollo/estructuras'],
+            PRODUCCION: ['/desarrollo/equivalencias', '/desarrollo/articulos', '/desarrollo/estructuras'],
         };
 
         // Config routes — solo supervisores de su sector + compras
         const configRoutes = ['/items', '/items/box-types', '/deposito', '/socios'];
         // Auditoría — solo supervisores
         const auditRoutes = ['/admin/movements'];
+
+        // Supervisores ven desarrollo
+        if (isSupervisor && to.startsWith('/desarrollo')) return true;
 
         // Rutas del sector del usuario
         const myRoutes = sectorRoutes[sector] || [];
