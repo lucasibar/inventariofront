@@ -60,6 +60,7 @@ const OrdenesProduccionPage = lazy(() => import('../../pages/quality/OrdenesProd
 const DesarrolloArticulosPage = lazy(() => import('../../pages/desarrollo/ArticulosPage').then(m => ({ default: m.ArticulosPage })));
 const DesarrolloEstructurasPage = lazy(() => import('../../pages/desarrollo/EstructurasPage').then(m => ({ default: m.EstructurasPage })));
 const DesarrolloEquivalenciasPage = lazy(() => import('../../pages/desarrollo/EquivalenciasPage').then(m => ({ default: m.EquivalenciasPage })));
+const DesarrolloMaquinasPage = lazy(() => import('../../pages/desarrollo/AsignacionMaquinasPage').then(m => ({ default: m.AsignacionMaquinasPage })));
 
 // New Sectors Dashboards
 const AdminDashboardPage = lazy(() => import('../../pages/admin/AdminDashboardPage'));
@@ -193,6 +194,7 @@ export const router = createBrowserRouter([
               { path: "desarrollo/equivalencias", element: <LazyRoute element={DesarrolloEquivalenciasPage} /> },
               { path: "desarrollo/articulos", element: <LazyRoute element={DesarrolloArticulosPage} /> },
               { path: "desarrollo/estructuras", element: <LazyRoute element={DesarrolloEstructurasPage} /> },
+              { path: "desarrollo/maquinas", element: <LazyRoute element={DesarrolloMaquinasPage} /> },
             ]
           },
           // Shared

@@ -137,11 +137,16 @@ export default function BuscadorMaquinaPage() {
         if (!searchTerm) return;
 
         const term = searchTerm.trim().toLowerCase();
-        const found = machines.find((m: any) => 
-            m.number?.toString() === term || 
-            m.codigoInterno?.toLowerCase() === term ||
-            m.nombre?.toLowerCase().includes(term)
-        );
+        const isNumeric = /^\d+$/.test(term);
+        const found = machines.find((m: any) => {
+            if (isNumeric) {
+                return m.number === parseInt(term, 10);
+            }
+            return (
+                m.codigoInterno?.toLowerCase() === term ||
+                m.nombre?.toLowerCase().includes(term)
+            );
+        });
 
         setSearchedMachine(found || null);
         if (!found) {

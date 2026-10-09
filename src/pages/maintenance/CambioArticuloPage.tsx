@@ -87,7 +87,8 @@ export default function CambioArticuloPage() {
 
     useEffect(() => {
         if (machineTypes.length > 0 && !tejTypeId) {
-            const tej = machineTypes.find((t: any) => t.name.toLowerCase().includes('tejedur'));
+            const tej = machineTypes.find((t: any) => t.name.trim().toLowerCase() === 'tejeduría' || t.name.trim().toLowerCase() === 'tejeduria')
+                || machineTypes.find((t: any) => t.category === 'TEJEDURIA' || t.name.toLowerCase().includes('tejedur'));
             if (tej) setTejTypeId(tej.id);
         }
     }, [machineTypes, tejTypeId]);
@@ -261,6 +262,17 @@ export default function CambioArticuloPage() {
                                     value={machineOptions.find((m: any) => m.value === selectedMachineId) || null}
                                     onChange={(_, val: any) => setSelectedMachineId(val?.value || null)}
                                     loading={loadingMachines}
+                                    filterOptions={(options, state) => {
+                                        const input = state.inputValue.trim();
+                                        if (!input) return options;
+                                        if (/^\d+$/.test(input)) {
+                                            const targetNum = parseInt(input, 10);
+                                            const exact = options.filter(o => o.number === targetNum);
+                                            if (exact.length > 0) return exact;
+                                        }
+                                        const lower = input.toLowerCase();
+                                        return options.filter(o => o.label.toLowerCase().includes(lower));
+                                    }}
                                     renderInput={(params) => (
                                         <TextField {...params} label="Buscar Máquina (por número) *" variant="outlined"
                                             inputRef={machineSearchRef}

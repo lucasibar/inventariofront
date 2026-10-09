@@ -69,6 +69,34 @@ export interface ArticuloEstructura {
     descripcionInsumo?: string;
 }
 
+export interface ArticuloResumenMaquina {
+    id: string;
+    codigo: string;
+    descripcion: string;
+    tipo: string;
+    talle?: string;
+    marca?: string;
+    totalMachineTypes: number;
+    confirmadosCount: number;
+    estimadosCount: number;
+    avgCycleTimeSeconds: number | null;
+    overallStatus: 'CONFIRMADO' | 'ESTIMADO' | 'SIN_ASIGNAR';
+}
+
+export interface ArticuloMachineTypeDetail {
+    articuloId: string;
+    machineTypeId: string;
+    cycleTimeSeconds: number | null;
+    timeSource: string;
+    status: 'CONFIRMADO' | 'ESTIMADO' | 'PENDIENTE';
+    machineTypeName: string;
+    marca: string;
+    modelo: string;
+    cantAgujas: number;
+    cilindro: number;
+    puntera: string;
+}
+
 export const articulosApi = api.injectEndpoints({
     endpoints: (builder) => ({
         getArticulos: builder.query<{
@@ -189,6 +217,110 @@ export const articulosApi = api.injectEndpoints({
             },
             providesTags: ['Items'],
         }),
+
+        getArticulosConMaquinas: builder.query<{
+            items: ArticuloResumenMaquina[];
+            total: number;
+            page: number;
+            limit: number;
+            totalPages: number;
+        }, {
+            search?: string;
+            status?: string;
+            page?: number;
+            limit?: number;
+        }>({
+            query: (params = {}) => {
+                const p = new URLSearchParams();
+                if (params.search) p.set('search', params.search);
+                if (params.status) p.set('status', params.status);
+                if (params.page) p.set('page', String(params.page));
+                if (params.limit) p.set('limit', String(params.limit));
+                return `articulos/maquinas/resumen?${p.toString()}`;
+            },
+            providesTags: ['Articulos'],
+        }),
+
+        getArticuloMachineTypes: builder.query<ArticuloMachineTypeDetail[], string>({
+            query: (articuloId) => `articulos/${articuloId}/maquinas`,
+            providesTags: (_res, _err, id) => [{ type: 'Articulos', id: `maquinas-${id}` }],
+        }),
+
+        updateArticuloMachineType: builder.mutation<{ success: boolean }, {
+            articuloId: string;
+            machineTypeId: string;
+            cycleTimeSeconds: number;
+            status?: string;
+        }>({
+            query: ({ articuloId, machineTypeId, ...body }) => ({
+                url: `articulos/${articuloId}/maquinas/${machineTypeId}`,
+                method: 'PUT',
+                body,
+            }),
+            invalidatesTags: (_res, _err, { articuloId }) => [
+                'Articulos',
+                { type: 'Articulos', id: `maquinas-${articuloId}` },
+            ],
+        }),
+        getPendientesEstructura: builder.query<{
+            items: Array<{
+                id: string;
+                codigo: string;
+                descripcion: string;
+                tipo: string;
+                unidadMedida: string;
+                marca?: string;
+                talle?: string;
+                articuloGenerico?: string;
+            }>;
+            total: number;
+            page: number;
+            limit: number;
+            totalPages: number;
+        }, {
+            search?: string;
+            tipo?: string;
+            page?: number;
+            limit?: number;
+        }>({
+            query: (params = {}) => {
+                const p = new URLSearchParams();
+                if (params.search) p.set('search', params.search);
+                if (params.tipo) p.set('tipo', params.tipo);
+                if (params.page) p.set('page', String(params.page));
+                if (params.limit) p.set('limit', String(params.limit));
+                return `articulos/estructuras/pendientes?${p.toString()}`;
+            },
+            providesTags: ['Estructuras'],
+        }),
+
+        crearArbolEstructura: builder.mutation<{
+            success: boolean;
+            componentesGuardados: number;
+            piCreado: boolean;
+        }, {
+            codigoPadre: string;
+            productoIntermedio?: {
+                codigoPI: string;
+                descripcionPI?: string;
+                cantidad?: number;
+            };
+            componentes: Array<{
+                codigoComponente: string;
+                descripcionInsumo?: string;
+                cantidad: number;
+                tipoFijoVariable?: string;
+                itemIdEquivalente?: string;
+                ordenPrioridad?: number;
+            }>;
+        }>({
+            query: (body) => ({
+                url: 'articulos/estructuras/crear-arbol',
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['Estructuras', 'Articulos', 'ArticuloEquivalencias'],
+        }),
     }),
 });
 
@@ -202,4 +334,10 @@ export const {
     useDesasociarItemMutation,
     useGetArticuloEstructurasQuery,
     useBuscarItemsParaVincularQuery,
+    useGetArticulosConMaquinasQuery,
+    useGetArticuloMachineTypesQuery,
+    useUpdateArticuloMachineTypeMutation,
+    useGetPendientesEstructuraQuery,
+    useCrearArbolEstructuraMutation,
 } = articulosApi;
+

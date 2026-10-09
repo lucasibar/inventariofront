@@ -167,8 +167,14 @@ export default function DisponibilidadMaquinaPage() {
         if (!data?.machines) return [];
         let list = [...data.machines];
         if (detailSearch) {
-            const s = detailSearch.toLowerCase();
-            list = list.filter((m: any) => m.number.toString().includes(s) || m.nombre.toLowerCase().includes(s));
+            const s = detailSearch.trim().toLowerCase();
+            const isNumeric = /^\d+$/.test(s);
+            list = list.filter((m: any) => {
+                if (isNumeric) {
+                    return m.number === parseInt(s, 10);
+                }
+                return m.nombre.toLowerCase().includes(s);
+            });
         }
         list.sort((a: any, b: any) => {
             let valA = a[detailSortField];

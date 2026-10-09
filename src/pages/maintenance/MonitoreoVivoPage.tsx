@@ -141,7 +141,11 @@ export default function MonitoreoVivoPage() {
     }, [plants]);
 
     const tejeduriaTypeId = useMemo(() => {
-        const tej = machineTypes.find((t: any) => t.name.toLowerCase().includes('tejedur'));
+        // Priorizar el tipo base de sector exacto 'Tejeduría' (sin subtipo técnico en el nombre)
+        const exactBase = machineTypes.find((t: any) => t.name.trim().toLowerCase() === 'tejeduría' || t.name.trim().toLowerCase() === 'tejeduria');
+        if (exactBase) return exactBase.id;
+        // Fallback: por categoría o por incluir 'tejedur'
+        const tej = machineTypes.find((t: any) => t.category === 'TEJEDURIA' || t.name.toLowerCase().includes('tejedur'));
         return tej?.id || null;
     }, [machineTypes]);
 

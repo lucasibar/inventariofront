@@ -91,7 +91,8 @@ export default function RegistroMaquinasPage() {
 
     useEffect(() => {
         if (machineTypes.length > 0 && !selectedTypeId) {
-            const tej = machineTypes.find((t: any) => t.name.toLowerCase().includes('tejedur'));
+            const tej = machineTypes.find((t: any) => t.name.trim().toLowerCase() === 'tejeduría' || t.name.trim().toLowerCase() === 'tejeduria')
+                || machineTypes.find((t: any) => t.category === 'TEJEDURIA' || t.name.toLowerCase().includes('tejedur'));
             setSelectedTypeId(tej?.id || machineTypes[0].id);
         }
     }, [machineTypes, selectedTypeId]);
@@ -253,6 +254,18 @@ export default function RegistroMaquinasPage() {
                                     value={machineOptions.find((o: any) => o.value === selectedMachineId) || null}
                                     onChange={(_e, newVal) => setSelectedMachineId(newVal?.value || null)}
                                     loading={loadingMachines}
+                                    filterOptions={(options, state) => {
+                                        const input = state.inputValue.trim();
+                                        if (!input) return options;
+                                        if (/^\d+$/.test(input)) {
+                                            const targetNum = parseInt(input, 10);
+                                            // Si es numérico, filtrar por número exacto primero
+                                            const exact = options.filter(o => o.number === targetNum);
+                                            if (exact.length > 0) return exact;
+                                        }
+                                        const lower = input.toLowerCase();
+                                        return options.filter(o => o.label.toLowerCase().includes(lower));
+                                    }}
                                     renderInput={(params) => (
                                         <TextField
                                             {...params}

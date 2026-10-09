@@ -440,7 +440,8 @@ export default function DashboardMantenimientoPage() {
 
     useEffect(() => {
         if (machineTypes.length > 0 && !selectedTypeId) {
-            const tejeduria = machineTypes.find((t: any) => t.name.toLowerCase().includes('tejedur'));
+            const tejeduria = machineTypes.find((t: any) => t.name.trim().toLowerCase() === 'tejeduría' || t.name.trim().toLowerCase() === 'tejeduria')
+                || machineTypes.find((t: any) => t.category === 'TEJEDURIA' || t.name.toLowerCase().includes('tejedur'));
             if (tejeduria) setSelectedTypeId(tejeduria.id);
         }
     }, [machineTypes, selectedTypeId]);

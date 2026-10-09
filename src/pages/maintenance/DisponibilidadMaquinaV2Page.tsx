@@ -66,9 +66,13 @@ export default function DisponibilidadMaquinaV2Page() {
 
         if (searchFilter.trim()) {
             const q = searchFilter.toLowerCase().trim();
-            list = list.filter((m: any) => 
-                m.number.toString().includes(q) || m.nombre.toLowerCase().includes(q)
-            );
+            const isNumeric = /^\d+$/.test(q);
+            list = list.filter((m: any) => {
+                if (isNumeric) {
+                    return m.number === parseInt(q, 10);
+                }
+                return m.nombre.toLowerCase().includes(q);
+            });
         }
 
         // Sort: Machines with non-pure-active time (Reducida, Parada, Cambio) at top,
