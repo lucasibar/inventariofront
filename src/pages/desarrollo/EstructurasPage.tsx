@@ -36,7 +36,10 @@ export function EstructurasPage() {
     const [searchParams, setSearchParams] = useSearchParams();
 
     // Tab principal: 'VISUALIZADOR' | 'SIMULADOR' | 'PENDIENTES'
-    const [activeTab, setActiveTab] = useState<'VISUALIZADOR' | 'SIMULADOR' | 'PENDIENTES'>('VISUALIZADOR');
+    const initialTab = searchParams.get('tab');
+    const [activeTab, setActiveTab] = useState<'VISUALIZADOR' | 'SIMULADOR' | 'PENDIENTES'>(
+        initialTab === 'SIMULADOR' || initialTab === 'PENDIENTES' ? initialTab : 'VISUALIZADOR'
+    );
 
     // Estado Visualizador
     const [parentCodeSearch, setParentCodeSearch] = useState('');
@@ -88,6 +91,10 @@ export function EstructurasPage() {
             setSelectedParentCode(codParam);
             setBreadcrumb([codParam]);
         }
+        const tabParam = searchParams.get('tab');
+        if (tabParam === 'SIMULADOR' || tabParam === 'VISUALIZADOR' || tabParam === 'PENDIENTES') {
+            setActiveTab(tabParam);
+        }
     }, [searchParams]);
 
     const selectParent = (codigo: string, addToTrail = false) => {
@@ -107,6 +114,14 @@ export function EstructurasPage() {
         soloConEtapa: parentEtapaFilter === 'TODOS',
         limit: 30,
     });
+
+    useEffect(() => {
+        if (!selectedParentCode && articulosData?.items && articulosData.items.length > 0) {
+            const firstCode = articulosData.items[0].codigo;
+            setSelectedParentCode(firstCode);
+            setBreadcrumb([firstCode]);
+        }
+    }, [articulosData, selectedParentCode]);
 
     const { data: compCatalogoData } = useGetArticulosQuery(
         {
@@ -646,7 +661,7 @@ export function EstructurasPage() {
                                 )}
 
                                 {/* Resumen rápido de Explosión Total al pie del Visualizador */}
-                                {simulacionData && (simulacionData.hiladosNecesarios.length > 0 || simulacionData.tejidoMaquinas.length > 0) && (
+                                {simulacionData && ((simulacionData.hiladosNecesarios?.length || 0) > 0 || (simulacionData.tejidoMaquinas?.length || 0) > 0) && (
                                     <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                                             <h4 style={{ margin: 0, fontSize: '14px', color: '#f3f4f6' }}>
@@ -657,7 +672,7 @@ export function EstructurasPage() {
                                             </Btn>
                                         </div>
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                            {simulacionData.hiladosNecesarios.map((h) => (
+                                            {(simulacionData.hiladosNecesarios || []).map((h) => (
                                                 <div
                                                     key={h.codigoArticulo}
                                                     style={{
@@ -713,7 +728,7 @@ export function EstructurasPage() {
                                             <h3 style={{ margin: '0 0 10px', fontSize: '15px', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 🧶 1. Explosión de Hilados Requeridos vs Stock Real en Depósito
                                             </h3>
-                                            {simulacionData.hiladosNecesarios.length === 0 ? (
+                                            {(simulacionData.hiladosNecesarios || []).length === 0 ? (
                                                 <p style={{ color: '#9ca3af', fontSize: '13px' }}>No hay hilados en la explosión de este artículo.</p>
                                             ) : (
                                                 <div style={{ overflowX: 'auto' }}>
@@ -728,7 +743,7 @@ export function EstructurasPage() {
                                                             </tr>
                                                         </thead>
                                                         <tbody>
-                                                            {simulacionData.hiladosNecesarios.map((h) => (
+                                                            {(simulacionData.hiladosNecesarios || []).map((h) => (
                                                                 <tr key={h.codigoArticulo} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                                                                     <td style={{ padding: '10px' }}>
                                                                         <div style={{ fontWeight: 700, color: '#f3f4f6' }}>{h.codigoArticulo}</div>
@@ -785,10 +800,10 @@ export function EstructurasPage() {
                                             <h3 style={{ margin: '0 0 10px', fontSize: '15px', color: '#a78bfa' }}>
                                                 ⚙️ 2. Tiempo Estimado de Tejeduría (Máquinas y Turnos de 8h)
                                             </h3>
-                                            {simulacionData.tejidoMaquinas.length === 0 ? (
+                                            {(simulacionData.tejidoMaquinas || []).length === 0 ? (
                                                 <p style={{ color: '#9ca3af', fontSize: '13px' }}>No se detectó etapa TEJIDO en este árbol.</p>
                                             ) : (
-                                                simulacionData.tejidoMaquinas.map((tm) => (
+                                                (simulacionData.tejidoMaquinas || []).map((tm) => (
                                                     <div
                                                         key={tm.codigoTejido}
                                                         style={{
@@ -855,7 +870,7 @@ export function EstructurasPage() {
                                             <h3 style={{ margin: '0 0 10px', fontSize: '15px', color: '#f472b6' }}>
                                                 📦 3. Insumos y Packaging Requeridos
                                             </h3>
-                                            {simulacionData.insumosNecesarios.length === 0 ? (
+                                            {(simulacionData.insumosNecesarios || []).length === 0 ? (
                                                 <p style={{ color: '#9ca3af', fontSize: '13px' }}>No hay insumos registrados en este árbol.</p>
                                             ) : (
                                                 <div style={{ overflowX: 'auto' }}>
@@ -868,7 +883,7 @@ export function EstructurasPage() {
                                                             </tr>
                                                         </thead>
                                                         <tbody>
-                                                            {simulacionData.insumosNecesarios.map((ins) => (
+                                                            {(simulacionData.insumosNecesarios || []).map((ins) => (
                                                                 <tr key={ins.codigoArticulo} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                                                                     <td style={{ padding: '8px 10px', fontWeight: 700, color: '#f3f4f6' }}>
                                                                         {ins.codigoArticulo}

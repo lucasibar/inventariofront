@@ -403,13 +403,22 @@ export function ArticulosPage() {
                                         <td style={{ padding: '10px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                                             <div style={{ display: 'inline-flex', gap: '6px' }}>
                                                 {(art.etapa === 'TERMINADO' || art.etapa === 'COSTURA' || art.etapa === 'TEJIDO' || art.tipo === 'PA' || art.tipo === 'PI') && (
-                                                    <Btn
-                                                        small
-                                                        variant="secondary"
-                                                        onClick={() => navigate(`/desarrollo/estructuras?codigo=${encodeURIComponent(art.codigo)}`)}
-                                                    >
-                                                        🧬 Estructura
-                                                    </Btn>
+                                                    <>
+                                                        <Btn
+                                                            small
+                                                            variant="secondary"
+                                                            onClick={() => navigate(`/desarrollo/estructuras?codigo=${encodeURIComponent(art.codigo)}`)}
+                                                        >
+                                                            🧬 Estructura
+                                                        </Btn>
+                                                        <Btn
+                                                            small
+                                                            variant="secondary"
+                                                            onClick={() => navigate(`/desarrollo/estructuras?codigo=${encodeURIComponent(art.codigo)}&tab=SIMULADOR`)}
+                                                        >
+                                                            🧮 Simular
+                                                        </Btn>
+                                                    </>
                                                 )}
                                                 <Btn
                                                     small
