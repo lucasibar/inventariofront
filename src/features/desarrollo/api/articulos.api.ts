@@ -6,12 +6,24 @@ export interface Articulo {
     descripcion: string;
     tipo: string;
     unidadMedida: string;
+    segundaUnidadMedida?: string;
     almacenEstandar?: string;
     marca?: string;
     talle?: string;
+    modelo?: string;
+    destino?: string;
+    variante?: string;
+    etapa?: 'TERMINADO' | 'COSTURA' | 'TEJIDO' | 'HILADO' | 'INSUMO' | string;
+    familia?: string;
+    codigoSusi?: string;
+    estado?: 'CHEQUEADO' | 'CONTROLAR' | 'MAL' | 'DESHABILITADO' | string;
+    origen?: string;
     tipoArticulo?: string;
+    articuloGenerico?: string;
+    color?: string;
     activo: boolean;
     estadoRevision?: string;
+    detalleRevision?: string;
     createdAt?: string;
 }
 
@@ -20,8 +32,13 @@ export interface ArticuloMaestroEquivalencia {
     codigo: string;
     descripcion: string;
     tipo: string;
+    etapa?: string;
+    familia?: string;
     unidadMedida: string;
+    estadoRevision?: string;
+    detalleRevision?: string;
     itemsAsignadosCount: number;
+    estructurasQueLoUsan?: number;
     mapeado: boolean;
     itemPrincipal: string | null;
 }
@@ -54,6 +71,7 @@ export interface ArticuloEstructura {
     posicion?: string;
     secuencia?: string;
     cantidad: number;
+    cantidadSecundaria?: number;
     fechaInicio?: string;
     fechaFin?: string;
     observacion?: string;
@@ -67,6 +85,13 @@ export interface ArticuloEstructura {
     detalleRevision?: string;
     estadoConsumo?: string;
     descripcionInsumo?: string;
+    etapaComponente?: string;
+    familiaComponente?: string;
+    unidadMedidaComponente?: string;
+    segundaUnidadComponente?: string;
+    articuloComponenteId?: string;
+    subComponentesCount?: number;
+    equivalenciasCount?: number;
 }
 
 export interface ArticuloResumenMaquina {
@@ -74,12 +99,17 @@ export interface ArticuloResumenMaquina {
     codigo: string;
     descripcion: string;
     tipo: string;
+    etapa?: string;
+    familia?: string;
+    modelo?: string;
+    variante?: string;
     talle?: string;
     marca?: string;
     totalMachineTypes: number;
     confirmadosCount: number;
     estimadosCount: number;
     avgCycleTimeSeconds: number | null;
+    preferredCycleTimeSeconds?: number | null;
     overallStatus: 'CONFIRMADO' | 'ESTIMADO' | 'SIN_ASIGNAR';
 }
 
@@ -87,6 +117,7 @@ export interface ArticuloMachineTypeDetail {
     articuloId: string;
     machineTypeId: string;
     cycleTimeSeconds: number | null;
+    preferida?: boolean;
     timeSource: string;
     status: 'CONFIRMADO' | 'ESTIMADO' | 'PENDIENTE';
     machineTypeName: string;
@@ -95,6 +126,69 @@ export interface ArticuloMachineTypeDetail {
     cantAgujas: number;
     cilindro: number;
     puntera: string;
+}
+
+export interface MachineTypeCatalogo {
+    id: string;
+    name: string;
+    marca: string;
+    modelo: string;
+    cantAgujas: number;
+    cilindro: number;
+    puntera: string;
+    processCategory: string;
+}
+
+export interface SimulacionNecesidadesResult {
+    codigoPadre: string;
+    descripcionPadre: string;
+    etapaPadre: string | null;
+    cantidadSolicitada: number;
+    hiladosNecesarios: Array<{
+        codigoArticulo: string;
+        articuloId: string | null;
+        descripcion: string;
+        unidadMedida: string;
+        cantidadTotalRequerida: number;
+        stockTotalDisponible: number;
+        faltante: number;
+        alcanzaStock: boolean;
+        sinEquivalenciaEnDeposito: boolean;
+        itemsEquivalentes: Array<{
+            ordenPrioridad: number;
+            esPrincipal: boolean;
+            codigoItem: string;
+            descripcionItem: string;
+            stockActual: number;
+            factorConversion: number;
+        }>;
+    }>;
+    insumosNecesarios: Array<{
+        codigoArticulo: string;
+        articuloId: string | null;
+        descripcion: string;
+        etapa: string;
+        unidadMedida: string;
+        cantidadTotalRequerida: number;
+        sinCantidadDefinida: boolean;
+        stockTotalDisponible: number;
+        equivalenciasCount: number;
+    }>;
+    tejidoMaquinas: Array<{
+        codigoTejido: string;
+        descripcionTejido: string;
+        unidadesATejer: number;
+        sinMaquinaAsignada: boolean;
+        opcionesMaquina: Array<{
+            machineTypeId: string;
+            machineTypeName: string;
+            preferida: boolean;
+            cycleTimeSeconds: number;
+            status: string;
+            horasTotales: number;
+            turnos8h: number;
+        }>;
+    }>;
 }
 
 export const articulosApi = api.injectEndpoints({
@@ -108,6 +202,12 @@ export const articulosApi = api.injectEndpoints({
         }, {
             search?: string;
             tipo?: string;
+            etapa?: string;
+            familia?: string;
+            modelo?: string;
+            destino?: string;
+            estado?: string;
+            soloConEtapa?: boolean;
             marca?: string;
             talle?: string;
             activo?: boolean;
@@ -118,6 +218,12 @@ export const articulosApi = api.injectEndpoints({
                 const p = new URLSearchParams();
                 if (params.search) p.set('search', params.search);
                 if (params.tipo) p.set('tipo', params.tipo);
+                if (params.etapa) p.set('etapa', params.etapa);
+                if (params.familia) p.set('familia', params.familia);
+                if (params.modelo) p.set('modelo', params.modelo);
+                if (params.destino) p.set('destino', params.destino);
+                if (params.estado) p.set('estado', params.estado);
+                if (params.soloConEtapa) p.set('soloConEtapa', 'true');
                 if (params.marca) p.set('marca', params.marca);
                 if (params.talle) p.set('talle', params.talle);
                 if (params.activo !== undefined) p.set('activo', String(params.activo));
@@ -133,6 +239,29 @@ export const articulosApi = api.injectEndpoints({
             providesTags: (_result, _error, id) => [{ type: 'Articulos', id }],
         }),
 
+        createArticulo: builder.mutation<Articulo, Partial<Articulo>>({
+            query: (body) => ({
+                url: 'articulos',
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['Articulos', 'Estructuras', 'ArticuloEquivalencias'],
+        }),
+
+        updateArticulo: builder.mutation<Articulo, { id: string; data: Partial<Articulo> }>({
+            query: ({ id, data }) => ({
+                url: `articulos/${id}`,
+                method: 'PUT',
+                body: data,
+            }),
+            invalidatesTags: (_res, _err, { id }) => [
+                'Articulos',
+                { type: 'Articulos', id },
+                'Estructuras',
+                'ArticuloEquivalencias',
+            ],
+        }),
+
         getEquivalenciasMaestro: builder.query<{
             items: ArticuloMaestroEquivalencia[];
             total: number;
@@ -142,6 +271,7 @@ export const articulosApi = api.injectEndpoints({
         }, {
             search?: string;
             tipo?: string;
+            etapa?: string;
             soloSinMapear?: boolean;
             soloMapeados?: boolean;
             page?: number;
@@ -151,6 +281,7 @@ export const articulosApi = api.injectEndpoints({
                 const p = new URLSearchParams();
                 if (params.search) p.set('search', params.search);
                 if (params.tipo) p.set('tipo', params.tipo);
+                if (params.etapa) p.set('etapa', params.etapa);
                 if (params.soloSinMapear) p.set('soloSinMapear', 'true');
                 if (params.soloMapeados) p.set('soloMapeados', 'true');
                 if (params.page) p.set('page', String(params.page));
@@ -180,7 +311,7 @@ export const articulosApi = api.injectEndpoints({
                 method: 'POST',
                 body,
             }),
-            invalidatesTags: ['ArticuloEquivalencias'],
+            invalidatesTags: ['ArticuloEquivalencias', 'Articulos', 'Estructuras'],
         }),
 
         reordenarPrioridades: builder.mutation<ArticuloItemEquivalencia[], {
@@ -192,7 +323,7 @@ export const articulosApi = api.injectEndpoints({
                 method: 'PUT',
                 body: { equivalenciaIds },
             }),
-            invalidatesTags: ['ArticuloEquivalencias'],
+            invalidatesTags: ['ArticuloEquivalencias', 'Estructuras'],
         }),
 
         desasociarItem: builder.mutation<{ success: boolean; reordenados: number }, string>({
@@ -200,12 +331,42 @@ export const articulosApi = api.injectEndpoints({
                 url: `articulos/equivalencias/${id}`,
                 method: 'DELETE',
             }),
-            invalidatesTags: ['ArticuloEquivalencias'],
+            invalidatesTags: ['ArticuloEquivalencias', 'Articulos', 'Estructuras'],
         }),
 
         getArticuloEstructuras: builder.query<ArticuloEstructura[], string>({
             query: (codigoPadre) => `articulos/estructuras/${encodeURIComponent(codigoPadre)}`,
             providesTags: ['Estructuras'],
+        }),
+
+        upsertLineaEstructura: builder.mutation<ArticuloEstructura, {
+            codigoPadre: string;
+            codigoComponente: string;
+            cantidad: number;
+            cantidadSecundaria?: number;
+            observacion?: string;
+            tipoFijoVariable?: string;
+        }>({
+            query: ({ codigoPadre, ...body }) => ({
+                url: `articulos/estructuras/${encodeURIComponent(codigoPadre)}/componente`,
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['Estructuras', 'Articulos'],
+        }),
+
+        eliminarLineaEstructura: builder.mutation<{ success: boolean }, string>({
+            query: (id) => ({
+                url: `articulos/estructuras/linea/${id}`,
+                method: 'DELETE',
+            }),
+            invalidatesTags: ['Estructuras', 'Articulos'],
+        }),
+
+        simularNecesidades: builder.query<SimulacionNecesidadesResult, { codigoPadre: string; cantidad: number }>({
+            query: ({ codigoPadre, cantidad }) =>
+                `articulos/estructuras/${encodeURIComponent(codigoPadre)}/simular?cantidad=${cantidad}`,
+            providesTags: ['Estructuras', 'ArticuloEquivalencias', 'Articulos'],
         }),
 
         buscarItemsParaVincular: builder.query<any[], { q?: string; categoryId?: string }>({
@@ -218,6 +379,14 @@ export const articulosApi = api.injectEndpoints({
             providesTags: ['Items'],
         }),
 
+        getCatalogoMaquinas: builder.query<MachineTypeCatalogo[], string | undefined>({
+            query: (processCategory) => {
+                const p = new URLSearchParams();
+                if (processCategory) p.set('processCategory', processCategory);
+                return `articulos/maquinas/catalogo?${p.toString()}`;
+            },
+        }),
+
         getArticulosConMaquinas: builder.query<{
             items: ArticuloResumenMaquina[];
             total: number;
@@ -227,6 +396,8 @@ export const articulosApi = api.injectEndpoints({
         }, {
             search?: string;
             status?: string;
+            etapa?: string;
+            familia?: string;
             page?: number;
             limit?: number;
         }>({
@@ -234,6 +405,8 @@ export const articulosApi = api.injectEndpoints({
                 const p = new URLSearchParams();
                 if (params.search) p.set('search', params.search);
                 if (params.status) p.set('status', params.status);
+                if (params.etapa) p.set('etapa', params.etapa);
+                if (params.familia) p.set('familia', params.familia);
                 if (params.page) p.set('page', String(params.page));
                 if (params.limit) p.set('limit', String(params.limit));
                 return `articulos/maquinas/resumen?${p.toString()}`;
@@ -251,6 +424,7 @@ export const articulosApi = api.injectEndpoints({
             machineTypeId: string;
             cycleTimeSeconds: number;
             status?: string;
+            preferida?: boolean;
         }>({
             query: ({ articuloId, machineTypeId, ...body }) => ({
                 url: `articulos/${articuloId}/maquinas/${machineTypeId}`,
@@ -260,14 +434,33 @@ export const articulosApi = api.injectEndpoints({
             invalidatesTags: (_res, _err, { articuloId }) => [
                 'Articulos',
                 { type: 'Articulos', id: `maquinas-${articuloId}` },
+                'Estructuras',
             ],
         }),
+
+        deleteArticuloMachineType: builder.mutation<{ success: boolean }, {
+            articuloId: string;
+            machineTypeId: string;
+        }>({
+            query: ({ articuloId, machineTypeId }) => ({
+                url: `articulos/${articuloId}/maquinas/${machineTypeId}`,
+                method: 'DELETE',
+            }),
+            invalidatesTags: (_res, _err, { articuloId }) => [
+                'Articulos',
+                { type: 'Articulos', id: `maquinas-${articuloId}` },
+                'Estructuras',
+            ],
+        }),
+
         getPendientesEstructura: builder.query<{
             items: Array<{
                 id: string;
                 codigo: string;
                 descripcion: string;
                 tipo: string;
+                etapa?: string;
+                familia?: string;
                 unidadMedida: string;
                 marca?: string;
                 talle?: string;
@@ -327,17 +520,23 @@ export const articulosApi = api.injectEndpoints({
 export const {
     useGetArticulosQuery,
     useGetArticuloByIdQuery,
+    useCreateArticuloMutation,
+    useUpdateArticuloMutation,
     useGetEquivalenciasMaestroQuery,
     useGetArticuloEquivalenciasQuery,
     useAsociarItemMutation,
     useReordenarPrioridadesMutation,
     useDesasociarItemMutation,
     useGetArticuloEstructurasQuery,
+    useUpsertLineaEstructuraMutation,
+    useEliminarLineaEstructuraMutation,
+    useSimularNecesidadesQuery,
     useBuscarItemsParaVincularQuery,
+    useGetCatalogoMaquinasQuery,
     useGetArticulosConMaquinasQuery,
     useGetArticuloMachineTypesQuery,
     useUpdateArticuloMachineTypeMutation,
+    useDeleteArticuloMachineTypeMutation,
     useGetPendientesEstructuraQuery,
     useCrearArbolEstructuraMutation,
 } = articulosApi;
-
