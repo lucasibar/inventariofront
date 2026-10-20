@@ -77,7 +77,7 @@ export function ArticulosPage() {
 
     const { data, isLoading } = useGetArticulosQuery({
         search: searchTerm,
-        etapa: etapaFiltro === 'CON_ETAPA' || etapaFiltro === '' ? (etapaFiltro === 'LEGACY' ? 'LEGACY' : undefined) : etapaFiltro,
+        etapa: etapaFiltro === 'CON_ETAPA' || etapaFiltro === '' ? undefined : etapaFiltro,
         soloConEtapa: etapaFiltro === 'CON_ETAPA',
         familia: familiaFiltro || undefined,
         marca: marcaFiltro || undefined,
