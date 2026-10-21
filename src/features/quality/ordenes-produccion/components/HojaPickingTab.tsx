@@ -10,17 +10,6 @@ interface HojaPickingTabProps {
     onEditArticle?: (codigo: string) => void;
 }
 
-const ROL_LABELS: Record<string, string> = {
-    COLOR_BASE: '🎨 Base',
-    LOGO: '🏷️ Logo',
-    DETALLE_MEDIA: '🧷 Detalle',
-    COLOR_TALLE: '🎨 C.Talle',
-    TRIANGULO: '🔺 Triáng.',
-    TALON_PUNTERA: '👟 Talón/P.',
-    GOMA: '⭕ Goma',
-    LYCRA: '🧵 Lycra',
-};
-
 export const HojaPickingTab: React.FC<HojaPickingTabProps> = ({
     items,
     fecha,

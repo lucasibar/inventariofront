@@ -440,30 +440,30 @@ export default function StockPedidosArticulosPage() {
                         <Input
                             label="Docenas Pedidas Totales"
                             type="number"
-                            step="0.1"
-                            value={editingPedido.docenas_pedidas}
-                            onChange={(e: any) => setEditingPedido({ ...editingPedido, docenas_pedidas: e.target.value })}
+                            inputProps={{ step: '0.1' }}
+                            value={String(editingPedido.docenas_pedidas ?? 0)}
+                            onChange={(v: string) => setEditingPedido({ ...editingPedido, docenas_pedidas: v })}
                         />
                         <Input
                             label="Docenas Tejidas (Etapa 1: Tejeduría)"
                             type="number"
-                            step="0.1"
-                            value={editingPedido.docenas_tejidas}
-                            onChange={(e: any) => setEditingPedido({ ...editingPedido, docenas_tejidas: e.target.value })}
+                            inputProps={{ step: '0.1' }}
+                            value={String(editingPedido.docenas_tejidas ?? 0)}
+                            onChange={(v: string) => setEditingPedido({ ...editingPedido, docenas_tejidas: v })}
                         />
                         <Input
                             label="Docenas Costuradas / Planchadas (Etapa 2: Costura)"
                             type="number"
-                            step="0.1"
-                            value={editingPedido.docenas_costuradas}
-                            onChange={(e: any) => setEditingPedido({ ...editingPedido, docenas_costuradas: e.target.value })}
+                            inputProps={{ step: '0.1' }}
+                            value={String(editingPedido.docenas_costuradas ?? 0)}
+                            onChange={(v: string) => setEditingPedido({ ...editingPedido, docenas_costuradas: v })}
                         />
                         <Input
                             label="Docenas Empaquetadas (Etapa 3: Producto Terminado)"
                             type="number"
-                            step="0.1"
-                            value={editingPedido.docenas_empaquetadas}
-                            onChange={(e: any) => setEditingPedido({ ...editingPedido, docenas_empaquetadas: e.target.value })}
+                            inputProps={{ step: '0.1' }}
+                            value={String(editingPedido.docenas_empaquetadas ?? 0)}
+                            onChange={(v: string) => setEditingPedido({ ...editingPedido, docenas_empaquetadas: v })}
                         />
                         <div>
                             <label style={{ fontSize: '12px', color: 'var(--text-muted, #9ca3af)', display: 'block', marginBottom: '4px' }}>
@@ -489,10 +489,10 @@ export default function StockPedidosArticulosPage() {
                             </select>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
-                            <Btn variant="secondary" type="button" onClick={() => setEditingPedido(null)}>
+                            <Btn variant="secondary" onClick={() => setEditingPedido(null)}>
                                 Cancelar
                             </Btn>
-                            <Btn type="submit">💾 Guardar Avance</Btn>
+                            <Btn onClick={(e) => handleSaveEditPedido(e as any)}>💾 Guardar Avance</Btn>
                         </div>
                     </form>
                 </Modal>
@@ -505,37 +505,37 @@ export default function StockPedidosArticulosPage() {
                         <Input
                             label="Número de Pedido / OP"
                             value={nuevoPedidoForm.numeroPedido}
-                            onChange={(e: any) => setNuevoPedidoForm({ ...nuevoPedidoForm, numeroPedido: e.target.value })}
-                            required
+                            onChange={(v: string) => setNuevoPedidoForm({ ...nuevoPedidoForm, numeroPedido: v })}
+                            inputProps={{ required: true }}
                         />
                         <Input
                             label="Código Artículo (ej: SX7664-100_L_B)"
                             value={nuevoPedidoForm.articuloCodigo}
-                            onChange={(e: any) => setNuevoPedidoForm({ ...nuevoPedidoForm, articuloCodigo: e.target.value })}
-                            required
+                            onChange={(v: string) => setNuevoPedidoForm({ ...nuevoPedidoForm, articuloCodigo: v })}
+                            inputProps={{ required: true }}
                         />
                         <Input
                             label="Código Susi (ej: SX7664-100-L)"
                             value={nuevoPedidoForm.codigoSusi}
-                            onChange={(e: any) => setNuevoPedidoForm({ ...nuevoPedidoForm, codigoSusi: e.target.value })}
+                            onChange={(v: string) => setNuevoPedidoForm({ ...nuevoPedidoForm, codigoSusi: v })}
                         />
                         <Input
                             label="Marca / Cliente"
                             value={nuevoPedidoForm.clienteMarca}
-                            onChange={(e: any) => setNuevoPedidoForm({ ...nuevoPedidoForm, clienteMarca: e.target.value })}
+                            onChange={(v: string) => setNuevoPedidoForm({ ...nuevoPedidoForm, clienteMarca: v })}
                         />
                         <Input
                             label="Docenas Pedidas"
                             type="number"
-                            step="0.1"
-                            value={nuevoPedidoForm.docenasPedidas}
-                            onChange={(e: any) => setNuevoPedidoForm({ ...nuevoPedidoForm, docenasPedidas: Number(e.target.value) })}
+                            inputProps={{ step: '0.1' }}
+                            value={String(nuevoPedidoForm.docenasPedidas)}
+                            onChange={(v: string) => setNuevoPedidoForm({ ...nuevoPedidoForm, docenasPedidas: Number(v) })}
                         />
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
-                            <Btn variant="secondary" type="button" onClick={() => setShowNewPedidoModal(false)}>
+                            <Btn variant="secondary" onClick={() => setShowNewPedidoModal(false)}>
                                 Cancelar
                             </Btn>
-                            <Btn type="submit">Crear Pedido</Btn>
+                            <Btn onClick={(e) => handleCreatePedido(e as any)}>Crear Pedido</Btn>
                         </div>
                     </form>
                 </Modal>
@@ -571,19 +571,19 @@ export default function StockPedidosArticulosPage() {
                         <Input
                             label="Código de Posición (ej: TEJ-CANASTO-03)"
                             value={nuevaPosForm.codigo}
-                            onChange={(e: any) => setNuevaPosForm({ ...nuevaPosForm, codigo: e.target.value })}
-                            required
+                            onChange={(v: string) => setNuevaPosForm({ ...nuevaPosForm, codigo: v })}
+                            inputProps={{ required: true }}
                         />
                         <Input
                             label="Descripción"
                             value={nuevaPosForm.descripcion}
-                            onChange={(e: any) => setNuevaPosForm({ ...nuevaPosForm, descripcion: e.target.value })}
+                            onChange={(v: string) => setNuevaPosForm({ ...nuevaPosForm, descripcion: v })}
                         />
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
-                            <Btn variant="secondary" type="button" onClick={() => setShowNewPosicionModal(false)}>
+                            <Btn variant="secondary" onClick={() => setShowNewPosicionModal(false)}>
                                 Cancelar
                             </Btn>
-                            <Btn type="submit">Crear Posición</Btn>
+                            <Btn onClick={(e) => handleCreatePosicion(e as any)}>Crear Posición</Btn>
                         </div>
                     </form>
                 </Modal>
