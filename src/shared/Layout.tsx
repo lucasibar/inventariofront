@@ -52,6 +52,26 @@ const navGroups: NavGroup[] = [
         ]
     },
     {
+        id: 'produccion',
+        label: 'Producción',
+        icon: '⚙️',
+        items: [
+            { to: '/produccion/planificacion', label: '📑 Planificación Diaria (PDFs)' },
+            { to: '/produccion/pedidos', label: '📦 Pedidos y Stock Artículos' },
+        ]
+    },
+    {
+        id: 'desarrollo',
+        label: 'Desarrollo',
+        icon: '🧪',
+        items: [
+            { to: '/desarrollo/articulos', label: '📋 Catálogo de Artículos' },
+            { to: '/desarrollo/estructuras', label: '🌳 Estructuras (BOM) y Simulador' },
+            { to: '/desarrollo/equivalencias', label: '🔗 Equivalencias y Prioridades' },
+            { to: '/desarrollo/maquinas', label: '⚙️ Asignación Máquinas y Tiempos' },
+        ]
+    },
+    {
         id: 'deposito',
         label: 'Depósito',
         icon: '🏭',
@@ -64,6 +84,7 @@ const navGroups: NavGroup[] = [
                 label: '🚚 Operaciones',
                 isSubGroup: true,
                 items: [
+                    { to: '/deposito/picking-produccion', label: '📋 Picking para Producción' },
                     { to: '/remitos-entrada', label: '📥 Entrada de mercadería' },
                     { to: '/remitos-salida', label: '📤 Salida de mercadería' },
                 ]
@@ -113,22 +134,12 @@ const navGroups: NavGroup[] = [
         ]
     },
     {
-        id: 'desarrollo',
-        label: 'Desarrollo',
-        icon: '🧪',
-        items: [
-            { to: '/desarrollo/equivalencias', label: '🔗 Equivalencias y Prioridades' },
-            { to: '/desarrollo/articulos', label: '📋 Catálogo Artículos TOTVS' },
-            { to: '/desarrollo/estructuras', label: '🌳 Estructuras (BOM) y Simulador' },
-            { to: '/desarrollo/maquinas', label: '⚙️ Asignación Máquinas y Tiempos' },
-        ]
-    },
-    {
         id: 'compras',
         label: 'Compras',
         icon: '🛒',
         items: [
             { to: '/compras/dashboard', label: '📊 Dashboard Compras' },
+            { to: '/compras/faltantes-produccion', label: '🧶 Faltantes Hilado Producción' },
             { to: '/compras/alertas-stock', label: '🚦 Alertas de Stock' },
             { to: '/compras/materiales-criticos-v2', label: '🔥 Materiales Críticos 2.0' },
             { to: '/compras/materiales-criticos', label: '⚠️ Combos de Compra' },
@@ -172,8 +183,6 @@ const navGroups: NavGroup[] = [
         label: 'Calidad',
         icon: '🎯',
         items: [
-            { to: '/calidad/articulos', label: '📋 Artículos' },
-            { to: '/calidad/ordenes-produccion', label: '📑 Órdenes de Producción' },
             { to: '/calidad/cuarentena', label: '🧪 Cuarentena y liberación' },
         ]
     },
@@ -256,7 +265,6 @@ export default function Layout() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Sync alerts data with notifications slice
     useEffect(() => {
         if (alerts && Array.isArray(alerts) && alerts.length > 0) {
             dispatch(setCurrentAlerts(alerts));
@@ -265,12 +273,9 @@ export default function Layout() {
         }
     }, [alerts, dispatch]);
 
-    // Close mobile menu on route change
     useEffect(() => {
         setMobileMenuOpen(false);
     }, [location.pathname]);
-
-
 
     useEffect(() => {
         const handleOpenMenu = () => setMobileMenuOpen(true);
@@ -290,10 +295,10 @@ export default function Layout() {
     const isAllowed = (to: string) => {
         if (isAdmin) return true;
 
-        // Definir rutas por sector
         const sectorRoutes: Record<string, string[]> = {
             DEPOSITO: [
                 '/deposito/dashboard', '/stock', '/movimientos',
+                '/deposito/picking-produccion',
                 '/remitos-entrada', '/remitos-salida',
                 '/deposito/capacidad',
                 '/reporte-consumo-detallado', '/tasks',
@@ -302,6 +307,7 @@ export default function Layout() {
             ],
             COMPRAS: [
                 '/compras/dashboard',
+                '/compras/faltantes-produccion',
                 '/compras/alertas-stock',
                 '/compras/materiales-criticos',
                 '/compras/materiales-criticos-v2',
@@ -315,29 +321,30 @@ export default function Layout() {
                 '/mantenimiento/kpi/disponibilidad',
                 '/mantenimiento/kpi/disponibilidad-v2',
             ],
-            CALIDAD: ['/calidad/articulos', '/calidad/ordenes-produccion', '/calidad/cuarentena'],
+            CALIDAD: ['/calidad/cuarentena'],
             VENTAS: ['/ventas/dashboard'],
             FINANZAS: ['/finanzas/dashboard'],
             RRHH: ['/rrhh/dashboard'],
-            DESARROLLO: ['/desarrollo/equivalencias', '/desarrollo/articulos', '/desarrollo/estructuras'],
-            PRODUCCION: ['/desarrollo/equivalencias', '/desarrollo/articulos', '/desarrollo/estructuras'],
+            DESARROLLO: ['/desarrollo/equivalencias', '/desarrollo/articulos', '/desarrollo/estructuras', '/desarrollo/maquinas'],
+            PRODUCCION: [
+                '/produccion/planificacion',
+                '/produccion/pedidos',
+                '/desarrollo/articulos',
+                '/desarrollo/estructuras',
+                '/desarrollo/equivalencias',
+                '/desarrollo/maquinas',
+            ],
         };
 
-        // Config routes — solo supervisores de su sector + compras
         const configRoutes = ['/items', '/items/box-types', '/deposito', '/socios'];
-        // Auditoría — solo supervisores
         const auditRoutes = ['/admin/movements'];
 
-        // Supervisores ven desarrollo
-        if (isSupervisor && to.startsWith('/desarrollo')) return true;
+        if (isSupervisor && (to.startsWith('/desarrollo') || to.startsWith('/produccion'))) return true;
 
-        // Rutas del sector del usuario
         const myRoutes = sectorRoutes[sector] || [];
 
-        // Supervisores ven auditoría
         if (isSupervisor && auditRoutes.includes(to)) return true;
 
-        // Supervisor de COMPRAS también ve stock en lectura
         if (isSupervisor && sector === 'COMPRAS') {
             const depositoViewRoutes = [
                 '/deposito/dashboard', '/stock', '/movimientos',
@@ -346,12 +353,10 @@ export default function Layout() {
             if ([...myRoutes, ...depositoViewRoutes, ...configRoutes].includes(to)) return true;
         }
 
-        // Supervisor de DEPOSITO no ve config
         if (isSupervisor && sector === 'DEPOSITO') {
             return myRoutes.includes(to);
         }
 
-        // Operarios solo ven rutas de su sector
         return myRoutes.includes(to);
     };
 
@@ -393,14 +398,12 @@ export default function Layout() {
             });
         });
 
-        // Auto collapse other groups and open only the active one
         if (activeGroupId) {
             setExpandedGroups([activeGroupId]);
         } else {
             setExpandedGroups([]);
         }
 
-        // Auto collapse other subgroups and open only the active one
         if (activeSubGroupId) {
             setExpandedSubGroups([activeSubGroupId]);
         } else {
@@ -408,14 +411,11 @@ export default function Layout() {
         }
     }, [location.pathname]);
 
-
     const handleLogout = () => {
         dispatch(api.util.resetApiState());
         dispatch(logout());
         navigate('/login', { replace: true });
     };
-
-
 
     return (
         <div style={{
@@ -499,7 +499,6 @@ export default function Layout() {
                             textTransform: 'uppercase'
                         }}>
                             {allItems.find(i => i.to === location.pathname.split('?')[0])?.label.split(' ').slice(1).join(' ') || 'WMS'}
-
                         </span>
                     </div>
 
@@ -528,38 +527,12 @@ export default function Layout() {
                                 +
                             </button>
                         )}
-                        {(location.pathname === '/produccion/dashboard' || location.pathname === '/mantenimiento/dashboard') && (
-                            <button
-                                onClick={() => document.dispatchEvent(new Event(location.pathname === '/produccion/dashboard' ? 'open-production-filters' : 'open-maintenance-filters'))}
-                                style={{
-                                    background: 'transparent',
-                                    border: 'none',
-                                    color: 'var(--text-muted, #9ca3af)',
-                                    cursor: 'pointer',
-                                    padding: '6px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <line x1="4" y1="6" x2="20" y2="6" />
-                                    <circle cx="9" cy="6" r="2.5" fill="var(--bg-primary, #0f1117)" />
-                                    <line x1="4" y1="12" x2="20" y2="12" />
-                                    <circle cx="15" cy="12" r="2.5" fill="var(--bg-primary, #0f1117)" />
-                                    <line x1="4" y1="18" x2="20" y2="18" />
-                                    <circle cx="9" cy="18" r="2.5" fill="var(--bg-primary, #0f1117)" />
-                                </svg>
-                            </button>
-                        )}
                     </div>
                 </header>
             )}
 
-            {/* User Overlay for Mobile Menu */}
             {(isMobile || location.pathname === '/mantenimiento/monitoreo') && <div className="nav-overlay" onClick={() => setMobileMenuOpen(false)} />}
 
-            {/* Sidebar / Drawer */}
             <aside style={{
                 position: isMobile || location.pathname === '/mantenimiento/monitoreo' ? 'fixed' : 'relative',
                 left: (isMobile || location.pathname === '/mantenimiento/monitoreo') && !mobileMenuOpen ? '-280px' : '0',
@@ -722,7 +695,6 @@ export default function Layout() {
                         );
                     })}
 
-                    {/* Notificaciones menu item */}
                     <NavLink
                         to="/notificaciones"
                         style={({ isActive }) => ({
@@ -764,7 +736,6 @@ export default function Layout() {
                         )}
                     </NavLink>
 
-                    {/* Ayuda menu item */}
                     <NavLink
                         to="/ayuda"
                         style={({ isActive }) => ({
@@ -783,9 +754,6 @@ export default function Layout() {
                     </NavLink>
                 </nav>
 
-
-
-                {/* Bottom Actions */}
                 <div style={{ borderTop: '1px solid var(--border-color, #2a2d3e)', padding: '8px 0' }}>
                     <button
                         type="button"
@@ -833,8 +801,7 @@ export default function Layout() {
                 </div>
             </aside>
 
-            {/* Main Content Area */}
-            <main 
+            <main
                 className="app-content"
                 style={{
                     flex: 1,
@@ -869,11 +836,11 @@ export default function Layout() {
             {showPasswordModal && (
                 <Modal title="Cambiar mi Contraseña" onClose={() => { setShowPasswordModal(false); setNewPasswordVal(''); }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
-                        <Input 
-                            label="Nueva Contraseña" 
+                        <Input
+                            label="Nueva Contraseña"
                             type="password"
-                            value={newPasswordVal} 
-                            onChange={setNewPasswordVal} 
+                            value={newPasswordVal}
+                            onChange={setNewPasswordVal}
                         />
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>

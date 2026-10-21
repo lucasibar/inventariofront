@@ -133,11 +133,13 @@ export const MaterialesAsignadosTab: React.FC<MaterialesAsignadosTabProps> = ({
                         <thead>
                             <tr style={{ background: 'rgba(0,0,0,0.25)', borderBottom: '1px solid var(--border-color, #2a2d3e)' }}>
                                 <th style={{ padding: '12px 14px' }}>Insumo / Hilado</th>
-                                <th style={{ padding: '12px 14px', width: '130px' }}>Función / Rol</th>
-                                <th style={{ padding: '12px 14px' }}>Tono / Variante</th>
-                                <th style={{ padding: '12px 14px', textAlign: 'center', width: '150px' }}>Máquinas Asignadas</th>
-                                <th style={{ padding: '12px 14px', textAlign: 'center', width: '130px' }}>Artículos</th>
-                                <th style={{ padding: '12px 14px', textAlign: 'center', width: '90px' }}>Acción</th>
+                                <th style={{ padding: '12px 14px', textAlign: 'center', width: '105px' }}>Máquinas</th>
+                                <th style={{ padding: '12px 14px', textAlign: 'right', width: '130px' }}>Consumo Día</th>
+                                <th style={{ padding: '12px 14px', textAlign: 'right', width: '135px' }}>Stock Total (Pick+Res)</th>
+                                <th style={{ padding: '12px 14px', textAlign: 'right', width: '125px' }}>Stock Restante</th>
+                                <th style={{ padding: '12px 14px', textAlign: 'right', width: '125px' }}>Faltante / Comprar</th>
+                                <th style={{ padding: '12px 14px', textAlign: 'center', width: '140px' }}>Estado Compras</th>
+                                <th style={{ padding: '12px 14px', textAlign: 'center', width: '80px' }}>Detalle</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -184,48 +186,91 @@ export const MaterialesAsignadosTab: React.FC<MaterialesAsignadosTabProps> = ({
                                                     <div style={{ fontSize: '12px', color: 'var(--text-primary, #f3f4f6)', marginTop: '2px', fontWeight: 500 }}>
                                                         {mat.descripcion}
                                                     </div>
-                                                </td>
-
-                                                <td style={{ padding: '12px 14px', fontSize: '12px', fontWeight: 600 }}>
-                                                    <span style={{ padding: '3px 8px', background: 'rgba(255,255,255,0.06)', borderRadius: '6px' }}>
-                                                        {ROL_LABELS[mat.rol] || mat.rol}
-                                                    </span>
-                                                </td>
-
-                                                <td style={{ padding: '12px 14px', fontSize: '12px', color: 'var(--text-secondary, #d1d5db)' }}>
-                                                    {mat.colorNombre || mat.tono || '-'}
+                                                    <div style={{ fontSize: '10px', color: 'var(--text-muted, #9ca3af)', marginTop: '2px' }}>
+                                                        {mat.categoriaNombre || 'HILADO'} {mat.proveedor ? `· Prov: ${mat.proveedor}` : ''}
+                                                    </div>
                                                 </td>
 
                                                 <td style={{ padding: '12px 14px', textAlign: 'center' }}>
                                                     <div
                                                         style={{
                                                             display: 'inline-block',
-                                                            padding: '4px 12px',
-                                                            borderRadius: '16px',
+                                                            padding: '4px 10px',
+                                                            borderRadius: '14px',
                                                             background: 'rgba(99, 102, 241, 0.15)',
                                                             color: '#818cf8',
                                                             fontWeight: 800,
-                                                            fontSize: '13px',
+                                                            fontSize: '12px',
                                                         }}
                                                     >
-                                                        {mat.maquinasCount} máquinas
+                                                        {mat.maquinasCount} máq.
+                                                    </div>
+                                                    <div style={{ fontSize: '10px', color: 'var(--text-muted, #9ca3af)', marginTop: '2px' }}>
+                                                        {mat.articulosAsignados.length} art.
                                                     </div>
                                                 </td>
 
-                                                <td style={{ padding: '12px 14px', textAlign: 'center' }}>
-                                                    <span
+                                                <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                                                    <div style={{ fontWeight: 800, color: '#f3f4f6', fontSize: '13px' }}>
+                                                        {(mat.consumoTotalKg || 0).toFixed(2)} kg
+                                                    </div>
+                                                    <div style={{ fontSize: '10px', color: 'var(--text-muted, #9ca3af)' }}>
+                                                        {mat.conosTotales || 0} conos
+                                                    </div>
+                                                </td>
+
+                                                <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                                                    <div style={{ fontWeight: 700, color: '#a5b4fc', fontSize: '13px' }}>
+                                                        {(mat.stockActualTotalKg || 0).toFixed(2)} kg
+                                                    </div>
+                                                    <div style={{ fontSize: '10px', color: 'var(--text-muted, #9ca3af)' }}>
+                                                        Pick: {(mat.stockEnPickingKg || 0).toFixed(1)} · Res: {(mat.stockEnReservaKg || 0).toFixed(1)}
+                                                    </div>
+                                                </td>
+
+                                                <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                                                    <div
                                                         style={{
-                                                            display: 'inline-block',
-                                                            padding: '3px 10px',
-                                                            borderRadius: '12px',
-                                                            background: hasUnreviewedArticles ? 'rgba(239, 68, 68, 0.12)' : 'rgba(255,255,255,0.06)',
-                                                            color: hasUnreviewedArticles ? '#f87171' : 'var(--text-muted, #9ca3af)',
-                                                            fontWeight: 700,
-                                                            fontSize: '11px',
+                                                            fontWeight: 800,
+                                                            fontSize: '13px',
+                                                            color: (mat.stockRestanteTotalKg || 0) < 0 ? '#ef4444' : '#34d399',
                                                         }}
                                                     >
-                                                        {mat.articulosAsignados.length} art.
-                                                    </span>
+                                                        {(mat.stockRestanteTotalKg || 0).toFixed(2)} kg
+                                                    </div>
+                                                    <div style={{ fontSize: '10px', color: 'var(--text-muted, #9ca3af)' }}>
+                                                        Mín: {(mat.stockMinimoKg || 0).toFixed(0)} kg
+                                                    </div>
+                                                </td>
+
+                                                <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                                                    {(mat.aComprarKg || 0) > 0 ? (
+                                                        <span style={{ fontWeight: 800, color: '#f87171', fontSize: '13px' }}>
+                                                            {(mat.aComprarKg || 0).toFixed(2)} kg
+                                                        </span>
+                                                    ) : (
+                                                        <span style={{ fontSize: '11px', color: 'var(--text-muted, #9ca3af)' }}>0 kg</span>
+                                                    )}
+                                                </td>
+
+                                                <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                                                    {mat.estadoAbastecimiento === 'CRITICO_COMPRAR' ? (
+                                                        <span style={{ padding: '4px 8px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.45)', fontWeight: 800, fontSize: '11px' }}>
+                                                            🔥 FALTANTE CRÍTICO
+                                                        </span>
+                                                    ) : mat.estadoAbastecimiento === 'ALERTA_MINIMO' ? (
+                                                        <span style={{ padding: '4px 8px', borderRadius: '6px', background: 'rgba(245, 158, 11, 0.18)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.4)', fontWeight: 800, fontSize: '11px' }}>
+                                                            ⚠️ BAJO MÍNIMO
+                                                        </span>
+                                                    ) : mat.estadoAbastecimiento === 'REPONER_PICKING' ? (
+                                                        <span style={{ padding: '4px 8px', borderRadius: '6px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', fontWeight: 700, fontSize: '11px' }}>
+                                                            📦 Pasar a Picking
+                                                        </span>
+                                                    ) : (
+                                                        <span style={{ padding: '4px 8px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.12)', color: '#34d399', fontWeight: 700, fontSize: '11px' }}>
+                                                            🟢 Stock Cubierto
+                                                        </span>
+                                                    )}
                                                 </td>
 
                                                 <td style={{ padding: '12px 14px', textAlign: 'center' }}>
@@ -242,7 +287,7 @@ export const MaterialesAsignadosTab: React.FC<MaterialesAsignadosTabProps> = ({
                                                             fontWeight: 600,
                                                         }}
                                                     >
-                                                        {isExpanded ? '▲ Ocultar' : '▼ Detalle'}
+                                                        {isExpanded ? '▲' : '▼'}
                                                     </button>
                                                 </td>
                                             </tr>
@@ -250,7 +295,7 @@ export const MaterialesAsignadosTab: React.FC<MaterialesAsignadosTabProps> = ({
                                             {/* Level 2: Secondary Expandable Drawer */}
                                             {isExpanded && (
                                                 <tr style={{ background: 'rgba(0,0,0,0.25)', borderBottom: '1px solid var(--border-color, #2a2d3e)' }}>
-                                                    <td colSpan={6} style={{ padding: '16px 20px' }}>
+                                                    <td colSpan={8} style={{ padding: '16px 20px' }}>
                                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
                                                             {/* Sub-Panel 1: Máquinas Asignadas por Área */}
                                                             <div

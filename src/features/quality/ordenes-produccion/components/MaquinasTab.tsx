@@ -207,11 +207,21 @@ export const MaquinasTab: React.FC<MaquinasTabProps> = ({ maquinas, onEditArticl
                                                         </div>
                                                         <div style={{ fontSize: '10px', color: 'var(--text-muted, #9ca3af)', marginTop: '2px', display: 'flex', justifyContent: 'space-between' }}>
                                                             <span>Talle: {primaryEntry.talle || '-'}</span>
-                                                            {entries.length > 1 && (
+                                                            {entries.some((e) => e.hasChangeover) ? (
+                                                                <span style={{ color: '#f59e0b', fontWeight: 800 }} title={primaryEntry.changeoverType || 'Cambio a las 08:00 AM'}>
+                                                                    🔄 08:00 AM
+                                                                </span>
+                                                            ) : entries.length > 1 ? (
                                                                 <span style={{ color: '#f59e0b', fontWeight: 700 }}>
                                                                     +{entries.length - 1} art
                                                                 </span>
-                                                            )}
+                                                            ) : null}
+                                                        </div>
+                                                        <div style={{ fontSize: '10px', color: '#34d399', fontWeight: 700, marginTop: '2px', display: 'flex', justifyContent: 'space-between' }}>
+                                                            <span>{entries.reduce((acc, e) => acc + (e.docenasEstimadas || 0), 0).toFixed(1)} doc.</span>
+                                                            <span style={{ color: 'var(--text-muted, #9ca3af)', fontWeight: 500 }}>
+                                                                {primaryEntry.cycleTimeSeconds || 95}s/m
+                                                            </span>
                                                         </div>
                                                         <div
                                                             style={{
@@ -332,33 +342,37 @@ export const MaquinasTab: React.FC<MaquinasTabProps> = ({ maquinas, onEditArticl
                                             </div>
 
                                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px', fontSize: '12px', color: 'var(--text-muted, #9ca3af)', marginBottom: '10px' }}>
+                                                <div>Cód. TEJIDO: <strong style={{ color: '#a5b4fc' }}>{matched?.codigo || artCode}</strong></div>
                                                 <div>Talle: <strong style={{ color: '#fff' }}>{entry.talle || '-'}</strong></div>
                                                 <div>Color: <strong style={{ color: '#fff' }}>{entry.colorRaw || '-'}</strong></div>
-                                                <div>Área: <strong style={{ color: '#fff' }}>Área {entry.area}</strong></div>
-                                                <div>Archivo: <span style={{ fontSize: '10px' }}>{entry.file}</span></div>
+                                                <div>Horario: <strong style={{ color: entry.hasChangeover ? '#fbbf24' : '#34d399' }}>{entry.horarioTexto || '12h turno'}</strong></div>
+                                                <div>Velocidad: <strong style={{ color: '#fff' }}>{entry.cycleTimeSeconds || 95} seg/media</strong></div>
+                                                <div>Producción: <strong style={{ color: '#34d399' }}>{entry.docenasEstimadas || 0} doc ({entry.paresEstimados || 0} par / {entry.mediasEstimadas || 0} med)</strong></div>
                                             </div>
 
-                                            {/* BOM if present */}
-                                            {matched?.itemRefs && matched.itemRefs.length > 0 && (
+                                            {/* Hilados calculados para esta máquina */}
+                                            {entry.hiladosMaquina && entry.hiladosMaquina.length > 0 && (
                                                 <div style={{ marginTop: '10px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '8px' }}>
                                                     <div style={{ fontSize: '11px', fontWeight: 700, color: '#a5b4fc', textTransform: 'uppercase', marginBottom: '6px' }}>
-                                                        Hilados requeridos por esta máquina:
+                                                        🧵 Hilados requeridos en esta máquina ({entry.netHours || 12}h netas):
                                                     </div>
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                        {matched.itemRefs.map((ref: any, rIdx: number) => (
+                                                        {entry.hiladosMaquina.map((h, rIdx) => (
                                                             <div
                                                                 key={rIdx}
                                                                 style={{
                                                                     display: 'flex',
                                                                     justifyContent: 'space-between',
                                                                     fontSize: '11px',
-                                                                    padding: '3px 8px',
+                                                                    padding: '4px 8px',
                                                                     background: 'rgba(255,255,255,0.03)',
                                                                     borderRadius: '4px',
                                                                 }}
                                                             >
-                                                                <span><strong>{ref.rol}:</strong> {ref.item?.codigoInterno} - {ref.item?.descripcion}</span>
-                                                                <span style={{ color: 'var(--text-muted, #9ca3af)' }}>{ref.colorNombre || ref.item?.tono || ''}</span>
+                                                                <span><strong style={{ color: '#818cf8' }}>{h.codigoItem}</strong> — {h.descripcion}</span>
+                                                                <span style={{ color: '#34d399', fontWeight: 700 }}>
+                                                                    {h.consumoKg.toFixed(2)} kg ({h.conosEstimados} conos)
+                                                                </span>
                                                             </div>
                                                         ))}
                                                     </div>

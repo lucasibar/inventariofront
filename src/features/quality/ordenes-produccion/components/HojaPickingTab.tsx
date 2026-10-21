@@ -129,15 +129,15 @@ export const HojaPickingTab: React.FC<HojaPickingTabProps> = ({
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
                         <thead>
                             <tr style={{ background: 'rgba(0,0,0,0.25)', borderBottom: '1px solid var(--border-color, #2a2d3e)' }}>
-                                <th style={{ padding: '10px 12px', textAlign: 'center', width: '50px' }}>Listo</th>
-                                <th style={{ padding: '10px 12px', width: '120px' }}>Código Insumo</th>
-                                <th style={{ padding: '10px 12px' }}>Descripción Material</th>
-                                <th style={{ padding: '10px 12px', width: '110px' }}>Rol</th>
-                                <th style={{ padding: '10px 12px', width: '120px' }}>Color / Tono</th>
-                                <th style={{ padding: '10px 12px', textAlign: 'center', width: '110px' }}>Máquinas</th>
-                                <th style={{ padding: '10px 12px', width: '140px' }}>Áreas Destino</th>
-                                <th style={{ padding: '10px 12px', textAlign: 'center', width: '110px' }}>Control</th>
-                                <th className="no-print" style={{ padding: '10px 12px', textAlign: 'center', width: '80px' }}>Acción</th>
+                                <th style={{ padding: '10px 12px', textAlign: 'center', width: '45px' }}>Listo</th>
+                                <th style={{ padding: '10px 12px', width: '120px' }}>Código / Categoría</th>
+                                <th style={{ padding: '10px 12px' }}>Descripción Hilado</th>
+                                <th style={{ padding: '10px 12px', textAlign: 'right', width: '125px' }}>Consumo Día</th>
+                                <th style={{ padding: '10px 12px', textAlign: 'right', width: '110px' }}>En Picking</th>
+                                <th style={{ padding: '10px 12px', textAlign: 'right', width: '110px' }}>En Reserva (Stock)</th>
+                                <th style={{ padding: '10px 12px', textAlign: 'right', width: '130px' }}>A Pasar a Picking</th>
+                                <th style={{ padding: '10px 12px', width: '150px' }}>Posición Picking Destino</th>
+                                <th className="no-print" style={{ padding: '10px 12px', textAlign: 'center', width: '70px' }}>Detalle</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -183,74 +183,89 @@ export const HojaPickingTab: React.FC<HojaPickingTabProps> = ({
                                                 </td>
 
                                                 <td style={{ padding: '10px 12px', fontWeight: 800, fontSize: '13px', color: '#818cf8' }}>
-                                                    {item.codigoMaterial}
+                                                    <div>{item.codigoMaterial}</div>
+                                                    <div style={{ fontSize: '10px', color: 'var(--text-muted, #9ca3af)', fontWeight: 600 }}>
+                                                        {item.categoriaNombre || 'HILADO'} · {item.maquinasCount} máq.
+                                                    </div>
                                                 </td>
 
                                                 <td style={{ padding: '10px 12px', fontSize: '13px' }}>
                                                     <div style={{ fontWeight: 600 }}>{item.descripcionMaterial}</div>
-                                                    {item.proveedor && (
-                                                        <div style={{ fontSize: '11px', color: 'var(--text-muted, #9ca3af)' }}>
-                                                            Prov: {item.proveedor}
+                                                    <div style={{ fontSize: '11px', color: 'var(--text-muted, #9ca3af)' }}>
+                                                        {item.areas.join(' | ')} {item.proveedor ? `· Prov: ${item.proveedor}` : ''}
+                                                    </div>
+                                                </td>
+
+                                                <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                                                    <div style={{ fontWeight: 800, color: '#f3f4f6', fontSize: '13px' }}>
+                                                        {(item.consumoDiaKg || 0).toFixed(2)} kg
+                                                    </div>
+                                                    <div style={{ fontSize: '10px', color: 'var(--text-muted, #9ca3af)' }}>
+                                                        {item.conosNecesarios || 0} conos (M: {(item.consumoMananaKg || 0).toFixed(1)} / N: {(item.consumoNocheKg || 0).toFixed(1)})
+                                                    </div>
+                                                </td>
+
+                                                <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: '#38bdf8' }}>
+                                                    {(item.stockEnPickingKg || 0).toFixed(2)} kg
+                                                </td>
+
+                                                <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                                                    <div style={{ fontWeight: 700, color: '#a5b4fc' }}>
+                                                        {(item.stockEnReservaKg || 0).toFixed(2)} kg
+                                                    </div>
+                                                    {item.posicionesStockReserva && item.posicionesStockReserva.length > 0 && (
+                                                        <div style={{ fontSize: '10px', color: 'var(--text-muted, #9ca3af)' }}>
+                                                            De: {item.posicionesStockReserva.slice(0, 2).join(', ')}
                                                         </div>
                                                     )}
                                                 </td>
 
-                                                <td style={{ padding: '10px 12px', fontSize: '12px', fontWeight: 600 }}>
-                                                    {ROL_LABELS[item.rol] || item.rol}
-                                                </td>
-
-                                                <td style={{ padding: '10px 12px', fontSize: '12px', color: 'var(--text-secondary, #d1d5db)' }}>
-                                                    {item.colorNombre || item.tono || '-'}
-                                                </td>
-
-                                                <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                                                    <span
-                                                        style={{
-                                                            display: 'inline-block',
-                                                            padding: '3px 10px',
-                                                            borderRadius: '12px',
-                                                            background: 'rgba(16, 185, 129, 0.15)',
-                                                            color: '#34d399',
-                                                            fontWeight: 800,
-                                                            fontSize: '13px',
-                                                        }}
-                                                    >
-                                                        {item.maquinasCount} máq.
-                                                    </span>
-                                                </td>
-
-                                                <td style={{ padding: '10px 12px', fontSize: '11px', color: '#a5b4fc', fontWeight: 600 }}>
-                                                    {item.areas.join(' | ')}
-                                                </td>
-
-                                                <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                                                    {item.hasUnreviewedArticles ? (
+                                                <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                                                    {(item.aPasarAPickingKg || 0) > 0 ? (
                                                         <span
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                if (onEditArticle && item.articulos.length > 0) {
-                                                                    onEditArticle(item.articulos[0]);
-                                                                }
-                                                            }}
                                                             style={{
                                                                 display: 'inline-block',
-                                                                padding: '3px 8px',
-                                                                borderRadius: '4px',
-                                                                background: 'rgba(239, 68, 68, 0.18)',
-                                                                color: '#f87171',
-                                                                fontWeight: 700,
-                                                                fontSize: '10px',
-                                                                border: '1px solid rgba(239, 68, 68, 0.4)',
-                                                                cursor: onEditArticle ? 'pointer' : 'default',
+                                                                padding: '4px 10px',
+                                                                borderRadius: '8px',
+                                                                background: 'rgba(245, 158, 11, 0.18)',
+                                                                color: '#fbbf24',
+                                                                border: '1px solid rgba(245, 158, 11, 0.4)',
+                                                                fontWeight: 800,
+                                                                fontSize: '12px',
                                                             }}
-                                                            title="Contiene artículos no revisados. Clic para abrir ficha"
                                                         >
-                                                            ⚠️ Revisar ✏️
+                                                            📦 Mover {(item.aPasarAPickingKg || 0).toFixed(2)} kg
                                                         </span>
                                                     ) : (
                                                         <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 700 }}>
-                                                            🟢 Verificado
+                                                            🟢 Picking Cubierto
                                                         </span>
+                                                    )}
+                                                </td>
+
+                                                <td style={{ padding: '10px 12px' }}>
+                                                    {item.posicionesPickingSugeridas && item.posicionesPickingSugeridas.length > 0 ? (
+                                                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                                            {item.posicionesPickingSugeridas.map((pos) => (
+                                                                <span
+                                                                    key={pos}
+                                                                    style={{
+                                                                        padding: '3px 8px',
+                                                                        borderRadius: '6px',
+                                                                        background: 'rgba(16, 185, 129, 0.15)',
+                                                                        border: '1px solid rgba(16, 185, 129, 0.35)',
+                                                                        color: '#34d399',
+                                                                        fontWeight: 800,
+                                                                        fontSize: '11px',
+                                                                    }}
+                                                                    title={`Posición de Picking predilecta para ${item.categoriaNombre || 'este hilado'}`}
+                                                                >
+                                                                    📍 {pos}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <span style={{ fontSize: '11px', color: 'var(--text-muted, #9ca3af)' }}>Sin pos. asignada</span>
                                                     )}
                                                 </td>
 

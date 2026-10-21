@@ -123,14 +123,14 @@ export const HojaRepartidorTab: React.FC<HojaRepartidorTabProps> = ({
                         <thead>
                             <tr style={{ background: 'rgba(0,0,0,0.25)', borderBottom: '1px solid var(--border-color, #2a2d3e)' }}>
                                 <th style={{ padding: '10px 12px', textAlign: 'center', width: '50px' }}>Entr.</th>
-                                <th style={{ padding: '10px 12px', width: '80px' }}>Área</th>
-                                <th style={{ padding: '10px 12px' }}>Artículo / Prenda</th>
+                                <th style={{ padding: '10px 12px', width: '100px' }}>Área / Turno</th>
+                                <th style={{ padding: '10px 12px' }}>Artículo TEJIDO / Cód. PDF</th>
                                 <th style={{ padding: '10px 12px', textAlign: 'center', width: '70px' }}>Talle</th>
-                                <th style={{ padding: '10px 12px' }}>Color</th>
-                                <th style={{ padding: '10px 12px', textAlign: 'center', width: '110px' }}>Máquinas</th>
-                                <th style={{ padding: '10px 12px', textAlign: 'center', width: '110px' }}>Insumos</th>
-                                <th style={{ padding: '10px 12px', textAlign: 'center', width: '110px' }}>Revisión</th>
-                                <th className="no-print" style={{ padding: '10px 12px', textAlign: 'center', width: '80px' }}>Acción</th>
+                                <th style={{ padding: '10px 12px' }}>Color / Cambios 08:00 AM</th>
+                                <th style={{ padding: '10px 12px', textAlign: 'center', width: '100px' }}>Máquinas</th>
+                                <th style={{ padding: '10px 12px', textAlign: 'right', width: '120px' }}>Prod. Estimada</th>
+                                <th style={{ padding: '10px 12px', textAlign: 'right', width: '130px' }}>Hilado a Llevar</th>
+                                <th className="no-print" style={{ padding: '10px 12px', textAlign: 'center', width: '80px' }}>Detalle</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -176,7 +176,10 @@ export const HojaRepartidorTab: React.FC<HojaRepartidorTabProps> = ({
                                                 </td>
 
                                                 <td style={{ padding: '10px 12px', fontWeight: 700, fontSize: '13px', color: '#a5b4fc' }}>
-                                                    {item.area}
+                                                    <div>{item.area}</div>
+                                                    <div style={{ fontSize: '11px', color: 'var(--text-muted, #9ca3af)', fontWeight: 600 }}>
+                                                        {item.shift === 'N' ? '🌙 Noche' : '☀️ Mañana'}
+                                                    </div>
                                                 </td>
 
                                                 <td style={{ padding: '10px 12px' }}>
@@ -184,7 +187,7 @@ export const HojaRepartidorTab: React.FC<HojaRepartidorTabProps> = ({
                                                         {item.codigoArticulo}
                                                     </div>
                                                     <div style={{ fontSize: '11px', color: 'var(--text-muted, #9ca3af)', marginTop: '2px' }}>
-                                                        {item.descripcionArticulo}
+                                                        {item.codigoOriginalPdf ? `Susi: ${item.codigoOriginalPdf} · ` : ''}{item.descripcionArticulo}
                                                     </div>
                                                 </td>
 
@@ -193,7 +196,12 @@ export const HojaRepartidorTab: React.FC<HojaRepartidorTabProps> = ({
                                                 </td>
 
                                                 <td style={{ padding: '10px 12px', fontSize: '12px', color: 'var(--text-secondary, #d1d5db)' }}>
-                                                    {item.color || '-'}
+                                                    <div>{item.color || '-'}</div>
+                                                    {item.cambiosDetalle && item.cambiosDetalle.length > 0 && (
+                                                        <div style={{ fontSize: '10px', color: '#fbbf24', fontWeight: 700, marginTop: '3px' }}>
+                                                            🔄 {item.cambiosDetalle.join(' | ')}
+                                                        </div>
+                                                    )}
                                                 </td>
 
                                                 <td style={{ padding: '10px 12px', textAlign: 'center' }}>
@@ -210,9 +218,21 @@ export const HojaRepartidorTab: React.FC<HojaRepartidorTabProps> = ({
                                                     >
                                                         {item.maquinasCount} máq.
                                                     </span>
+                                                    <div style={{ fontSize: '10px', color: 'var(--text-muted, #9ca3af)', marginTop: '2px' }}>
+                                                        {item.horasTejido || 0}h netas
+                                                    </div>
                                                 </td>
 
-                                                <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                                                <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                                                    <div style={{ fontWeight: 800, color: '#34d399', fontSize: '12px' }}>
+                                                        {(item.docenasEstimadas || 0).toFixed(1)} doc.
+                                                    </div>
+                                                    <div style={{ fontSize: '10px', color: 'var(--text-muted, #9ca3af)' }}>
+                                                        {item.paresEstimados || 0} par ({item.mediasEstimadas || 0} med)
+                                                    </div>
+                                                </td>
+
+                                                <td style={{ padding: '10px 12px', textAlign: 'right' }}>
                                                     <span
                                                         style={{
                                                             display: 'inline-block',
@@ -220,41 +240,15 @@ export const HojaRepartidorTab: React.FC<HojaRepartidorTabProps> = ({
                                                             borderRadius: '6px',
                                                             background: item.materiales.length > 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
                                                             color: item.materiales.length > 0 ? '#34d399' : '#f87171',
-                                                            fontWeight: 700,
+                                                            fontWeight: 800,
                                                             fontSize: '11px',
                                                         }}
                                                     >
-                                                        {item.materiales.length > 0 ? `${item.materiales.length} hilados` : 'Sin hilados'}
+                                                        {item.materiales.reduce((acc, m) => acc + (m.consumoKg || 0), 0).toFixed(2)} kg
                                                     </span>
-                                                </td>
-
-                                                <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                                                    {item.isUnreviewed ? (
-                                                        <span
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                if (onEditArticle) onEditArticle(item.codigoArticulo);
-                                                            }}
-                                                            style={{
-                                                                display: 'inline-block',
-                                                                padding: '3px 8px',
-                                                                borderRadius: '6px',
-                                                                background: 'rgba(239, 68, 68, 0.18)',
-                                                                color: '#f87171',
-                                                                fontWeight: 700,
-                                                                fontSize: '10px',
-                                                                border: '1px solid rgba(239, 68, 68, 0.4)',
-                                                                cursor: onEditArticle ? 'pointer' : 'default',
-                                                            }}
-                                                            title="Clic para revisar o modificar la ficha técnica de este artículo"
-                                                        >
-                                                            ⚠️ OJO: Revisar ✏️
-                                                        </span>
-                                                    ) : (
-                                                        <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 700 }}>
-                                                            🟢 Chequeado
-                                                        </span>
-                                                    )}
+                                                    <div style={{ fontSize: '10px', color: 'var(--text-muted, #9ca3af)', marginTop: '2px' }}>
+                                                        {item.materiales.reduce((acc, m) => acc + (m.conos || 0), 0)} conos ({item.materiales.length} hil.)
+                                                    </div>
                                                 </td>
 
                                                 <td className="no-print" style={{ padding: '10px 12px', textAlign: 'center' }}>
@@ -312,10 +306,20 @@ export const HojaRepartidorTab: React.FC<HojaRepartidorTabProps> = ({
                                                                     <div style={{ fontSize: '11px', fontWeight: 800, color: '#a5b4fc', textTransform: 'uppercase', marginBottom: '6px' }}>
                                                                         🧵 Hilados a Llevar ({item.materiales.length}):
                                                                     </div>
-                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                                                         {item.materiales.map((m, mIdx) => (
-                                                                            <div key={mIdx} style={{ fontSize: '11px', color: 'var(--text-primary, #f3f4f6)' }}>
-                                                                                <strong style={{ color: '#818cf8' }}>{m.rol}:</strong> {m.codigo} — {m.descripcion} {m.colorNombre ? `(${m.colorNombre})` : ''}
+                                                                            <div key={mIdx} style={{ fontSize: '11px', color: 'var(--text-primary, #f3f4f6)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px', background: 'rgba(255,255,255,0.03)', borderRadius: '4px' }}>
+                                                                                <span>
+                                                                                    <strong style={{ color: '#818cf8' }}>{m.codigo}</strong> — {m.descripcion}
+                                                                                    {m.posicionPicking && (
+                                                                                        <span style={{ marginLeft: '6px', padding: '1px 6px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>
+                                                                                            📍 {m.posicionPicking}
+                                                                                        </span>
+                                                                                    )}
+                                                                                </span>
+                                                                                <strong style={{ color: '#34d399' }}>
+                                                                                    {(m.consumoKg || 0).toFixed(2)} kg ({m.conos || 1} conos)
+                                                                                </strong>
                                                                             </div>
                                                                         ))}
                                                                     </div>

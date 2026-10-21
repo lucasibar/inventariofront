@@ -51,8 +51,6 @@ export function ArticulosPage() {
         variante: string;
         marca: string;
         unidadMedida: string;
-        segundaUnidadMedida: string;
-        almacenEstandar: string;
         codigoSusi: string;
         estado: string;
         activo: boolean;
@@ -68,8 +66,6 @@ export function ArticulosPage() {
         variante: '',
         marca: 'NIKE',
         unidadMedida: 'UN',
-        segundaUnidadMedida: 'PA',
-        almacenEstandar: '01',
         codigoSusi: '',
         estado: 'CONTROLAR',
         activo: true,
@@ -137,8 +133,6 @@ export function ArticulosPage() {
             variante: '',
             marca: 'NIKE',
             unidadMedida: 'UN',
-            segundaUnidadMedida: 'PA',
-            almacenEstandar: '01',
             codigoSusi: '',
             estado: 'CONTROLAR',
             activo: true,
@@ -160,8 +154,6 @@ export function ArticulosPage() {
             variante: art.variante || '',
             marca: art.marca || '',
             unidadMedida: art.unidadMedida || 'UN',
-            segundaUnidadMedida: art.segundaUnidadMedida || '',
-            almacenEstandar: art.almacenEstandar || '01',
             codigoSusi: art.codigoSusi || '',
             estado: art.estado || 'CONTROLAR',
             activo: art.activo ?? true,
@@ -393,7 +385,6 @@ export function ArticulosPage() {
                                         </td>
                                         <td style={{ padding: '10px', color: '#9ca3af' }}>
                                             {art.unidadMedida || 'UN'}
-                                            {art.segundaUnidadMedida ? ` / ${art.segundaUnidadMedida}` : ''}
                                         </td>
                                         <td style={{ padding: '10px' }}>
                                             <Badge color={ESTADO_COLOR[art.estado || 'CONTROLAR'] || '#6b7280'}>
@@ -623,22 +614,12 @@ export function ArticulosPage() {
 
                             <div>
                                 <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>
-                                    Unidad Medida 1
+                                    Unidad de Medida
                                 </label>
                                 <Input
                                     value={form.unidadMedida}
                                     onChange={(val) => setForm({ ...form, unidadMedida: val.toUpperCase() })}
-                                    placeholder="UN, KG, MT..."
-                                />
-                            </div>
-                            <div>
-                                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>
-                                    Unidad Medida 2 (TOTVS)
-                                </label>
-                                <Input
-                                    value={form.segundaUnidadMedida}
-                                    onChange={(val) => setForm({ ...form, segundaUnidadMedida: val.toUpperCase() })}
-                                    placeholder="PA, P3, P6, UN..."
+                                    placeholder="UN, KG, DOC, PAR..."
                                 />
                             </div>
                         </div>

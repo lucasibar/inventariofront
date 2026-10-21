@@ -270,14 +270,15 @@ export const ArticulosTejidoTab: React.FC<ArticulosTejidoTabProps> = ({
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
                         <thead>
                             <tr style={{ background: 'rgba(0,0,0,0.25)', borderBottom: '1px solid var(--border-color, #2a2d3e)' }}>
-                                <th style={{ padding: '12px 14px', width: '140px' }}>Revisión (Clic)</th>
-                                <th style={{ padding: '12px 14px' }}>Artículo / Marca</th>
-                                <th style={{ padding: '12px 14px' }}>Descripción</th>
-                                <th style={{ padding: '12px 14px', textAlign: 'center', width: '100px' }}>Talles</th>
-                                <th style={{ padding: '12px 14px' }}>Colores</th>
-                                <th style={{ padding: '12px 14px', textAlign: 'center', width: '110px' }}>Máquinas</th>
-                                <th style={{ padding: '12px 14px', textAlign: 'center', width: '110px' }}>Insumos</th>
-                                <th style={{ padding: '12px 14px', textAlign: 'center', width: '90px' }}>Acción</th>
+                                <th style={{ padding: '12px 14px', width: '130px' }}>Estado</th>
+                                <th style={{ padding: '12px 14px' }}>Artículo TEJIDO / Cód. Susana</th>
+                                <th style={{ padding: '12px 14px' }}>Descripción / Color</th>
+                                <th style={{ padding: '12px 14px', textAlign: 'center', width: '90px' }}>Talle</th>
+                                <th style={{ padding: '12px 14px', textAlign: 'center', width: '100px' }}>Máquinas</th>
+                                <th style={{ padding: '12px 14px', textAlign: 'center', width: '110px' }}>Seg/Media y Hs</th>
+                                <th style={{ padding: '12px 14px', textAlign: 'right', width: '140px' }}>Producción Estimada</th>
+                                <th style={{ padding: '12px 14px', textAlign: 'right', width: '120px' }}>Hilado Total</th>
+                                <th style={{ padding: '12px 14px', textAlign: 'center', width: '80px' }}>Detalle</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -324,13 +325,16 @@ export const ArticulosTejidoTab: React.FC<ArticulosTejidoTabProps> = ({
                                                         {a.codigo}
                                                     </div>
                                                     <div style={{ fontSize: '11px', color: 'var(--text-muted, #9ca3af)', marginTop: '2px' }}>
-                                                        {a.marca || 'Sin marca'}
+                                                        PDF Susi: <strong>{a.codigoOriginalPdf}</strong> · {a.marca || 'Sin marca'}
                                                     </div>
                                                 </td>
 
-                                                <td style={{ padding: '12px 14px', maxWidth: '300px' }}>
+                                                <td style={{ padding: '12px 14px', maxWidth: '280px' }}>
                                                     <div style={{ whiteSpace: 'normal', color: 'var(--text-primary, #f3f4f6)', fontWeight: 500 }}>
                                                         {a.descripcion}
+                                                    </div>
+                                                    <div style={{ fontSize: '11px', color: 'var(--text-muted, #9ca3af)', marginTop: '2px' }}>
+                                                        {a.colores.join(' / ') || '-'}
                                                     </div>
                                                     {a.advertencia && (
                                                         <div style={{ fontSize: '11px', color: '#f87171', marginTop: '2px', fontWeight: 500 }}>
@@ -358,10 +362,6 @@ export const ArticulosTejidoTab: React.FC<ArticulosTejidoTabProps> = ({
                                                     </div>
                                                 </td>
 
-                                                <td style={{ padding: '12px 14px', fontSize: '12px', color: 'var(--text-secondary, #d1d5db)' }}>
-                                                    {a.colores.join(' / ') || '-'}
-                                                </td>
-
                                                 <td style={{ padding: '12px 14px', textAlign: 'center' }}>
                                                     <span
                                                         style={{
@@ -378,7 +378,25 @@ export const ArticulosTejidoTab: React.FC<ArticulosTejidoTabProps> = ({
                                                     </span>
                                                 </td>
 
-                                                <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                                                <td style={{ padding: '12px 14px', textAlign: 'center', fontSize: '12px' }}>
+                                                    <div style={{ fontWeight: 700, color: '#e5e7eb' }}>
+                                                        {a.cycleTimeSecondsPromedio || 95}s / media
+                                                    </div>
+                                                    <div style={{ fontSize: '11px', color: 'var(--text-muted, #9ca3af)' }}>
+                                                        {a.horasTejidoTotales || 0}h netas
+                                                    </div>
+                                                </td>
+
+                                                <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                                                    <div style={{ fontWeight: 800, color: '#34d399', fontSize: '13px' }}>
+                                                        {(a.docenasTotales || 0).toLocaleString('es-AR')} doc.
+                                                    </div>
+                                                    <div style={{ fontSize: '11px', color: 'var(--text-muted, #9ca3af)' }}>
+                                                        {(a.paresTotales || 0).toLocaleString('es-AR')} pares ({(a.mediasTotales || 0).toLocaleString('es-AR')} med.)
+                                                    </div>
+                                                </td>
+
+                                                <td style={{ padding: '12px 14px', textAlign: 'right' }}>
                                                     <span
                                                         style={{
                                                             display: 'inline-block',
@@ -386,12 +404,15 @@ export const ArticulosTejidoTab: React.FC<ArticulosTejidoTabProps> = ({
                                                             borderRadius: '12px',
                                                             background: a.itemRefs && a.itemRefs.length > 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
                                                             color: a.itemRefs && a.itemRefs.length > 0 ? '#34d399' : '#f87171',
-                                                            fontWeight: 700,
-                                                            fontSize: '11px',
+                                                            fontWeight: 800,
+                                                            fontSize: '12px',
                                                         }}
                                                     >
-                                                        {a.itemRefs && a.itemRefs.length > 0 ? `${a.itemRefs.length} hilados` : 'Sin ficha'}
+                                                        {(a.kilosHiladoTotales || 0).toLocaleString('es-AR')} kg
                                                     </span>
+                                                    <div style={{ fontSize: '10px', color: 'var(--text-muted, #9ca3af)', marginTop: '2px' }}>
+                                                        {a.itemRefs?.length || 0} hilados BOM
+                                                    </div>
                                                 </td>
 
                                                 <td style={{ padding: '12px 14px', textAlign: 'center' }}>
@@ -408,7 +429,7 @@ export const ArticulosTejidoTab: React.FC<ArticulosTejidoTabProps> = ({
                                                             fontWeight: 600,
                                                         }}
                                                     >
-                                                        {isExpanded ? '▲ Ocultar' : '▼ Detalle'}
+                                                        {isExpanded ? '▲' : '▼'}
                                                     </button>
                                                 </td>
                                             </tr>
@@ -416,7 +437,7 @@ export const ArticulosTejidoTab: React.FC<ArticulosTejidoTabProps> = ({
                                             {/* Level 2: Secondary Expandable Drawer */}
                                             {isExpanded && (
                                                 <tr style={{ background: 'rgba(0,0,0,0.25)', borderBottom: '1px solid var(--border-color, #2a2d3e)' }}>
-                                                    <td colSpan={8} style={{ padding: '16px 20px' }}>
+                                                    <td colSpan={9} style={{ padding: '16px 20px' }}>
                                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
                                                             {/* Sub-Panel 1: Máquinas por Área */}
                                                             <div
@@ -671,8 +692,12 @@ export const ArticulosTejidoTab: React.FC<ArticulosTejidoTabProps> = ({
                                                 <td style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--text-muted, #9ca3af)' }}>
                                                     {ref.colorNombre || ref.item?.tono || '-'}
                                                 </td>
-                                                <td style={{ padding: '8px 12px', textAlign: 'center', fontSize: '12px' }}>
-                                                    {ref.consumoGramos ? `${ref.consumoGramos} g` : '-'}
+                                                <td style={{ padding: '8px 12px', textAlign: 'center', fontSize: '12px', fontWeight: 700, color: '#34d399' }}>
+                                                    {ref.consumoKgPorDocena
+                                                        ? `${Number(ref.consumoKgPorDocena).toFixed(4)} kg / doc`
+                                                        : ref.consumoGramos
+                                                        ? `${ref.consumoGramos} g`
+                                                        : '-'}
                                                 </td>
                                             </tr>
                                         ))}
