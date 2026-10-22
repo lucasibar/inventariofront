@@ -4,12 +4,10 @@ export interface Articulo {
     id: string;
     codigo: string;
     descripcion: string;
-    tipo: string;
     unidadMedida: string;
-    segundaUnidadMedida?: string;
-    almacenEstandar?: string;
     marca?: string;
     talle?: string;
+    pesoU?: number;
     modelo?: string;
     destino?: string;
     variante?: string;
@@ -17,14 +15,9 @@ export interface Articulo {
     familia?: string;
     codigoSusi?: string;
     estado?: 'CHEQUEADO' | 'CONTROLAR' | 'MAL' | 'DESHABILITADO' | string;
-    origen?: string;
-    tipoArticulo?: string;
-    articuloGenerico?: string;
-    color?: string;
     activo: boolean;
-    estadoRevision?: string;
-    detalleRevision?: string;
     createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface ArticuloMaestroEquivalencia {
@@ -68,28 +61,15 @@ export interface ArticuloEstructura {
     id: string;
     codigoPadre: string;
     codigoComponente: string;
-    posicion?: string;
-    secuencia?: string;
     cantidad: number;
     cantidadSecundaria?: number;
-    fechaInicio?: string;
-    fechaFin?: string;
     observacion?: string;
-    tipoFijoVariable?: string;
-    revisionInicial?: string;
-    revisionFinal?: string;
-    detalleFalla?: string;
-    componenteAnterior?: string;
-    estadoRevision?: string;
-    fuenteControl?: string;
-    detalleRevision?: string;
-    estadoConsumo?: string;
     descripcionInsumo?: string;
     etapaComponente?: string;
     familiaComponente?: string;
     unidadMedidaComponente?: string;
-    segundaUnidadComponente?: string;
-    articuloComponenteId?: string;
+    articuloPadreId?: string;
+    articuloHijoId?: string;
     subComponentesCount?: number;
     equivalenciasCount?: number;
 }

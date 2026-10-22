@@ -303,6 +303,170 @@ export default function OrdenesProduccionPage({ sectorMode }: OrdenesProduccionP
             {/* Results Section */}
             {result && (
                 <div>
+                    {/* Botones de Redirección a Informes Generados */}
+                    {effectiveSector === 'PRODUCCION' && (
+                        <div
+                            className="no-print"
+                            style={{
+                                background: 'linear-gradient(90deg, rgba(30, 27, 75, 0.6) 0%, rgba(20, 24, 39, 0.9) 100%)',
+                                border: '1px solid rgba(139, 92, 246, 0.4)',
+                                borderRadius: '14px',
+                                padding: '18px 22px',
+                                marginBottom: '22px',
+                            }}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
+                                <div>
+                                    <div style={{ fontSize: '15px', fontWeight: 800, color: '#f3f4f6', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span>📊</span> Informes de Producción Generados
+                                        <Badge color="#10b981">Planilla Analizada</Badge>
+                                    </div>
+                                    <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '3px' }}>
+                                        La producción diaria fue calculada con éxito. Navegá directamente a los dashboards especializados de Depósito y Producción:
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
+                                {/* Botón 1: Hilado en Depósito */}
+                                <div
+                                    onClick={() => navigate('/deposito/informes-produccion?tipo=HILADO')}
+                                    style={{
+                                        background: 'rgba(245, 158, 11, 0.1)',
+                                        border: '1px solid rgba(245, 158, 11, 0.4)',
+                                        borderRadius: '10px',
+                                        padding: '14px 16px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                    }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '14px', fontWeight: 800, color: '#f59e0b' }}>
+                                            🧶 Necesidad de Hilado (Depósito)
+                                        </span>
+                                        <span style={{ fontSize: '16px' }}>↗️</span>
+                                    </div>
+                                    <div style={{ fontSize: '11px', color: '#d1d5db', marginTop: '6px' }}>
+                                        Kilos, conos, stock picking vs depósito, alertas stock mínimo en rojo y próximo corte de proveedor.
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#f59e0b' }}>
+                                            {(result.resumenAlertas.totalKilosHiladoDia || 0).toLocaleString('es-AR')} kg
+                                        </span>
+                                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>•</span>
+                                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>
+                                            {filteredMateriales.length} hilados
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Botón 2: Insumos en Depósito */}
+                                <div
+                                    onClick={() => navigate('/deposito/informes-produccion?tipo=INSUMO')}
+                                    style={{
+                                        background: 'rgba(236, 72, 153, 0.1)',
+                                        border: '1px solid rgba(236, 72, 153, 0.4)',
+                                        borderRadius: '10px',
+                                        padding: '14px 16px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                    }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '14px', fontWeight: 800, color: '#ec4899' }}>
+                                            📦 Necesidad de Insumos (Depósito)
+                                        </span>
+                                        <span style={{ fontSize: '16px' }}>↗️</span>
+                                    </div>
+                                    <div style={{ fontSize: '11px', color: '#d1d5db', marginTop: '6px' }}>
+                                        Avíos, packaging y etiquetas requeridas para la terminación en depósito de insumos.
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#ec4899' }}>
+                                            Depósito Insumos
+                                        </span>
+                                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>•</span>
+                                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>
+                                            Picking y Reserva
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Botón 3: Plan de Tejeduría en Producción */}
+                                <div
+                                    onClick={() => navigate('/produccion/informe-tejeduria')}
+                                    style={{
+                                        background: 'rgba(16, 185, 129, 0.1)',
+                                        border: '1px solid rgba(16, 185, 129, 0.4)',
+                                        borderRadius: '10px',
+                                        padding: '14px 16px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                    }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '14px', fontWeight: 800, color: '#10b981' }}>
+                                            ⚙️ Plan de Tejeduría Diario
+                                        </span>
+                                        <span style={{ fontSize: '16px' }}>↗️</span>
+                                    </div>
+                                    <div style={{ fontSize: '11px', color: '#d1d5db', marginTop: '6px' }}>
+                                        Qué artículo se teje en qué máquina y estimado en docenas/pares al final del día.
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#10b981' }}>
+                                            {(result.resumenAlertas.totalDocenasEstimadas || 0).toLocaleString('es-AR')} doc.
+                                        </span>
+                                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>•</span>
+                                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>
+                                            {new Set(filteredMaquinas.map((m) => m.machine)).size} máquinas
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Botón 4: Informe de Cambios en Producción */}
+                                <div
+                                    onClick={() => navigate('/produccion/informe-cambios-dia')}
+                                    style={{
+                                        background: 'rgba(139, 92, 246, 0.1)',
+                                        border: '1px solid rgba(139, 92, 246, 0.4)',
+                                        borderRadius: '10px',
+                                        padding: '14px 16px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                    }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '14px', fontWeight: 800, color: '#a78bfa' }}>
+                                            🔄 Informe de Cambios de Máquina
+                                        </span>
+                                        <span style={{ fontSize: '16px' }}>↗️</span>
+                                    </div>
+                                    <div style={{ fontSize: '11px', color: '#d1d5db', marginTop: '6px' }}>
+                                        Cuántos cambios son, en qué máquinas, qué tipo de cambio y cuánto se estima que tarda.
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#a78bfa' }}>
+                                            {result.resumenAlertas.totalCambiosProgramados08AM || 0} cambios
+                                        </span>
+                                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>•</span>
+                                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>
+                                            08:00 AM y entre turnos
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Top KPI Cards tailored to the calculation engine */}
                     <div
                         className="no-print"

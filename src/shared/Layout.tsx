@@ -56,7 +56,9 @@ const navGroups: NavGroup[] = [
         label: 'Producción',
         icon: '⚙️',
         items: [
-            { to: '/produccion/planificacion', label: '📑 Planificación Diaria (PDFs)' },
+            { to: '/produccion/planificacion', label: '📑 Carga de Producción (PDFs)' },
+            { to: '/produccion/informe-tejeduria', label: '⚙️ Plan de Tejeduría Diario' },
+            { to: '/produccion/informe-cambios-dia', label: '🔄 Informe de Cambios del Día' },
             { to: '/produccion/pedidos', label: '📦 Pedidos y Stock Artículos' },
         ]
     },
@@ -94,6 +96,8 @@ const navGroups: NavGroup[] = [
                 label: '📊 Informes',
                 isSubGroup: true,
                 items: [
+                    { to: '/deposito/informes-produccion?tipo=HILADO', label: '🧶 Necesidad Diaria Hilado' },
+                    { to: '/deposito/informes-produccion?tipo=INSUMO', label: '📦 Necesidad Diaria Insumos' },
                     { to: '/deposito/capacidad', label: '📦 Medidores de Capacidad' },
                     { to: '/deposito/materiales-estancados', label: '🧊 Materiales Estancados' },
                     { to: '/reporte-consumo-detallado', label: '📊 Consumo Detallado' },

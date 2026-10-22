@@ -56,6 +56,9 @@ const ArticulosPage = lazy(() => import('../../pages/quality/ArticulosPage'));
 const CuarentenaCalidadPage = lazy(() => import('../../pages/quality/CuarentenaCalidadPage'));
 const OrdenesProduccionPage = lazy(() => import('../../pages/quality/OrdenesProduccionPage'));
 const StockPedidosArticulosPage = lazy(() => import('../../pages/produccion/StockPedidosArticulosPage'));
+const InformeTejeduriaPage = lazy(() => import('../../pages/produccion/InformeTejeduriaPage'));
+const InformeCambiosDiaPage = lazy(() => import('../../pages/produccion/InformeCambiosDiaPage'));
+const InformeProduccionDepositoPage = lazy(() => import('../../pages/warehouse/InformeProduccionDepositoPage'));
 
 // Sector: Desarrollo
 const DesarrolloArticulosPage = lazy(() => import('../../pages/desarrollo/ArticulosPage').then(m => ({ default: m.ArticulosPage })));
@@ -161,9 +164,12 @@ export const router = createBrowserRouter([
               // Sector: Producción
               { path: "produccion/planificacion", element: <LazyRoute element={OrdenesProduccionPage} props={{ sectorMode: 'PRODUCCION' }} /> },
               { path: "produccion/pedidos", element: <LazyRoute element={StockPedidosArticulosPage} /> },
+              { path: "produccion/informe-tejeduria", element: <LazyRoute element={InformeTejeduriaPage} /> },
+              { path: "produccion/informe-cambios-dia", element: <LazyRoute element={InformeCambiosDiaPage} /> },
 
               // Sector: Depósito
               { path: "deposito/dashboard", element: <LazyRoute element={DashboardDepositoPage} /> },
+              { path: "deposito/informes-produccion", element: <LazyRoute element={InformeProduccionDepositoPage} /> },
               { path: "deposito/picking-produccion", element: <LazyRoute element={OrdenesProduccionPage} props={{ sectorMode: 'DEPOSITO' }} /> },
               { path: "deposito/capacidad", element: <LazyRoute element={CapacityDashboardPage} /> },
               { path: "remitos-salida", element: <LazyRoute element={RemitosSalidaPage} /> },

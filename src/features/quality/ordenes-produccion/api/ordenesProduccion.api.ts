@@ -52,6 +52,25 @@ export const ordenesProduccionApi = api.injectEndpoints({
                 method: 'POST',
             }),
         }),
+        getCorteProveedor: builder.query<{
+            categoriasDisponibles: string[];
+            categoriaSeleccionada: string;
+            mesesAnalizados: number;
+            mensajeCorte: string;
+            diasParaCorte: number | null;
+            fechaProyectadaCorte: string | null;
+            alertaCritica: boolean;
+            materialActual: any;
+            proximoMaterial: any;
+            cadenaPrioridades: any[];
+        }, { categoria?: string; meses?: number }>({
+            query: (params = {}) => {
+                const p = new URLSearchParams();
+                if (params.categoria) p.set('categoria', params.categoria);
+                if (params.meses) p.set('meses', String(params.meses));
+                return `articulos/ordenes-produccion/corte-proveedor?${p.toString()}`;
+            },
+        }),
     }),
 });
 
@@ -66,4 +85,5 @@ export const {
     useCrearPedidoProduccionMutation,
     useActualizarPedidoProduccionMutation,
     useSincronizarPlanillaConPedidosMutation,
+    useGetCorteProveedorQuery,
 } = ordenesProduccionApi;
