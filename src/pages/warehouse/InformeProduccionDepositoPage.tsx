@@ -60,6 +60,7 @@ export default function InformeProduccionDepositoPage() {
         return activePlanilla.materiales.filter((mat) => {
             const cat = (mat.categoriaNombre || '').toUpperCase();
             const rol = (mat.rol || '').toUpperCase();
+            const desc = (mat.descripcion || '').toUpperCase();
             // Clasificación Hilado vs Insumo
             const isHilado = rol === 'HILADO' || cat.includes('HILADO') || cat.includes('ALGODON') || cat.includes('GOMA') || cat.includes('LYCRA') || cat.includes('POLIAMIDA') || desc.includes('HILADO') || mat.unidadPrincipal === 'KG';
             
