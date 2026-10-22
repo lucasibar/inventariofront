@@ -379,7 +379,7 @@ export function EstructurasPage() {
                                                     {art.codigo}
                                                 </span>
                                                 <Badge color={ETAPA_COLOR[art.etapa || ''] || '#9ca3af'}>
-                                                    {art.etapa || art.tipo}
+                                                    {art.etapa || (art as any).tipo || 'ARTÍCULO'}
                                                 </Badge>
                                             </div>
                                             <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
@@ -513,7 +513,7 @@ export function EstructurasPage() {
                                                                 }}
                                                                 style={{ padding: '6px 10px', cursor: 'pointer', fontSize: '12px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
                                                             >
-                                                                <strong style={{ color: '#60a5fa' }}>{item.codigo}</strong> ({item.etapa || item.tipo}) — {item.descripcion}
+                                                                <strong style={{ color: '#60a5fa' }}>{item.codigo}</strong> ({item.etapa || (item as any).tipo || 'GEN'}) — {item.descripcion}
                                                             </div>
                                                         ))}
                                                     </div>

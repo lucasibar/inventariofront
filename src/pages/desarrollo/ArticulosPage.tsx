@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
     useGetArticulosQuery,
     useCreateArticuloMutation,
@@ -38,7 +37,6 @@ type ModalTab = 'DATOS' | 'ESTRUCTURA' | 'MAQUINAS' | 'EQUIVALENCIAS';
 
 export function ArticulosPage() {
     const isMobile = useIsMobile();
-    const navigate = useNavigate();
 
     // Filtros de navegación
     const [searchTerm, setSearchTerm] = useState('');
@@ -196,14 +194,18 @@ export function ArticulosPage() {
             alert('Código y Descripción son obligatorios');
             return;
         }
+        const payload: Partial<Articulo> = {
+            ...form,
+            pesoU: form.pesoU ?? undefined,
+        };
         try {
             if (editingArticulo) {
                 await updateArticulo({
                     id: editingArticulo.id,
-                    data: form,
+                    data: payload,
                 }).unwrap();
             } else {
-                const created = await createArticulo(form).unwrap();
+                const created = await createArticulo(payload).unwrap();
                 setEditingArticulo(created);
             }
             alert('Datos del artículo guardados correctamente');

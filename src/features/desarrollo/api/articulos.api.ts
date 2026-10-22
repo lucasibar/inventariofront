@@ -5,9 +5,10 @@ export interface Articulo {
     codigo: string;
     descripcion: string;
     unidadMedida: string;
+    tipo?: string;
     marca?: string;
     talle?: string;
-    pesoU?: number;
+    pesoU?: number | null;
     modelo?: string;
     destino?: string;
     variante?: string;
