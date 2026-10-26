@@ -13,7 +13,7 @@ import { PageHeader, Card, Badge, Btn, Modal, Table, Spinner, Input, Select, Act
 import { useSelector } from 'react-redux';
 import { selectCurrentUser, selectAllowedDepots } from '../../entities/auth/model/authSlice';
 import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
-import { EditComboModal } from './EditComboModal';
+import { EditComboModal } from '../../features/warehouse/stock/ui/EditComboModal';
 
 export default function MaterialesCriticosPage() {
     const isMobile = useIsMobile();
