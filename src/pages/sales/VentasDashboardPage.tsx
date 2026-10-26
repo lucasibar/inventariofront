@@ -242,16 +242,6 @@ export const VentasDashboardPage: React.FC = () => {
                         Actualizar
                     </Button>
                     <Button
-                        variant="outlined"
-                        color="secondary"
-                        startIcon={<CloudUploadIcon />}
-                        onClick={handleImportarExcel}
-                        disabled={isImporting}
-                        sx={{ borderColor: '#8b5cf6', color: '#c084fc' }}
-                    >
-                        {isImporting ? 'Importando...' : 'Importar Pedidos DW'}
-                    </Button>
-                    <Button
                         variant="contained"
                         startIcon={<AddIcon />}
                         onClick={() => setModalNuevoOpen(true)}
