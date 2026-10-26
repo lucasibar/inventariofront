@@ -16,6 +16,7 @@ import {
     useBuscarItemsParaVincularQuery,
     type Articulo,
 } from '../../features/desarrollo/api/articulos.api';
+import { useGetArticulosSinEstructuraQuery } from '../../features/ventas/api/ventas.api';
 import { PageHeader, Card, Btn, Input, Select, Badge, Spinner, useIsMobile } from '../../shared/ui';
 
 const ETAPA_COLOR: Record<string, string> = {
@@ -37,6 +38,7 @@ type ModalTab = 'DATOS' | 'ESTRUCTURA' | 'MAQUINAS' | 'EQUIVALENCIAS';
 
 export function ArticulosPage() {
     const isMobile = useIsMobile();
+    const { data: pedidosSinEstructura = [] } = useGetArticulosSinEstructuraQuery();
 
     // Filtros de navegación
     const [searchTerm, setSearchTerm] = useState('');
@@ -356,6 +358,37 @@ export function ArticulosPage() {
                     ➕ Nuevo Artículo
                 </Btn>
             </div>
+
+            {/* Alerta de pedidos de venta sin estructura */}
+            {pedidosSinEstructura.length > 0 && (
+                <div style={{
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid #ef4444',
+                    borderRadius: '12px',
+                    padding: '14px 18px',
+                    marginBottom: '18px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    color: '#fca5a5',
+                    flexWrap: 'wrap',
+                    gap: '12px',
+                }}>
+                    <div>
+                        <strong style={{ fontSize: '14px' }}>⚠️ Alerta de Ventas:</strong> Hay <strong>{pedidosSinEstructura.length}</strong> artículo(s) ingresados en pedidos de venta sin estructura técnica (BOM).
+                        <span style={{ fontSize: '12px', display: 'block', color: '#f87171', marginTop: '4px' }}>
+                            Artículos requeridos: {pedidosSinEstructura.map(p => p.articuloCodigo).slice(0, 4).join(', ')}{pedidosSinEstructura.length > 4 ? ` (+${pedidosSinEstructura.length - 4} más)` : ''}
+                        </span>
+                    </div>
+                    <Btn variant="danger" size="small" onClick={() => {
+                        if (pedidosSinEstructura[0]) {
+                            setSearchTerm(pedidosSinEstructura[0].articuloCodigo.split('_')[0]);
+                        }
+                    }}>
+                        🔍 Buscar en Catálogo
+                    </Btn>
+                </div>
+            )}
 
             {/* Pestañas de Etapas y Filtros Rápidos */}
             <Card style={{ marginBottom: '18px', padding: '16px' }}>
