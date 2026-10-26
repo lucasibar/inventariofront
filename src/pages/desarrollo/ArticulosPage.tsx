@@ -380,7 +380,7 @@ export function ArticulosPage() {
                             Artículos requeridos: {pedidosSinEstructura.map(p => p.articuloCodigo).slice(0, 4).join(', ')}{pedidosSinEstructura.length > 4 ? ` (+${pedidosSinEstructura.length - 4} más)` : ''}
                         </span>
                     </div>
-                    <Btn variant="danger" size="small" onClick={() => {
+                    <Btn variant="danger" onClick={() => {
                         if (pedidosSinEstructura[0]) {
                             setSearchTerm(pedidosSinEstructura[0].articuloCodigo.split('_')[0]);
                         }

@@ -27,7 +27,6 @@ import {
 } from '@mui/material';
 import {
     Add as AddIcon,
-    CloudUpload as CloudUploadIcon,
     LocalShipping as ShippingIcon,
     TrendingUp as TrendingUpIcon,
     Warning as WarningIcon,
@@ -44,10 +43,9 @@ import {
     useCrearPedidoVentaMutation,
     useAvanzarEstadioPedidoMutation,
     useEmitirRemitoSalidaMutation,
-    useImportarPedidosExcelMutation,
     useGetMovimientosVentasQuery,
-    PedidoVenta,
 } from '../../features/ventas/api/ventas.api';
+import type { PedidoVenta } from '../../features/ventas/api/ventas.api';
 
 export const VentasDashboardPage: React.FC = () => {
     // Pestaña activa
@@ -115,7 +113,6 @@ export const VentasDashboardPage: React.FC = () => {
     const [crearPedido, { isLoading: isCreando }] = useCrearPedidoVentaMutation();
     const [avanzarEstadio, { isLoading: isAvanzando }] = useAvanzarEstadioPedidoMutation();
     const [emitirRemito, { isLoading: isRemitiendo }] = useEmitirRemitoSalidaMutation();
-    const [importarExcel, { isLoading: isImporting }] = useImportarPedidosExcelMutation();
 
     const pedidos = pedidosData?.pedidos || [];
     const kpis = pedidosData?.kpis || {
@@ -189,17 +186,6 @@ export const VentasDashboardPage: React.FC = () => {
             refetchMovimientos();
         } catch (err: any) {
             alert(`Error al emitir remito: ${err?.data?.message || err.message}`);
-        }
-    };
-
-    const handleImportarExcel = async () => {
-        if (!window.confirm('¿Deseas importar y sincronizar los pedidos desde el archivo Consolidado Pedidos DW?')) return;
-        try {
-            const res = await importarExcel({}).unwrap();
-            alert(`Sincronización completa: ${res.importados} importados, ${res.actualizados} actualizados.`);
-            refetchPedidos();
-        } catch (err: any) {
-            alert(`Error en importación: ${err?.data?.message || err.message}`);
         }
     };
 
@@ -378,21 +364,45 @@ export const VentasDashboardPage: React.FC = () => {
                         </Grid>
 
                         <Grid size={{ xs: 12, md: 8 }}>
-                            <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
-                                <Typography variant="caption" sx={{ color: '#9ca3af', fontWeight: 700 }}>
-                                    MARCA:
-                                </Typography>
-                                {clientesList.map((c) => (
-                                    <Chip
-                                        key={c}
-                                        label={c}
-                                        clickable
-                                        size="small"
-                                        color={clienteFiltro === c ? 'primary' : 'default'}
-                                        onClick={() => setClienteFiltro(c)}
-                                        sx={{ fontWeight: 600 }}
-                                    />
-                                ))}
+                            <Stack spacing={1}>
+                                <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
+                                    <Typography variant="caption" sx={{ color: '#9ca3af', fontWeight: 700 }}>
+                                        MARCA:
+                                    </Typography>
+                                    {clientesList.map((c) => (
+                                        <Chip
+                                            key={c}
+                                            label={c}
+                                            clickable
+                                            size="small"
+                                            color={clienteFiltro === c ? 'primary' : 'default'}
+                                            onClick={() => setClienteFiltro(c)}
+                                            sx={{ fontWeight: 600 }}
+                                        />
+                                    ))}
+                                </Stack>
+
+                                <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
+                                    <Typography variant="caption" sx={{ color: '#9ca3af', fontWeight: 700 }}>
+                                        ESTADO:
+                                    </Typography>
+                                    {[
+                                        { val: 'TODOS', label: 'Todos' },
+                                        { val: 'CONFIRMADO', label: 'Confirmado' },
+                                        { val: 'ARMADO_DESPACHO', label: 'Listo Despacho' },
+                                        { val: 'DESPACHADO', label: 'Entregados' },
+                                    ].map((st) => (
+                                        <Chip
+                                            key={st.val}
+                                            label={st.label}
+                                            clickable
+                                            size="small"
+                                            color={estadoFiltro === st.val ? 'secondary' : 'default'}
+                                            onClick={() => setEstadoFiltro(st.val)}
+                                            sx={{ fontWeight: 600, height: 22, fontSize: 11 }}
+                                        />
+                                    ))}
+                                </Stack>
                             </Stack>
                         </Grid>
                     </Grid>
