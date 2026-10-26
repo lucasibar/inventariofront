@@ -52,7 +52,6 @@ const DisponibilidadMaquinaPage = lazy(() => import('../../pages/maintenance/Dis
 const DisponibilidadMaquinaV2Page = lazy(() => import('../../pages/maintenance/DisponibilidadMaquinaV2Page'));
 
 // Sector: Quality (Calidad) & Producción
-const ArticulosPage = lazy(() => import('../../pages/quality/ArticulosPage'));
 const CuarentenaCalidadPage = lazy(() => import('../../pages/quality/CuarentenaCalidadPage'));
 const OrdenesProduccionPage = lazy(() => import('../../pages/quality/OrdenesProduccionPage'));
 const StockPedidosArticulosPage = lazy(() => import('../../pages/produccion/StockPedidosArticulosPage'));
@@ -206,7 +205,7 @@ export const router = createBrowserRouter([
               { path: "rrhh/dashboard", element: <LazyRoute element={RRHHDashboardPage} /> },
 
               // Sector: Calidad
-              { path: "calidad/articulos", element: <LazyRoute element={ArticulosPage} /> },
+              { path: "calidad/articulos", element: <Navigate to="/desarrollo/articulos" replace /> },
               { path: "calidad/cuarentena", element: <LazyRoute element={CuarentenaCalidadPage} /> },
               { path: "calidad/ordenes-produccion", element: <Navigate to="/produccion/planificacion" replace /> },
 
