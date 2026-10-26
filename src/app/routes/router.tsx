@@ -55,6 +55,7 @@ const DisponibilidadMaquinaV2Page = lazy(() => import('../../pages/maintenance/D
 const CuarentenaCalidadPage = lazy(() => import('../../pages/quality/CuarentenaCalidadPage'));
 const OrdenesProduccionPage = lazy(() => import('../../pages/quality/OrdenesProduccionPage'));
 const StockPedidosArticulosPage = lazy(() => import('../../pages/produccion/StockPedidosArticulosPage'));
+const ProgramacionGanttPage = lazy(() => import('../../pages/produccion/ProgramacionGanttPage'));
 const InformeTejeduriaPage = lazy(() => import('../../pages/produccion/InformeTejeduriaPage'));
 const InformeCambiosDiaPage = lazy(() => import('../../pages/produccion/InformeCambiosDiaPage'));
 const InformeProduccionDepositoPage = lazy(() => import('../../pages/warehouse/InformeProduccionDepositoPage'));
@@ -161,6 +162,7 @@ export const router = createBrowserRouter([
             element: <RoleGuard allowedRoles={['ADMIN', 'SUPERVISOR', 'OPERARIO']} />,
             children: [
               // Sector: Producción
+              { path: "produccion/programacion-gantt", element: <LazyRoute element={ProgramacionGanttPage} /> },
               { path: "produccion/planificacion", element: <LazyRoute element={OrdenesProduccionPage} props={{ sectorMode: 'PRODUCCION' }} /> },
               { path: "produccion/pedidos", element: <LazyRoute element={StockPedidosArticulosPage} /> },
               { path: "produccion/informe-tejeduria", element: <LazyRoute element={InformeTejeduriaPage} /> },

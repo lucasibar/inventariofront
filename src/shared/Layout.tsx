@@ -56,6 +56,7 @@ const navGroups: NavGroup[] = [
         label: 'Producción',
         icon: '⚙️',
         items: [
+            { to: '/produccion/programacion-gantt', label: '📊 Programación Gantt Máquinas' },
             { to: '/produccion/planificacion', label: '📑 Carga de Producción (PDFs)' },
             { to: '/produccion/informe-tejeduria', label: '⚙️ Plan de Tejeduría Diario' },
             { to: '/produccion/informe-cambios-dia', label: '🔄 Informe de Cambios del Día' },
@@ -331,6 +332,7 @@ export default function Layout() {
             RRHH: ['/rrhh/dashboard'],
             DESARROLLO: ['/desarrollo/equivalencias', '/desarrollo/articulos', '/desarrollo/estructuras', '/desarrollo/maquinas'],
             PRODUCCION: [
+                '/produccion/programacion-gantt',
                 '/produccion/planificacion',
                 '/produccion/pedidos',
                 '/desarrollo/articulos',
