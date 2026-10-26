@@ -2,6 +2,7 @@ import { api } from '../../../shared/api';
 
 export interface BloqueProgramacion {
     id: string;
+    tipoPlan: 'REAL' | 'IDEAL';
     pedidoId?: string | null;
     numeroPedido: string;
     cliente: string;
@@ -39,6 +40,7 @@ export interface MaquinaTimeline {
 export interface TimelineData {
     maquinas: MaquinaTimeline[];
     bloques: BloqueProgramacion[];
+    tipoPlan: 'REAL' | 'IDEAL';
     rango: {
         desde: string;
         hasta: string;
@@ -65,6 +67,7 @@ export interface BacklogPedidoItem {
 }
 
 export interface AsignarBloquePayload {
+    tipoPlan?: 'REAL' | 'IDEAL';
     pedidoId?: string;
     numeroPedido: string;
     cliente: string;
@@ -95,10 +98,22 @@ export interface SplitBloquePayload {
     nuevaFechaFin?: string;
 }
 
+export interface GenerarPlanIdealPayload {
+    fechaInicio: string;
+    dias?: number;
+    cliente?: string;
+}
+
+export interface PromoverPlanPayload {
+    maquinaId?: string;
+    desde: string;
+}
+
 export const programacionApi = api.injectEndpoints({
     endpoints: (builder) => ({
-        getTimeline: builder.query<TimelineData, { desde: string; hasta: string }>({
-            query: ({ desde, hasta }) => `produccion/programacion/timeline?desde=${desde}&hasta=${hasta}`,
+        getTimeline: builder.query<TimelineData, { desde: string; hasta: string; tipoPlan?: 'REAL' | 'IDEAL' }>({
+            query: ({ desde, hasta, tipoPlan = 'REAL' }) =>
+                `produccion/programacion/timeline?desde=${desde}&hasta=${hasta}&tipoPlan=${tipoPlan}`,
             providesTags: ['Programacion'],
         }),
         getBacklog: builder.query<BacklogPedidoItem[], { cliente?: string; search?: string } | void>({
@@ -150,6 +165,22 @@ export const programacionApi = api.injectEndpoints({
             }),
             invalidatesTags: ['Programacion'],
         }),
+        generarPlanIdeal: builder.mutation<{ mensaje: string; bloquesGenerados: number }, GenerarPlanIdealPayload>({
+            query: (body) => ({
+                url: 'produccion/programacion/generar-ideal',
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['Programacion'],
+        }),
+        promoverPlanIdeal: builder.mutation<{ mensaje: string; promovidos: number }, PromoverPlanPayload>({
+            query: (body) => ({
+                url: 'produccion/programacion/promover-ideal',
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['Programacion', 'Ventas'],
+        }),
     }),
 });
 
@@ -161,4 +192,6 @@ export const {
     useSplitBloqueMutation,
     useEliminarBloqueMutation,
     useActualizarEstadoBloqueMutation,
+    useGenerarPlanIdealMutation,
+    usePromoverPlanIdealMutation,
 } = programacionApi;

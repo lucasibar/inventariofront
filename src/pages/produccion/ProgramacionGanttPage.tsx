@@ -21,7 +21,8 @@ import {
     Alert,
     CircularProgress,
     Stack,
-    Divider,
+    Tabs,
+    Tab,
 } from '@mui/material';
 import {
     Search as SearchIcon,
@@ -35,6 +36,9 @@ import {
     Today as TodayIcon,
     ViewTimeline as TimelineIcon,
     PrecisionManufacturing as MachineIcon,
+    AutoAwesome as MagicIcon,
+    Publish as PromoteIcon,
+    Warning as WarningIcon,
 } from '@mui/icons-material';
 
 import {
@@ -45,6 +49,8 @@ import {
     useSplitBloqueMutation,
     useEliminarBloqueMutation,
     useActualizarEstadoBloqueMutation,
+    useGenerarPlanIdealMutation,
+    usePromoverPlanIdealMutation,
 } from '../../features/produccion/api/programacion.api';
 import type {
     BloqueProgramacion,
@@ -69,6 +75,9 @@ function getClientColor(cliente: string) {
 }
 
 export default function ProgramacionGanttPage() {
+    // Tipo de Plan Activo: 'REAL' (Plan Guía oficial) vs 'IDEAL' (Simulador)
+    const [tipoPlanActive, setTipoPlanActive] = useState<'REAL' | 'IDEAL'>('REAL');
+
     // Rango de fechas: 7 días desde hoy por defecto
     const [startDate, setStartDate] = useState(() => {
         const d = new Date();
@@ -87,6 +96,20 @@ export default function ProgramacionGanttPage() {
     const [splitCantidadLote1, setSplitCantidadLote1] = useState<number>(0);
     const [splitCantidadLote2, setSplitCantidadLote2] = useState<number>(0);
     const [splitMaquinaDestino, setSplitMaquinaDestino] = useState<string>('');
+
+    // Estado del modal de "Planificame" (Generar Plan Ideal)
+    const [planificameModalOpen, setPlanificameModalOpen] = useState(false);
+    const [planificameFechaInicio, setPlanificameFechaInicio] = useState(() => {
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
+        d.setHours(6, 0, 0, 0);
+        return d.toISOString().slice(0, 10);
+    });
+    const [planificameDias, setPlanificameDias] = useState<number>(7);
+
+    // Estado del modal de Promover Plan
+    const [promoverModalOpen, setPromoverModalOpen] = useState(false);
+    const [promoverMaquinaSeleccionada, setPromoverMaquinaSeleccionada] = useState<MaquinaTimeline | null>(null);
 
     // Rango calculado
     const { desdeStr, hastaStr, daysArray } = useMemo(() => {
@@ -112,7 +135,7 @@ export default function ProgramacionGanttPage() {
         data: timelineData,
         isLoading: loadingTimeline,
         refetch: refetchTimeline,
-    } = useGetTimelineQuery({ desde: desdeStr, hasta: hastaStr });
+    } = useGetTimelineQuery({ desde: desdeStr, hasta: hastaStr, tipoPlan: tipoPlanActive });
 
     const {
         data: backlog = [],
@@ -129,6 +152,8 @@ export default function ProgramacionGanttPage() {
     const [splitBloque, { isLoading: guardandoSplit }] = useSplitBloqueMutation();
     const [eliminarBloque] = useEliminarBloqueMutation();
     const [actualizarEstado] = useActualizarEstadoBloqueMutation();
+    const [generarPlanIdeal, { isLoading: generandosePlan }] = useGenerarPlanIdealMutation();
+    const [promoverPlanIdeal, { isLoading: promoviendoPlan }] = usePromoverPlanIdealMutation();
 
     // Filtros de máquinas
     const maquinas = useMemo(() => {
@@ -223,18 +248,17 @@ export default function ProgramacionGanttPage() {
             const endTime = new Date(hastaStr).getTime();
             const droppedTimestamp = startTime + clickRatio * (endTime - startTime);
 
-            // Redondeo / Snapping a 1 hora o medio turno (4hs)
             const hourMs = 3600 * 1000;
             const snappedTimestamp = Math.round(droppedTimestamp / hourMs) * hourMs;
             const droppedDate = new Date(snappedTimestamp);
 
             if (data.type === 'BACKLOG_ITEM') {
-                // Cálculo estimado de duración (por defecto 25 packs/hora o proporcional)
                 const packs = Number(data.cantidadPacks) || 100;
-                const horasEstimadas = Math.max(4, Math.round(packs / 25)); // Mínimo 4 hs
+                const horasEstimadas = Math.max(4, Math.round(packs / 25));
                 const fechaFin = new Date(snappedTimestamp + horasEstimadas * hourMs);
 
                 await asignarBloque({
+                    tipoPlan: tipoPlanActive,
                     pedidoId: data.pedidoId,
                     numeroPedido: data.numeroPedido,
                     cliente: data.cliente,
@@ -312,6 +336,47 @@ export default function ProgramacionGanttPage() {
         }
     };
 
+    // MOTOR PLANIFICAME
+    const handleEjecutarPlanificame = async () => {
+        try {
+            const res = await generarPlanIdeal({
+                fechaInicio: planificameFechaInicio,
+                dias: planificameDias,
+                cliente: clienteFilter !== 'TODOS' ? clienteFilter : undefined,
+            }).unwrap();
+            setPlanificameModalOpen(false);
+            setTipoPlanActive('IDEAL');
+            alert(res.mensaje);
+        } catch (err: any) {
+            alert('Error al generar Plan Ideal: ' + (err?.data?.message || err.message));
+        }
+    };
+
+    // PROMOVER A REAL (TOTAL O POR MÁQUINA)
+    const handleAbrirPromocionTotal = () => {
+        setPromoverMaquinaSeleccionada(null);
+        setPromoverModalOpen(true);
+    };
+
+    const handleAbrirPromocionMaquina = (maq: MaquinaTimeline) => {
+        setPromoverMaquinaSeleccionada(maq);
+        setPromoverModalOpen(true);
+    };
+
+    const handleConfirmarPromocion = async () => {
+        try {
+            const res = await promoverPlanIdeal({
+                maquinaId: promoverMaquinaSeleccionada ? promoverMaquinaSeleccionada.id : undefined,
+                desde: startDate,
+            }).unwrap();
+            setPromoverModalOpen(false);
+            setTipoPlanActive('REAL');
+            alert(res.mensaje);
+        } catch (err: any) {
+            alert('Error al promover plan: ' + (err?.data?.message || err.message));
+        }
+    };
+
     // Render de bloques en cada máquina
     const renderBlocksForMachine = (maquinaId: string, rowWidth: number) => {
         const maquinaBloques = bloques.filter((b) => b.maquinaId === maquinaId);
@@ -329,7 +394,7 @@ export default function ProgramacionGanttPage() {
             const widthRatio = (bEnd - bStart) / totalDuration;
 
             const leftPx = leftRatio * rowWidth;
-            const widthPx = Math.max(65, widthRatio * rowWidth);
+            const widthPx = Math.max(75, widthRatio * rowWidth);
 
             const colors = getClientColor(block.cliente);
 
@@ -479,28 +544,107 @@ export default function ProgramacionGanttPage() {
     };
 
     return (
-        <Box sx={{ p: 2, height: 'calc(100vh - 75px)', display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* BARRA SUPERIOR DE HERRAMIENTAS */}
-            <Paper elevation={2} sx={{ p: 1.5, borderRadius: 2 }}>
+        <Box sx={{ p: 2, height: 'calc(100vh - 75px)', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            {/* TABS SUPERIORES: PLAN GUÍA REAL VS PLANIFICADOR IDEAL */}
+            <Paper elevation={2} sx={{ px: 2, pt: 1, borderRadius: 2 }}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap">
+                    <Tabs
+                        value={tipoPlanActive}
+                        onChange={(_, val) => setTipoPlanActive(val)}
+                        textColor="primary"
+                        indicatorColor="primary"
+                    >
+                        <Tab
+                            value="REAL"
+                            label="📌 Plan Guía (Producción Real)"
+                            sx={{ fontWeight: 'bold', textTransform: 'none', fontSize: '0.95rem' }}
+                        />
+                        <Tab
+                            value="IDEAL"
+                            label="🧪 Planificador Ideal (Simulador)"
+                            sx={{ fontWeight: 'bold', textTransform: 'none', fontSize: '0.95rem' }}
+                        />
+                    </Tabs>
+
+                    {/* Botones de acción principales según el Tab */}
+                    {tipoPlanActive === 'IDEAL' ? (
+                        <Stack direction="row" spacing={1} sx={{ my: 0.5 }}>
+                            <Button
+                                variant="contained"
+                                color="secondary"
+                                startIcon={<MagicIcon />}
+                                onClick={() => setPlanificameModalOpen(true)}
+                                sx={{ textTransform: 'none', fontWeight: 'bold' }}
+                            >
+                                🪄 Planificame
+                            </Button>
+                            <Button
+                                variant="contained"
+                                color="success"
+                                startIcon={<PromoteIcon />}
+                                onClick={handleAbrirPromocionTotal}
+                                sx={{ textTransform: 'none', fontWeight: 'bold' }}
+                            >
+                                🚀 Aplicar TODO al Plan Real
+                            </Button>
+                        </Stack>
+                    ) : (
+                        <Stack direction="row" spacing={1} alignItems="center" sx={{ my: 0.5 }}>
+                            <Chip
+                                label="PLAN GUÍA OFICIAL ACTIVO"
+                                color="primary"
+                                size="small"
+                                sx={{ fontWeight: 'bold' }}
+                            />
+                            <Button
+                                variant="outlined"
+                                color="secondary"
+                                size="small"
+                                startIcon={<MagicIcon />}
+                                onClick={() => {
+                                    setTipoPlanActive('IDEAL');
+                                    setPlanificameModalOpen(true);
+                                }}
+                                sx={{ textTransform: 'none' }}
+                            >
+                                Probar nuevo plan en Simulador
+                            </Button>
+                        </Stack>
+                    )}
+                </Stack>
+            </Paper>
+
+            {/* BANNER INFORMATIVO SEGÚN MODO */}
+            {tipoPlanActive === 'IDEAL' && (
+                <Alert
+                    severity="info"
+                    sx={{ py: 0.5, border: '1px dashed #7c3aed', bgcolor: '#f5f3ff' }}
+                    action={
+                        <Button
+                            color="secondary"
+                            size="small"
+                            onClick={() => setPlanificameModalOpen(true)}
+                            sx={{ fontWeight: 'bold', textTransform: 'none' }}
+                        >
+                            Ejecutar Optimización
+                        </Button>
+                    }
+                >
+                    <strong>Estás en la hoja del Simulador / Plan Ideal.</strong> Podés generar un plan
+                    automático, tocar y ajustar bloques sin alterar la producción real. Cuando estés
+                    conforme, aplicalo todo junto o máquina por máquina.
+                </Alert>
+            )}
+
+            {/* BARRA DE HERRAMIENTAS Y NAVEGACIÓN */}
+            <Paper elevation={1} sx={{ p: 1.2, borderRadius: 2 }}>
                 <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between" flexWrap="wrap">
                     {/* Título y Navegación de Fechas */}
                     <Stack direction="row" spacing={1.5} alignItems="center">
-                        <TimelineIcon color="primary" sx={{ fontSize: 32 }} />
-                        <Box>
-                            <Typography variant="h6" sx={{ fontWeight: 'bold', lineHeight: 1.2 }}>
-                                Gantt de Programación de Tejeduría
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                                Arrastrá pedidos de venta a las máquinas o mové bloques entre turnos
-                            </Typography>
-                        </Box>
-
-                        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-
-                        {/* Botones de Fecha */}
+                        <TimelineIcon color="primary" sx={{ fontSize: 28 }} />
                         <Stack direction="row" spacing={0.5} alignItems="center">
                             <IconButton size="small" onClick={() => handleShiftDate(-viewDays)}>
-                                <PrevIcon />
+                                <PrevIcon fontSize="small" />
                             </IconButton>
                             <Button
                                 size="small"
@@ -512,7 +656,7 @@ export default function ProgramacionGanttPage() {
                                 Hoy
                             </Button>
                             <IconButton size="small" onClick={() => handleShiftDate(viewDays)}>
-                                <NextIcon />
+                                <NextIcon fontSize="small" />
                             </IconButton>
 
                             <TextField
@@ -520,14 +664,14 @@ export default function ProgramacionGanttPage() {
                                 size="small"
                                 value={startDate}
                                 onChange={(e) => setStartDate(e.target.value)}
-                                sx={{ width: 145, ml: 1 }}
+                                sx={{ width: 140, ml: 1 }}
                             />
                         </Stack>
                     </Stack>
 
                     {/* Controles de Zoom y Filtros */}
                     <Stack direction="row" spacing={1.5} alignItems="center">
-                        <FormControl size="small" sx={{ minWidth: 110 }}>
+                        <FormControl size="small" sx={{ minWidth: 105 }}>
                             <InputLabel>Zoom</InputLabel>
                             <Select
                                 value={viewDays}
@@ -552,12 +696,11 @@ export default function ProgramacionGanttPage() {
                                     </InputAdornment>
                                 ),
                             }}
-                            sx={{ width: 160 }}
+                            sx={{ width: 150 }}
                         />
 
                         <Button
-                            variant="contained"
-                            color="primary"
+                            variant="outlined"
                             startIcon={<RefreshIcon />}
                             onClick={() => {
                                 refetchTimeline();
@@ -727,6 +870,7 @@ export default function ProgramacionGanttPage() {
                         borderRadius: 2,
                         overflow: 'hidden',
                         backgroundColor: '#fff',
+                        border: tipoPlanActive === 'IDEAL' ? '2px solid #a855f7' : 'none',
                     }}
                 >
                     {loadingTimeline ? (
@@ -740,19 +884,24 @@ export default function ProgramacionGanttPage() {
                                 {/* Columna Fija: Máquina */}
                                 <Box
                                     sx={{
-                                        width: 170,
-                                        minWidth: 170,
+                                        width: 185,
+                                        minWidth: 185,
                                         p: 1.5,
                                         fontWeight: 'bold',
                                         color: '#334155',
                                         borderRight: '2px solid #e2e8f0',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: 1,
+                                        justifyContent: 'space-between',
                                     }}
                                 >
-                                    <MachineIcon fontSize="small" />
-                                    Máquina
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                                        <MachineIcon fontSize="small" />
+                                        Máquina
+                                    </Box>
+                                    {tipoPlanActive === 'IDEAL' && (
+                                        <Chip label="Simulación" size="small" color="secondary" sx={{ height: 16, fontSize: '0.55rem' }} />
+                                    )}
                                 </Box>
 
                                 {/* Columnas de los Días */}
@@ -770,7 +919,6 @@ export default function ProgramacionGanttPage() {
                                                     bgcolor: isToday ? '#eff6ff' : 'transparent',
                                                 }}
                                             >
-                                                {/* Nombre del Día */}
                                                 <Box sx={{ p: 0.5, borderBottom: '1px solid #e2e8f0' }}>
                                                     <Typography
                                                         variant="caption"
@@ -787,7 +935,6 @@ export default function ProgramacionGanttPage() {
                                                     </Typography>
                                                 </Box>
 
-                                                {/* Sub-turnos (M: Mañana, T: Tarde, N: Noche) */}
                                                 <Box sx={{ display: 'flex', fontSize: '0.62rem', color: '#94a3b8' }}>
                                                     <Box sx={{ flex: 1, borderRight: '1px dashed #e2e8f0', py: 0.2 }}>
                                                         M
@@ -815,7 +962,7 @@ export default function ProgramacionGanttPage() {
                                             key={maq.id}
                                             sx={{
                                                 display: 'flex',
-                                                minHeight: 52,
+                                                minHeight: 54,
                                                 borderBottom: '1px solid #e2e8f0',
                                                 '&:hover': { bgcolor: '#f8fafc' },
                                             }}
@@ -823,30 +970,46 @@ export default function ProgramacionGanttPage() {
                                             {/* Cabecera de Máquina */}
                                             <Box
                                                 sx={{
-                                                    width: 170,
-                                                    minWidth: 170,
+                                                    width: 185,
+                                                    minWidth: 185,
                                                     p: 1,
                                                     borderRight: '2px solid #e2e8f0',
                                                     display: 'flex',
-                                                    flexDirection: 'column',
-                                                    justifyContent: 'center',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
                                                     bgcolor: '#fff',
                                                 }}
                                             >
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                                        M#{maq.number}
+                                                <Box>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                                                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                                            M#{maq.number}
+                                                        </Typography>
+                                                        <Chip
+                                                            label={maq.status || 'ACTIVA'}
+                                                            size="small"
+                                                            color={maq.status === 'ACTIVA' ? 'success' : 'default'}
+                                                            sx={{ height: 16, fontSize: '0.58rem', fontWeight: 'bold' }}
+                                                        />
+                                                    </Box>
+                                                    <Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: 110, display: 'block' }}>
+                                                        {maq.nombre}
                                                     </Typography>
-                                                    <Chip
-                                                        label={maq.status || 'ACTIVA'}
-                                                        size="small"
-                                                        color={maq.status === 'ACTIVA' ? 'success' : 'default'}
-                                                        sx={{ height: 16, fontSize: '0.58rem', fontWeight: 'bold' }}
-                                                    />
                                                 </Box>
-                                                <Typography variant="caption" color="text.secondary" noWrap>
-                                                    {maq.nombre}
-                                                </Typography>
+
+                                                {/* Botón para aplicar solo esta máquina en modo IDEAL */}
+                                                {tipoPlanActive === 'IDEAL' && (
+                                                    <Tooltip title={`Aplicar solo M#${maq.number} al Plan Real`}>
+                                                        <IconButton
+                                                            size="small"
+                                                            color="success"
+                                                            onClick={() => handleAbrirPromocionMaquina(maq)}
+                                                            sx={{ p: 0.5, bgcolor: '#f0fdf4', '&:hover': { bgcolor: '#dcfce7' } }}
+                                                        >
+                                                            <PromoteIcon sx={{ fontSize: '1rem' }} />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                )}
                                             </Box>
 
                                             {/* Carril de la Línea de Tiempo (Drop Target) */}
@@ -878,10 +1041,7 @@ export default function ProgramacionGanttPage() {
                                                 ))}
 
                                                 {/* Bloques Programados */}
-                                                {renderBlocksForMachine(
-                                                    maq.id,
-                                                    e_rowWidth()
-                                                )}
+                                                {renderBlocksForMachine(maq.id, e_rowWidth())}
                                             </Box>
                                         </Box>
                                     ))
@@ -893,12 +1053,7 @@ export default function ProgramacionGanttPage() {
             </Box>
 
             {/* MODAL PARA DIVIDIR BLOQUE (SPLIT) */}
-            <Dialog
-                open={splitModalOpen}
-                onClose={() => setSplitModalOpen(false)}
-                maxWidth="sm"
-                fullWidth
-            >
+            <Dialog open={splitModalOpen} onClose={() => setSplitModalOpen(false)} maxWidth="sm" fullWidth>
                 <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <SplitIcon color="primary" />
                     Dividir Lote de Producción (Split)
@@ -989,12 +1144,100 @@ export default function ProgramacionGanttPage() {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* MODAL PARA "PLANIFICAME" (GENERAR PLAN IDEAL) */}
+            <Dialog open={planificameModalOpen} onClose={() => setPlanificameModalOpen(false)} maxWidth="xs" fullWidth>
+                <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <MagicIcon color="secondary" />
+                    Generar Plan Ideal Automático
+                </DialogTitle>
+                <DialogContent dividers>
+                    <Stack spacing={2.5}>
+                        <Alert severity="info" sx={{ fontSize: '0.82rem' }}>
+                            El motor cruzará los pedidos pendientes con la <strong>matriz de compatibilidad de máquinas</strong> y <strong>cadencias de ciclo</strong>, minimizando tiempos de cambio de hilado.
+                        </Alert>
+
+                        <TextField
+                            label="Fecha de Inicio de Planificación"
+                            type="date"
+                            value={planificameFechaInicio}
+                            onChange={(e) => setPlanificameFechaInicio(e.target.value)}
+                            fullWidth
+                            InputLabelProps={{ shrink: true }}
+                        />
+
+                        <FormControl fullWidth>
+                            <InputLabel>Horizonte de Planificación</InputLabel>
+                            <Select
+                                value={planificameDias}
+                                label="Horizonte de Planificación"
+                                onChange={(e) => setPlanificameDias(Number(e.target.value))}
+                            >
+                                <MenuItem value={3}>3 Días</MenuItem>
+                                <MenuItem value={7}>7 Días (1 semana)</MenuItem>
+                                <MenuItem value={14}>14 Días (2 semanas)</MenuItem>
+                                <MenuItem value={21}>21 Días (3 semanas)</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Stack>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setPlanificameModalOpen(false)}>Cancelar</Button>
+                    <Button
+                        variant="contained"
+                        color="secondary"
+                        startIcon={<MagicIcon />}
+                        onClick={handleEjecutarPlanificame}
+                        disabled={generandosePlan}
+                    >
+                        {generandosePlan ? 'Calculando...' : 'Planificar Automáticamente'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* MODAL PARA CONFIRMAR PROMOCIÓN A PLAN REAL */}
+            <Dialog open={promoverModalOpen} onClose={() => setPromoverModalOpen(false)} maxWidth="xs" fullWidth>
+                <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <WarningIcon color="warning" />
+                    Confirmar Aplicación al Plan Real
+                </DialogTitle>
+                <DialogContent dividers>
+                    <Typography variant="body2" sx={{ mb: 1.5 }}>
+                        {promoverMaquinaSeleccionada ? (
+                            <>
+                                Vas a reemplazar la programación futura de la{' '}
+                                <strong>Máquina #{promoverMaquinaSeleccionada.number} ({promoverMaquinaSeleccionada.nombre})</strong>{' '}
+                                en el <strong>Plan Real</strong> con los bloques del Simulador.
+                            </>
+                        ) : (
+                            <>
+                                Vas a reemplazar la programación de <strong>TODAS las máquinas</strong> en el{' '}
+                                <strong>Plan Real</strong> con la propuesta actual del Simulador.
+                            </>
+                        )}
+                    </Typography>
+                    <Alert severity="warning" sx={{ fontSize: '0.8rem' }}>
+                        Esta acción sobreescribirá la programación a partir de <strong>{startDate}</strong>.
+                    </Alert>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setPromoverModalOpen(false)}>Cancelar</Button>
+                    <Button
+                        variant="contained"
+                        color="success"
+                        startIcon={<PromoteIcon />}
+                        onClick={handleConfirmarPromocion}
+                        disabled={promoviendoPlan}
+                    >
+                        {promoviendoPlan ? 'Aplicando...' : 'Confirmar y Aplicar'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }
 
 // Función auxiliar para calcular el ancho total de la fila
 function e_rowWidth(): number {
-    // Estimación dinámica calculada en base a la pantalla del cliente o fallback
-    return Math.max(800, window.innerWidth - 170 - 320 - 60);
+    return Math.max(800, window.innerWidth - 185 - 320 - 60);
 }
