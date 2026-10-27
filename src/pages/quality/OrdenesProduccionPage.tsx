@@ -7,6 +7,7 @@ import {
     useListarPlanillasProduccionQuery,
     useLazyGetPlanillaProduccionByIdQuery,
     useSincronizarPlanillaConPedidosMutation,
+    useLimpiarPlanillasProduccionMutation,
 } from '../../features/quality/ordenes-produccion/api/ordenesProduccion.api';
 import type { ProduccionParseResult } from '../../features/quality/ordenes-produccion/types/ordenesProduccion.types';
 import { PdfUploader } from '../../features/quality/ordenes-produccion/components/PdfUploader';
@@ -39,6 +40,19 @@ export default function OrdenesProduccionPage({ sectorMode }: OrdenesProduccionP
     const { data: historialPlanillas = [], refetch: refetchHistorial } = useListarPlanillasProduccionQuery();
     const [fetchPlanillaById] = useLazyGetPlanillaProduccionByIdQuery();
     const [sincronizarPedidos, { isLoading: isSyncing }] = useSincronizarPlanillaConPedidosMutation();
+    const [limpiarPlanillas, { isLoading: isCleaning }] = useLimpiarPlanillasProduccionMutation();
+
+    const handleLimpiarCargas = async () => {
+        if (!window.confirm('¿Seguro que deseas borrar todas las cargas viejas de planillas de producción?')) return;
+        try {
+            await limpiarPlanillas().unwrap();
+            setResult(null);
+            refetchUltima();
+            refetchHistorial();
+        } catch (err: any) {
+            alert('Error al borrar cargas: ' + (err.data?.message || err.message));
+        }
+    };
 
     const [result, setResult] = useState<ProduccionParseResult | null>(null);
     const [activeTab, setActiveTab] = useState<TabType>(() => {
@@ -268,6 +282,17 @@ export default function OrdenesProduccionPage({ sectorMode }: OrdenesProduccionP
                                 style={{ fontSize: '12px', background: '#10b981' }}
                             >
                                 {isSyncing ? 'Sincronizando...' : '📦 Impactar Avance en Pedidos / Stock Artículos'}
+                            </Btn>
+                        )}
+
+                        {effectiveSector === 'PRODUCCION' && (
+                            <Btn
+                                variant="secondary"
+                                onClick={handleLimpiarCargas}
+                                disabled={isCleaning}
+                                style={{ fontSize: '12px', color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.4)' }}
+                            >
+                                {isCleaning ? 'Limpiando...' : '🗑️ Limpiar Cargas Viejas'}
                             </Btn>
                         )}
 

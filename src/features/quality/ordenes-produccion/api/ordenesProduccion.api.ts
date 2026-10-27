@@ -19,6 +19,12 @@ export const ordenesProduccionApi = api.injectEndpoints({
         getPlanillaProduccionById: builder.query<ProduccionParseResult | null, string>({
             query: (id) => `articulos/ordenes-produccion/planillas/${id}`,
         }),
+        limpiarPlanillasProduccion: builder.mutation<{ deleted: boolean; message: string }, void>({
+            query: () => ({
+                url: 'articulos/ordenes-produccion/planillas',
+                method: 'DELETE',
+            }),
+        }),
         getDepositosArticulos: builder.query<{ depositos: any[]; resumenStockPorArticulo: any[] }, void>({
             query: () => 'articulos/ordenes-produccion/depositos-articulos',
         }),
@@ -85,5 +91,6 @@ export const {
     useCrearPedidoProduccionMutation,
     useActualizarPedidoProduccionMutation,
     useSincronizarPlanillaConPedidosMutation,
+    useLimpiarPlanillasProduccionMutation,
     useGetCorteProveedorQuery,
 } = ordenesProduccionApi;
