@@ -240,6 +240,9 @@ export default function Layout() {
     const sector = user?.sector?.toUpperCase() || '';
     const isAdmin = role === 'ADMIN';
     const isSupervisor = role === 'SUPERVISOR';
+    const userSectors: string[] = user?.sectors && user.sectors.length > 0
+        ? user.sectors.map((s: string) => s.toUpperCase())
+        : (user?.sector ? user.sector.split(/[,;|]/).map((s: string) => s.trim().toUpperCase()).filter(Boolean) : []);
 
     const navigation = useNavigation();
     const isNavigating = navigation.state === 'loading';
@@ -300,6 +303,11 @@ export default function Layout() {
     const isAllowed = (to: string) => {
         if (isAdmin) return true;
 
+        // Admin-only paths
+        if (to === '/users' || to.startsWith('/admin/dashboard') || to === '/admin/auditoria') {
+            return false;
+        }
+
         const sectorRoutes: Record<string, string[]> = {
             DEPOSITO: [
                 '/deposito/dashboard', '/stock', '/movimientos',
@@ -309,6 +317,9 @@ export default function Layout() {
                 '/reporte-consumo-detallado', '/tasks',
                 '/chequeo-inventario', '/chequeo-categoria', '/reporte-chequeo', '/deposito/informes',
                 '/deposito/materiales-estancados', '/deposito/completitud-materiales',
+                '/deposito/informes-produccion',
+                '/items', '/items/box-types', '/deposito', '/socios',
+                '/admin/movements',
             ],
             COMPRAS: [
                 '/compras/dashboard',
@@ -317,10 +328,12 @@ export default function Layout() {
                 '/compras/materiales-criticos',
                 '/compras/materiales-criticos-v2',
                 '/stock',
+                '/items', '/items/box-types', '/deposito', '/socios',
             ],
             MANTENIMIENTO: [
                 '/mantenimiento/dashboard', '/mantenimiento/monitoreo',
                 '/mantenimiento/registro', '/mantenimiento/cambios', '/mantenimiento/historial',
+                '/mantenimiento/historial-cambios',
                 '/mantenimiento/buscador', '/mantenimiento/pendientes',
                 '/mantenimiento/informe-turnos', '/mantenimiento/informe-cambios',
                 '/mantenimiento/kpi/disponibilidad',
@@ -330,43 +343,32 @@ export default function Layout() {
             VENTAS: ['/ventas/dashboard'],
             FINANZAS: ['/finanzas/dashboard'],
             RRHH: ['/rrhh/dashboard'],
-            DESARROLLO: ['/desarrollo/equivalencias', '/desarrollo/articulos', '/desarrollo/estructuras', '/desarrollo/maquinas'],
-            PRODUCCION: [
-                '/produccion/programacion-gantt',
-                '/produccion/planificacion',
-                '/produccion/pedidos',
+            DESARROLLO: [
                 '/desarrollo/articulos',
                 '/desarrollo/estructuras',
                 '/desarrollo/equivalencias',
                 '/desarrollo/maquinas',
             ],
+            PRODUCCION: [
+                '/produccion/programacion-gantt',
+                '/produccion/planificacion',
+                '/produccion/pedidos',
+                '/produccion/informe-tejeduria',
+                '/produccion/informe-cambios-dia',
+            ],
         };
 
-        const configRoutes = ['/items', '/items/box-types', '/deposito', '/socios'];
-        const auditRoutes = ['/admin/movements'];
-
-        if (isSupervisor && (to.startsWith('/desarrollo') || to.startsWith('/produccion'))) return true;
-
-        const myRoutes = sectorRoutes[sector] || [];
-
-        if (isSupervisor && auditRoutes.includes(to)) return true;
-
-        if (isSupervisor && sector === 'COMPRAS') {
-            const depositoViewRoutes = [
-                '/deposito/dashboard', '/stock', '/movimientos',
-                '/remitos-entrada', '/reporte-consumo-detallado',
-            ];
-            if ([...myRoutes, ...depositoViewRoutes, ...configRoutes].includes(to)) return true;
-        }
-
-        if (isSupervisor && sector === 'DEPOSITO') {
-            return myRoutes.includes(to);
-        }
-
-        return myRoutes.includes(to);
+        return userSectors.some(sec => {
+            const routes = sectorRoutes[sec] || [];
+            return routes.some(r => to === r || to.startsWith(r));
+        });
     };
 
     const filteredGroups = navGroups.map(group => {
+        if (group.id === 'administracion' && !isAdmin) {
+            return null;
+        }
+
         const filteredItems = group.items.map(item => {
             if ('isSubGroup' in item && item.isSubGroup) {
                 const subItems = item.items.filter(subItem => isAllowed(subItem.to));
@@ -380,8 +382,10 @@ export default function Layout() {
             }
         }).filter((item): item is NonNullable<typeof item> => item !== null);
 
+        if (filteredItems.length === 0) return null;
+
         return { ...group, items: filteredItems };
-    }).filter(group => group.items.length > 0);
+    }).filter((group): group is NonNullable<typeof group> => group !== null);
 
     const allItems = navGroups.flatMap(g => flattenItems(g.items));
 

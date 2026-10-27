@@ -5,8 +5,10 @@ export interface User {
     username: string;
     role: string;
     sector: string | null;
+    sectors?: string[];
     isActive: boolean;
     allowedDepotIds: string[];
+    depots?: string[];
 }
 
 export interface LoginResponse {
@@ -35,7 +37,7 @@ export const authApi = api.injectEndpoints({
             query: () => 'auth/users',
             providesTags: ['User'],
         }),
-        createUser: build.mutation<User, Partial<User> & { password?: string }>({
+        createUser: build.mutation<User, Partial<User> & { password?: string; sectors?: string[] }>({
             query: (body) => ({
                 url: 'auth/users',
                 method: 'POST',
@@ -43,7 +45,7 @@ export const authApi = api.injectEndpoints({
             }),
             invalidatesTags: ['User'],
         }),
-        updateUser: build.mutation<User, { id: string; data: Partial<User> & { password?: string } }>({
+        updateUser: build.mutation<User, { id: string; data: Partial<User> & { password?: string; sectors?: string[] } }>({
             query: ({ id, data }) => ({
                 url: `auth/users/${id}`,
                 method: 'PATCH',
@@ -69,4 +71,3 @@ export const {
     useUpdateUserMutation,
     useChangeMyPasswordMutation
 } = authApi;
-

@@ -7,6 +7,7 @@ import {
 } from '../../entities/auth/api/authApi';
 import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
 import { PageHeader, Card, Table, Btn, Modal, Input, Badge, EditableCell } from '../../shared/ui';
+import { ALL_SECTORS } from '../../shared/types/roles';
 
 export default function UsersPage() {
     const { data: users = [], isLoading: loadingUsers } = useGetUsersQuery();
@@ -20,13 +21,25 @@ export default function UsersPage() {
     const [newUserForm, setNewUserForm] = useState({ 
         username: '', 
         password: '', 
-        roleComposite: 'OPERARIO_DEPOSITO',
+        role: 'SUPERVISOR',
+        sectors: ['DEPOSITO'] as string[],
         allowedDepotIds: [] as string[]
     });
 
     const [editingDepotsFor, setEditingDepotsFor] = useState<User | null>(null);
+    const [editingSectorsFor, setEditingSectorsFor] = useState<{ user: User; sectors: string[] } | null>(null);
     const [editingPasswordFor, setEditingPasswordFor] = useState<User | null>(null);
     const [newPasswordVal, setNewPasswordVal] = useState('');
+
+    const getUserSectors = (u: User): string[] => {
+        if (u.sectors && Array.isArray(u.sectors) && u.sectors.length > 0) {
+            return u.sectors.map(s => s.toUpperCase());
+        }
+        if (u.sector) {
+            return u.sector.split(/[,;|]/).map(s => s.trim().toUpperCase()).filter(Boolean);
+        }
+        return [];
+    };
 
     const handleCreateSubmit = async () => {
         if (!newUserForm.username || !newUserForm.password) {
@@ -34,37 +47,29 @@ export default function UsersPage() {
             return;
         }
         try {
-            let role = newUserForm.roleComposite;
-            let sector: string | null = null;
-            if (role.includes('_')) {
-                const parts = role.split('_');
-                role = parts[0];
-                sector = parts[1];
-            }
             await createUser({
                 username: newUserForm.username,
                 password: newUserForm.password,
-                role,
-                sector,
+                role: newUserForm.role,
+                sectors: newUserForm.role === 'ADMIN' ? [] : newUserForm.sectors,
                 allowedDepotIds: newUserForm.allowedDepotIds
             }).unwrap();
             setShowNewUserModal(false);
-            setNewUserForm({ username: '', password: '', roleComposite: 'OPERARIO_DEPOSITO', allowedDepotIds: [] });
+            setNewUserForm({ 
+                username: '', 
+                password: '', 
+                role: 'SUPERVISOR', 
+                sectors: ['DEPOSITO'], 
+                allowedDepotIds: [] 
+            });
         } catch (e: any) {
             alert(e?.data?.message || 'Error al crear usuario');
         }
     };
 
-    const handleUpdateRole = async (user: User, compositeVal: string) => {
-        let newRole = compositeVal;
-        let newSector: string | null = null;
-        if (compositeVal.includes('_')) {
-            const parts = compositeVal.split('_');
-            newRole = parts[0];
-            newSector = parts[1];
-        }
+    const handleUpdateRole = async (user: User, newRole: string) => {
         try {
-            await updateUser({ id: user.id, data: { role: newRole, sector: newSector } }).unwrap();
+            await updateUser({ id: user.id, data: { role: newRole } }).unwrap();
         } catch (e: any) {
             alert(e?.data?.message || 'Error al actualizar rol');
         }
@@ -86,67 +91,113 @@ export default function UsersPage() {
         }
     };
 
-    const cols = ['Usuario', 'Rol', 'Depósitos Permitidos', 'Estado', 'Acciones'];
+    const handleUpdateSectors = async (userId: string, sectors: string[]) => {
+        try {
+            await updateUser({ id: userId, data: { sectors } }).unwrap();
+            setEditingSectorsFor(null);
+        } catch (e: any) {
+            alert(e?.data?.message || 'Error al actualizar sectores');
+        }
+    };
+
+    const cols = ['Usuario', 'Rol', 'Sectores Permitidos', 'Depósitos Permitidos', 'Estado', 'Acciones'];
     
-    const rows = users.map(u => [
-        <div style={{ fontWeight: 600, color: 'var(--text-primary, #f3f4f6)' }}>
-            <EditableCell 
-                value={u.username} 
-                onSave={async (v) => { await updateUser({ id: u.id, data: { username: v } }).unwrap(); }} 
-            />
-        </div>,
-        <select 
-            value={u.role + (u.sector ? '_' + u.sector : '')} 
-            onChange={(e) => handleUpdateRole(u, e.target.value)}
-            style={{ 
-                background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-color, #2a2d3e)', color: 'var(--text-primary, #f3f4f6)', 
-                borderRadius: '6px', padding: '4px 8px', fontSize: '13px', outline: 'none' 
-            }}
-        >
-            <option value="ADMIN">ADMIN</option>
-            <option value="SUPERVISOR_DEPOSITO">SUPERVISOR (Depósito)</option>
-            <option value="OPERARIO_DEPOSITO">OPERARIO (Depósito)</option>
-            <option value="SUPERVISOR_COMPRAS">SUPERVISOR (Compras)</option>
-            <option value="OPERARIO_COMPRAS">OPERARIO (Compras)</option>
-            <option value="SUPERVISOR_CALIDAD">SUPERVISOR (Calidad)</option>
-            <option value="OPERARIO_CALIDAD">OPERARIO (Calidad)</option>
-        </select>,
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', maxWidth: '300px' }}>
-            {u.role === 'ADMIN' ? (
-                <Badge color="#6366f1">ACCESO TOTAL</Badge>
-            ) : (
-                <>
-                    {u.allowedDepotIds?.map(id => {
-                        const d = depots.find(depo => depo.id === id);
-                        return <Badge key={id} color="var(--text-dimmed, #4b5563)">{d?.nombre || id}</Badge>;
-                    })}
-                    {u.allowedDepotIds?.length === 0 && <span style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '12px', fontStyle: 'italic' }}>Ninguno (Sin acceso)</span>}
-                    <button 
-                        onClick={() => setEditingDepotsFor(u)}
-                        style={{ border: 'none', background: 'none', color: '#6366f1', fontSize: '12px', cursor: 'pointer', textDecoration: 'underline' }}
-                    >
-                        {u.allowedDepotIds?.length > 0 ? 'Editar' : '+ Asignar'}
-                    </button>
-                </>
-            )}
-        </div>,
-        <Badge color={u.isActive !== false ? '#10b981' : '#ef4444'}>
-            {u.isActive !== false ? 'ACTIVO' : 'INACTIVO'}
-        </Badge>,
-        <div style={{ display: 'flex', gap: '8px' }}>
-            <Btn small variant="secondary" onClick={() => setEditingPasswordFor(u)}>
-                Contraseña
-            </Btn>
-            <Btn small variant="secondary" onClick={() => handleToggleActive(u)}>
-                {u.isActive !== false ? 'Desactivar' : 'Activar'}
-            </Btn>
-        </div>
-    ]);
+    const rows = users.map(u => {
+        const uSectors = getUserSectors(u);
+
+        return [
+            <div style={{ fontWeight: 600, color: 'var(--text-primary, #f3f4f6)' }}>
+                <EditableCell 
+                    value={u.username} 
+                    onSave={async (v) => { await updateUser({ id: u.id, data: { username: v } }).unwrap(); }} 
+                />
+            </div>,
+            <select 
+                value={u.role} 
+                onChange={(e) => handleUpdateRole(u, e.target.value)}
+                style={{ 
+                    background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-color, #2a2d3e)', color: 'var(--text-primary, #f3f4f6)', 
+                    borderRadius: '6px', padding: '5px 10px', fontSize: '13px', outline: 'none', fontWeight: 600
+                }}
+            >
+                <option value="ADMIN">ADMIN</option>
+                <option value="SUPERVISOR">SUPERVISOR</option>
+                <option value="OPERARIO">OPERARIO</option>
+            </select>,
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', maxWidth: '300px', alignItems: 'center' }}>
+                {u.role === 'ADMIN' ? (
+                    <Badge color="#6366f1">🌟 ACCESO TOTAL A TODOS</Badge>
+                ) : (
+                    <>
+                        {uSectors.map(sec => {
+                            const found = ALL_SECTORS.find(s => s.key === sec);
+                            return (
+                                <Badge key={sec} color="#3b82f6">
+                                    {found ? `${found.icon} ${found.label}` : sec}
+                                </Badge>
+                            );
+                        })}
+                        {uSectors.length === 0 && (
+                            <span style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '12px', fontStyle: 'italic' }}>
+                                Ninguno (Sin acceso a sectores)
+                            </span>
+                        )}
+                        <button 
+                            onClick={() => setEditingSectorsFor({ user: u, sectors: [...uSectors] })}
+                            style={{ 
+                                border: 'none', background: 'none', color: '#6366f1', fontSize: '12px', 
+                                cursor: 'pointer', textDecoration: 'underline', padding: '2px 4px' 
+                            }}
+                        >
+                            {uSectors.length > 0 ? 'Editar' : '+ Asignar'}
+                        </button>
+                    </>
+                )}
+            </div>,
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', maxWidth: '280px', alignItems: 'center' }}>
+                {u.role === 'ADMIN' ? (
+                    <Badge color="#6366f1">ACCESO TOTAL</Badge>
+                ) : (
+                    <>
+                        {u.allowedDepotIds?.map(id => {
+                            const d = depots.find(depo => depo.id === id);
+                            return <Badge key={id} color="var(--text-dimmed, #4b5563)">{d?.nombre || id}</Badge>;
+                        })}
+                        {(!u.allowedDepotIds || u.allowedDepotIds.length === 0) && (
+                            <span style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '12px', fontStyle: 'italic' }}>
+                                Todos (Sin restricción)
+                            </span>
+                        )}
+                        <button 
+                            onClick={() => setEditingDepotsFor(u)}
+                            style={{ 
+                                border: 'none', background: 'none', color: '#6366f1', fontSize: '12px', 
+                                cursor: 'pointer', textDecoration: 'underline', padding: '2px 4px' 
+                            }}
+                        >
+                            {u.allowedDepotIds && u.allowedDepotIds.length > 0 ? 'Editar' : '+ Asignar'}
+                        </button>
+                    </>
+                )}
+            </div>,
+            <Badge color={u.isActive !== false ? '#10b981' : '#ef4444'}>
+                {u.isActive !== false ? 'ACTIVO' : 'INACTIVO'}
+            </Badge>,
+            <div style={{ display: 'flex', gap: '8px' }}>
+                <Btn small variant="secondary" onClick={() => setEditingPasswordFor(u)}>
+                    🔑 Contraseña
+                </Btn>
+                <Btn small variant="secondary" onClick={() => handleToggleActive(u)}>
+                    {u.isActive !== false ? 'Desactivar' : 'Activar'}
+                </Btn>
+            </div>
+        ];
+    });
 
     return (
-        <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-            <PageHeader title="Gestión de Usuarios" subtitle="Administra accesos, roles y permisos de depósitos">
-                <Btn onClick={() => setShowNewUserModal(true)}>+ Crear Usuario</Btn>
+        <div style={{ padding: '24px', maxWidth: '1280px', margin: '0 auto' }}>
+            <PageHeader title="Administración de Usuarios y Sesiones" subtitle="Configura cuentas, roles, permisos por sector y contraseñas">
+                <Btn onClick={() => setShowNewUserModal(true)}>+ Crear Nuevo Usuario</Btn>
             </PageHeader>
 
             <Card style={{ padding: 0, overflow: 'hidden' }}>
@@ -157,7 +208,7 @@ export default function UsersPage() {
                 />
                 {!loadingUsers && users.length === 0 && (
                     <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-subtle, #6b7280)' }}>
-                        No hay usuarios registrados aparte del administrador inicial.
+                        No hay usuarios registrados.
                     </div>
                 )}
             </Card>
@@ -180,23 +231,103 @@ export default function UsersPage() {
                         <div>
                             <label style={{ display: 'block', color: 'var(--text-muted, #9ca3af)', fontSize: '13px', marginBottom: '8px' }}>Rol</label>
                             <select 
-                                value={newUserForm.roleComposite}
-                                onChange={e => setNewUserForm(p => ({...p, roleComposite: e.target.value}))}
+                                value={newUserForm.role}
+                                onChange={e => setNewUserForm(p => ({...p, role: e.target.value}))}
                                 style={{ width: '100%', background: 'var(--bg-primary, #0f1117)', border: '1px solid var(--border-color, #2a2d3e)', color: 'var(--text-primary, #f3f4f6)', borderRadius: '8px', padding: '10px' }}
                             >
-                                <option value="OPERARIO_DEPOSITO">OPERARIO (Depósito)</option>
-                                <option value="SUPERVISOR_DEPOSITO">SUPERVISOR (Depósito)</option>
-                                <option value="OPERARIO_COMPRAS">OPERARIO (Compras)</option>
-                                <option value="SUPERVISOR_COMPRAS">SUPERVISOR (Compras)</option>
-                                <option value="OPERARIO_CALIDAD">OPERARIO (Calidad)</option>
-                                <option value="SUPERVISOR_CALIDAD">SUPERVISOR (Calidad)</option>
-                                <option value="ADMIN">ADMIN</option>
+                                <option value="SUPERVISOR">SUPERVISOR</option>
+                                <option value="OPERARIO">OPERARIO</option>
+                                <option value="ADMIN">ADMIN (Acceso Total)</option>
                             </select>
                         </div>
+
+                        {newUserForm.role !== 'ADMIN' && (
+                            <div>
+                                <label style={{ display: 'block', color: 'var(--text-muted, #9ca3af)', fontSize: '13px', marginBottom: '8px' }}>
+                                    Sectores Permitidos
+                                </label>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+                                    {ALL_SECTORS.map(sec => {
+                                        const isChecked = newUserForm.sectors.includes(sec.key);
+                                        return (
+                                            <label key={sec.key} style={{ 
+                                                display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', 
+                                                background: isChecked ? 'rgba(99,102,241,0.15)' : 'var(--bg-hover-row, rgba(255,255,255,0.03))', 
+                                                borderRadius: '6px', cursor: 'pointer', border: isChecked ? '1px solid #6366f1' : '1px solid transparent'
+                                            }}>
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={isChecked}
+                                                    onChange={e => {
+                                                        const next = e.target.checked 
+                                                            ? [...newUserForm.sectors, sec.key]
+                                                            : newUserForm.sectors.filter(s => s !== sec.key);
+                                                        setNewUserForm(p => ({...p, sectors: next}));
+                                                    }}
+                                                />
+                                                <span style={{ fontSize: '13px', color: 'var(--text-primary, #f3f4f6)' }}>
+                                                    {sec.icon} {sec.label}
+                                                </span>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                         <Btn variant="secondary" onClick={() => setShowNewUserModal(false)}>Cancelar</Btn>
                         <Btn onClick={handleCreateSubmit}>Crear Usuario</Btn>
+                    </div>
+                </Modal>
+            )}
+
+            {/* Modal Editar Sectores */}
+            {editingSectorsFor && (
+                <Modal 
+                    title={`Permisos de Sector para ${editingSectorsFor.user.username}`} 
+                    onClose={() => setEditingSectorsFor(null)}
+                >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+                        <p style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '13px', margin: '0 0 8px 0' }}>
+                            Selecciona los sectores a los que este usuario tiene permiso de acceso y visualización:
+                        </p>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
+                            {ALL_SECTORS.map(sec => {
+                                const isChecked = editingSectorsFor.sectors.includes(sec.key);
+                                return (
+                                    <label key={sec.key} style={{ 
+                                        display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', 
+                                        background: isChecked ? 'rgba(99,102,241,0.18)' : 'var(--bg-hover-row, rgba(255,255,255,0.03))', 
+                                        borderRadius: '8px', cursor: 'pointer', 
+                                        border: isChecked ? '1px solid #6366f1' : '1px solid rgba(255,255,255,0.06)'
+                                    }}>
+                                        <input 
+                                            type="checkbox" 
+                                            checked={isChecked}
+                                            onChange={(e) => {
+                                                const current = editingSectorsFor.sectors;
+                                                const next = e.target.checked
+                                                    ? [...current, sec.key]
+                                                    : current.filter(s => s !== sec.key);
+                                                setEditingSectorsFor({ ...editingSectorsFor, sectors: next });
+                                            }}
+                                        />
+                                        <div>
+                                            <div style={{ color: 'var(--text-primary, #f3f4f6)', fontWeight: 600, fontSize: '13px' }}>
+                                                {sec.icon} {sec.label}
+                                            </div>
+                                        </div>
+                                    </label>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                        <Btn variant="secondary" onClick={() => setEditingSectorsFor(null)}>Cancelar</Btn>
+                        <Btn onClick={() => handleUpdateSectors(editingSectorsFor.user.id, editingSectorsFor.sectors)}>
+                            Guardar Sectores
+                        </Btn>
                     </div>
                 </Modal>
             )}

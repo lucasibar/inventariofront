@@ -74,3 +74,31 @@ export const RoleGuard = ({ allowedRoles }: RoleGuardProps) => {
 
     return <Outlet />;
 };
+
+interface SectorGuardProps {
+    allowedSectors: string[];
+}
+
+export const SectorGuard = ({ allowedSectors }: SectorGuardProps) => {
+    const user = useSelector(selectCurrentUser);
+
+    if (!user) {
+        return <Navigate to="/login" replace />;
+    }
+
+    if (user.role?.toUpperCase() === 'ADMIN') {
+        return <Outlet />;
+    }
+
+    const userSectors: string[] = user.sectors && user.sectors.length > 0
+        ? user.sectors
+        : (user.sector ? user.sector.split(/[,;|]/).map((s: string) => s.trim().toUpperCase()).filter(Boolean) : []);
+
+    const hasSector = allowedSectors.some(sector => userSectors.includes(sector.toUpperCase()));
+
+    if (!hasSector) {
+        return <Navigate to="/" replace />;
+    }
+
+    return <Outlet />;
+};

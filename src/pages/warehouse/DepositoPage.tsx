@@ -111,7 +111,7 @@ function CategoryManager({ categoriaPrincipal, categoriaSecundaria, itemCategori
 export default function DepositoPage() {
     const user = useSelector(selectCurrentUser);
     const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
-    const allowedDepots = user?.depots;
+    const allowedDepots = user?.allowedDepotIds || user?.depots;
 
     // API Hooks
     const { data: rawDepots = [], isLoading: loadingDepots, refetch } = useGetDepotsQuery();

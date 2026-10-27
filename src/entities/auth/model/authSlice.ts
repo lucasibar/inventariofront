@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { User } from '../api/authApi';
+import { authApi } from '../api/authApi';
 
 interface AuthState {
     user: User | null;
@@ -55,18 +56,38 @@ const authSlice = createSlice({
             localStorage.removeItem('user');
         },
     },
+    extraReducers: (builder) => {
+        builder.addMatcher(
+            authApi.endpoints.verifySession.matchFulfilled,
+            (state, { payload }) => {
+                if (payload) {
+                    state.user = {
+                        ...(state.user || {}),
+                        ...payload,
+                    };
+                    localStorage.setItem('user', JSON.stringify(state.user));
+                }
+            }
+        );
+    },
 });
 
 export const { setCredentials, logout } = authSlice.actions;
 export default authSlice.reducer;
 
-export const selectCurrentUser = (state: any) => state.auth.user;
-export const selectIsAuthenticated = (state: any) => state.auth.isAuthenticated;
-export const selectUserRole = (state: any) => state.auth.user?.role;
-export const selectIsAdmin = (state: any) => state.auth.user?.role?.toUpperCase() === 'ADMIN';
+export const selectCurrentUser = (state: any): User | null => state.auth.user;
+export const selectIsAuthenticated = (state: any): boolean => state.auth.isAuthenticated;
+export const selectUserRole = (state: any): string | undefined => state.auth.user?.role;
+export const selectIsAdmin = (state: any): boolean => state.auth.user?.role?.toUpperCase() === 'ADMIN';
 export const selectAllowedDepots = (state: any) => {
     const user = state.auth.user;
     if (user?.role?.toUpperCase() === 'ADMIN') return null; // Admins have no restrictions
     return user?.allowedDepotIds || [];
 };
-export const selectUserSector = (state: any) => state.auth.user?.sector;
+export const selectUserSector = (state: any): string | null => state.auth.user?.sector || null;
+export const selectUserSectors = (state: any): string[] => {
+    const user = state.auth.user;
+    if (user?.sectors && Array.isArray(user.sectors) && user.sectors.length > 0) return user.sectors;
+    if (user?.sector) return user.sector.split(/[,;|]/).map((s: string) => s.trim().toUpperCase()).filter(Boolean);
+    return [];
+};

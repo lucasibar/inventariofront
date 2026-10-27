@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { PrivateRoute, RoleGuard } from './PrivateRoute';
+import { PrivateRoute, RoleGuard, SectorGuard } from './PrivateRoute';
 import { LoginPage } from '../../pages/login/LoginPage';
 import Layout from '../../shared/Layout';
 import { useSelector } from 'react-redux';
@@ -90,25 +90,30 @@ const LazyRoute = ({ element: Element, props }: { element: any; props?: any }) =
   </Suspense>
 );
 
-const getHome = (role?: string, sector?: string) => {
+const getHome = (role?: string, sector?: string | null, sectors?: string[]) => {
     const r = role?.toUpperCase();
-    const s = sector?.toUpperCase();
     if (r === 'ADMIN') return '/admin/dashboard';
-    if (s === 'PRODUCCION') return '/produccion/planificacion';
-    if (s === 'DESARROLLO') return '/desarrollo/articulos';
-    if (s === 'DEPOSITO') return '/deposito/dashboard';
-    if (s === 'COMPRAS') return '/compras/dashboard';
-    if (s === 'MANTENIMIENTO') return '/mantenimiento/dashboard';
-    if (s === 'VENTAS') return '/ventas/dashboard';
-    if (s === 'FINANZAS') return '/finanzas/dashboard';
-    if (s === 'RRHH') return '/rrhh/dashboard';
-    if (s === 'CALIDAD') return '/calidad/cuarentena';
+
+    const secList: string[] = sectors && sectors.length > 0
+        ? sectors.map(s => s.toUpperCase())
+        : (sector ? sector.split(/[,;|]/).map(s => s.trim().toUpperCase()).filter(Boolean) : []);
+
+    if (secList.includes('PRODUCCION')) return '/produccion/planificacion';
+    if (secList.includes('COMPRAS')) return '/compras/dashboard';
+    if (secList.includes('DEPOSITO')) return '/deposito/dashboard';
+    if (secList.includes('DESARROLLO')) return '/desarrollo/articulos';
+    if (secList.includes('VENTAS')) return '/ventas/dashboard';
+    if (secList.includes('MANTENIMIENTO')) return '/mantenimiento/dashboard';
+    if (secList.includes('CALIDAD')) return '/calidad/cuarentena';
+    if (secList.includes('FINANZAS')) return '/finanzas/dashboard';
+    if (secList.includes('RRHH')) return '/rrhh/dashboard';
+
     return '/deposito/dashboard';
 };
 
 const RootRedirect = () => {
   const user = useSelector(selectCurrentUser);
-  return <Navigate to={getHome(user?.role, user?.sector)} replace />;
+  return <Navigate to={getHome(user?.role, user?.sector, user?.sectors)} replace />;
 };
 
 export const router = createBrowserRouter([
@@ -127,17 +132,7 @@ export const router = createBrowserRouter([
             index: true,
             element: <RootRedirect />
           },
-          // Config & Operaciones
-          {
-            element: <RoleGuard allowedRoles={['ADMIN', 'SUPERVISOR', 'OPERARIO']} />,
-            children: [
-              { path: "remitos-entrada", element: <LazyRoute element={RemitosEntradaPage} /> },
-              { path: "items", element: <LazyRoute element={MaterialesPage} /> },
-              { path: "items/box-types", element: <LazyRoute element={BoxTypesPage} /> },
-              { path: "socios", element: <LazyRoute element={SociosPage} /> },
-            ]
-          },
-          // ADMIN
+          // ADMIN ONLY
           {
             element: <RoleGuard allowedRoles={['ADMIN']} />,
             children: [
@@ -146,29 +141,31 @@ export const router = createBrowserRouter([
               { path: "admin/auditoria", element: <LazyRoute element={AuditoriaSistemaPage} /> },
             ]
           },
-          // SUPERVISOR + ADMIN
+          // SECTOR: PRODUCCIÓN
           {
-            element: <RoleGuard allowedRoles={['ADMIN', 'SUPERVISOR']} />,
+            element: <SectorGuard allowedSectors={['PRODUCCION']} />,
             children: [
-              { path: "admin/movements", element: <LazyRoute element={AdminMovementsPage} /> },
-              { path: "chequeo-inventario", element: <LazyRoute element={ChequeoInventarioPage} /> },
-              { path: "chequeo-categoria", element: <LazyRoute element={ChequeoCategoriaPage} /> },
-              { path: "reporte-chequeo", element: <LazyRoute element={ReporteChequeoPage} /> },
-              { path: "deposito/informes", element: <LazyRoute element={InformesInventariadoPage} /> },
-            ]
-          },
-          // Sectores Operativos
-          {
-            element: <RoleGuard allowedRoles={['ADMIN', 'SUPERVISOR', 'OPERARIO']} />,
-            children: [
-              // Sector: Producción
               { path: "produccion/programacion-gantt", element: <LazyRoute element={ProgramacionGanttPage} /> },
               { path: "produccion/planificacion", element: <LazyRoute element={OrdenesProduccionPage} props={{ sectorMode: 'PRODUCCION' }} /> },
               { path: "produccion/pedidos", element: <LazyRoute element={StockPedidosArticulosPage} /> },
               { path: "produccion/informe-tejeduria", element: <LazyRoute element={InformeTejeduriaPage} /> },
               { path: "produccion/informe-cambios-dia", element: <LazyRoute element={InformeCambiosDiaPage} /> },
-
-              // Sector: Depósito
+            ]
+          },
+          // SECTOR: DESARROLLO
+          {
+            element: <SectorGuard allowedSectors={['DESARROLLO']} />,
+            children: [
+              { path: "desarrollo/equivalencias", element: <LazyRoute element={DesarrolloEquivalenciasPage} /> },
+              { path: "desarrollo/articulos", element: <LazyRoute element={DesarrolloArticulosPage} /> },
+              { path: "desarrollo/estructuras", element: <LazyRoute element={DesarrolloEstructurasPage} /> },
+              { path: "desarrollo/maquinas", element: <LazyRoute element={DesarrolloMaquinasPage} /> },
+            ]
+          },
+          // SECTOR: DEPÓSITO
+          {
+            element: <SectorGuard allowedSectors={['DEPOSITO']} />,
+            children: [
               { path: "deposito/dashboard", element: <LazyRoute element={DashboardDepositoPage} /> },
               { path: "deposito/informes-produccion", element: <LazyRoute element={InformeProduccionDepositoPage} /> },
               { path: "deposito/picking-produccion", element: <LazyRoute element={OrdenesProduccionPage} props={{ sectorMode: 'DEPOSITO' }} /> },
@@ -180,15 +177,28 @@ export const router = createBrowserRouter([
               { path: "tasks", element: <LazyRoute element={WorkspaceTasksPage} /> },
               { path: "deposito/materiales-estancados", element: <LazyRoute element={MaterialesEstancadosPage} /> },
               { path: "deposito/completitud-materiales", element: <LazyRoute element={MaterialesCompletitudPage} /> },
-
-              // Sector: Compras
+              { path: "deposito/informes", element: <LazyRoute element={InformesInventariadoPage} /> },
+              { path: "chequeo-inventario", element: <LazyRoute element={ChequeoInventarioPage} /> },
+              { path: "chequeo-categoria", element: <LazyRoute element={ChequeoCategoriaPage} /> },
+              { path: "reporte-chequeo", element: <LazyRoute element={ReporteChequeoPage} /> },
+              { path: "admin/movements", element: <LazyRoute element={AdminMovementsPage} /> },
+            ]
+          },
+          // SECTOR: COMPRAS
+          {
+            element: <SectorGuard allowedSectors={['COMPRAS']} />,
+            children: [
               { path: "compras/dashboard", element: <LazyRoute element={DashboardComprasPage} /> },
               { path: "compras/faltantes-produccion", element: <LazyRoute element={OrdenesProduccionPage} props={{ sectorMode: 'COMPRAS' }} /> },
               { path: "compras/alertas-stock", element: <LazyRoute element={AlertaStockPage} /> },
               { path: "compras/materiales-criticos", element: <LazyRoute element={MaterialesCriticosPage} /> },
               { path: "compras/materiales-criticos-v2", element: <LazyRoute element={MaterialesCriticosV2Page} /> },
-
-              // Sector: Mantenimiento
+            ]
+          },
+          // SECTOR: MANTENIMIENTO
+          {
+            element: <SectorGuard allowedSectors={['MANTENIMIENTO']} />,
+            children: [
               { path: "mantenimiento/dashboard", element: <LazyRoute element={DashboardMantenimientoPage} /> },
               { path: "mantenimiento/monitoreo", element: <LazyRoute element={MonitoreoVivoPage} /> },
               { path: "mantenimiento/registro", element: <LazyRoute element={RegistroMaquinasPage} /> },
@@ -201,25 +211,50 @@ export const router = createBrowserRouter([
               { path: "mantenimiento/informe-cambios", element: <LazyRoute element={InformeCambiosPage} /> },
               { path: "mantenimiento/kpi/disponibilidad", element: <LazyRoute element={DisponibilidadMaquinaPage} /> },
               { path: "mantenimiento/kpi/disponibilidad-v2", element: <LazyRoute element={DisponibilidadMaquinaV2Page} /> },
-
-              { path: "ventas/dashboard", element: <LazyRoute element={VentasDashboardPage} /> },
-              { path: "finanzas/dashboard", element: <LazyRoute element={FinanzasDashboardPage} /> },
-              { path: "rrhh/dashboard", element: <LazyRoute element={RRHHDashboardPage} /> },
-
-              // Sector: Calidad
-              { path: "calidad/articulos", element: <Navigate to="/desarrollo/articulos" replace /> },
-              { path: "calidad/cuarentena", element: <LazyRoute element={CuarentenaCalidadPage} /> },
-              { path: "calidad/ordenes-produccion", element: <Navigate to="/produccion/planificacion" replace /> },
-
-              // Sector: Desarrollo
-              { path: "desarrollo/equivalencias", element: <LazyRoute element={DesarrolloEquivalenciasPage} /> },
-              { path: "desarrollo/articulos", element: <LazyRoute element={DesarrolloArticulosPage} /> },
-              { path: "desarrollo/estructuras", element: <LazyRoute element={DesarrolloEstructurasPage} /> },
-              { path: "desarrollo/maquinas", element: <LazyRoute element={DesarrolloMaquinasPage} /> },
             ]
           },
-          // Shared
-          { path: "deposito", element: <LazyRoute element={DepositoPage} /> },
+          // SECTOR: VENTAS
+          {
+            element: <SectorGuard allowedSectors={['VENTAS']} />,
+            children: [
+              { path: "ventas/dashboard", element: <LazyRoute element={VentasDashboardPage} /> },
+            ]
+          },
+          // SECTOR: FINANZAS
+          {
+            element: <SectorGuard allowedSectors={['FINANZAS']} />,
+            children: [
+              { path: "finanzas/dashboard", element: <LazyRoute element={FinanzasDashboardPage} /> },
+            ]
+          },
+          // SECTOR: RRHH
+          {
+            element: <SectorGuard allowedSectors={['RRHH']} />,
+            children: [
+              { path: "rrhh/dashboard", element: <LazyRoute element={RRHHDashboardPage} /> },
+            ]
+          },
+          // SECTOR: CALIDAD
+          {
+            element: <SectorGuard allowedSectors={['CALIDAD']} />,
+            children: [
+              { path: "calidad/cuarentena", element: <LazyRoute element={CuarentenaCalidadPage} /> },
+              { path: "calidad/articulos", element: <Navigate to="/desarrollo/articulos" replace /> },
+              { path: "calidad/ordenes-produccion", element: <Navigate to="/produccion/planificacion" replace /> },
+            ]
+          },
+          // SHARED / OPERACIONES & CONFIGURACIÓN
+          {
+            element: <SectorGuard allowedSectors={['DEPOSITO', 'COMPRAS', 'PRODUCCION']} />,
+            children: [
+              { path: "remitos-entrada", element: <LazyRoute element={RemitosEntradaPage} /> },
+              { path: "items", element: <LazyRoute element={MaterialesPage} /> },
+              { path: "items/box-types", element: <LazyRoute element={BoxTypesPage} /> },
+              { path: "socios", element: <LazyRoute element={SociosPage} /> },
+              { path: "deposito", element: <LazyRoute element={DepositoPage} /> },
+            ]
+          },
+          // GENERIC SHARED
           { path: "notificaciones", element: <LazyRoute element={NotificationsPage} /> },
           { path: "ayuda", element: <LazyRoute element={HelpPage} /> },
         ]

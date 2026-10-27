@@ -1,5 +1,6 @@
 import React from 'react';
-import { Box, Grid, Paper, Typography, LinearProgress } from '@mui/material';
+import { Box, Grid, Paper, Typography, LinearProgress, Button } from '@mui/material';
+import { Link } from 'react-router-dom';
 
 const AdminDashboardPage: React.FC = () => {
     // Mock Data
@@ -21,9 +22,49 @@ const AdminDashboardPage: React.FC = () => {
 
     return (
         <Box sx={{ p: 4, background: 'var(--bg-primary, #0f1117)', minHeight: '100vh', color: 'var(--text-primary, #f3f4f6)' }}>
-            <Typography variant="h4" sx={{ mb: 4, fontWeight: 800, color: '#a5b4fc', letterSpacing: '-0.5px' }}>
-                Dashboard General de Administración
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: '#a5b4fc', letterSpacing: '-0.5px' }}>
+                    Dashboard General de Administración
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Link to="/users" style={{ textDecoration: 'none' }}>
+                        <Button 
+                            variant="contained" 
+                            startIcon={<span>👥</span>}
+                            sx={{ 
+                                bgcolor: '#6366f1', 
+                                color: '#fff', 
+                                fontWeight: 700, 
+                                borderRadius: '10px',
+                                textTransform: 'none',
+                                px: 2.5,
+                                py: 1,
+                                '&:hover': { bgcolor: '#4f46e5' }
+                            }}
+                        >
+                            Gestión de Usuarios y Permisos
+                        </Button>
+                    </Link>
+                    <Link to="/admin/auditoria" style={{ textDecoration: 'none' }}>
+                        <Button 
+                            variant="outlined" 
+                            startIcon={<span>🔎</span>}
+                            sx={{ 
+                                borderColor: 'rgba(255,255,255,0.2)', 
+                                color: 'var(--text-primary, #f3f4f6)', 
+                                fontWeight: 600, 
+                                borderRadius: '10px',
+                                textTransform: 'none',
+                                px: 2,
+                                py: 1,
+                                '&:hover': { borderColor: '#6366f1', bgcolor: 'rgba(99,102,241,0.08)' }
+                            }}
+                        >
+                            Auditoría del Sistema
+                        </Button>
+                    </Link>
+                </Box>
+            </Box>
 
             <Grid container spacing={3}>
                 {/* Sector Cards */}
