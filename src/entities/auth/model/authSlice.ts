@@ -1,7 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { User } from '../api/authApi';
-import { authApi } from '../api/authApi';
 
 interface AuthState {
     user: User | null;
@@ -48,6 +47,12 @@ const authSlice = createSlice({
             localStorage.setItem('token', token);
             localStorage.setItem('user', JSON.stringify(user));
         },
+        updateUserData: (state, action: PayloadAction<Partial<User>>) => {
+            if (state.user) {
+                state.user = { ...state.user, ...action.payload };
+                localStorage.setItem('user', JSON.stringify(state.user));
+            }
+        },
         logout: (state) => {
             state.user = null;
             state.token = null;
@@ -58,12 +63,14 @@ const authSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder.addMatcher(
-            authApi.endpoints.verifySession.matchFulfilled,
-            (state, { payload }) => {
-                if (payload) {
+            (action: any) =>
+                action.type === 'api/executeQuery/fulfilled' &&
+                action.meta?.arg?.endpointName === 'verifySession',
+            (state, action: any) => {
+                if (action.payload) {
                     state.user = {
                         ...(state.user || {}),
-                        ...payload,
+                        ...action.payload,
                     };
                     localStorage.setItem('user', JSON.stringify(state.user));
                 }
@@ -72,7 +79,7 @@ const authSlice = createSlice({
     },
 });
 
-export const { setCredentials, logout } = authSlice.actions;
+export const { setCredentials, updateUserData, logout } = authSlice.actions;
 export default authSlice.reducer;
 
 export const selectCurrentUser = (state: any): User | null => state.auth.user;
