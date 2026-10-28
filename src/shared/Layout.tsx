@@ -80,7 +80,7 @@ const navGroups: NavGroup[] = [
         label: 'Depósito',
         icon: '🏭',
         items: [
-            { to: '/deposito/dashboard', label: '📊 Dashboard Depo' },
+            { to: '/deposito/dashboard', label: '🎯 Centro de Comando' },
             { to: '/stock', label: '📋 Stock' },
             { to: '/movimientos', label: '🔄 Movimientos' },
             {
