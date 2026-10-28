@@ -17,7 +17,10 @@ import {
     TableHead,
     TableRow,
     TableCell,
-    TableBody
+    TableBody,
+    Snackbar,
+    Alert,
+    Chip
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
@@ -25,14 +28,15 @@ import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import CategoryIcon from '@mui/icons-material/Category';
 import CloseIcon from '@mui/icons-material/Close';
 import SaveIcon from '@mui/icons-material/Save';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import DeleteIcon from '@mui/icons-material/Delete';
 import GridViewIcon from '@mui/icons-material/GridView';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import EditIcon from '@mui/icons-material/Edit';
 import InfoIcon from '@mui/icons-material/Info';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import FlashOnIcon from '@mui/icons-material/FlashOn';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
 import { 
     useGetStockQuery, 
@@ -42,9 +46,10 @@ import {
     useReassignBatchMutation,
     useLazyCheckBatchQuery,
     useUpdateBatchObservationsMutation,
+    useMoveStockMutation,
 } from '../../features/warehouse/stock/api/stock.api';
 import { useDespachoDirectoMutation } from '../../features/warehouse/remitosSalida/api/remitos-salida.api';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
 import { useGetItemsQuery, useGetItemCategoriesQuery } from '../../features/warehouse/materiales/api/items.api';
 import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
@@ -108,7 +113,6 @@ export default function DashboardDepositoPage() {
     const allowedDepots = useSelector(selectAllowedDepots);
     const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
     const isMobile = useIsMobile();
-    const navigate = useNavigate();
 
     // View switcher (grid / list)
     const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
@@ -122,7 +126,6 @@ export default function DashboardDepositoPage() {
     const [depotId, setDepotId] = useState<string>(() => sessionStorage.getItem('selectedDepotId') || '');
     const [positionId, setPositionId] = useState<string>('');
     const [searchTerm, setSearchTerm] = useState<string>('');
-    const [expandedMaterials, setExpandedMaterials] = useState<string[]>([]);
     const [deletingKeys, setDeletingKeys] = useState<string[]>([]);
     const [detailGroupId, setDetailGroupId] = useState<string | null>(null);
     const [emptyPositionsModal, setEmptyPositionsModal] = useState<boolean>(false);
@@ -152,11 +155,6 @@ export default function DashboardDepositoPage() {
             setSearchParams(newParams, { replace: true });
         }
     }, [searchParams]);
-
-    const toggleMaterial = (id: string, e?: React.MouseEvent) => {
-        if(e) e.stopPropagation();
-        setExpandedMaterials(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-    };
 
     const { data: rawDepots = [] } = useGetDepotsQuery();
     const depots = useMemo(() => {
@@ -198,6 +196,72 @@ export default function DashboardDepositoPage() {
 
     const [obsModal, setObsModal] = useState({ open: false, batchId: '', text: '' });
     const [obsSaving, setObsSaving] = useState(false);
+
+    // Movimiento Rápido state
+    const [moveStockMutation, { isLoading: isMovingStock }] = useMoveStockMutation();
+    const [moveModal, setMoveModal] = useState(false);
+    const [moveEntry, setMoveEntry] = useState<any>(null);
+    const [moveDestDepot, setMoveDestDepot] = useState<string>('');
+    const [moveDestPos, setMoveDestPos] = useState<string>('');
+    const [moveCajas, setMoveCajas] = useState<string>('');
+    const [moveKilos, setMoveKilos] = useState<string>('');
+    const [isManualKilosEdited, setIsManualKilosEdited] = useState<boolean>(false);
+    const [moveSuccessToast, setMoveSuccessToast] = useState<string | null>(null);
+
+    const getKilosPorCajaRatio = (entry: any) => {
+        if (!entry) return null;
+        const itemKpc = entry.batch?.item?.kilosPorCaja;
+        if (itemKpc != null && Number(itemKpc) > 0) return Number(itemKpc);
+        const sec = Number(entry.qtySecundaria);
+        const princ = Number(entry.qtyPrincipal);
+        if (sec > 0 && princ > 0) return princ / sec;
+        return null;
+    };
+
+    const openQuickMove = (entry: any) => {
+        setMoveEntry(entry);
+        const entryDepot = entry.depositoId || depotId;
+        setMoveDestDepot(entryDepot);
+        setMoveDestPos('');
+        setMoveCajas('');
+        setMoveKilos('');
+        setIsManualKilosEdited(false);
+        setMoveModal(true);
+    };
+
+    const handleCajasChange = (valStr: string) => {
+        setMoveCajas(valStr);
+        const cajasNum = parseFloat(valStr.replace(',', '.'));
+        if (!isNaN(cajasNum) && cajasNum > 0 && moveEntry) {
+            const ratio = getKilosPorCajaRatio(moveEntry);
+            const maxSec = Number(moveEntry.qtySecundaria || 0);
+            const maxPrinc = Number(moveEntry.qtyPrincipal || 0);
+
+            if (maxSec > 0 && Math.abs(cajasNum - maxSec) < 0.001) {
+                setMoveKilos(String(maxPrinc));
+            } else if (ratio != null) {
+                const calculated = Math.round(cajasNum * ratio * 100) / 100;
+                const capped = maxPrinc > 0 ? Math.min(calculated, maxPrinc) : calculated;
+                setMoveKilos(String(capped));
+            }
+            setIsManualKilosEdited(false);
+        } else if (!valStr.trim() && !isManualKilosEdited) {
+            setMoveKilos('');
+        }
+    };
+
+    const handleKilosChange = (valStr: string) => {
+        setMoveKilos(valStr);
+        setIsManualKilosEdited(true);
+    };
+
+    const handleMoveAll = () => {
+        if (!moveEntry) return;
+        const maxSec = moveEntry.qtySecundaria ? String(moveEntry.qtySecundaria) : '';
+        setMoveCajas(maxSec);
+        setMoveKilos(String(moveEntry.qtyPrincipal));
+        setIsManualKilosEdited(true);
+    };
 
     // Despacho Directo state
     const [despachoModal, setDespachoModal] = useState(false);
@@ -354,6 +418,65 @@ export default function DashboardDepositoPage() {
         positionId: positionId || undefined
     }, { skip: !depotId });
 
+    const destPositions = useMemo(() => {
+        if (!moveDestDepot) return [];
+        const targetDepot = depots.find((d: any) => d.id === moveDestDepot);
+        if (!targetDepot || !targetDepot.positions) return [];
+        const occupiedIds = new Set(rawStock.map((s: any) => s.posicionId).filter(Boolean));
+        return targetDepot.positions
+            .filter((p: any) => p.activo && p.id !== moveEntry?.posicionId)
+            .map((p: any) => ({
+                ...p,
+                isOccupied: occupiedIds.has(p.id),
+                label: `${p.codigo}${!occupiedIds.has(p.id) ? ' (Vacía)' : ''}`
+            }));
+    }, [depots, moveDestDepot, moveEntry, rawStock]);
+
+    const handleConfirmMove = async () => {
+        if (!moveEntry || !moveDestDepot || !moveDestPos) {
+            alert('Por favor seleccioná una posición de destino.');
+            return;
+        }
+        const kilos = parseFloat(String(moveKilos).replace(',', '.'));
+        if (isNaN(kilos) || kilos <= 0) {
+            alert('Ingresá una cantidad de kilos válida.');
+            return;
+        }
+        const maxKilos = Number(moveEntry.qtyPrincipal);
+        if (kilos > maxKilos + 0.001) {
+            alert(`No podés mover más de los ${maxKilos} disponibles.`);
+            return;
+        }
+        const cajas = moveCajas ? parseFloat(String(moveCajas).replace(',', '.')) : null;
+        if (cajas !== null && !isNaN(cajas)) {
+            const maxCajas = Number(moveEntry.qtySecundaria || 0);
+            if (maxCajas > 0 && cajas > maxCajas) {
+                alert(`No podés mover más de las ${maxCajas} cajas disponibles.`);
+                return;
+            }
+        }
+
+        try {
+            await moveStockMutation({
+                depositoId: moveDestDepot,
+                posicionIdOrigen: moveEntry.posicionId,
+                posicionIdDestino: moveDestPos,
+                itemId: moveEntry.batch?.item?.id || moveEntry.itemId,
+                lotId: moveEntry.lotId || moveEntry.batch?.id,
+                qtyPrincipal: kilos,
+                qtySecundaria: cajas && !isNaN(cajas) ? cajas : null,
+                fecha: new Date().toISOString(),
+            }).unwrap();
+
+            const destPosName = destPositions.find((p: any) => p.id === moveDestPos)?.codigo || 'la nueva posición';
+            setMoveSuccessToast(`✅ Movimiento completado: ${kilos} kg a ${destPosName}`);
+            setMoveModal(false);
+            setMoveEntry(null);
+        } catch (err: any) {
+            alert(err?.data?.message || err?.message || 'Error al realizar el movimiento');
+        }
+    };
+
     const emptyPositions = useMemo(() => {
         if (!depotId) return [];
         const allDepotPositions = (depots.find((d: any) => d.id === depotId)?.positions || []).filter((p: any) => p.activo);
@@ -435,8 +558,8 @@ export default function DashboardDepositoPage() {
             {/* Header */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
                 <Box>
-                    <Typography variant="h5" sx={{ fontWeight: 900, color: colors.text, letterSpacing: '-0.5px' }}>Gestión de Stock</Typography>
-                    <Typography variant="caption" sx={{ color: colors.textDim }}>Inventario físico y distribución de partidas en posiciones</Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 900, color: colors.text, letterSpacing: '-0.5px' }}>Centro de Comando de Depósito</Typography>
+                    <Typography variant="caption" sx={{ color: colors.textDim }}>Control operativo de stock, ubicaciones y movimientos en tiempo real</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1 }}>
                     <Button 
@@ -560,9 +683,8 @@ export default function DashboardDepositoPage() {
                         </Paper>
                     ) : (
                         viewMode === 'grid' ? (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '16px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '16px' }}>
                                 {groupedData.map((group: any) => {
-                                    const isExpanded = expandedMaterials.includes(group.item.id);
                                     const categoryName = group.item.category?.nombre || group.item.categoria || 'General';
                                     const codeText = group.item.codigoInterno;
 
@@ -572,99 +694,70 @@ export default function DashboardDepositoPage() {
                                             className="material-card-hover"
                                             style={{ 
                                                 background: colors.cardBg, 
-                                                border: `1px solid ${isExpanded ? colors.primary : colors.border}`, 
-                                                borderRadius: '12px', 
-                                                overflow: 'hidden', 
+                                                border: `1px solid ${colors.border}`, 
+                                                borderRadius: '14px', 
+                                                padding: '16px',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                justifyContent: 'space-between',
+                                                gap: '12px',
                                                 transition: 'all 0.15s ease-in-out',
                                                 cursor: 'pointer'
                                             }}
-                                            onClick={() => toggleMaterial(group.item.id)}
+                                            onClick={() => setDetailGroupId(group.item.id)}
                                         >
-                                            {/* Header */}
-                                            <div style={{ padding: '16px' }}>
+                                            <div>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                                                     <div>
-                                                        <div style={{ color: colors.primary, fontWeight: 800, fontSize: '11px', letterSpacing: '0.5px' }}>{codeText}</div>
-                                                        <div style={{ fontWeight: 800, color: 'var(--text-white-dynamic, #fff)', fontSize: '15px', lineHeight: 1.2, marginTop: '2px' }}>{group.item.descripcion}</div>
+                                                        <span style={{ color: colors.primary, fontWeight: 800, fontSize: '11px', letterSpacing: '0.5px' }}>{codeText}</span>
+                                                        <div style={{ fontWeight: 800, color: 'var(--text-white-dynamic, #fff)', fontSize: '15px', lineHeight: 1.25, marginTop: '2px' }}>{group.item.descripcion}</div>
                                                     </div>
-                                                    <IconButton size="small" sx={{ color: colors.textDim }}>
-                                                        {isExpanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-                                                    </IconButton>
+                                                    <Chip 
+                                                        icon={<CategoryIcon style={{ fontSize: 13, color: colors.textDim }} />} 
+                                                        label={categoryName} 
+                                                        size="small" 
+                                                        sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: colors.textDim, fontSize: '0.7rem', fontWeight: 700, height: '24px' }}
+                                                    />
                                                 </div>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                                                        <span style={{ fontSize: '20px', fontWeight: 900, color: colors.primary }}>{group.metrics.kilos.toFixed(1)}</span>
-                                                        <span style={{ fontSize: '11px', color: colors.textDim, fontWeight: 700 }}>{group.item.unidadPrincipal || 'kg'}</span>
+                                                
+                                                {group.supplier?.name && (
+                                                    <div style={{ color: colors.textDim, fontSize: '11px', marginBottom: '8px' }}>
+                                                        Prov: <span style={{ color: 'var(--text-white-dynamic, #fff)', fontWeight: 600 }}>{group.supplier.name}</span>
                                                     </div>
-                                                    <div style={{ textAlign: 'right' }}>
-                                                        <div style={{ color: colors.textDim, display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600 }}>
-                                                            <CategoryIcon style={{ fontSize: 12 }} /> {categoryName}
-                                                        </div>
-                                                        <div style={{ color: colors.textDim, display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px', fontSize: '11px', fontWeight: 600 }}>
-                                                            <LocationOnIcon style={{ fontSize: 12 }} /> {group.entries.length} registros
+                                                )}
+
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '12px', padding: '10px 12px', background: 'rgba(0,0,0,0.15)', borderRadius: '10px', border: `1px solid ${colors.border}` }}>
+                                                    <div>
+                                                        <div style={{ fontSize: '10px', color: colors.textDim, fontWeight: 700, textTransform: 'uppercase' }}>Stock Total</div>
+                                                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                                                            <span style={{ fontSize: '22px', fontWeight: 900, color: colors.primary }}>
+                                                                {group.metrics.kilos.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                                                            </span>
+                                                            <span style={{ fontSize: '12px', color: colors.textDim, fontWeight: 700 }}>{group.item.unidadPrincipal || 'kg'}</span>
                                                         </div>
                                                     </div>
+                                                    {group.metrics.units > 0 && (
+                                                        <div style={{ textAlign: 'right' }}>
+                                                            <div style={{ fontSize: '10px', color: colors.textDim, fontWeight: 700, textTransform: 'uppercase' }}>Bultos / Unidades</div>
+                                                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', justifyContent: 'flex-end' }}>
+                                                                <span style={{ fontSize: '18px', fontWeight: 800, color: colors.success }}>
+                                                                    {group.metrics.units.toLocaleString('es-AR')}
+                                                                </span>
+                                                                <span style={{ fontSize: '11px', color: colors.textDim, fontWeight: 700 }}>{group.item.unidadSecundaria || 'un'}</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
 
-                                            {/* Expanded content */}
-                                            {isExpanded && (
-                                                <div style={{ padding: '12px', background: 'rgba(0,0,0,0.15)', borderTop: `1px solid ${colors.border}` }} onClick={(e) => e.stopPropagation()}>
-                                                    {group.entries.map((entry: any, index: number) => {
-                                                        const isDeleting = deletingKeys.includes(getEntryKey(entry));
-                                                        return (
-                                                            <div 
-                                                                key={entry.id} 
-                                                                style={{ 
-                                                                    display: 'flex', 
-                                                                    justifyContent: 'space-between', 
-                                                                    alignItems: 'center', 
-                                                                    padding: '8px 4px',
-                                                                    borderBottom: index === group.entries.length - 1 ? 'none' : `1px solid ${colors.border}`,
-                                                                    opacity: isDeleting ? 0.5 : 1,
-                                                                    pointerEvents: isDeleting ? 'none' : 'auto'
-                                                                }}
-                                                            >
-                                                                <div>
-                                                                    <div 
-                                                                        onClick={() => navigate('/movimientos', { state: { depositoId: entry.depositoId || depotId, posicionId: entry.posicionId, itemId: entry.batch?.item?.id } })}
-                                                                        style={{ fontWeight: 800, color: colors.info, textDecoration: 'underline', cursor: 'pointer', fontSize: '13px', display: 'inline-block' }}
-                                                                    >
-                                                                        {entry.posicion?.codigo || 'S/P'}
-                                                                    </div>
-                                                                    <div style={{ color: colors.textDim, display: 'block', marginTop: '2px', fontSize: '11px' }}>
-                                                                        Lote: <strong style={{ color: 'var(--text-white-dynamic, #fff)', cursor: 'pointer', textDecoration: 'underline dashed' }} onClick={() => inlineEditLot(entry, entry.batch?.lotNumber || '')}>{entry.batch?.lotNumber}</strong>
-                                                                        {entry.batch?.observaciones && (
-                                                                            <Tooltip title={`Ver obs: ${entry.batch.observaciones}`}>
-                                                                                <IconButton size="small" onClick={() => alert(`Observación: ${entry.batch.observaciones}`)} sx={{ color: colors.danger, p: 0, ml: 0.5 }}><InfoIcon sx={{ fontSize: 14 }} /></IconButton>
-                                                                            </Tooltip>
-                                                                        )}
-                                                                        <IconButton size="small" onClick={() => setObsModal({ open: true, batchId: entry.batch?.id, text: entry.batch?.observaciones || '' })} sx={{ color: colors.textDim, p: 0, ml: 0.5 }}><EditIcon sx={{ fontSize: 12 }} /></IconButton>
-                                                                    </div>
-                                                                </div>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                                    <div style={{ textAlign: 'right' }}>
-                                                                        <div style={{ fontWeight: 800, color: colors.primary, cursor: 'pointer', textDecoration: 'underline dashed', fontSize: '13px' }} onClick={() => inlineEditQty(entry, entry.qtyPrincipal, 'principal', entry.batch.item.unidadPrincipal)}>
-                                                                            {entry.qtyPrincipal} <small style={{ fontWeight: 400, color: colors.textDim }}>{group.item.unidadPrincipal}</small>
-                                                                        </div>
-                                                                        {entry.qtySecundaria && (
-                                                                            <div style={{ color: colors.textDim, cursor: 'pointer', textDecoration: 'underline dashed', fontSize: '11px', marginTop: '2px' }} onClick={() => inlineEditQty(entry, entry.qtySecundaria, 'secundaria', entry.batch.item.unidadSecundaria)}>
-                                                                                {entry.qtySecundaria} <small>{group.item.unidadSecundaria}</small>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                    <div style={{ display: 'flex', gap: '2px' }}>
-                                                                        <IconButton size="small" onClick={() => openDespacho(entry)} sx={{ color: colors.info }} title="Despachar"><LocalShippingIcon sx={{ fontSize: 16 }} /></IconButton>
-                                                                        {isAdmin && (
-                                                                            <IconButton size="small" onClick={() => handleDeleteLine(entry)} sx={{ color: colors.danger }} title="Eliminar"><DeleteIcon sx={{ fontSize: 16 }} /></IconButton>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: `1px solid ${colors.border}`, marginTop: '4px' }}>
+                                                <div style={{ color: colors.info, display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 700 }}>
+                                                    <LocationOnIcon style={{ fontSize: 14 }} /> {group.entries.length} {group.entries.length === 1 ? 'ubicación' : 'ubicaciones'}
                                                 </div>
-                                            )}
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: colors.primary, fontSize: '12px', fontWeight: 800 }}>
+                                                    Ver y Mover <ArrowForwardIcon style={{ fontSize: 14 }} />
+                                                </div>
+                                            </div>
                                         </div>
                                     );
                                 })}
@@ -850,31 +943,56 @@ export default function DashboardDepositoPage() {
                 </Box>
             </Drawer>
 
-            {/* Detail Modal for List View */}
+            {/* Detail Modal for Material (List & Grid View) */}
             {detailGroup && (
                 <Modal 
                     open={!!detailGroupId} 
                     onClose={() => setDetailGroupId(null)}
                     sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
-                    <Paper sx={{ width: '90%', maxWidth: 700, bgcolor: colors.bg, border: `1px solid ${colors.primary}`, borderRadius: 4, p: 3, outline: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.6)', maxHeight: '90vh', overflowY: 'auto' }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Paper sx={{ width: '92%', maxWidth: 850, bgcolor: colors.bg, border: `1px solid ${colors.primary}`, borderRadius: 4, p: 3, outline: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.6)', maxHeight: '90vh', overflowY: 'auto' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                             <Box>
-                                <Typography variant="h6" sx={{ fontWeight: 900, color: colors.primary, lineHeight: 1.2 }}>{detailGroup.item.descripcion}</Typography>
-                                <Typography variant="caption" sx={{ color: colors.textDim }}>Proveedor: {detailGroup.supplier?.name || 'Sin proveedor'}</Typography>
+                                <Typography variant="caption" sx={{ color: colors.primary, fontWeight: 800, letterSpacing: '0.5px' }}>
+                                    {detailGroup.item.codigoInterno}
+                                </Typography>
+                                <Typography variant="h6" sx={{ fontWeight: 900, color: 'var(--text-white-dynamic, #fff)', lineHeight: 1.2 }}>
+                                    {detailGroup.item.descripcion}
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 1.5, mt: 0.5, alignItems: 'center' }}>
+                                    <Typography variant="caption" sx={{ color: colors.textDim }}>
+                                        Proveedor: <strong>{detailGroup.supplier?.name || 'Sin proveedor'}</strong>
+                                    </Typography>
+                                    <span style={{ color: colors.textDim }}>&middot;</span>
+                                    <Typography variant="caption" sx={{ color: colors.textDim }}>
+                                        Categoría: <strong>{detailGroup.item.category?.nombre || detailGroup.item.categoria || 'General'}</strong>
+                                    </Typography>
+                                </Box>
                             </Box>
-                            <IconButton onClick={() => setDetailGroupId(null)} sx={{ color: colors.textDim }}><CloseIcon /></IconButton>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Chip 
+                                    label={`Total: ${detailGroup.metrics.kilos.toLocaleString('es-AR', { minimumFractionDigits: 1 })} ${detailGroup.item.unidadPrincipal || 'kg'}`}
+                                    sx={{ bgcolor: `${colors.primary}20`, color: colors.primary, fontWeight: 800, fontSize: '0.8rem' }}
+                                />
+                                {detailGroup.metrics.units > 0 && (
+                                    <Chip 
+                                        label={`${detailGroup.metrics.units.toLocaleString('es-AR')} ${detailGroup.item.unidadSecundaria || 'un'}`}
+                                        sx={{ bgcolor: `${colors.success}20`, color: colors.success, fontWeight: 800, fontSize: '0.8rem' }}
+                                    />
+                                )}
+                                <IconButton onClick={() => setDetailGroupId(null)} sx={{ color: colors.textDim, ml: 1 }}><CloseIcon /></IconButton>
+                            </Box>
                         </Box>
                         
-                        <TableContainer sx={{ maxHeight: 400, overflowY: 'auto', border: `1px solid ${colors.border}`, borderRadius: 2 }}>
+                        <TableContainer sx={{ maxHeight: 450, overflowY: 'auto', border: `1px solid ${colors.border}`, borderRadius: 2 }}>
                             <MuiTable size="small">
                                 <TableHead sx={{ bgcolor: 'var(--bg-alt-row, rgba(0,0,0,0.2))' }}>
                                     <TableRow sx={{ '& th': { color: colors.textDim, fontWeight: 800 } }}>
                                         <TableCell>Ubicación</TableCell>
                                         <TableCell>Lote</TableCell>
                                         <TableCell align="right">Kilos</TableCell>
-                                        <TableCell align="right">Unidades</TableCell>
-                                        <TableCell align="center">Acción</TableCell>
+                                        <TableCell align="right">Bultos / Unidades</TableCell>
+                                        <TableCell align="center">Acciones</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -882,15 +1000,25 @@ export default function DashboardDepositoPage() {
                                         const isOldest = entry.batch.lotNumber === detailGroup.minLotNumber;
                                         const isDeleting = deletingKeys.includes(getEntryKey(entry));
                                         return (
-                                            <TableRow key={entry.id} sx={{ opacity: isDeleting ? 0.5 : 1, '& td': { color: 'var(--text-white-dynamic, #fff)', py: 1 } }}>
+                                            <TableRow key={entry.id} sx={{ opacity: isDeleting ? 0.5 : 1, '& td': { color: 'var(--text-white-dynamic, #fff)', py: 1.2 } }}>
                                                 <TableCell>
-                                                    <Typography 
-                                                        variant="body2" 
-                                                        onClick={() => { setDetailGroupId(null); navigate('/movimientos', { state: { depositoId: entry.depositoId || depotId, posicionId: entry.posicionId, itemId: entry.batch?.item?.id } }); }}
-                                                        sx={{ fontWeight: 800, color: colors.info, textDecoration: 'underline', cursor: 'pointer' }}
-                                                    >
-                                                        {entry.posicion?.codigo || 'S/P'}
-                                                    </Typography>
+                                                    <Tooltip title="Toca para mover stock desde esta posición">
+                                                        <Chip 
+                                                            icon={<LocationOnIcon style={{ fontSize: 14, color: colors.info }} />}
+                                                            label={entry.posicion?.codigo || 'S/P'}
+                                                            onClick={() => openQuickMove(entry)}
+                                                            clickable
+                                                            sx={{ 
+                                                                bgcolor: 'rgba(59, 130, 246, 0.12)', 
+                                                                color: colors.info, 
+                                                                fontWeight: 800, 
+                                                                fontSize: '0.8rem',
+                                                                border: `1px solid rgba(59, 130, 246, 0.3)`,
+                                                                cursor: 'pointer',
+                                                                '&:hover': { bgcolor: 'rgba(59, 130, 246, 0.25)', transform: 'scale(1.02)' }
+                                                            }}
+                                                        />
+                                                    </Tooltip>
                                                 </TableCell>
                                                 <TableCell>
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -925,10 +1053,33 @@ export default function DashboardDepositoPage() {
                                                     ) : '-'}
                                                 </TableCell>
                                                 <TableCell align="center">
-                                                    <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-                                                        <IconButton size="small" onClick={() => openDespacho(entry)} sx={{ color: colors.info }} title="Despachar"><LocalShippingIcon sx={{ fontSize: 16 }} /></IconButton>
+                                                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', alignItems: 'center' }}>
+                                                        <Button
+                                                            size="small"
+                                                            variant="contained"
+                                                            startIcon={<SwapHorizIcon />}
+                                                            onClick={() => openQuickMove(entry)}
+                                                            sx={{ 
+                                                                bgcolor: colors.info, 
+                                                                color: '#fff', 
+                                                                fontWeight: 800, 
+                                                                fontSize: '0.72rem', 
+                                                                textTransform: 'none', 
+                                                                borderRadius: 1.5,
+                                                                py: 0.4,
+                                                                px: 1.2,
+                                                                '&:hover': { bgcolor: '#2563eb' }
+                                                            }}
+                                                        >
+                                                            Mover
+                                                        </Button>
+                                                        <IconButton size="small" onClick={() => openDespacho(entry)} sx={{ color: colors.textDim, '&:hover': { color: colors.primary } }} title="Despachar">
+                                                            <LocalShippingIcon sx={{ fontSize: 16 }} />
+                                                        </IconButton>
                                                         {isAdmin && (
-                                                            <IconButton size="small" onClick={() => handleDeleteLine(entry)} sx={{ color: colors.danger }} title="Eliminar"><DeleteIcon sx={{ fontSize: 16 }} /></IconButton>
+                                                            <IconButton size="small" onClick={() => handleDeleteLine(entry)} sx={{ color: colors.textDim, '&:hover': { color: colors.danger } }} title="Eliminar">
+                                                                <DeleteIcon sx={{ fontSize: 16 }} />
+                                                            </IconButton>
                                                         )}
                                                     </Box>
                                                 </TableCell>
@@ -947,6 +1098,211 @@ export default function DashboardDepositoPage() {
                     </Paper>
                 </Modal>
             )}
+
+            {/* Quick Move Modal */}
+            {moveModal && moveEntry && (
+                <Modal
+                    open={moveModal}
+                    onClose={() => { if (!isMovingStock) { setMoveModal(false); setMoveEntry(null); } }}
+                    sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                    <Paper sx={{ 
+                        width: '92%', 
+                        maxWidth: 520, 
+                        bgcolor: colors.bg, 
+                        border: `1px solid ${colors.info}`, 
+                        borderRadius: 4, 
+                        p: 3, 
+                        outline: 'none', 
+                        boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
+                        maxHeight: '92vh',
+                        overflowY: 'auto'
+                    }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <SwapHorizIcon sx={{ color: colors.info, fontSize: '1.6rem' }} />
+                                <Typography variant="h6" sx={{ fontWeight: 900, color: 'var(--text-white-dynamic, #fff)' }}>
+                                    Mover de Ubicación
+                                </Typography>
+                            </Box>
+                            <IconButton onClick={() => { setMoveModal(false); setMoveEntry(null); }} sx={{ color: colors.textDim }}>
+                                <CloseIcon />
+                            </IconButton>
+                        </Box>
+
+                        {/* Detalle del origen */}
+                        <Box sx={{ p: 2, bgcolor: 'var(--bg-alt-row, rgba(255,255,255,0.03))', borderRadius: 3, border: `1px solid ${colors.border}`, mb: 2.5 }}>
+                            <Typography variant="caption" sx={{ color: colors.primary, fontWeight: 800, letterSpacing: '0.5px' }}>
+                                {moveEntry.batch?.item?.codigoInterno}
+                            </Typography>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'var(--text-white-dynamic, #fff)', lineHeight: 1.25, mb: 1 }}>
+                                {moveEntry.batch?.item?.descripcion}
+                            </Typography>
+                            
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', mt: 1 }}>
+                                <Chip 
+                                    size="small" 
+                                    label={`📍 Origen: ${moveEntry.posicion?.codigo || 'S/P'}`}
+                                    sx={{ bgcolor: 'rgba(59, 130, 246, 0.15)', color: colors.info, fontWeight: 800 }}
+                                />
+                                <Chip 
+                                    size="small" 
+                                    label={`Lote: ${moveEntry.batch?.lotNumber}`}
+                                    sx={{ bgcolor: 'rgba(255,255,255,0.06)', color: 'var(--text-white-dynamic, #fff)', fontWeight: 700 }}
+                                />
+                                <Chip 
+                                    size="small" 
+                                    label={`Disponible: ${moveEntry.qtyPrincipal} ${moveEntry.batch?.item?.unidadPrincipal || 'kg'}${moveEntry.qtySecundaria ? ` (${moveEntry.qtySecundaria} ${moveEntry.batch?.item?.unidadSecundaria || 'cajas'})` : ''}`}
+                                    sx={{ bgcolor: 'rgba(16, 185, 129, 0.15)', color: colors.success, fontWeight: 800 }}
+                                />
+                            </Box>
+                        </Box>
+
+                        {/* Destino */}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2.5 }}>
+                            <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 800, textTransform: 'uppercase', fontSize: '0.7rem' }}>
+                                1. ¿A qué posición lo querés mover?
+                            </Typography>
+
+                            <Box sx={{ display: 'flex', gap: 1.5 }}>
+                                {depots.length > 1 && (
+                                    <TextField
+                                        select
+                                        label="Depósito Destino"
+                                        size="small"
+                                        value={moveDestDepot}
+                                        onChange={(e) => { setMoveDestDepot(e.target.value); setMoveDestPos(''); }}
+                                        sx={{ flex: '1 1 180px', '& .MuiInputLabel-root': { color: colors.textDim }, '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
+                                    >
+                                        {depots.map((d: any) => (
+                                            <MenuItem key={d.id} value={d.id}>{d.nombre}</MenuItem>
+                                        ))}
+                                    </TextField>
+                                )}
+
+                                <Autocomplete
+                                    options={destPositions}
+                                    getOptionLabel={(option: any) => option.label || option.codigo || ''}
+                                    value={destPositions.find((p: any) => p.id === moveDestPos) || null}
+                                    onChange={(_e, val: any) => setMoveDestPos(val?.id || '')}
+                                    size="small"
+                                    sx={{ flex: '2 1 220px', '& .MuiInputLabel-root': { color: colors.textDim }, '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
+                                    renderInput={(params) => <TextField {...params} label="Posición Destino *" placeholder="Escribí código de ubicación..." />}
+                                />
+                            </Box>
+                        </Box>
+
+                        {/* Cantidades */}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 800, textTransform: 'uppercase', fontSize: '0.7rem' }}>
+                                    2. ¿Cuánto querés mover?
+                                </Typography>
+                                <Button
+                                    size="small"
+                                    startIcon={<FlashOnIcon sx={{ fontSize: 14 }} />}
+                                    onClick={handleMoveAll}
+                                    sx={{ color: colors.primary, fontWeight: 800, fontSize: '0.72rem', textTransform: 'none', p: 0.5 }}
+                                >
+                                    Mover Todo el Pallet
+                                </Button>
+                            </Box>
+
+                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                {/* Cajas / Unidad Secundaria */}
+                                <TextField
+                                    label={`Cajas (${moveEntry.batch?.item?.unidadSecundaria || 'Cajas'})`}
+                                    type="number"
+                                    size="small"
+                                    fullWidth
+                                    placeholder={moveEntry.qtySecundaria ? `Disp: ${moveEntry.qtySecundaria}` : '0'}
+                                    value={moveCajas}
+                                    onChange={(e) => handleCajasChange(e.target.value)}
+                                    InputLabelProps={{ shrink: true, sx: { color: colors.textDim } }}
+                                    InputProps={{ sx: { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
+                                />
+
+                                {/* Kilos / Unidad Principal */}
+                                <TextField
+                                    label={`Kilos * (${moveEntry.batch?.item?.unidadPrincipal || 'kg'})`}
+                                    type="number"
+                                    size="small"
+                                    fullWidth
+                                    placeholder={`Disp: ${moveEntry.qtyPrincipal}`}
+                                    value={moveKilos}
+                                    onChange={(e) => handleKilosChange(e.target.value)}
+                                    InputLabelProps={{ shrink: true, sx: { color: colors.textDim } }}
+                                    InputProps={{ sx: { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
+                                />
+                            </Box>
+
+                            {/* Recomendación de equivalencia de kilos */}
+                            {(() => {
+                                const ratio = getKilosPorCajaRatio(moveEntry);
+                                const cajasNum = parseFloat(moveCajas.replace(',', '.'));
+                                if (ratio && !isNaN(cajasNum) && cajasNum > 0) {
+                                    return (
+                                        <Box sx={{ p: 1.2, bgcolor: 'rgba(59, 130, 246, 0.08)', border: `1px dashed rgba(59, 130, 246, 0.3)`, borderRadius: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Typography variant="caption" sx={{ color: colors.info, fontSize: '0.74rem' }}>
+                                                💡 Estimado: <strong>~{ratio.toFixed(2)} kg/caja</strong>. Podés editar los kilos si el peso real difiere.
+                                            </Typography>
+                                            {isManualKilosEdited && (
+                                                <Button 
+                                                    size="small" 
+                                                    onClick={() => handleCajasChange(moveCajas)} 
+                                                    sx={{ fontSize: '0.68rem', color: colors.info, textTransform: 'none', p: 0.2, minWidth: 'auto', ml: 1 }}
+                                                >
+                                                    Recalcular
+                                                </Button>
+                                            )}
+                                        </Box>
+                                    );
+                                }
+                                return null;
+                            })()}
+                        </Box>
+
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 3, borderTop: `1px solid ${colors.border}`, pt: 2 }}>
+                            <Button 
+                                variant="text" 
+                                disabled={isMovingStock}
+                                onClick={() => { setMoveModal(false); setMoveEntry(null); }} 
+                                sx={{ color: colors.textDim }}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button
+                                variant="contained"
+                                disabled={isMovingStock || !moveDestPos || !moveKilos || parseFloat(moveKilos) <= 0}
+                                onClick={handleConfirmMove}
+                                startIcon={isMovingStock ? <CircularProgress size={18} color="inherit" /> : <SwapHorizIcon />}
+                                sx={{ 
+                                    bgcolor: colors.info, 
+                                    color: '#fff', 
+                                    fontWeight: 800, 
+                                    borderRadius: 2, 
+                                    px: 3,
+                                    '&:hover': { bgcolor: '#2563eb' } 
+                                }}
+                            >
+                                {isMovingStock ? 'Moviendo...' : 'Confirmar Movimiento'}
+                            </Button>
+                        </Box>
+                    </Paper>
+                </Modal>
+            )}
+
+            {/* Toast feedback */}
+            <Snackbar
+                open={!!moveSuccessToast}
+                autoHideDuration={4000}
+                onClose={() => setMoveSuccessToast(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            >
+                <Alert onClose={() => setMoveSuccessToast(null)} severity="success" sx={{ bgcolor: '#064e3b', color: '#ecfdf5', fontWeight: 700, borderRadius: 2, border: `1px solid #059669` }}>
+                    {moveSuccessToast}
+                </Alert>
+            </Snackbar>
 
             {/* Observations Modal */}
             {obsModal.open && (
