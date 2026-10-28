@@ -52,6 +52,7 @@ const DisponibilidadMaquinaPage = lazy(() => import('../../pages/maintenance/Dis
 const DisponibilidadMaquinaV2Page = lazy(() => import('../../pages/maintenance/DisponibilidadMaquinaV2Page'));
 
 // Sector: Quality (Calidad) & Producción
+const DashboardProduccionPage = lazy(() => import('../../pages/produccion/DashboardProduccionPage'));
 const CuarentenaCalidadPage = lazy(() => import('../../pages/quality/CuarentenaCalidadPage'));
 const OrdenesProduccionPage = lazy(() => import('../../pages/quality/OrdenesProduccionPage'));
 const StockPedidosArticulosPage = lazy(() => import('../../pages/produccion/StockPedidosArticulosPage'));
@@ -145,6 +146,7 @@ export const router = createBrowserRouter([
           {
             element: <SectorGuard allowedSectors={['PRODUCCION']} />,
             children: [
+              { path: "produccion/dashboard", element: <LazyRoute element={DashboardProduccionPage} /> },
               { path: "produccion/programacion-gantt", element: <LazyRoute element={ProgramacionGanttPage} /> },
               { path: "produccion/planificacion", element: <LazyRoute element={OrdenesProduccionPage} props={{ sectorMode: 'PRODUCCION' }} /> },
               { path: "produccion/pedidos", element: <LazyRoute element={StockPedidosArticulosPage} /> },

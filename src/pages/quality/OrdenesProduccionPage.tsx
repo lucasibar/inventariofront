@@ -297,6 +297,13 @@ export default function OrdenesProduccionPage({ sectorMode }: OrdenesProduccionP
                         )}
 
                         <Btn
+                            onClick={() => navigate('/produccion/dashboard')}
+                            style={{ fontSize: '12px', background: '#8b5cf6', color: '#fff' }}
+                        >
+                            ⚡ Dashboard de Producción ↗️
+                        </Btn>
+
+                        <Btn
                             variant="secondary"
                             onClick={() => navigate('/desarrollo/articulos')}
                             style={{ fontSize: '12px' }}

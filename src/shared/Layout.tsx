@@ -56,6 +56,7 @@ const navGroups: NavGroup[] = [
         label: 'Producción',
         icon: '⚙️',
         items: [
+            { to: '/produccion/dashboard', label: '⚡ Dashboard de Producción' },
             { to: '/produccion/programacion-gantt', label: '📊 Programación Gantt Máquinas' },
             { to: '/produccion/planificacion', label: '📑 Carga de Producción (PDFs)' },
             { to: '/produccion/informe-tejeduria', label: '⚙️ Plan de Tejeduría Diario' },
@@ -350,6 +351,7 @@ export default function Layout() {
                 '/desarrollo/maquinas',
             ],
             PRODUCCION: [
+                '/produccion/dashboard',
                 '/produccion/programacion-gantt',
                 '/produccion/planificacion',
                 '/produccion/pedidos',
