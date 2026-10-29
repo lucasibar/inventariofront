@@ -422,15 +422,48 @@ export default function DashboardDepositoPage() {
         if (!moveDestDepot) return [];
         const targetDepot = depots.find((d: any) => d.id === moveDestDepot);
         if (!targetDepot || !targetDepot.positions) return [];
-        const occupiedIds = new Set(rawStock.map((s: any) => s.posicionId).filter(Boolean));
+        
+        // Mapear el stock disponible por posición
+        const stockByPos: Record<string, any[]> = {};
+        rawStock.forEach((s: any) => {
+            if (s.posicionId && Number(s.qtyPrincipal) > 0) {
+                if (!stockByPos[s.posicionId]) stockByPos[s.posicionId] = [];
+                stockByPos[s.posicionId].push(s);
+            }
+        });
+
         return targetDepot.positions
             .filter((p: any) => p.activo && p.id !== moveEntry?.posicionId)
-            .map((p: any) => ({
-                ...p,
-                isOccupied: occupiedIds.has(p.id),
-                label: `${p.codigo}${!occupiedIds.has(p.id) ? ' (Vacía)' : ''}`
-            }));
+            .map((p: any) => {
+                const currentStock = stockByPos[p.id] || [];
+                const isOccupied = currentStock.length > 0;
+                
+                let contentsSummary = '';
+                if (isOccupied) {
+                    contentsSummary = currentStock.map((s: any) => {
+                        const itemCode = s.batch?.item?.codigoInterno || '';
+                        const itemDesc = s.batch?.item?.descripcion || '';
+                        const lote = s.batch?.lotNumber ? `(L:${s.batch.lotNumber})` : '';
+                        const kg = `${Number(s.qtyPrincipal).toFixed(1)} ${s.batch?.item?.unidadPrincipal || 'kg'}`;
+                        const un = s.qtySecundaria ? ` / ${s.qtySecundaria} ${s.batch?.item?.unidadSecundaria || 'un'}` : '';
+                        return `${itemCode ? `[${itemCode}] ` : ''}${itemDesc} ${lote} - ${kg}${un}`;
+                    }).join(' | ');
+                }
+
+                return {
+                    ...p,
+                    isOccupied,
+                    currentStock,
+                    contentsSummary,
+                    label: `${p.codigo} ${isOccupied ? `— [Ocupada: ${contentsSummary}]` : '— [Vacía]'}`
+                };
+            });
     }, [depots, moveDestDepot, moveEntry, rawStock]);
+
+    const selectedDestPosData = useMemo(() => {
+        if (!moveDestPos) return null;
+        return destPositions.find((p: any) => p.id === moveDestPos) || null;
+    }, [destPositions, moveDestPos]);
 
     const handleConfirmMove = async () => {
         if (!moveEntry || !moveDestDepot || !moveDestPos) {
@@ -1002,9 +1035,9 @@ export default function DashboardDepositoPage() {
                                         return (
                                             <TableRow key={entry.id} sx={{ opacity: isDeleting ? 0.5 : 1, '& td': { color: 'var(--text-white-dynamic, #fff)', py: 1.2 } }}>
                                                 <TableCell>
-                                                    <Tooltip title="Toca para mover stock desde esta posición">
+                                                    <Tooltip title={`Toca para mover stock desde ${entry.posicion?.codigo || 'esta posición'}`}>
                                                         <Chip 
-                                                            icon={<LocationOnIcon style={{ fontSize: 14, color: colors.info }} />}
+                                                            icon={<SwapHorizIcon style={{ fontSize: 16, color: colors.info }} />}
                                                             label={entry.posicion?.codigo || 'S/P'}
                                                             onClick={() => openQuickMove(entry)}
                                                             clickable
@@ -1053,26 +1086,7 @@ export default function DashboardDepositoPage() {
                                                     ) : '-'}
                                                 </TableCell>
                                                 <TableCell align="center">
-                                                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', alignItems: 'center' }}>
-                                                        <Button
-                                                            size="small"
-                                                            variant="contained"
-                                                            startIcon={<SwapHorizIcon />}
-                                                            onClick={() => openQuickMove(entry)}
-                                                            sx={{ 
-                                                                bgcolor: colors.info, 
-                                                                color: '#fff', 
-                                                                fontWeight: 800, 
-                                                                fontSize: '0.72rem', 
-                                                                textTransform: 'none', 
-                                                                borderRadius: 1.5,
-                                                                py: 0.4,
-                                                                px: 1.2,
-                                                                '&:hover': { bgcolor: '#2563eb' }
-                                                            }}
-                                                        >
-                                                            Mover
-                                                        </Button>
+                                                    <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center', alignItems: 'center' }}>
                                                         <IconButton size="small" onClick={() => openDespacho(entry)} sx={{ color: colors.textDim, '&:hover': { color: colors.primary } }} title="Despachar">
                                                             <LocalShippingIcon sx={{ fontSize: 16 }} />
                                                         </IconButton>
@@ -1159,7 +1173,7 @@ export default function DashboardDepositoPage() {
                         </Box>
 
                         {/* Destino */}
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2.5 }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2.5 }}>
                             <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 800, textTransform: 'uppercase', fontSize: '0.7rem' }}>
                                 1. ¿A qué posición lo querés mover?
                             </Typography>
@@ -1182,14 +1196,73 @@ export default function DashboardDepositoPage() {
 
                                 <Autocomplete
                                     options={destPositions}
-                                    getOptionLabel={(option: any) => option.label || option.codigo || ''}
+                                    getOptionLabel={(option: any) => option.codigo || ''}
+                                    filterOptions={(options, state) => {
+                                        const query = state.inputValue.toLowerCase().trim();
+                                        if (!query) return options;
+                                        return options.filter((opt: any) => 
+                                            (opt.codigo || '').toLowerCase().includes(query) ||
+                                            (opt.contentsSummary || '').toLowerCase().includes(query)
+                                        );
+                                    }}
+                                    renderOption={(props, option: any) => (
+                                        <Box component="li" {...props} key={option.id} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', py: 1, px: 1.5, borderBottom: `1px solid ${colors.border}`, width: '100%' }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                                                <Typography variant="body2" sx={{ fontWeight: 800, color: 'var(--text-white-dynamic, #fff)' }}>
+                                                    📍 {option.codigo}
+                                                </Typography>
+                                                {option.isOccupied ? (
+                                                    <Chip size="small" label={`${option.currentStock.length} lote(s)`} sx={{ bgcolor: 'rgba(245, 158, 11, 0.15)', color: colors.primary, fontSize: '0.68rem', fontWeight: 700, height: '20px' }} />
+                                                ) : (
+                                                    <Chip size="small" label="Vacía" sx={{ bgcolor: 'rgba(16, 185, 129, 0.15)', color: colors.success, fontSize: '0.68rem', fontWeight: 700, height: '20px' }} />
+                                                )}
+                                            </Box>
+                                            {option.isOccupied && (
+                                                <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.72rem', mt: 0.5, lineHeight: 1.25 }}>
+                                                    {option.contentsSummary}
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    )}
                                     value={destPositions.find((p: any) => p.id === moveDestPos) || null}
                                     onChange={(_e, val: any) => setMoveDestPos(val?.id || '')}
                                     size="small"
                                     sx={{ flex: '2 1 220px', '& .MuiInputLabel-root': { color: colors.textDim }, '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
-                                    renderInput={(params) => <TextField {...params} label="Posición Destino *" placeholder="Escribí código de ubicación..." />}
+                                    renderInput={(params) => <TextField {...params} label="Posición Destino *" placeholder="Buscar por código o contenido..." />}
                                 />
                             </Box>
+
+                            {/* Detalle visual de lo que tiene la posición de destino seleccionada */}
+                            {selectedDestPosData && (
+                                !selectedDestPosData.isOccupied ? (
+                                    <Box sx={{ p: 1.2, bgcolor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Typography variant="body2" sx={{ color: colors.success, fontSize: '0.78rem', fontWeight: 700 }}>
+                                            ✅ Posición {selectedDestPosData.codigo} libre y disponible (sin mercadería previa).
+                                        </Typography>
+                                    </Box>
+                                ) : (
+                                    <Box sx={{ p: 1.5, bgcolor: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)', borderRadius: 2 }}>
+                                        <Typography variant="caption" sx={{ color: colors.primary, fontWeight: 800, textTransform: 'uppercase', fontSize: '0.68rem', display: 'block', mb: 0.8 }}>
+                                            📦 Mercadería actualmente en {selectedDestPosData.codigo} ({selectedDestPosData.currentStock.length} {selectedDestPosData.currentStock.length === 1 ? 'partida' : 'partidas'}):
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6, maxHeight: '130px', overflowY: 'auto' }}>
+                                            {selectedDestPosData.currentStock.map((s: any, idx: number) => (
+                                                <Box key={s.id || idx} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.76rem', bgcolor: 'rgba(0,0,0,0.25)', p: '6px 10px', borderRadius: 1.5 }}>
+                                                    <div>
+                                                        <span style={{ color: colors.primary, fontWeight: 800 }}>{s.batch?.item?.codigoInterno}</span>{' '}
+                                                        <span style={{ color: 'var(--text-white-dynamic, #fff)', fontWeight: 600 }}>{s.batch?.item?.descripcion}</span>{' '}
+                                                        <span style={{ color: colors.textDim, fontSize: '0.7rem' }}>(Lote: {s.batch?.lotNumber})</span>
+                                                    </div>
+                                                    <div style={{ textAlign: 'right', fontWeight: 800, color: colors.primary, whiteSpace: 'nowrap', marginLeft: '8px' }}>
+                                                        {Number(s.qtyPrincipal).toFixed(1)} <small style={{ color: colors.textDim }}>{s.batch?.item?.unidadPrincipal || 'kg'}</small>
+                                                        {s.qtySecundaria ? <span style={{ color: colors.success, marginLeft: '6px' }}>({s.qtySecundaria} {s.batch?.item?.unidadSecundaria || 'un'})</span> : null}
+                                                    </div>
+                                                </Box>
+                                            ))}
+                                        </Box>
+                                    </Box>
+                                )
+                            )}
                         </Box>
 
                         {/* Cantidades */}
