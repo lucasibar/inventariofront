@@ -16,9 +16,20 @@ export const remitosEntradaApi = api.injectEndpoints({
         }),
         deleteRemitoEntrada: builder.mutation<void, string>({
             query: (id) => ({ url: `remitos-entrada/${id}`, method: 'DELETE' }),
-            invalidatesTags: ['RemitosEntrada'],
+            invalidatesTags: ['RemitosEntrada', 'Stock'],
+        }),
+        deleteRemitoEntradaLine: builder.mutation<void, string>({
+            query: (movementId) => ({ url: `remitos-entrada/line/${movementId}`, method: 'DELETE' }),
+            invalidatesTags: ['RemitosEntrada', 'Stock'],
         }),
     }),
 });
 
-export const { useGetRemitosEntradaQuery, useGetRemitoEntradaQuery, useLazyGetRemitoEntradaQuery, useCreateRemitoEntradaMutation, useDeleteRemitoEntradaMutation } = remitosEntradaApi;
+export const {
+    useGetRemitosEntradaQuery,
+    useGetRemitoEntradaQuery,
+    useLazyGetRemitoEntradaQuery,
+    useCreateRemitoEntradaMutation,
+    useDeleteRemitoEntradaMutation,
+    useDeleteRemitoEntradaLineMutation,
+} = remitosEntradaApi;

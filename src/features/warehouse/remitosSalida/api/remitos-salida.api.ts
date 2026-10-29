@@ -19,7 +19,7 @@ export const remitosSalidaApi = api.injectEndpoints({
         }),
         deleteRemitoSalida: builder.mutation<void, string>({
             query: (id) => ({ url: `remitos-salida/${id}`, method: 'DELETE' }),
-            invalidatesTags: ['RemitosSalida'],
+            invalidatesTags: ['RemitosSalida', 'Stock'],
         }),
         despachoDirecto: builder.mutation<any, {
             fecha: string;

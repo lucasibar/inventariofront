@@ -48,6 +48,21 @@ const colors = {
     inputBg: 'var(--bg-action-btn, rgba(255,255,255,0.05))'
 };
 
+const normalizeText = (text: string) =>
+    (text || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+
+const formatDate = (dateStr: string) => {
+    if (!dateStr) return '—';
+    const clean = String(dateStr).slice(0, 10);
+    const parts = clean.split('-');
+    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    return clean;
+};
+
 function DebouncedSearchInput({ value, onChange, delay = 300, ...props }: any) {
     const [localVal, setLocalVal] = useState(value);
     
@@ -85,20 +100,34 @@ export default function RemitosEntradaPage() {
     const [selectedDepotId, setSelectedDepotId] = useState('');
     const [fechaDesde, setFechaDesde] = useState('');
     const [fechaHasta, setFechaHasta] = useState('');
+    const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVO' | 'ANULADO'>('ALL');
 
     const filteredRemitos = useMemo(() => {
         let list = remitos;
+
+        if (statusFilter !== 'ALL') {
+            list = list.filter((r: any) => (r.status || 'ACTIVO') === statusFilter);
+        }
+
         if (selectedDepotId) {
             list = list.filter((r: any) => r.depositoId === selectedDepotId || r.deposito?.id === selectedDepotId);
         }
+
+        // Comparación de fechas pura como string ISO para no sufrir el desfase de zona horaria UTC-3
         if (fechaDesde) {
-            list = list.filter((r: any) => new Date(r.fecha || r.date).getTime() >= new Date(fechaDesde + 'T00:00:00').getTime());
+            list = list.filter((r: any) => {
+                const rDate = String(r.fecha || r.date || '').slice(0, 10);
+                return !rDate || rDate >= fechaDesde;
+            });
         }
         if (fechaHasta) {
-            list = list.filter((r: any) => new Date(r.fecha || r.date).getTime() <= new Date(fechaHasta + 'T23:59:59').getTime());
+            list = list.filter((r: any) => {
+                const rDate = String(r.fecha || r.date || '').slice(0, 10);
+                return !rDate || rDate <= fechaHasta;
+            });
         }
 
-        const query = search.toLowerCase().trim();
+        const query = normalizeText(search);
         if (!query) return list;
         const tokens = query.split(/\s+/).filter(Boolean);
 
@@ -113,7 +142,7 @@ export default function RemitosEntradaPage() {
                 return `${itemCode} ${itemDesc} ${itemCat} ${lotNum} ${itemSupplier} ${pos}`;
             }).join(' ');
 
-            const searchableContent = [
+            const searchableContent = normalizeText([
                 r.numero || '',
                 r.documentId || '',
                 r.id || '',
@@ -121,13 +150,18 @@ export default function RemitosEntradaPage() {
                 r.partner?.taxId || r.supplierTaxId || '',
                 r.observaciones || '',
                 linesContent
-            ].join(' ').toLowerCase();
+            ].join(' '));
 
             return tokens.every(token => searchableContent.includes(token));
         });
-    }, [remitos, search, selectedDepotId, fechaDesde, fechaHasta]);
+    }, [remitos, search, selectedDepotId, fechaDesde, fechaHasta, statusFilter]);
 
     const pagination = useClientPagination(filteredRemitos, 25);
+
+    // Resetear a la primera página al cambiar cualquier filtro
+    useEffect(() => {
+        pagination.setPage(0);
+    }, [search, selectedDepotId, fechaDesde, fechaHasta, statusFilter]);
 
     // Métricas para los KPIs
     const metrics = useMemo(() => {
@@ -147,8 +181,10 @@ export default function RemitosEntradaPage() {
             if (provName) proveedores.add(provName);
 
             (r.lines || []).forEach((l: any) => {
-                totalKilos += Number(l.qtyPrincipal || 0);
-                if (l.qtySecundaria) totalBultos += Number(l.qtySecundaria);
+                if (l.status !== 'ANULADO') {
+                    totalKilos += Number(l.qtyPrincipal || 0);
+                    if (l.qtySecundaria) totalBultos += Number(l.qtySecundaria);
+                }
             });
         });
 
@@ -166,37 +202,32 @@ export default function RemitosEntradaPage() {
             const fullRemito = await triggerGetDetail(remito.id).unwrap();
             setSelectedRemito(fullRemito);
             setShowDetail(true);
-        } catch (err) {
-            console.error('Error al cargar detalle del remito', err);
+        } catch {
             setSelectedRemito(remito);
             setShowDetail(true);
         }
     };
 
-    const handleAnular = async (e: React.MouseEvent, remito: any) => {
+    const handleDelete = async (e: React.MouseEvent, remitoId: string) => {
         e.stopPropagation();
-        const num = remito.numero || remito.documentId || remito.id;
-        if (!window.confirm(`¿Estás seguro de que querés anular el remito "${num}"?\nEsta acción revertirá los ingresos de stock asociados.`)) {
-            return;
-        }
+        if (!window.confirm('¿Estás seguro de anular este remito de entrada completo? El stock ingresado se descontará del inventario.')) return;
         try {
-            await deleteRemito(remito.id).unwrap();
+            await deleteRemito(remitoId).unwrap();
         } catch (err: any) {
-            alert(err?.data?.message || err?.message || 'Error al anular el remito');
+            alert(err?.data?.message || err?.message || 'Error al anular remito de entrada');
         }
     };
 
     return (
-        <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: '1400px', margin: '0 auto', color: colors.text, minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>
-            
-            {/* Encabezado */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+        <Box sx={{ p: { xs: 2, md: 3 }, display: 'flex', flexDirection: 'column', gap: 3, bgcolor: colors.bg, minHeight: '100vh', color: colors.text }}>
+            {/* Header */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
                 <Box>
-                    <Typography variant="h5" sx={{ fontWeight: 900, color: colors.text, letterSpacing: '-0.5px' }}>
-                        Remitos de Entrada
+                    <Typography variant="h5" sx={{ fontWeight: 900, color: colors.primary, letterSpacing: '-0.5px' }}>
+                        📥 Remitos de Entrada
                     </Typography>
-                    <Typography variant="caption" sx={{ color: colors.textDim }}>
-                        Gestión y recepción física de mercadería con asignación directa de ubicaciones
+                    <Typography variant="body2" sx={{ color: colors.textDim, mt: 0.5 }}>
+                        Recepción y alta de mercadería, pesaje por bultos y asignación inmediata de posición.
                     </Typography>
                 </Box>
                 <Button 
@@ -266,12 +297,25 @@ export default function RemitosEntradaPage() {
                         value={selectedDepotId}
                         onChange={(e) => setSelectedDepotId(e.target.value)}
                         size="small"
-                        sx={{ flex: '1 1 200px', '& .MuiInputLabel-root': { color: colors.textDim }, '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
+                        sx={{ flex: '1 1 180px', '& .MuiInputLabel-root': { color: colors.textDim }, '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
                     >
                         <MenuItem value=""><em>Todos los depósitos</em></MenuItem>
                         {depots.filter((d: any) => d.activo !== false).map((d: any) => (
                             <MenuItem key={d.id} value={d.id}>{d.nombre}</MenuItem>
                         ))}
+                    </TextField>
+
+                    <TextField
+                        select
+                        label="Estado"
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value as any)}
+                        size="small"
+                        sx={{ width: '140px', '& .MuiInputLabel-root': { color: colors.textDim }, '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
+                    >
+                        <MenuItem value="ALL">Todos</MenuItem>
+                        <MenuItem value="ACTIVO">Activos</MenuItem>
+                        <MenuItem value="ANULADO">Anulados</MenuItem>
                     </TextField>
 
                     <DebouncedSearchInput
@@ -283,7 +327,7 @@ export default function RemitosEntradaPage() {
                         InputProps={{
                             startAdornment: <SearchIcon sx={{ color: colors.textDim, mr: 1, fontSize: '1.2rem' }} />
                         }}
-                        sx={{ flex: '2 1 300px', '& .MuiInputLabel-root': { color: colors.textDim }, '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
+                        sx={{ flex: '2 1 260px', '& .MuiInputLabel-root': { color: colors.textDim }, '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
                     />
 
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -294,7 +338,7 @@ export default function RemitosEntradaPage() {
                             value={fechaDesde}
                             onChange={(e) => setFechaDesde(e.target.value)}
                             InputLabelProps={{ shrink: true, sx: { color: colors.textDim } }}
-                            sx={{ width: '150px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
+                            sx={{ width: '145px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
                         />
                         <TextField
                             label="Hasta"
@@ -303,13 +347,13 @@ export default function RemitosEntradaPage() {
                             value={fechaHasta}
                             onChange={(e) => setFechaHasta(e.target.value)}
                             InputLabelProps={{ shrink: true, sx: { color: colors.textDim } }}
-                            sx={{ width: '150px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
+                            sx={{ width: '145px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
                         />
-                        {(fechaDesde || fechaHasta || search || selectedDepotId) && (
+                        {(fechaDesde || fechaHasta || search || selectedDepotId || statusFilter !== 'ALL') && (
                             <Button 
                                 size="small"
                                 startIcon={<ClearIcon />}
-                                onClick={() => { setSearch(''); setSelectedDepotId(''); setFechaDesde(''); setFechaHasta(''); }}
+                                onClick={() => { setSearch(''); setSelectedDepotId(''); setFechaDesde(''); setFechaHasta(''); setStatusFilter('ALL'); }}
                                 sx={{ color: colors.danger, fontWeight: 700, textTransform: 'none', height: '38px', borderRadius: 2 }}
                             >
                                 Limpiar
@@ -364,8 +408,9 @@ export default function RemitosEntradaPage() {
                             <TableBody>
                                 {pagination.pageItems.map((remito: any) => {
                                     const lines = remito.lines || [];
-                                    const totalKilos = lines.reduce((acc: number, l: any) => acc + Number(l.qtyPrincipal || 0), 0);
-                                    const totalBultos = lines.reduce((acc: number, l: any) => acc + Number(l.qtySecundaria || 0), 0);
+                                    const activeLines = lines.filter((l: any) => l.status !== 'ANULADO');
+                                    const totalKilos = activeLines.reduce((acc: number, l: any) => acc + Number(l.qtyPrincipal || 0), 0);
+                                    const totalBultos = activeLines.reduce((acc: number, l: any) => acc + Number(l.qtySecundaria || 0), 0);
                                     const isAnulado = remito.status === 'ANULADO';
 
                                     return (
@@ -401,7 +446,7 @@ export default function RemitosEntradaPage() {
                                             </TableCell>
 
                                             <TableCell sx={{ color: 'var(--text-white-dynamic, #fff)', fontSize: '0.82rem' }}>
-                                                {new Date(remito.fecha || remito.date).toLocaleDateString('es-AR')}
+                                                {formatDate(remito.fecha || remito.date)}
                                             </TableCell>
 
                                             <TableCell>
@@ -458,16 +503,25 @@ export default function RemitosEntradaPage() {
                                             </TableCell>
 
                                             <TableCell align="center" onClick={(e) => e.stopPropagation()}>
-                                                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.5 }}>
-                                                    <Tooltip title="Ver detalle e imprimir">
-                                                        <IconButton size="small" onClick={() => handleRowClick(remito)} sx={{ color: colors.info }}>
-                                                            <VisibilityIcon sx={{ fontSize: 18 }} />
+                                                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                                                    <Tooltip title="Ver Detalle / Imprimir Remito">
+                                                        <IconButton 
+                                                            size="small" 
+                                                            onClick={() => handleRowClick(remito)}
+                                                            sx={{ color: colors.info, '&:hover': { bgcolor: 'rgba(59, 130, 246, 0.15)' } }}
+                                                        >
+                                                            <VisibilityIcon fontSize="small" />
                                                         </IconButton>
                                                     </Tooltip>
+
                                                     {!isAnulado && (
-                                                        <Tooltip title="Anular remito">
-                                                            <IconButton size="small" onClick={(e) => handleAnular(e, remito)} sx={{ color: colors.textDim, '&:hover': { color: colors.danger } }}>
-                                                                <DeleteIcon sx={{ fontSize: 18 }} />
+                                                        <Tooltip title="Anular Remito Completo">
+                                                            <IconButton 
+                                                                size="small" 
+                                                                onClick={(e) => handleDelete(e, remito.id)}
+                                                                sx={{ color: colors.danger, '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.15)' } }}
+                                                            >
+                                                                <DeleteIcon fontSize="small" />
                                                             </IconButton>
                                                         </Tooltip>
                                                     )}
@@ -481,12 +535,15 @@ export default function RemitosEntradaPage() {
                     </TableContainer>
 
                     <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end', borderTop: `1px solid ${colors.border}` }}>
-                        <PaginationControls 
-                            count={filteredRemitos.length} 
-                            page={pagination.page} 
-                            pageSize={pagination.pageSize} 
-                            onPageChange={pagination.setPage} 
-                            onPageSizeChange={(val) => { pagination.setPageSize(val); pagination.setPage(0); }} 
+                        <PaginationControls
+                            count={filteredRemitos.length}
+                            page={pagination.page}
+                            pageSize={pagination.pageSize}
+                            onPageChange={pagination.setPage}
+                            onPageSizeChange={(value) => {
+                                pagination.setPageSize(value);
+                                pagination.setPage(0);
+                            }}
                         />
                     </Box>
                 </Paper>
@@ -496,22 +553,23 @@ export default function RemitosEntradaPage() {
             {showForm && (
                 <NuevoRemitoEntradaModal
                     onClose={() => setShowForm(false)}
-                    onSuccess={() => { setShowForm(false); }}
+                    onSuccess={() => {
+                        setShowForm(false);
+                    }}
                 />
             )}
 
-            {/* Modal de Detalle */}
-            <RemitoDetailModal
-                open={showDetail}
-                onClose={() => setShowDetail(false)}
-                remito={selectedRemito}
-            />
-
-            <style>{`
-                .hoverable-row:hover {
-                    background-color: var(--bg-alt-row, rgba(255,255,255,0.03)) !important;
-                }
-            `}</style>
+            {/* Modal de Detalle / Impresión del Remito */}
+            {showDetail && selectedRemito && (
+                <RemitoDetailModal
+                    open={showDetail}
+                    onClose={() => {
+                        setShowDetail(false);
+                        setSelectedRemito(null);
+                    }}
+                    remito={selectedRemito}
+                />
+            )}
         </Box>
     );
 }
