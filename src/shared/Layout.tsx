@@ -102,7 +102,7 @@ const navGroups: NavGroup[] = [
                     { to: '/deposito/informes-produccion?tipo=INSUMO', label: '📦 Necesidad Diaria Insumos' },
                     { to: '/deposito/capacidad', label: '📦 Medidores de Capacidad' },
                     { to: '/deposito/materiales-estancados', label: '🧊 Materiales Estancados' },
-                    { to: '/reporte-consumo-detallado', label: '📊 Consumo Detallado' },
+                    { to: '/reporte-consumo-detallado', label: '📊 Consumo de Materiales' },
                 ]
             },
             {
@@ -145,6 +145,7 @@ const navGroups: NavGroup[] = [
         icon: '🛒',
         items: [
             { to: '/compras/dashboard', label: '📊 Dashboard Compras' },
+            { to: '/reporte-consumo-detallado', label: '📊 Consumo de Materiales' },
             { to: '/compras/faltantes-produccion', label: '🧶 Faltantes Hilado Producción' },
             { to: '/compras/alertas-stock', label: '🚦 Alertas de Stock' },
             { to: '/compras/materiales-criticos-v2', label: '🔥 Materiales Críticos 2.0' },
@@ -324,6 +325,7 @@ export default function Layout() {
             ],
             COMPRAS: [
                 '/compras/dashboard',
+                '/reporte-consumo-detallado',
                 '/compras/faltantes-produccion',
                 '/compras/alertas-stock',
                 '/compras/materiales-criticos',

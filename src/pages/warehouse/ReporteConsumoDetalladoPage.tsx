@@ -1,930 +1,955 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useGetRecentMovementsQuery, useGetCombosQuery, useUpdateComboMutation } from '../../features/warehouse/stock/api/stock.api';
-import { useLazyGetRemitoSalidaQuery } from '../../features/warehouse/remitosSalida/api/remitos-salida.api';
-import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.api';
-import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
-import { RemitoDetailModal } from '../../features/warehouse/remitos/ui/RemitoDetailModal';
-import { EditComboModal } from '../../features/warehouse/stock/ui/EditComboModal';
-import { PageHeader, Card, Input, Spinner, Btn } from '../../shared/ui';
-import { useIsMobile } from '../../shared/ui';
-import { 
-    XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar, LineChart, Line 
+import {
+    Box,
+    Typography,
+    Button,
+    Paper,
+    TextField,
+    MenuItem,
+    IconButton,
+    Chip,
+    Table as MuiTable,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    CircularProgress,
+    Tooltip,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Collapse
+} from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import CloseIcon from '@mui/icons-material/Close';
+import EditIcon from '@mui/icons-material/Edit';
+import * as XLSX from 'xlsx';
+import {
+    XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
+    ResponsiveContainer, BarChart, Bar, AreaChart, Area
 } from 'recharts';
 
-interface DebouncedSearchInputProps {
-    value: string;
-    onChange: (val: string) => void;
-    delay?: number;
-    label?: string;
-    placeholder?: string;
-}
+import { useGetRecentMovementsQuery, useGetCombosQuery, useUpdateComboMutation, useGetStockQuery } from '../../features/warehouse/stock/api/stock.api';
+import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposito.api';
+import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.api';
+import { useLazyGetRemitoSalidaQuery } from '../../features/warehouse/remitosSalida/api/remitos-salida.api';
+import { RemitoDetailModal } from '../../features/warehouse/remitos/ui/RemitoDetailModal';
+import { EditComboModal } from '../../features/warehouse/stock/ui/EditComboModal';
+import { PaginationControls, useClientPagination } from '../../shared/pagination';
 
-function DebouncedSearchInput({ value, onChange, delay = 300, ...props }: DebouncedSearchInputProps) {
-    const [localValue, setLocalValue] = useState(value);
+const colors = {
+    primary: '#f59e0b', // Amber
+    secondary: 'var(--text-mui-secondary, #475569)',
+    bg: 'var(--bg-primary, #0f1117)',
+    cardBg: 'var(--bg-hover-row, rgba(255,255,255,0.03))',
+    border: 'rgba(255, 255, 255, 0.08)',
+    text: 'var(--text-primary, #f3f4f6)',
+    textDim: 'var(--text-muted, #9ca3af)',
+    danger: '#ef4444',
+    warning: '#f59e0b',
+    success: '#10b981',
+    info: '#38bdf8',
+    inputBg: 'var(--bg-action-btn, rgba(255,255,255,0.05))'
+};
 
-    useEffect(() => {
-        setLocalValue(value);
-    }, [value]);
+const normalizeText = (text: string) =>
+    (text || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
 
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            onChange(localValue);
-        }, delay);
-        return () => clearTimeout(handler);
-    }, [localValue, onChange, delay]);
-
-    return (
-        <Input
-            {...props}
-            value={localValue}
-            onChange={setLocalValue}
-        />
-    );
-}
+const formatDate = (dateStr: string) => {
+    if (!dateStr) return '—';
+    const clean = String(dateStr).slice(0, 10);
+    const parts = clean.split('-');
+    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    return clean;
+};
 
 export default function ReporteConsumoDetalladoPage() {
-    const isMobile = useIsMobile();
-    
-    // Date range defaults to the last 30 days
+    // ── Fechas y presets ──
     const [desde, setDesde] = useState(() => {
         const d = new Date();
         d.setDate(d.getDate() - 30);
         return d.toISOString().split('T')[0];
     });
     const [hasta, setHasta] = useState(() => new Date().toISOString().split('T')[0]);
+    const [activePreset, setActivePreset] = useState<'7D' | '15D' | '30D' | 'MES' | 'CUSTOM'>('30D');
+
+    const handlePreset = (preset: '7D' | '15D' | '30D' | 'MES') => {
+        setActivePreset(preset);
+        const today = new Date();
+        const endStr = today.toISOString().split('T')[0];
+        setHasta(endStr);
+
+        if (preset === '7D') {
+            const d = new Date();
+            d.setDate(d.getDate() - 7);
+            setDesde(d.toISOString().split('T')[0]);
+        } else if (preset === '15D') {
+            const d = new Date();
+            d.setDate(d.getDate() - 15);
+            setDesde(d.toISOString().split('T')[0]);
+        } else if (preset === '30D') {
+            const d = new Date();
+            d.setDate(d.getDate() - 30);
+            setDesde(d.toISOString().split('T')[0]);
+        } else if (preset === 'MES') {
+            const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            setDesde(startOfMonth.toISOString().split('T')[0]);
+        }
+    };
+
+    // ── Filtros generales ──
     const [depositoId, setDepositoId] = useState<string>('');
-
-    const { data: depositos = [] } = useGetDepotsQuery();
-    const { data: movements = [], isFetching } = useGetRecentMovementsQuery({ desde, hasta, tipo: 'REMITO_SALIDA', depositoId: depositoId || undefined });
-    const [triggerGetRemitoDetail] = useLazyGetRemitoSalidaQuery();
-
+    const [tipoConsumo, setTipoConsumo] = useState<'ALL' | 'REMITO_SALIDA' | 'ENTREGA_PRODUCCION' | 'AJUSTE_RESTA'>('ALL');
     const [searchQuery, setSearchQuery] = useState('');
-    const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
-    const [selectedRemito, setSelectedRemito] = useState<any>(null);
-    const [showDetailModal, setShowDetailModal] = useState(false);
-    const [excludedMaterialIds, setExcludedMaterialIds] = useState<Record<string, boolean>>({});
-
-    // States and queries for Materials Groups ("Combos")
     const [viewByGroup, setViewByGroup] = useState(false);
-    const [editComboId, setEditComboId] = useState<string | null>(null);
-    const [excludedComboIds, setExcludedComboIds] = useState<Record<string, boolean>>({});
+    const [showCharts, setShowCharts] = useState(false);
 
+    // ── Consultas Backend ──
+    const { data: rawDepots = [] } = useGetDepotsQuery();
+    const depots = useMemo(() => rawDepots.filter((d: any) => d.activo !== false), [rawDepots]);
+
+    const { data: rawMovements = [], isFetching: isFetchingMovements } = useGetRecentMovementsQuery({
+        desde,
+        hasta,
+        depositoId: depositoId || undefined,
+        tipo: tipoConsumo === 'ALL' ? undefined : tipoConsumo
+    });
+
+    const { data: rawStock = [], isFetching: isFetchingStock } = useGetStockQuery({});
     const { data: combos = [] } = useGetCombosQuery(undefined, { skip: !viewByGroup });
     const { data: items = [] } = useGetItemsQuery({}, { skip: !viewByGroup });
     const [updateCombo] = useUpdateComboMutation();
 
-    const toggleItemExpanded = (itemId: string) => {
-        setExpandedItems(prev => ({
-            ...prev,
-            [itemId]: !prev[itemId]
-        }));
-    };
+    // ── Modales secundarios ──
+    const [selectedItemMovements, setSelectedItemMovements] = useState<any | null>(null);
+    const [selectedRemito, setSelectedRemito] = useState<any | null>(null);
+    const [showRemitoModal, setShowRemitoModal] = useState(false);
+    const [editCombo, setEditCombo] = useState<any | null>(null);
+    const [triggerGetRemitoDetail] = useLazyGetRemitoSalidaQuery();
 
-    // Filter movements dynamically by search query (multi-word and category matching)
-    const filteredMovements = useMemo(() => {
-        const searchWords = searchQuery.toLowerCase().split(' ').filter(w => w.length > 0);
-        if (searchWords.length === 0) return movements;
-        
-        return movements.filter(m => {
-            return searchWords.every(word => {
-                const materialCode = (m.item?.codigoInterno || '').toLowerCase();
-                const materialDesc = (m.item?.descripcion || '').toLowerCase();
-                const lotNumber = (m.batch?.lotNumber || '').toLowerCase();
-                const categoryName = (m.item?.category?.nombre || m.item?.categoria || '').toLowerCase();
-                
-                const supplierName = (
-                    m.supplier?.name || 
-                    m.batchSupplier?.name || 
-                    m.batch?.supplier?.name || 
-                    ''
-                ).toLowerCase();
-
-                return materialCode.includes(word) || 
-                       materialDesc.includes(word) || 
-                       lotNumber.includes(word) || 
-                       supplierName.includes(word) ||
-                       categoryName.includes(word);
-            });
+    // ── Mapa de Stock Actual Disponible ──
+    const stockMap = useMemo(() => {
+        const map = new Map<string, number>();
+        rawStock.forEach((s: any) => {
+            if (!depositoId || s.depositoId === depositoId) {
+                const current = map.get(s.itemId) || 0;
+                map.set(s.itemId, current + Math.max(0, Number(s.qtyPrincipal || 0)));
+            }
         });
-    }, [movements, searchQuery]);
+        return map;
+    }, [rawStock, depositoId]);
 
-    // Calculate items breakdown (list of all materials found in the period)
-    const itemsBreakdown = useMemo(() => {
+    // ── Movimientos filtrados válidos (excluye anulados y tipos no-consumo) ──
+    const validMovements = useMemo(() => {
+        const allowedTypes = ['REMITO_SALIDA', 'ENTREGA_PRODUCCION', 'AJUSTE_RESTA'];
+        return rawMovements.filter((m: any) => {
+            if (m.status === 'ANULADO') return false;
+            if (tipoConsumo !== 'ALL') {
+                if (m.tipo !== tipoConsumo) return false;
+            } else {
+                if (!allowedTypes.includes(m.tipo)) return false;
+            }
+            return true;
+        });
+    }, [rawMovements, tipoConsumo]);
+
+    // ── Días totales del período ──
+    const totalDays = useMemo(() => {
+        if (!desde || !hasta) return 30;
+        const start = new Date(desde + 'T12:00:00');
+        const end = new Date(hasta + 'T12:00:00');
+        const diff = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        return Math.max(1, diff);
+    }, [desde, hasta]);
+
+    // ── Desglose por Material (Consumo Individual) ──
+    const itemsData = useMemo(() => {
         const groups: Record<string, {
-            item: { id: string; codigoInterno: string; descripcion: string; unidadPrincipal: string };
+            id: string;
+            codigoInterno: string;
+            descripcion: string;
+            unidadPrincipal: string;
+            supplierName: string;
+            categoryName: string;
             totalQty: number;
+            totalBultos: number;
             movements: any[];
         }> = {};
 
-        filteredMovements.forEach(m => {
+        validMovements.forEach((m: any) => {
             if (!m.item) return;
             const itemId = m.item.id;
             const qty = Math.abs(Number(m.qtyPrincipal || 0));
+            const bultos = Math.abs(Number(m.qtySecundaria || 0));
 
             if (!groups[itemId]) {
                 groups[itemId] = {
-                    item: m.item,
+                    id: itemId,
+                    codigoInterno: m.item.codigoInterno || 'S/C',
+                    descripcion: m.item.descripcion || m.item.codigoInterno || 'Material',
+                    unidadPrincipal: m.item.unidadPrincipal || 'KG',
+                    supplierName: m.item.supplier?.name || m.supplier?.name || m.batch?.supplier?.name || '—',
+                    categoryName: m.item.category?.nombre || m.item.categoria || '—',
                     totalQty: 0,
+                    totalBultos: 0,
                     movements: []
                 };
             }
             groups[itemId].totalQty += qty;
+            groups[itemId].totalBultos += bultos;
             groups[itemId].movements.push(m);
         });
 
-        return Object.values(groups).sort((a, b) => b.totalQty - a.totalQty);
-    }, [filteredMovements]);
+        // Completar métricas de cobertura y consumo diario
+        return Object.values(groups).map((g) => {
+            const stockActual = stockMap.get(g.id) || 0;
+            const consumoDiario = g.totalQty / totalDays;
+            const diasCobertura = consumoDiario > 0 ? (stockActual / consumoDiario) : Infinity;
 
-    // Calculate aggregated metrics and charts data based on filtered (non-excluded) materials/groups
-    const { timelineData, barChartData, totalKilos, averageKilos, averageKilosMonthly } = useMemo(() => {
-        let sumKilos = 0;
-        const dailyTotals: Record<string, number> = {};
-        const dailyGroupTotals: Record<string, Record<string, number>> = {};
-        const groupTotals: Record<string, number> = {};
+            return {
+                ...g,
+                stockActual,
+                consumoDiario,
+                diasCobertura
+            };
+        }).sort((a, b) => b.totalQty - a.totalQty);
+    }, [validMovements, stockMap, totalDays]);
 
-        if (viewByGroup) {
-            filteredMovements.forEach(m => {
-                if (!m.item) return;
-                const itemId = m.item.id;
-                const qty = Math.abs(Number(m.qtyPrincipal || 0));
-                
-                let matchesAnyActive = false;
-                combos.forEach(grupo => {
-                    if (excludedComboIds[grupo.id]) return;
-                    if (grupo.itemIds && grupo.itemIds.includes(itemId)) {
-                        matchesAnyActive = true;
-                        
-                        const dateStr = m.fecha;
-                        if (!dailyGroupTotals[dateStr]) dailyGroupTotals[dateStr] = {};
-                        dailyGroupTotals[dateStr][grupo.id] = (dailyGroupTotals[dateStr][grupo.id] || 0) + qty;
-                        
-                        groupTotals[grupo.id] = (groupTotals[grupo.id] || 0) + qty;
-                    }
-                });
+    // ── Desglose por Grupos / Combos ──
+    const groupsData = useMemo(() => {
+        if (!viewByGroup) return [];
 
-                if (matchesAnyActive) {
-                    sumKilos += qty;
+        return combos.map((combo: any) => {
+            const comboItemIds = combo.itemIds || [];
+            let comboQty = 0;
+            let comboBultos = 0;
+            let comboStock = 0;
+            const comboMovements: any[] = [];
+
+            comboItemIds.forEach((itemId: string) => {
+                comboStock += stockMap.get(itemId) || 0;
+            });
+
+            validMovements.forEach((m: any) => {
+                if (m.item && comboItemIds.includes(m.item.id)) {
+                    const qty = Math.abs(Number(m.qtyPrincipal || 0));
+                    const bultos = Math.abs(Number(m.qtySecundaria || 0));
+                    comboQty += qty;
+                    comboBultos += bultos;
+                    comboMovements.push(m);
                 }
             });
-        } else {
-            filteredMovements.forEach(m => {
-                if (!m.item) return;
-                const itemId = m.item.id;
-                
-                // Skip calculations for excluded materials
-                if (excludedMaterialIds[itemId]) return;
 
-                const qty = Math.abs(Number(m.qtyPrincipal || 0));
-                sumKilos += qty;
+            const consumoDiario = comboQty / totalDays;
+            const diasCobertura = consumoDiario > 0 ? (comboStock / consumoDiario) : Infinity;
 
-                // Group by date for progressive chart
-                const dateStr = m.fecha;
-                dailyTotals[dateStr] = (dailyTotals[dateStr] || 0) + qty;
+            return {
+                id: combo.id,
+                comboRef: combo,
+                title: combo.title,
+                supplierName: combo.supplier?.name || 'Varios / Mixto',
+                itemCount: comboItemIds.length,
+                totalQty: comboQty,
+                totalBultos: comboBultos,
+                stockActual: comboStock,
+                consumoDiario,
+                diasCobertura,
+                movements: comboMovements
+            };
+        }).sort((a, b) => b.totalQty - a.totalQty);
+    }, [viewByGroup, combos, validMovements, stockMap, totalDays]);
+
+    // ── Filtrado por búsqueda en tiempo real ──
+    const filteredRows: any[] = useMemo(() => {
+        const query = normalizeText(searchQuery);
+        const tokens = query.split(/\s+/).filter(Boolean);
+
+        if (viewByGroup) {
+            if (!tokens.length) return groupsData;
+            return groupsData.filter((g: any) => {
+                const searchStr = normalizeText(`${g.title} ${g.supplierName}`);
+                return tokens.every(t => searchStr.includes(t));
             });
         }
 
-        // Build daily consumption data filling missing dates with 0
+        if (!tokens.length) return itemsData;
+        return itemsData.filter((i: any) => {
+            const searchStr = normalizeText(`${i.codigoInterno} ${i.descripcion} ${i.supplierName} ${i.categoryName}`);
+            return tokens.every(t => searchStr.includes(t));
+        });
+    }, [viewByGroup, groupsData, itemsData, searchQuery]);
+
+    const pagination = useClientPagination(filteredRows, 15);
+
+    // Reset de página al cambiar filtros
+    useEffect(() => {
+        pagination.setPage(0);
+    }, [desde, hasta, depositoId, tipoConsumo, searchQuery, viewByGroup]);
+
+    // ── Métricas KPIs ──
+    const kpis = useMemo(() => {
+        let totalKilos = 0;
+        let totalBultos = 0;
+        let criticos = 0;
+        let atencion = 0;
+        let stockTotalAnalizado = 0;
+
+        itemsData.forEach((item) => {
+            totalKilos += item.totalQty;
+            totalBultos += item.totalBultos;
+            stockTotalAnalizado += item.stockActual;
+
+            if (item.stockActual <= 0 || item.diasCobertura < 7) {
+                criticos++;
+            } else if (item.diasCobertura < 15) {
+                atencion++;
+            }
+        });
+
+        const ritmoDiario = totalDays > 0 ? (totalKilos / totalDays) : 0;
+        const proyeccionMensual = ritmoDiario * 30;
+
+        return {
+            totalKilos,
+            totalBultos,
+            ritmoDiario,
+            proyeccionMensual,
+            criticos,
+            atencion,
+            stockTotalAnalizado,
+            totalMovimientos: validMovements.length
+        };
+    }, [itemsData, totalDays, validMovements]);
+
+    // ── Datos para Gráficos de Análisis ──
+    const chartData = useMemo(() => {
+        if (!showCharts) return { timeline: [], top5: [] };
+
+        // Evolución diaria
+        const dailyMap: Record<string, number> = {};
+        validMovements.forEach((m: any) => {
+            const f = String(m.fecha || '').slice(0, 10);
+            if (f) {
+                dailyMap[f] = (dailyMap[f] || 0) + Math.abs(Number(m.qtyPrincipal || 0));
+            }
+        });
+
         const start = new Date(desde + 'T12:00:00');
         const end = new Date(hasta + 'T12:00:00');
         const timeline: any[] = [];
-        
+
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            const dateStr = d.toISOString().split('T')[0];
-            
+            const f = d.toISOString().split('T')[0];
+            timeline.push({
+                fecha: formatDate(f),
+                kilos: Number((dailyMap[f] || 0).toFixed(1))
+            });
+        }
+
+        // Top 5 más consumidos
+        const top5 = itemsData.slice(0, 5).map((i) => ({
+            name: i.codigoInterno,
+            kilos: Number(i.totalQty.toFixed(1)),
+            desc: i.descripcion
+        }));
+
+        return { timeline, top5 };
+    }, [showCharts, validMovements, desde, hasta, itemsData]);
+
+    // ── Exportación a Excel ──
+    const handleExportExcel = () => {
+        const rows = filteredRows.map((r: any) => {
             if (viewByGroup) {
-                const dayObj: any = { fecha: dateStr };
-                combos.forEach(grupo => {
-                    if (excludedComboIds[grupo.id]) return;
-                    const val = dailyGroupTotals[dateStr]?.[grupo.id] || 0;
-                    dayObj[grupo.id] = Number(val.toFixed(2));
-                });
-                timeline.push(dayObj);
-            } else {
-                const qty = dailyTotals[dateStr] || 0;
-                timeline.push({
-                    fecha: dateStr,
-                    qty: Number(qty.toFixed(2))
-                });
+                return {
+                    'Grupo / Combo': r.title,
+                    'Proveedor': r.supplierName,
+                    'Materiales Incluidos': r.itemCount,
+                    'Consumo Período (kg)': Number(r.totalQty.toFixed(2)),
+                    'Consumo Diario (kg/d)': Number(r.consumoDiario.toFixed(2)),
+                    'Stock Actual (kg)': Number(r.stockActual.toFixed(2)),
+                    'Días Cobertura': r.consumoDiario > 0 ? Number(r.diasCobertura.toFixed(1)) : 'Sin consumo',
+                    'Estado': r.stockActual <= 0 ? 'Sin stock' : (r.diasCobertura < 7 ? 'Crítico (<7d)' : (r.diasCobertura < 15 ? 'Atención (7-15d)' : 'Óptimo (>15d)'))
+                };
             }
-        }
-
-        // Build vertical/horizontal bar chart data
-        let bars: any[] = [];
-        if (viewByGroup) {
-            bars = combos
-                .filter(grupo => !excludedComboIds[grupo.id])
-                .map(grupo => ({
-                    name: grupo.title,
-                    kilos: Number((groupTotals[grupo.id] || 0).toFixed(2)),
-                    descripcion: grupo.supplier?.name || 'Mixto'
-                }))
-                .sort((a, b) => b.kilos - a.kilos)
-                .slice(0, 10);
-        } else {
-            bars = itemsBreakdown
-                .filter(g => !excludedMaterialIds[g.item.id])
-                .map(g => ({
-                    name: g.item.codigoInterno,
-                    kilos: Number(g.totalQty.toFixed(2)),
-                    descripcion: g.item.descripcion
-                })).slice(0, 10); // top 10 selected materials
-        }
-
-        const totalDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1);
-        const averageKilos = sumKilos / totalDays;
-        const averageKilosMonthly = averageKilos * 30;
-
-        return {
-            timelineData: timeline,
-            barChartData: bars,
-            totalKilos: sumKilos,
-            averageKilos,
-            averageKilosMonthly
-        };
-    }, [filteredMovements, excludedMaterialIds, excludedComboIds, itemsBreakdown, combos, viewByGroup, desde, hasta]);
-
-    const toggleMaterialSelection = (itemId: string) => {
-        setExcludedMaterialIds(prev => ({
-            ...prev,
-            [itemId]: !prev[itemId]
-        }));
-    };
-
-    const selectAllMaterials = () => {
-        setExcludedMaterialIds({});
-    };
-
-    const deselectAllMaterials = () => {
-        const allExcluded: Record<string, boolean> = {};
-        itemsBreakdown.forEach(g => {
-            allExcluded[g.item.id] = true;
+            return {
+                'Código': r.codigoInterno,
+                'Descripción': r.descripcion,
+                'Proveedor': r.supplierName,
+                'Categoría': r.categoryName,
+                'Consumo Período (kg)': Number(r.totalQty.toFixed(2)),
+                'Bultos': r.totalBultos,
+                'Consumo Diario (kg/d)': Number(r.consumoDiario.toFixed(2)),
+                'Stock Actual (kg)': Number(r.stockActual.toFixed(2)),
+                'Días Cobertura': r.consumoDiario > 0 ? Number(r.diasCobertura.toFixed(1)) : 'Sin consumo',
+                'Estado': r.stockActual <= 0 ? 'Sin stock' : (r.diasCobertura < 7 ? 'Crítico (<7d)' : (r.diasCobertura < 15 ? 'Atención (7-15d)' : 'Óptimo (>15d)'))
+            };
         });
-        setExcludedMaterialIds(allExcluded);
+
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Consumo');
+        XLSX.writeFile(wb, `Consumo_Materiales_${desde}_al_${hasta}.xlsx`);
     };
 
-    const toggleComboSelection = (comboId: string) => {
-        setExcludedComboIds(prev => ({
-            ...prev,
-            [comboId]: !prev[comboId]
-        }));
-    };
-
-    const selectAllCombos = () => {
-        setExcludedComboIds({});
-    };
-
-    const deselectAllCombos = () => {
-        const allExcluded: Record<string, boolean> = {};
-        combos.forEach(g => {
-            allExcluded[g.id] = true;
-        });
-        setExcludedComboIds(allExcluded);
-    };
-
-    // Handle clicking a remito link
-    const handleRemitoClick = async (e: React.MouseEvent, docId: string | null, docNum: string | null) => {
-        e.stopPropagation();
+    // ── Clic en remito para ver comprobante formal ──
+    const handleViewRemito = async (docId: string | null) => {
         if (!docId) {
-            alert('Este movimiento no tiene un ID de remito asociado para ver detalle.');
+            alert('Este movimiento no tiene remito formal asociado.');
             return;
         }
         try {
-            const fullRemito = await triggerGetRemitoDetail(docId).unwrap();
-            setSelectedRemito(fullRemito);
-            setShowDetailModal(true);
-        } catch (err) {
-            console.error('Error loading remito details', err);
-            // Fallback visualization if API call fails
-            setSelectedRemito({
-                numero: docNum || 'S/N',
-                fecha: '',
-                partner: { name: 'Desconocido' },
-                lines: []
-            });
-            setShowDetailModal(true);
+            const doc = await triggerGetRemitoDetail(docId).unwrap();
+            setSelectedRemito(doc);
+            setShowRemitoModal(true);
+        } catch {
+            alert('Error al obtener el remito.');
         }
     };
 
+    const isLoading = isFetchingMovements || isFetchingStock;
+
     return (
-        <div style={{ padding: isMobile ? '12px' : '24px', maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <PageHeader 
-                title="Consumo Detallado" 
-                subtitle="Informe dinámico de egreso de materiales mediante remitos de salida" 
-            >
-                <div style={{ display: 'flex', gap: '8px' }}>
-                    <Btn 
-                        variant={viewByGroup ? "secondary" : "primary"}
-                        onClick={() => setViewByGroup(false)}
-                        small={isMobile}
+        <Box sx={{ p: { xs: 2, md: 3 }, display: 'flex', flexDirection: 'column', gap: 2.5, bgcolor: colors.bg, minHeight: '100vh', color: colors.text }}>
+            
+            {/* Header Conciso */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5 }}>
+                <Box>
+                    <Typography variant="h5" sx={{ fontWeight: 900, color: colors.primary, letterSpacing: '-0.5px' }}>
+                        📊 Consumo de Materiales
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: colors.textDim }}>
+                        Análisis de egresos, ritmo de abastecimiento y proyección de agotamiento de stock
+                    </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <Button
+                        size="small"
+                        variant={viewByGroup ? "contained" : "outlined"}
+                        onClick={() => setViewByGroup(!viewByGroup)}
+                        sx={{ 
+                            borderRadius: 2, 
+                            fontWeight: 700, 
+                            textTransform: 'none',
+                            bgcolor: viewByGroup ? colors.primary : 'transparent',
+                            color: viewByGroup ? '#000' : colors.text,
+                            borderColor: colors.border
+                        }}
                     >
-                        Consumo Individual
-                    </Btn>
-                    <Btn 
-                        variant={viewByGroup ? "primary" : "secondary"}
-                        onClick={() => setViewByGroup(true)}
-                        small={isMobile}
-                    >
-                        Consumo por Grupos
-                    </Btn>
-                </div>
-            </PageHeader>
+                        {viewByGroup ? '📦 Ver Individuales' : '🏷️ Ver por Combos'}
+                    </Button>
 
-            {/* Filters */}
-            <Card style={{ padding: '20px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
-                        <Input 
-                            label="Desde" 
-                            type="date" 
-                            value={desde} 
-                            onChange={setDesde} 
-                        />
-                        <Input 
-                            label="Hasta" 
-                            type="date" 
-                            value={hasta} 
-                            onChange={setHasta} 
-                        />
-                    </div>
-                    {/* Depot Filter */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted, #9ca3af)', letterSpacing: '0.03em' }}>
-                            Depósito
-                        </label>
-                        <select
-                            value={depositoId}
-                            onChange={(e) => setDepositoId(e.target.value)}
-                            style={{
-                                background: 'var(--bg-secondary, #111827)',
-                                border: '1px solid var(--border-strong, #1e293b)',
-                                borderRadius: '8px',
-                                color: 'var(--text-primary, #f3f4f6)',
-                                padding: '10px 14px',
-                                fontSize: '14px',
-                                outline: 'none',
-                                cursor: 'pointer',
-                                width: '100%',
-                            }}
-                        >
-                            <option value="">Todos los depósitos</option>
-                            {depositos.filter((dep: any) => dep.activo !== false).map((dep: any) => (
-                                <option key={dep.id} value={dep.id}>{dep.nombre}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <DebouncedSearchInput 
-                        label="Buscar por proveedor, lote, material, descripción, categoría o código (múltiples palabras)" 
-                        placeholder="Ej: algodon rontaltex..." 
-                        value={searchQuery} 
-                        onChange={setSearchQuery} 
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<BarChartIcon />}
+                        onClick={() => setShowCharts(!showCharts)}
+                        sx={{ 
+                            borderRadius: 2, 
+                            fontWeight: 700, 
+                            textTransform: 'none',
+                            color: showCharts ? colors.info : colors.textDim,
+                            borderColor: showCharts ? colors.info : colors.border
+                        }}
+                    >
+                        {showCharts ? 'Ocultar Gráficos' : 'Ver Gráficos'}
+                    </Button>
+
+                    <Button
+                        size="small"
+                        variant="contained"
+                        startIcon={<FileDownloadIcon />}
+                        onClick={handleExportExcel}
+                        sx={{ bgcolor: '#10b981', color: '#fff', fontWeight: 800, borderRadius: 2, textTransform: 'none', '&:hover': { bgcolor: '#059669' } }}
+                    >
+                        Exportar Excel
+                    </Button>
+                </Box>
+            </Box>
+
+            {/* KPIs Concisos (4 Tarjetas fijas) */}
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 1.5 }}>
+                <Paper sx={{ p: 1.8, bgcolor: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 2.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                    <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 700, textTransform: 'uppercase', fontSize: '0.65rem' }}>
+                        Total Consumido ({totalDays} días)
+                    </Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 900, color: colors.primary }}>
+                        {kpis.totalKilos.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}{' '}
+                        <small style={{ fontSize: '0.8rem', fontWeight: 500 }}>kg</small>
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.72rem' }}>
+                        {kpis.totalBultos > 0 ? `${kpis.totalBultos.toLocaleString('es-AR')} bultos en ` : ''}{kpis.totalMovimientos} operaciones
+                    </Typography>
+                </Paper>
+
+                <Paper sx={{ p: 1.8, bgcolor: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 2.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                    <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 700, textTransform: 'uppercase', fontSize: '0.65rem' }}>
+                        Ritmo Diario de Salida
+                    </Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 900, color: colors.info }}>
+                        {kpis.ritmoDiario.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}{' '}
+                        <small style={{ fontSize: '0.8rem', fontWeight: 500 }}>kg/día</small>
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.72rem' }}>
+                        Proyección mensual: ~{kpis.proyeccionMensual.toLocaleString('es-AR', { maximumFractionDigits: 0 })} kg/mes
+                    </Typography>
+                </Paper>
+
+                <Paper sx={{ p: 1.8, bgcolor: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 2.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                    <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 700, textTransform: 'uppercase', fontSize: '0.65rem' }}>
+                        Alerta de Agotamiento
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                        <Typography variant="h5" sx={{ fontWeight: 900, color: kpis.criticos > 0 ? colors.danger : colors.success }}>
+                            {kpis.criticos}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: kpis.criticos > 0 ? colors.danger : colors.textDim, fontWeight: 700, fontSize: '0.75rem' }}>
+                            {kpis.criticos === 1 ? 'material crítico (<7d)' : 'materiales críticos (<7d)'}
+                        </Typography>
+                    </Box>
+                    <Typography variant="caption" sx={{ color: colors.warning, fontSize: '0.72rem' }}>
+                        {kpis.atencion} adicionales en atención (7 a 15d)
+                    </Typography>
+                </Paper>
+
+                <Paper sx={{ p: 1.8, bgcolor: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 2.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                    <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 700, textTransform: 'uppercase', fontSize: '0.65rem' }}>
+                        Stock Actual Disponible
+                    </Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 900, color: colors.text }}>
+                        {kpis.stockTotalAnalizado.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}{' '}
+                        <small style={{ fontSize: '0.8rem', fontWeight: 500 }}>kg</small>
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.72rem' }}>
+                        Presente en los depósitos analizados
+                    </Typography>
+                </Paper>
+            </Box>
+
+            {/* Gráficos Compactos Opcionales (Colapsables con 1 Click) */}
+            <Collapse in={showCharts}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.4fr 1fr' }, gap: 1.5 }}>
+                    <Paper sx={{ p: 2, bgcolor: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 2.5, height: '220px' }}>
+                        <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 800, textTransform: 'uppercase', fontSize: '0.7rem', display: 'block', mb: 1 }}>
+                            📈 Picos de Consumo Diario (kg)
+                        </Typography>
+                        <ResponsiveContainer width="100%" height="82%">
+                            <AreaChart data={chartData.timeline}>
+                                <defs>
+                                    <linearGradient id="areaColor" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor={colors.info} stopOpacity={0.3}/>
+                                        <stop offset="95%" stopColor={colors.info} stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
+                                <XAxis dataKey="fecha" stroke="var(--text-muted, #64748b)" fontSize={10} />
+                                <YAxis stroke="var(--text-muted, #64748b)" fontSize={10} />
+                                <RechartsTooltip 
+                                    contentStyle={{ background: '#0b0f19', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '11px' }}
+                                />
+                                <Area type="monotone" dataKey="kilos" name="Kilos" stroke={colors.info} fill="url(#areaColor)" strokeWidth={2} />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </Paper>
+
+                    <Paper sx={{ p: 2, bgcolor: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 2.5, height: '220px' }}>
+                        <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 800, textTransform: 'uppercase', fontSize: '0.7rem', display: 'block', mb: 1 }}>
+                            🏆 Top 5 Materiales Más Consumidos
+                        </Typography>
+                        <ResponsiveContainer width="100%" height="82%">
+                            <BarChart data={chartData.top5} layout="vertical">
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" horizontal={false} />
+                                <XAxis type="number" stroke="var(--text-muted, #64748b)" fontSize={10} />
+                                <YAxis dataKey="name" type="category" stroke="var(--text-muted, #64748b)" fontSize={10} width={75} />
+                                <RechartsTooltip 
+                                    contentStyle={{ background: '#0b0f19', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '11px' }}
+                                />
+                                <Bar dataKey="kilos" name="Kilos" fill={colors.primary} radius={[0, 4, 4, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </Paper>
+                </Box>
+            </Collapse>
+
+            {/* Barra de Filtros Compacta */}
+            <Paper sx={{ p: 1.5, bgcolor: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 2.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                    {/* Botones Presets Rápidos */}
+                    <Box sx={{ display: 'flex', gap: 0.5, bgcolor: 'rgba(255,255,255,0.03)', p: 0.4, borderRadius: 2, border: `1px solid ${colors.border}` }}>
+                        {(['7D', '15D', '30D', 'MES'] as const).map((p) => (
+                            <Chip
+                                key={p}
+                                label={p === 'MES' ? 'Este Mes' : `${p}`}
+                                size="small"
+                                onClick={() => handlePreset(p)}
+                                sx={{
+                                    cursor: 'pointer',
+                                    fontWeight: activePreset === p ? 800 : 600,
+                                    fontSize: '0.7rem',
+                                    bgcolor: activePreset === p ? colors.primary : 'transparent',
+                                    color: activePreset === p ? '#000' : colors.textDim,
+                                    '&:hover': { bgcolor: activePreset === p ? colors.primary : 'rgba(255,255,255,0.08)' }
+                                }}
+                            />
+                        ))}
+                    </Box>
+
+                    {/* Rango de Fechas */}
+                    <TextField
+                        type="date"
+                        size="small"
+                        value={desde}
+                        onChange={(e) => { setDesde(e.target.value); setActivePreset('CUSTOM'); }}
+                        sx={{ width: '135px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2, fontSize: '0.8rem', height: '34px' } }}
                     />
-                </div>
-            </Card>
+                    <Typography variant="caption" sx={{ color: colors.textDim }}>al</Typography>
+                    <TextField
+                        type="date"
+                        size="small"
+                        value={hasta}
+                        onChange={(e) => { setHasta(e.target.value); setActivePreset('CUSTOM'); }}
+                        sx={{ width: '135px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2, fontSize: '0.8rem', height: '34px' } }}
+                    />
 
-            {isFetching ? (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
-                    <Spinner />
-                </div>
+                    {/* Selector de Depósito */}
+                    <TextField
+                        select
+                        size="small"
+                        value={depositoId}
+                        onChange={(e) => setDepositoId(e.target.value)}
+                        sx={{ width: '160px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2, fontSize: '0.8rem', height: '34px' } }}
+                    >
+                        <MenuItem value=""><em>Todos los depósitos</em></MenuItem>
+                        {depots.map((d: any) => (
+                            <MenuItem key={d.id} value={d.id}>{d.nombre}</MenuItem>
+                        ))}
+                    </TextField>
+
+                    {/* Tipo de Consumo */}
+                    <TextField
+                        select
+                        size="small"
+                        value={tipoConsumo}
+                        onChange={(e) => setTipoConsumo(e.target.value as any)}
+                        sx={{ width: '175px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2, fontSize: '0.8rem', height: '34px' } }}
+                    >
+                        <MenuItem value="ALL">Todos los egresos</MenuItem>
+                        <MenuItem value="REMITO_SALIDA">Remitos a Clientes</MenuItem>
+                        <MenuItem value="ENTREGA_PRODUCCION">Entregas a Fábrica</MenuItem>
+                        <MenuItem value="AJUSTE_RESTA">Mermas / Ajustes</MenuItem>
+                    </TextField>
+
+                    {/* Buscador Multipalabra */}
+                    <TextField
+                        size="small"
+                        placeholder="Buscar por código, material, proveedor..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        InputProps={{
+                            startAdornment: <SearchIcon sx={{ color: colors.textDim, mr: 0.5, fontSize: '1.1rem' }} />
+                        }}
+                        sx={{ flex: '1 1 200px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2, fontSize: '0.8rem', height: '34px' } }}
+                    />
+                </Box>
+            </Paper>
+
+            {/* Tabla Concisa de Resultados */}
+            {isLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 8 }}>
+                    <CircularProgress sx={{ color: colors.primary }} />
+                </Box>
+            ) : filteredRows.length === 0 ? (
+                <Paper sx={{ p: 5, textAlign: 'center', bgcolor: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3 }}>
+                    <Typography variant="body1" sx={{ color: colors.textDim }}>
+                        No se registraron consumos en el período con los filtros seleccionados.
+                    </Typography>
+                </Paper>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    
-                    {/* General Summary Card */}
-                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr', gap: '20px' }}>
-                        <Card style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', background: 'var(--bg-report-gradient, linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%))', border: '1px solid var(--border-report-strong, #312e81)' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
-                                <div>
-                                    <div style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '12px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '6px' }}>
-                                        Consumo Total del Período
-                                    </div>
-                                    <div style={{ fontSize: '32px', fontWeight: 800, color: '#38bdf8' }}>
-                                        {totalKilos.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        <span style={{ fontSize: '16px', color: 'var(--text-subtle, #94a3b8)', marginLeft: '6px' }}>Kg</span>
-                                    </div>
-                                </div>
-                                
-                                <div style={{ borderTop: '1px solid rgba(56, 189, 248, 0.15)', paddingTop: '14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%' }}>
-                                    <div style={{ borderRight: '1px solid rgba(56, 189, 248, 0.15)', paddingRight: '6px' }}>
-                                        <div style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '4px' }}>
-                                            Promedio Diario
-                                        </div>
-                                        <div style={{ fontSize: '20px', fontWeight: 800, color: '#10b981' }}>
-                                            {averageKilos.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            <span style={{ fontSize: '11px', color: 'var(--text-subtle, #94a3b8)', marginLeft: '3px' }}>Kg</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <div style={{ paddingLeft: '6px' }}>
-                                        <div style={{ color: 'var(--text-muted, #9ca3af)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '4px' }}>
-                                            Promedio Mensual
-                                        </div>
-                                        <div style={{ fontSize: '20px', fontWeight: 800, color: '#8b5cf6' }}>
-                                            {averageKilosMonthly.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            <span style={{ fontSize: '11px', color: 'var(--text-subtle, #94a3b8)', marginLeft: '3px' }}>Kg</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)', marginTop: '14px', borderTop: '1px dashed var(--bg-hover-dynamic, rgba(255,255,255,0.05))', paddingTop: '8px', width: '100%' }}>
-                                Basado en {filteredMovements.length === movements.length ? `${movements.length}` : `${filteredMovements.length} de ${movements.length}`} transacciones
-                            </div>
-                        </Card>
+                <Paper sx={{ bgcolor: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 2.5, overflow: 'hidden' }}>
+                    <TableContainer>
+                        <MuiTable size="small">
+                            <TableHead sx={{ bgcolor: 'rgba(0,0,0,0.25)' }}>
+                                <TableRow sx={{ '& th': { color: colors.textDim, fontWeight: 800, fontSize: '0.72rem', textTransform: 'uppercase', py: 1.2 } }}>
+                                    {viewByGroup ? (
+                                        <>
+                                            <TableCell>Grupo / Combo</TableCell>
+                                            <TableCell>Proveedor</TableCell>
+                                            <TableCell align="center">Materiales</TableCell>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <TableCell>Código</TableCell>
+                                            <TableCell>Descripción & Proveedor</TableCell>
+                                            <TableCell>Categoría</TableCell>
+                                        </>
+                                    )}
+                                    <TableCell align="right">Consumo Período</TableCell>
+                                    <TableCell align="right">Ritmo Diario</TableCell>
+                                    <TableCell align="right">Stock Actual</TableCell>
+                                    <TableCell align="center">Cobertura Estimada</TableCell>
+                                    <TableCell align="center">Acciones</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {pagination.pageItems.map((row: any) => {
+                                    const isCritical = row.stockActual <= 0 || row.diasCobertura < 7;
+                                    const isWarning = !isCritical && row.diasCobertura < 15;
 
-                        {/* Desktop Daily Consumption Chart */}
-                        {!isMobile && (
-                            <Card style={{ padding: '20px', height: '240px' }}>
-                                <h3 style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: '14px', margin: '0 0 15px 0', fontWeight: 700 }}>
-                                    📈 Consumo Diario {viewByGroup ? 'por Grupo de Materiales' : '(Kilos)'}
-                                </h3>
-                                {timelineData.length === 0 ? (
-                                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80%', color: 'var(--text-muted, #64748b)' }}>
-                                        No hay datos en el rango seleccionado
-                                    </div>
-                                ) : viewByGroup ? (
-                                    <ResponsiveContainer width="100%" height="80%">
-                                        <LineChart data={timelineData}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-strong, #1e293b)" vertical={false} />
-                                            <XAxis 
-                                                dataKey="fecha" 
-                                                stroke="var(--text-muted, #64748b)" 
-                                                fontSize={11}
-                                                tickFormatter={(val) => new Date(val).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })}
-                                            />
-                                            <YAxis stroke="var(--text-muted, #64748b)" fontSize={11} />
-                                            <Tooltip 
-                                                contentStyle={{ background: 'var(--bg-primary, #0f172a)', border: '1px solid var(--border-strong, #334155)', borderRadius: '8px', color: 'var(--text-white-dynamic, #fff)' }}
-                                                labelFormatter={(val) => new Date(val).toLocaleDateString('es-AR', { dateStyle: 'medium' })}
-                                            />
-                                            {combos.filter(grupo => !excludedComboIds[grupo.id]).map((grupo, idx) => {
-                                                const colorsList = ['#38bdf8', '#fb7185', '#34d399', '#fbbf24', '#a78bfa', '#f472b6', '#2dd4bf'];
-                                                return (
-                                                    <Line 
-                                                        key={grupo.id}
-                                                        type="monotone"
-                                                        dataKey={grupo.id}
-                                                        name={grupo.title}
-                                                        stroke={colorsList[idx % colorsList.length]}
-                                                        strokeWidth={2}
-                                                        dot={false}
-                                                        activeDot={{ r: 4 }}
-                                                    />
-                                                );
-                                            })}
-                                        </LineChart>
-                                    </ResponsiveContainer>
-                                ) : (
-                                    <ResponsiveContainer width="100%" height="80%">
-                                        <AreaChart data={timelineData}>
-                                            <defs>
-                                                <linearGradient id="colorCumulative" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.25}/>
-                                                    <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-strong, #1e293b)" vertical={false} />
-                                            <XAxis 
-                                                dataKey="fecha" 
-                                                stroke="var(--text-muted, #64748b)" 
-                                                fontSize={11}
-                                                tickFormatter={(val) => new Date(val).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })}
-                                            />
-                                            <YAxis stroke="var(--text-muted, #64748b)" fontSize={11} />
-                                            <Tooltip 
-                                                contentStyle={{ background: 'var(--bg-primary, #0f172a)', border: '1px solid var(--border-strong, #334155)', borderRadius: '8px', color: 'var(--text-white-dynamic, #fff)' }}
-                                                itemStyle={{ color: '#38bdf8' }}
-                                                labelFormatter={(val) => new Date(val).toLocaleDateString('es-AR', { dateStyle: 'medium' })}
-                                            />
-                                            <Area 
-                                                type="monotone" 
-                                                dataKey="qty" 
-                                                name="Consumo Diario" 
-                                                stroke="#0ea5e9" 
-                                                strokeWidth={2}
-                                                fillOpacity={1} 
-                                                fill="url(#colorCumulative)" 
-                                            />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                )}
-                            </Card>
-                        )}
-                    </div>
+                                    return (
+                                        <TableRow key={row.id} className="hoverable-row" sx={{ borderBottom: `1px solid ${colors.border}`, '& td': { py: 1 } }}>
+                                            {viewByGroup ? (
+                                                <>
+                                                    <TableCell sx={{ fontWeight: 800, color: colors.primary, fontSize: '0.85rem' }}>
+                                                        {row.title}
+                                                    </TableCell>
+                                                    <TableCell sx={{ color: colors.textDim, fontSize: '0.8rem' }}>
+                                                        {row.supplierName}
+                                                    </TableCell>
+                                                    <TableCell align="center">
+                                                        <Chip label={`${row.itemCount} ítems`} size="small" sx={{ fontSize: '0.7rem', height: '20px', bgcolor: 'rgba(255,255,255,0.05)', color: colors.text }} />
+                                                    </TableCell>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <TableCell sx={{ fontWeight: 800, color: colors.primary, fontSize: '0.82rem' }}>
+                                                        {row.codigoInterno}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Typography sx={{ fontWeight: 600, color: '#fff', fontSize: '0.82rem', lineHeight: 1.2 }}>
+                                                            {row.descripcion}
+                                                        </Typography>
+                                                        <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.7rem' }}>
+                                                            {row.supplierName}
+                                                        </Typography>
+                                                    </TableCell>
+                                                    <TableCell sx={{ color: colors.textDim, fontSize: '0.75rem' }}>
+                                                        {row.categoryName}
+                                                    </TableCell>
+                                                </>
+                                            )}
 
-                    {/* Material List with accordions */}
-                    <Card style={{ padding: '0px', overflow: 'hidden' }}>
-                        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-strong, #1e293b)', background: 'var(--bg-secondary, #111827)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                            <span style={{ fontWeight: 700, color: 'var(--text-primary, #f3f4f6)' }}>
-                                {viewByGroup ? 'Grupos de Materiales' : 'Materiales Consumidos'}
-                            </span>
-                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                <button 
-                                    onClick={viewByGroup ? selectAllCombos : selectAllMaterials}
-                                    style={{ background: 'none', border: 'none', color: '#38bdf8', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}
-                                >
-                                    ✓ Seleccionar Todos
-                                </button>
-                                <button 
-                                    onClick={viewByGroup ? deselectAllCombos : deselectAllMaterials}
-                                    style={{ background: 'none', border: 'none', color: 'var(--text-subtle, #94a3b8)', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}
-                                >
-                                    ✗ Desmarcar Todos
-                                </button>
-                                <span style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)' }}>| Ordenado por Kilos</span>
-                            </div>
-                        </div>
+                                            {/* Consumo Período */}
+                                            <TableCell align="right" sx={{ fontWeight: 800, color: colors.info, fontSize: '0.85rem' }}>
+                                                {row.totalQty.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg
+                                                {row.totalBultos > 0 && (
+                                                    <Typography variant="caption" sx={{ color: colors.textDim, display: 'block', fontSize: '0.68rem' }}>
+                                                        {row.totalBultos} bultos
+                                                    </Typography>
+                                                )}
+                                            </TableCell>
 
-                        {viewByGroup ? (
-                            combos.length === 0 ? (
-                                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted, #64748b)' }}>
-                                    No se encontraron grupos configurados.
-                                </div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    {combos.map((grupo) => {
-                                        const isExpanded = !!expandedItems[grupo.id];
-                                        const isSelected = !excludedComboIds[grupo.id];
-                                        
-                                        // Calcular consumo total del grupo en el periodo
-                                        const groupConsumoTotal = filteredMovements.reduce((sum, m) => {
-                                            if (m.item && grupo.itemIds?.includes(m.item.id)) {
-                                                return sum + Math.abs(Number(m.qtyPrincipal || 0));
-                                            }
-                                            return sum;
-                                        }, 0);
+                                            {/* Ritmo Diario */}
+                                            <TableCell align="right" sx={{ fontWeight: 600, color: colors.text, fontSize: '0.82rem' }}>
+                                                {row.consumoDiario.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg/d
+                                            </TableCell>
 
-                                        // Agrupar movimientos de este grupo por material para el desglose
-                                        const groupItemsBreakdown = (() => {
-                                            const breakdown: Record<string, {
-                                                item: any;
-                                                totalQty: number;
-                                                movements: any[];
-                                            }> = {};
+                                            {/* Stock Actual */}
+                                            <TableCell align="right" sx={{ fontWeight: 700, color: row.stockActual <= 0 ? colors.danger : colors.text, fontSize: '0.82rem' }}>
+                                                {row.stockActual.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg
+                                            </TableCell>
 
-                                            filteredMovements.forEach(m => {
-                                                if (m.item && grupo.itemIds?.includes(m.item.id)) {
-                                                    const itemId = m.item.id;
-                                                    if (!breakdown[itemId]) {
-                                                        breakdown[itemId] = {
-                                                            item: m.item,
-                                                            totalQty: 0,
-                                                            movements: []
-                                                        };
-                                                    }
-                                                    const qty = Math.abs(Number(m.qtyPrincipal || 0));
-                                                    breakdown[itemId].totalQty += qty;
-                                                    breakdown[itemId].movements.push(m);
-                                                }
-                                            });
+                                            {/* Semáforo Cobertura */}
+                                            <TableCell align="center">
+                                                {row.stockActual <= 0 ? (
+                                                    <Chip label="SIN STOCK" size="small" color="error" sx={{ fontWeight: 800, fontSize: '0.65rem', height: '22px' }} />
+                                                ) : row.consumoDiario <= 0 ? (
+                                                    <Chip label="Sin consumo" size="small" sx={{ bgcolor: 'rgba(255,255,255,0.06)', color: colors.textDim, fontSize: '0.65rem', height: '22px' }} />
+                                                ) : isCritical ? (
+                                                    <Tooltip title="Stock en riesgo inminente de quiebre (< 7 días)">
+                                                        <Chip label={`🔴 ${Math.round(row.diasCobertura)} días`} size="small" sx={{ bgcolor: 'rgba(239, 68, 68, 0.15)', color: colors.danger, fontWeight: 800, fontSize: '0.7rem', height: '22px' }} />
+                                                    </Tooltip>
+                                                ) : isWarning ? (
+                                                    <Tooltip title="Nivel de atención (7 a 15 días de stock)">
+                                                        <Chip label={`🟡 ${Math.round(row.diasCobertura)} días`} size="small" sx={{ bgcolor: 'rgba(245, 158, 11, 0.15)', color: colors.warning, fontWeight: 800, fontSize: '0.7rem', height: '22px' }} />
+                                                    </Tooltip>
+                                                ) : (
+                                                    <Chip label={`🟢 ${Math.round(row.diasCobertura)} días`} size="small" sx={{ bgcolor: 'rgba(16, 185, 129, 0.15)', color: colors.success, fontWeight: 800, fontSize: '0.7rem', height: '22px' }} />
+                                                )}
+                                            </TableCell>
 
-                                            return Object.values(breakdown).sort((a, b) => b.totalQty - a.totalQty);
-                                        })();
-
-                                        return (
-                                            <div key={grupo.id} style={{ borderBottom: '1px solid var(--border-strong, #1e293b)' }}>
-                                                
-                                                {/* Accordion Trigger Row */}
-                                                <div 
-                                                    onClick={() => toggleItemExpanded(grupo.id)}
-                                                    style={{ 
-                                                        padding: '16px 20px', 
-                                                        display: 'flex', 
-                                                        alignItems: 'center', 
-                                                        justifyContent: 'space-between', 
-                                                        cursor: 'pointer',
-                                                        background: isExpanded ? 'var(--bg-overlay, rgba(15, 23, 42, 0.4))' : 'transparent',
-                                                        transition: 'background 0.2s ease'
-                                                    }}
-                                                >
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                                                        <input 
-                                                            type="checkbox"
-                                                            checked={isSelected}
-                                                            onClick={(e) => e.stopPropagation()}
-                                                            onChange={() => toggleComboSelection(grupo.id)}
-                                                            style={{ 
-                                                                cursor: 'pointer', 
-                                                                width: '18px', 
-                                                                height: '18px', 
-                                                                accentColor: '#38bdf8' 
-                                                            }}
-                                                        />
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, minWidth: 0 }}>
-                                                            <span style={{ fontWeight: 700, color: isSelected ? 'var(--text-white-dynamic, #fff)' : 'var(--text-muted, #64748b)', fontSize: '15px', textDecoration: isSelected ? 'none' : 'line-through' }}>
-                                                                {grupo.title}
-                                                            </span>
-                                                            <span style={{ color: isSelected ? 'var(--text-muted, #9ca3af)' : 'var(--text-mui-secondary, #475569)', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                                Proveedor: {grupo.supplier?.name || 'Varios / Mixto'} | {grupo.itemIds?.length || 0} materiales
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setEditComboId(grupo.id);
-                                                            }}
-                                                            style={{
-                                                                background: 'none',
-                                                                border: 'none',
-                                                                color: '#38bdf8',
-                                                                fontSize: '13px',
-                                                                cursor: 'pointer',
-                                                                fontWeight: 600,
-                                                                padding: '4px 8px',
-                                                                borderRadius: '4px',
-                                                                transition: 'background 0.2s'
-                                                            }}
-                                                            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(56, 189, 248, 0.1)'}
-                                                            onMouseOut={(e) => e.currentTarget.style.background = 'none'}
+                                            {/* Acciones */}
+                                            <TableCell align="center">
+                                                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
+                                                    {viewByGroup && (
+                                                        <Tooltip title="Editar componentes del combo">
+                                                            <IconButton
+                                                                size="small"
+                                                                onClick={() => setEditCombo(row.comboRef)}
+                                                                sx={{ color: colors.primary, '&:hover': { bgcolor: 'rgba(245, 158, 11, 0.15)' } }}
+                                                            >
+                                                                <EditIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    )}
+                                                    <Tooltip title="Ver transacciones detalladas">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => setSelectedItemMovements(row)}
+                                                            sx={{ color: colors.info, '&:hover': { bgcolor: 'rgba(56, 189, 248, 0.15)' } }}
                                                         >
-                                                            ✏️ Configurar
-                                                        </button>
-                                                        <div style={{ textAlign: 'right' }}>
-                                                            <span style={{ fontWeight: 800, color: isSelected ? '#38bdf8' : 'var(--text-mui-secondary, #475569)', fontSize: '16px' }}>
-                                                                {groupConsumoTotal.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                            </span>
-                                                            <span style={{ color: 'var(--text-muted, #64748b)', fontSize: '12px', marginLeft: '4px' }}>
-                                                                Kg
-                                                            </span>
-                                                        </div>
-                                                        <span style={{ fontSize: '18px', color: 'var(--text-muted, #64748b)', transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-                                                            ▼
-                                                        </span>
-                                                    </div>
-                                                </div>
+                                                            <VisibilityIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </Box>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                            </TableBody>
+                        </MuiTable>
+                    </TableContainer>
 
-                                                {/* Accordion Detail Content */}
-                                                {isExpanded && (
-                                                    <div style={{ padding: '20px', background: 'var(--bg-primary, #0b0f19)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                                        {groupItemsBreakdown.length === 0 ? (
-                                                            <div style={{ color: 'var(--text-muted, #64748b)', fontSize: '13px', textAlign: 'center', padding: '10px' }}>
-                                                                No se registraron consumos para los materiales de este grupo en el período seleccionado.
-                                                            </div>
-                                                        ) : (
-                                                            groupItemsBreakdown.map((itemGroup) => (
-                                                                <div key={itemGroup.item.id} style={{ border: '1px solid var(--border-strong, #1e293b)', borderRadius: '8px', overflow: 'hidden' }}>
-                                                                    <div style={{ padding: '10px 14px', background: 'var(--bg-secondary, #111827)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                                            <strong style={{ color: 'var(--text-white-dynamic, #fff)', fontSize: '14px' }}>{itemGroup.item.descripcion}</strong>
-                                                                            <span style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)' }}>Cód: {itemGroup.item.codigoInterno}</span>
-                                                                        </div>
-                                                                        <span style={{ fontWeight: 700, color: '#38bdf8', fontSize: '14px' }}>
-                                                                            {itemGroup.totalQty.toLocaleString('es-AR', { minimumFractionDigits: 2 })} {itemGroup.item.unidadPrincipal}
-                                                                        </span>
-                                                                    </div>
-                                                                    <div style={{ overflowX: 'auto' }}>
-                                                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                                                                            <thead>
-                                                                                <tr style={{ borderBottom: '1px solid var(--border-strong, #1e293b)', background: 'rgba(0,0,0,0.15)' }}>
-                                                                                    <th style={{ padding: '8px 12px', textAlign: 'left', color: 'var(--text-muted, #64748b)' }}>Fecha</th>
-                                                                                    <th style={{ padding: '8px 12px', textAlign: 'left', color: 'var(--text-muted, #64748b)' }}>Cliente</th>
-                                                                                    <th style={{ padding: '8px 12px', textAlign: 'left', color: 'var(--text-muted, #64748b)' }}>Partida / Lote</th>
-                                                                                    <th style={{ padding: '8px 12px', textAlign: 'right', color: 'var(--text-muted, #64748b)' }}>Cantidad</th>
-                                                                                    <th style={{ padding: '8px 12px', textAlign: 'center', color: 'var(--text-muted, #64748b)' }}>Remito / Documento</th>
-                                                                                </tr>
-                                                                            </thead>
-                                                                            <tbody>
-                                                                                {itemGroup.movements.map((mov: any, index: number) => {
-                                                                                    const docNum = mov.documento?.numero || mov.documentoNumero;
-                                                                                    const clientName = mov.documento?.partner?.name || '—';
-                                                                                    return (
-                                                                                        <tr key={mov.id || index} style={{ borderBottom: index < itemGroup.movements.length - 1 ? '1px solid var(--border-strong, #1e293b)' : 'none' }}>
-                                                                                            <td style={{ padding: '8px 12px', color: 'var(--text-white-dynamic-muted, #e2e8f0)' }}>
-                                                                                                {new Date(mov.fecha).toLocaleDateString('es-AR')}
-                                                                                            </td>
-                                                                                            <td style={{ padding: '8px 12px', color: 'var(--text-white-dynamic-muted, #e2e8f0)' }}>
-                                                                                                {clientName}
-                                                                                            </td>
-                                                                                            <td style={{ padding: '8px 12px' }}>
-                                                                                                <code style={{ background: 'rgba(56, 189, 248, 0.1)', padding: '2px 6px', borderRadius: '4px', color: '#38bdf8', fontSize: '11px', fontFamily: 'monospace' }}>
-                                                                                                    {mov.batch?.lotNumber || '—'}
-                                                                                                </code>
-                                                                                            </td>
-                                                                                            <td style={{ padding: '8px 12px', textAlign: 'right', color: '#38bdf8', fontWeight: 600 }}>
-                                                                                                {Math.abs(Number(mov.qtyPrincipal)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                                                                                            </td>
-                                                                                            <td style={{ padding: '8px 12px', textAlign: 'center' }}>
-                                                                                                {mov.documentoId ? (
-                                                                                                    <button 
-                                                                                                        onClick={(e) => handleRemitoClick(e, mov.documentoId, docNum)}
-                                                                                                        style={{ 
-                                                                                                            background: 'rgba(56, 189, 248, 0.1)', 
-                                                                                                            border: '1px solid rgba(56, 189, 248, 0.3)', 
-                                                                                                            color: '#38bdf8', 
-                                                                                                            padding: '2px 6px', 
-                                                                                                            borderRadius: '4px', 
-                                                                                                            fontSize: '10px',
-                                                                                                            fontWeight: 600,
-                                                                                                            cursor: 'pointer'
-                                                                                                        }}
-                                                                                                    >
-                                                                                                        📄 {docNum || 'Ver Detalle'}
-                                                                                                    </button>
-                                                                                                ) : (
-                                                                                                    <span style={{ color: 'var(--text-muted, #64748b)' }}>{docNum || '—'}</span>
-                                                                                                )}
-                                                                                            </td>
-                                                                                        </tr>
-                                                                                    );
-                                                                                })}
-                                                                            </tbody>
-                                                                        </table>
-                                                                    </div>
-                                                                </div>
-                                                            ))
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )
-                        ) : (
-                            itemsBreakdown.length === 0 ? (
-                                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted, #64748b)' }}>
-                                    No se encontraron salidas registradas en el período.
-                                </div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    {itemsBreakdown.map((group) => {
-                                        const isExpanded = !!expandedItems[group.item.id];
-                                        const isSelected = !excludedMaterialIds[group.item.id];
-                                        return (
-                                            <div key={group.item.id} style={{ borderBottom: '1px solid var(--border-strong, #1e293b)' }}>
-                                                
-                                                {/* Accordion Trigger Row */}
-                                                <div 
-                                                    onClick={() => toggleItemExpanded(group.item.id)}
-                                                    style={{ 
-                                                        padding: '16px 20px', 
-                                                        display: 'flex', 
-                                                        alignItems: 'center', 
-                                                        justifyContent: 'space-between', 
-                                                        cursor: 'pointer',
-                                                        background: isExpanded ? 'var(--bg-overlay, rgba(15, 23, 42, 0.4))' : 'transparent',
-                                                        transition: 'background 0.2s ease'
-                                                    }}
-                                                >
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                                                        <input 
-                                                            type="checkbox"
-                                                            checked={isSelected}
-                                                            onClick={(e) => e.stopPropagation()}
-                                                            onChange={() => toggleMaterialSelection(group.item.id)}
-                                                            style={{ 
-                                                                cursor: 'pointer', 
-                                                                width: '18px', 
-                                                                height: '18px', 
-                                                                accentColor: '#38bdf8' 
-                                                            }}
-                                                        />
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, minWidth: 0 }}>
-                                                            <span style={{ fontWeight: 700, color: isSelected ? 'var(--text-white-dynamic, #fff)' : 'var(--text-muted, #64748b)', fontSize: '15px', textDecoration: isSelected ? 'none' : 'line-through' }}>
-                                                                {group.item.codigoInterno}
-                                                            </span>
-                                                            <span style={{ color: isSelected ? 'var(--text-muted, #9ca3af)' : 'var(--text-mui-secondary, #475569)', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                                {group.item.descripcion}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                                        <div style={{ textAlign: 'right' }}>
-                                                            <span style={{ fontWeight: 800, color: isSelected ? '#38bdf8' : 'var(--text-mui-secondary, #475569)', fontSize: '16px' }}>
-                                                                {group.totalQty.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                            </span>
-                                                            <span style={{ color: 'var(--text-muted, #64748b)', fontSize: '12px', marginLeft: '4px' }}>
-                                                                {group.item.unidadPrincipal}
-                                                            </span>
-                                                        </div>
-                                                        <span style={{ fontSize: '18px', color: 'var(--text-muted, #64748b)', transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-                                                            ▼
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Accordion Detail Content */}
-                                                {isExpanded && (
-                                                    <div style={{ padding: '0 20px 20px 20px', background: 'var(--bg-primary, #0b0f19)' }}>
-                                                        <div style={{ overflowX: 'auto', border: '1px solid var(--border-strong, #1e293b)', borderRadius: '8px' }}>
-                                                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                                                                <thead>
-                                                                    <tr style={{ borderBottom: '1px solid var(--border-strong, #1e293b)', background: 'var(--bg-secondary, #111827)' }}>
-                                                                        <th style={{ padding: '10px 12px', textAlign: 'left', color: 'var(--text-muted, #64748b)' }}>Fecha</th>
-                                                                        <th style={{ padding: '10px 12px', textAlign: 'left', color: 'var(--text-muted, #64748b)' }}>Cliente</th>
-                                                                        <th style={{ padding: '10px 12px', textAlign: 'left', color: 'var(--text-muted, #64748b)' }}>Partida / Lote</th>
-                                                                        <th style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--text-muted, #64748b)' }}>Cantidad</th>
-                                                                        <th style={{ padding: '10px 12px', textAlign: 'center', color: 'var(--text-muted, #64748b)' }}>Remito / Documento</th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    {group.movements.map((mov: any, index: number) => {
-                                                                        const docNum = mov.documento?.numero || mov.documentoNumero;
-                                                                        const clientName = mov.documento?.partner?.name || '—';
-                                                                        return (
-                                                                            <tr key={mov.id || index} style={{ borderBottom: index < group.movements.length - 1 ? '1px solid var(--border-strong, #1e293b)' : 'none' }}>
-                                                                                <td style={{ padding: '10px 12px', color: 'var(--text-white-dynamic-muted, #e2e8f0)' }}>
-                                                                                    {new Date(mov.fecha).toLocaleDateString('es-AR')}
-                                                                                </td>
-                                                                                <td style={{ padding: '10px 12px', color: 'var(--text-white-dynamic-muted, #e2e8f0)', fontWeight: 500 }}>
-                                                                                    {clientName}
-                                                                                </td>
-                                                                                <td style={{ padding: '10px 12px' }}>
-                                                                                    <code style={{ background: 'rgba(56, 189, 248, 0.1)', padding: '2px 6px', borderRadius: '4px', color: '#38bdf8', fontSize: '11px', fontFamily: 'monospace' }}>
-                                                                                        {mov.batch?.lotNumber || '—'}
-                                                                                    </code>
-                                                                                </td>
-                                                                                <td style={{ padding: '10px 12px', textAlign: 'right', color: '#38bdf8', fontWeight: 600 }}>
-                                                                                    {Math.abs(Number(mov.qtyPrincipal)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                                                                                </td>
-                                                                                <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                                                                                    {mov.documentoId ? (
-                                                                                        <button 
-                                                                                            onClick={(e) => handleRemitoClick(e, mov.documentoId, docNum)}
-                                                                                            style={{ 
-                                                                                                background: 'rgba(56, 189, 248, 0.1)', 
-                                                                                                border: '1px solid rgba(56, 189, 248, 0.3)', 
-                                                                                                color: '#38bdf8', 
-                                                                                                padding: '4px 8px', 
-                                                                                                borderRadius: '6px', 
-                                                                                                fontSize: '11px',
-                                                                                                fontWeight: 600,
-                                                                                                cursor: 'pointer',
-                                                                                                transition: 'all 0.2s'
-                                                                                            }}
-                                                                                            onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(56, 189, 248, 0.2)' }}
-                                                                                            onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(56, 189, 248, 0.1)' }}
-                                                                                        >
-                                                                                            📄 {docNum || 'Ver Detalle'}
-                                                                                        </button>
-                                                                                    ) : (
-                                                                                        <span style={{ color: 'var(--text-muted, #64748b)' }}>{docNum || '—'}</span>
-                                                                                    )}
-                                                                                </td>
-                                                                            </tr>
-                                                                        );
-                                                                    })}
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )
-                        )}
-                    </Card>
-
-                    {/* Mobile Horizontal Bar Chart at the Bottom */}
-                    {isMobile && barChartData.length > 0 && (
-                        <Card style={{ padding: '20px', marginTop: '10px' }}>
-                            <h3 style={{ color: 'var(--text-primary, #f3f4f6)', fontSize: '14px', margin: '0 0 15px 0', fontWeight: 700 }}>
-                                📊 Consumo por {viewByGroup ? 'Grupo' : 'Material'} (Kilos)
-                            </h3>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <BarChart 
-                                    data={barChartData} 
-                                    layout="vertical"
-                                    margin={{ left: 10, right: 20, top: 0, bottom: 5 }}
-                                >
-                                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-strong, #1e293b)" horizontal={false} />
-                                    <XAxis type="number" stroke="var(--text-muted, #64748b)" fontSize={11} />
-                                    <YAxis dataKey="name" type="category" stroke="var(--text-muted, #64748b)" fontSize={11} width={80} />
-                                    <Tooltip 
-                                        cursor={{ fill: 'var(--border-strong, #1e293b)' }}
-                                        contentStyle={{ background: 'var(--bg-primary, #0f172a)', border: '1px solid var(--border-strong, #334155)', borderRadius: '8px', color: 'var(--text-white-dynamic, #fff)' }}
-                                    />
-                                    <Bar dataKey="kilos" fill="#38bdf8" radius={[0, 4, 4, 0]} barSize={20} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </Card>
-                    )}
-
-                    {showDetailModal && (
-                        <RemitoDetailModal 
-                            open={showDetailModal}
-                            onClose={() => {
-                                setShowDetailModal(false);
-                                setSelectedRemito(null);
+                    {/* Paginación */}
+                    <Box sx={{ p: 1.5, display: 'flex', justifyContent: 'flex-end', borderTop: `1px solid ${colors.border}` }}>
+                        <PaginationControls
+                            count={filteredRows.length}
+                            page={pagination.page}
+                            pageSize={pagination.pageSize}
+                            onPageChange={pagination.setPage}
+                            onPageSizeChange={(value) => {
+                                pagination.setPageSize(value);
+                                pagination.setPage(0);
                             }}
-                            remito={selectedRemito}
                         />
-                    )}
-
-                    {editComboId && (
-                        <EditComboModal 
-                            combo={combos.find((c: any) => c.id === editComboId)} 
-                            items={items} 
-                            onClose={() => setEditComboId(null)} 
-                            onSave={async (ids: string[]) => { 
-                                await updateCombo({ id: editComboId, itemIds: ids }); 
-                                setEditComboId(null); 
-                            }} 
-                        />
-                    )}
-                </div>
+                    </Box>
+                </Paper>
             )}
-        </div>
+
+            {/* Modal Flotante de Transacciones Detalladas (Mantiene la página concisa sin estiramientos) */}
+            {selectedItemMovements && (
+                <Dialog
+                    open
+                    onClose={() => setSelectedItemMovements(null)}
+                    maxWidth="md"
+                    fullWidth
+                    PaperProps={{
+                        sx: { bgcolor: colors.bg, color: colors.text, border: `1px solid ${colors.border}`, borderRadius: 3 }
+                    }}
+                >
+                    <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1, borderBottom: `1px solid ${colors.border}` }}>
+                        <Box>
+                            <Typography variant="h6" sx={{ fontWeight: 900, color: colors.primary }}>
+                                {viewByGroup ? selectedItemMovements.title : selectedItemMovements.codigoInterno}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: colors.textDim }}>
+                                {viewByGroup ? `${selectedItemMovements.itemCount} materiales agrupados` : selectedItemMovements.descripcion} • Total: {selectedItemMovements.totalQty.toFixed(1)} kg en {selectedItemMovements.movements.length} movimientos
+                            </Typography>
+                        </Box>
+                        <IconButton size="small" onClick={() => setSelectedItemMovements(null)} sx={{ color: colors.textDim }}>
+                            <CloseIcon />
+                        </IconButton>
+                    </DialogTitle>
+
+                    <DialogContent sx={{ py: 2 }}>
+                        <TableContainer sx={{ maxHeight: '420px' }}>
+                            <MuiTable size="small" stickyHeader>
+                                <TableHead>
+                                    <TableRow sx={{ '& th': { bgcolor: '#111827', color: colors.textDim, fontWeight: 800, fontSize: '0.72rem', textTransform: 'uppercase' } }}>
+                                        <TableCell>Fecha</TableCell>
+                                        <TableCell>Tipo</TableCell>
+                                        <TableCell>Cliente / Destino</TableCell>
+                                        <TableCell>Lote / Partida</TableCell>
+                                        <TableCell align="right">Cantidad</TableCell>
+                                        <TableCell align="center">Comprobante</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {selectedItemMovements.movements.map((mov: any, idx: number) => {
+                                        const docNum = mov.documento?.numero || mov.documentoNumero;
+                                        const docId = mov.documentoId;
+                                        const clientName = mov.documento?.partner?.name || mov.partner?.name || '—';
+
+                                        return (
+                                            <TableRow key={mov.id || idx} sx={{ borderBottom: `1px solid ${colors.border}`, '& td': { py: 1 } }}>
+                                                <TableCell sx={{ color: '#fff', fontSize: '0.8rem' }}>
+                                                    {formatDate(mov.fecha)}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Chip
+                                                        label={mov.tipo === 'REMITO_SALIDA' ? 'Remito Salida' : (mov.tipo === 'ENTREGA_PRODUCCION' ? 'A Producción' : mov.tipo)}
+                                                        size="small"
+                                                        sx={{ 
+                                                            fontSize: '0.65rem', 
+                                                            height: '20px', 
+                                                            fontWeight: 700,
+                                                            bgcolor: mov.tipo === 'REMITO_SALIDA' ? 'rgba(56, 189, 248, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                                                            color: mov.tipo === 'REMITO_SALIDA' ? colors.info : colors.primary
+                                                        }}
+                                                    />
+                                                </TableCell>
+                                                <TableCell sx={{ color: '#fff', fontSize: '0.8rem', fontWeight: 500 }}>
+                                                    {clientName}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {mov.batch?.lotNumber ? (
+                                                        <Chip label={mov.batch.lotNumber} size="small" sx={{ fontFamily: 'monospace', fontSize: '0.7rem', height: '20px' }} />
+                                                    ) : '—'}
+                                                </TableCell>
+                                                <TableCell align="right" sx={{ fontWeight: 800, color: colors.primary, fontSize: '0.82rem' }}>
+                                                    {Math.abs(Number(mov.qtyPrincipal || 0)).toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg
+                                                </TableCell>
+                                                <TableCell align="center">
+                                                    {docId ? (
+                                                        <Button
+                                                            size="small"
+                                                            variant="outlined"
+                                                            onClick={() => handleViewRemito(docId)}
+                                                            sx={{ fontSize: '0.68rem', py: 0.2, px: 1, color: colors.info, borderColor: 'rgba(56, 189, 248, 0.4)', borderRadius: 1.5 }}
+                                                        >
+                                                            📄 {docNum || 'Ver Remito'}
+                                                        </Button>
+                                                    ) : (
+                                                        <Typography variant="caption" sx={{ color: colors.textDim }}>{docNum || '—'}</Typography>
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                </TableBody>
+                            </MuiTable>
+                        </TableContainer>
+                    </DialogContent>
+
+                    <DialogActions sx={{ p: 2, borderTop: `1px solid ${colors.border}` }}>
+                        <Button onClick={() => setSelectedItemMovements(null)} sx={{ color: colors.textDim, fontWeight: 700 }}>
+                            Cerrar
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            )}
+
+            {/* Modal de Remito Original */}
+            {showRemitoModal && selectedRemito && (
+                <RemitoDetailModal
+                    open={showRemitoModal}
+                    onClose={() => {
+                        setShowRemitoModal(false);
+                        setSelectedRemito(null);
+                    }}
+                    remito={selectedRemito}
+                />
+            )}
+
+            {/* Modal de Configurar Combo */}
+            {editCombo && (
+                <EditComboModal
+                    combo={editCombo}
+                    items={items}
+                    onClose={() => setEditCombo(null)}
+                    onSave={async (itemIds: string[]) => {
+                        await updateCombo({ id: editCombo.id, itemIds }).unwrap();
+                        setEditCombo(null);
+                    }}
+                />
+            )}
+        </Box>
     );
 }
