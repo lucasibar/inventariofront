@@ -20,7 +20,9 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    Collapse
+    Collapse,
+    Checkbox,
+    FormControlLabel
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
@@ -28,6 +30,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
+import FilterListIcon from '@mui/icons-material/FilterList';
 import * as XLSX from 'xlsx';
 import {
     XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
@@ -108,20 +111,26 @@ export default function ReporteConsumoDetalladoPage() {
 
     // ── Filtros generales ──
     const [depositoId, setDepositoId] = useState<string>('');
-    const [tipoConsumo, setTipoConsumo] = useState<'ALL' | 'REMITO_SALIDA' | 'ENTREGA_PRODUCCION' | 'AJUSTE_RESTA'>('ALL');
     const [searchQuery, setSearchQuery] = useState('');
     const [viewByGroup, setViewByGroup] = useState(false);
     const [showCharts, setShowCharts] = useState(false);
+
+    // ── Destildar Clientes y Destildar Materiales ──
+    const [excludedClientNames, setExcludedClientNames] = useState<Record<string, boolean>>({});
+    const [excludedMaterialIds, setExcludedMaterialIds] = useState<Record<string, boolean>>({});
+    const [clientFilterModalOpen, setClientFilterModalOpen] = useState(false);
+    const [clientSearchInModal, setClientSearchInModal] = useState('');
 
     // ── Consultas Backend ──
     const { data: rawDepots = [] } = useGetDepotsQuery();
     const depots = useMemo(() => rawDepots.filter((d: any) => d.activo !== false), [rawDepots]);
 
+    // Filtrar estrictamente solo REMITO_SALIDA en backend
     const { data: rawMovements = [], isFetching: isFetchingMovements } = useGetRecentMovementsQuery({
         desde,
         hasta,
         depositoId: depositoId || undefined,
-        tipo: tipoConsumo === 'ALL' ? undefined : tipoConsumo
+        tipo: 'REMITO_SALIDA'
     });
 
     const { data: rawStock = [], isFetching: isFetchingStock } = useGetStockQuery({});
@@ -148,19 +157,39 @@ export default function ReporteConsumoDetalladoPage() {
         return map;
     }, [rawStock, depositoId]);
 
-    // ── Movimientos filtrados válidos (excluye anulados y tipos no-consumo) ──
+    // ── Resolver cliente de cada movimiento ──
+    const getClientNameFromMovement = (m: any): string => {
+        return m.documento?.partner?.name || m.partner?.name || 'Consumidor Final / Sin Asignar';
+    };
+
+    // ── Extraer todos los clientes únicos en el período cargado ──
+    const allUniqueClients = useMemo(() => {
+        const set = new Set<string>();
+        rawMovements.forEach((m: any) => {
+            if (m.tipo === 'REMITO_SALIDA' && m.status !== 'ANULADO') {
+                set.add(getClientNameFromMovement(m));
+            }
+        });
+        return Array.from(set).sort((a, b) => a.localeCompare(b));
+    }, [rawMovements]);
+
+    // Cantidad de clientes filtrados/activos
+    const activeClientsCount = useMemo(() => {
+        return allUniqueClients.filter(c => !excludedClientNames[c]).length;
+    }, [allUniqueClients, excludedClientNames]);
+
+    // ── Movimientos filtrados válidos (solo REMITO_SALIDA, no anulados, y sin clientes excluidos) ──
     const validMovements = useMemo(() => {
-        const allowedTypes = ['REMITO_SALIDA', 'ENTREGA_PRODUCCION', 'AJUSTE_RESTA'];
         return rawMovements.filter((m: any) => {
             if (m.status === 'ANULADO') return false;
-            if (tipoConsumo !== 'ALL') {
-                if (m.tipo !== tipoConsumo) return false;
-            } else {
-                if (!allowedTypes.includes(m.tipo)) return false;
-            }
+            if (m.tipo !== 'REMITO_SALIDA') return false;
+
+            const clientName = getClientNameFromMovement(m);
+            if (excludedClientNames[clientName]) return false;
+
             return true;
         });
-    }, [rawMovements, tipoConsumo]);
+    }, [rawMovements, excludedClientNames]);
 
     // ── Días totales del período ──
     const totalDays = useMemo(() => {
@@ -183,6 +212,7 @@ export default function ReporteConsumoDetalladoPage() {
             totalQty: number;
             totalBultos: number;
             movements: any[];
+            clientsMap: Record<string, number>;
         }> = {};
 
         validMovements.forEach((m: any) => {
@@ -190,6 +220,7 @@ export default function ReporteConsumoDetalladoPage() {
             const itemId = m.item.id;
             const qty = Math.abs(Number(m.qtyPrincipal || 0));
             const bultos = Math.abs(Number(m.qtySecundaria || 0));
+            const client = getClientNameFromMovement(m);
 
             if (!groups[itemId]) {
                 groups[itemId] = {
@@ -201,12 +232,14 @@ export default function ReporteConsumoDetalladoPage() {
                     categoryName: m.item.category?.nombre || m.item.categoria || '—',
                     totalQty: 0,
                     totalBultos: 0,
-                    movements: []
+                    movements: [],
+                    clientsMap: {}
                 };
             }
             groups[itemId].totalQty += qty;
             groups[itemId].totalBultos += bultos;
             groups[itemId].movements.push(m);
+            groups[itemId].clientsMap[client] = (groups[itemId].clientsMap[client] || 0) + qty;
         });
 
         // Completar métricas de cobertura y consumo diario
@@ -234,6 +267,7 @@ export default function ReporteConsumoDetalladoPage() {
             let comboBultos = 0;
             let comboStock = 0;
             const comboMovements: any[] = [];
+            const clientsMap: Record<string, number> = {};
 
             comboItemIds.forEach((itemId: string) => {
                 comboStock += stockMap.get(itemId) || 0;
@@ -241,11 +275,17 @@ export default function ReporteConsumoDetalladoPage() {
 
             validMovements.forEach((m: any) => {
                 if (m.item && comboItemIds.includes(m.item.id)) {
+                    // Si el material individual está destildado, no sumarlo
+                    if (excludedMaterialIds[m.item.id]) return;
+
                     const qty = Math.abs(Number(m.qtyPrincipal || 0));
                     const bultos = Math.abs(Number(m.qtySecundaria || 0));
+                    const client = getClientNameFromMovement(m);
+
                     comboQty += qty;
                     comboBultos += bultos;
                     comboMovements.push(m);
+                    clientsMap[client] = (clientsMap[client] || 0) + qty;
                 }
             });
 
@@ -263,29 +303,38 @@ export default function ReporteConsumoDetalladoPage() {
                 stockActual: comboStock,
                 consumoDiario,
                 diasCobertura,
-                movements: comboMovements
+                movements: comboMovements,
+                clientsMap
             };
         }).sort((a, b) => b.totalQty - a.totalQty);
-    }, [viewByGroup, combos, validMovements, stockMap, totalDays]);
+    }, [viewByGroup, combos, validMovements, stockMap, totalDays, excludedMaterialIds]);
 
-    // ── Filtrado por búsqueda en tiempo real ──
+    // ── Filtrado por búsqueda en tiempo real y exclusión de materiales ──
     const filteredRows: any[] = useMemo(() => {
         const query = normalizeText(searchQuery);
         const tokens = query.split(/\s+/).filter(Boolean);
 
         if (viewByGroup) {
-            if (!tokens.length) return groupsData;
-            return groupsData.filter((g: any) => {
-                const searchStr = normalizeText(`${g.title} ${g.supplierName}`);
+            let list = groupsData;
+            if (tokens.length) {
+                list = list.filter((g: any) => {
+                    const clientsList = Object.keys(g.clientsMap).join(' ');
+                    const searchStr = normalizeText(`${g.title} ${g.supplierName} ${clientsList}`);
+                    return tokens.every(t => searchStr.includes(t));
+                });
+            }
+            return list;
+        }
+
+        let list = itemsData;
+        if (tokens.length) {
+            list = list.filter((i: any) => {
+                const clientsList = Object.keys(i.clientsMap).join(' ');
+                const searchStr = normalizeText(`${i.codigoInterno} ${i.descripcion} ${i.supplierName} ${i.categoryName} ${clientsList}`);
                 return tokens.every(t => searchStr.includes(t));
             });
         }
-
-        if (!tokens.length) return itemsData;
-        return itemsData.filter((i: any) => {
-            const searchStr = normalizeText(`${i.codigoInterno} ${i.descripcion} ${i.supplierName} ${i.categoryName}`);
-            return tokens.every(t => searchStr.includes(t));
-        });
+        return list;
     }, [viewByGroup, groupsData, itemsData, searchQuery]);
 
     const pagination = useClientPagination(filteredRows, 15);
@@ -293,17 +342,20 @@ export default function ReporteConsumoDetalladoPage() {
     // Reset de página al cambiar filtros
     useEffect(() => {
         pagination.setPage(0);
-    }, [desde, hasta, depositoId, tipoConsumo, searchQuery, viewByGroup]);
+    }, [desde, hasta, depositoId, searchQuery, viewByGroup, excludedClientNames, excludedMaterialIds]);
 
-    // ── Métricas KPIs ──
+    // ── Métricas KPIs (Solo toma en cuenta materiales que NO estén destildados) ──
     const kpis = useMemo(() => {
         let totalKilos = 0;
         let totalBultos = 0;
         let criticos = 0;
         let atencion = 0;
         let stockTotalAnalizado = 0;
+        let activeMaterialsCount = 0;
 
         itemsData.forEach((item) => {
+            if (excludedMaterialIds[item.id]) return; // Destildado por el usuario
+            activeMaterialsCount++;
             totalKilos += item.totalQty;
             totalBultos += item.totalBultos;
             stockTotalAnalizado += item.stockActual;
@@ -326,9 +378,10 @@ export default function ReporteConsumoDetalladoPage() {
             criticos,
             atencion,
             stockTotalAnalizado,
-            totalMovimientos: validMovements.length
+            activeMaterialsCount,
+            totalMovimientos: validMovements.filter(m => !excludedMaterialIds[m.itemId || m.item?.id]).length
         };
-    }, [itemsData, totalDays, validMovements]);
+    }, [itemsData, totalDays, validMovements, excludedMaterialIds]);
 
     // ── Datos para Gráficos de Análisis ──
     const chartData = useMemo(() => {
@@ -337,6 +390,7 @@ export default function ReporteConsumoDetalladoPage() {
         // Evolución diaria
         const dailyMap: Record<string, number> = {};
         validMovements.forEach((m: any) => {
+            if (excludedMaterialIds[m.itemId || m.item?.id]) return;
             const f = String(m.fecha || '').slice(0, 10);
             if (f) {
                 dailyMap[f] = (dailyMap[f] || 0) + Math.abs(Number(m.qtyPrincipal || 0));
@@ -356,48 +410,89 @@ export default function ReporteConsumoDetalladoPage() {
         }
 
         // Top 5 más consumidos
-        const top5 = itemsData.slice(0, 5).map((i) => ({
-            name: i.codigoInterno,
-            kilos: Number(i.totalQty.toFixed(1)),
-            desc: i.descripcion
-        }));
+        const top5 = itemsData
+            .filter(i => !excludedMaterialIds[i.id])
+            .slice(0, 5)
+            .map((i) => ({
+                name: i.codigoInterno,
+                kilos: Number(i.totalQty.toFixed(1)),
+                desc: i.descripcion
+            }));
 
         return { timeline, top5 };
-    }, [showCharts, validMovements, desde, hasta, itemsData]);
+    }, [showCharts, validMovements, desde, hasta, itemsData, excludedMaterialIds]);
 
     // ── Exportación a Excel ──
     const handleExportExcel = () => {
-        const rows = filteredRows.map((r: any) => {
-            if (viewByGroup) {
+        const rows = filteredRows
+            .filter((r: any) => !excludedMaterialIds[r.id])
+            .map((r: any) => {
+                if (viewByGroup) {
+                    return {
+                        'Grupo / Combo': r.title,
+                        'Proveedor': r.supplierName,
+                        'Materiales Incluidos': r.itemCount,
+                        'Consumo Período (kg)': Number(r.totalQty.toFixed(2)),
+                        'Consumo Diario (kg/d)': Number(r.consumoDiario.toFixed(2)),
+                        'Stock Actual (kg)': Number(r.stockActual.toFixed(2)),
+                        'Días Cobertura': r.consumoDiario > 0 ? Number(r.diasCobertura.toFixed(1)) : 'Sin consumo',
+                        'Clientes': Object.keys(r.clientsMap).join(', ')
+                    };
+                }
                 return {
-                    'Grupo / Combo': r.title,
+                    'Código': r.codigoInterno,
+                    'Descripción': r.descripcion,
                     'Proveedor': r.supplierName,
-                    'Materiales Incluidos': r.itemCount,
+                    'Categoría': r.categoryName,
                     'Consumo Período (kg)': Number(r.totalQty.toFixed(2)),
+                    'Bultos': r.totalBultos,
                     'Consumo Diario (kg/d)': Number(r.consumoDiario.toFixed(2)),
                     'Stock Actual (kg)': Number(r.stockActual.toFixed(2)),
                     'Días Cobertura': r.consumoDiario > 0 ? Number(r.diasCobertura.toFixed(1)) : 'Sin consumo',
-                    'Estado': r.stockActual <= 0 ? 'Sin stock' : (r.diasCobertura < 7 ? 'Crítico (<7d)' : (r.diasCobertura < 15 ? 'Atención (7-15d)' : 'Óptimo (>15d)'))
+                    'Clientes': Object.keys(r.clientsMap).join(', ')
                 };
-            }
-            return {
-                'Código': r.codigoInterno,
-                'Descripción': r.descripcion,
-                'Proveedor': r.supplierName,
-                'Categoría': r.categoryName,
-                'Consumo Período (kg)': Number(r.totalQty.toFixed(2)),
-                'Bultos': r.totalBultos,
-                'Consumo Diario (kg/d)': Number(r.consumoDiario.toFixed(2)),
-                'Stock Actual (kg)': Number(r.stockActual.toFixed(2)),
-                'Días Cobertura': r.consumoDiario > 0 ? Number(r.diasCobertura.toFixed(1)) : 'Sin consumo',
-                'Estado': r.stockActual <= 0 ? 'Sin stock' : (r.diasCobertura < 7 ? 'Crítico (<7d)' : (r.diasCobertura < 15 ? 'Atención (7-15d)' : 'Óptimo (>15d)'))
-            };
-        });
+            });
 
         const ws = XLSX.utils.json_to_sheet(rows);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Consumo');
-        XLSX.writeFile(wb, `Consumo_Materiales_${desde}_al_${hasta}.xlsx`);
+        XLSX.utils.book_append_sheet(wb, ws, 'Consumo_Remitos_Salida');
+        XLSX.writeFile(wb, `Consumo_RemitosSalida_${desde}_al_${hasta}.xlsx`);
+    };
+
+    // ── Manejo de tildar / destildar materiales ──
+    const toggleMaterialExcluded = (id: string) => {
+        setExcludedMaterialIds(prev => ({
+            ...prev,
+            [id]: !prev[id]
+        }));
+    };
+
+    const selectAllMaterials = () => {
+        setExcludedMaterialIds({});
+    };
+
+    const deselectAllMaterials = () => {
+        const next: Record<string, boolean> = {};
+        itemsData.forEach(i => { next[i.id] = true; });
+        setExcludedMaterialIds(next);
+    };
+
+    // ── Manejo de tildar / destildar clientes ──
+    const toggleClientExcluded = (clientName: string) => {
+        setExcludedClientNames(prev => ({
+            ...prev,
+            [clientName]: !prev[clientName]
+        }));
+    };
+
+    const selectAllClients = () => {
+        setExcludedClientNames({});
+    };
+
+    const deselectAllClients = () => {
+        const next: Record<string, boolean> = {};
+        allUniqueClients.forEach(c => { next[c] = true; });
+        setExcludedClientNames(next);
     };
 
     // ── Clic en remito para ver comprobante formal ──
@@ -417,17 +512,27 @@ export default function ReporteConsumoDetalladoPage() {
 
     const isLoading = isFetchingMovements || isFetchingStock;
 
+    // Clientes filtrados para el modal de clientes
+    const filteredClientsInModal = useMemo(() => {
+        const q = normalizeText(clientSearchInModal);
+        if (!q) return allUniqueClients;
+        return allUniqueClients.filter(c => normalizeText(c).includes(q));
+    }, [allUniqueClients, clientSearchInModal]);
+
     return (
         <Box sx={{ p: { xs: 2, md: 3 }, display: 'flex', flexDirection: 'column', gap: 2.5, bgcolor: colors.bg, minHeight: '100vh', color: colors.text }}>
             
             {/* Header Conciso */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5 }}>
                 <Box>
-                    <Typography variant="h5" sx={{ fontWeight: 900, color: colors.primary, letterSpacing: '-0.5px' }}>
-                        📊 Consumo de Materiales
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="h5" sx={{ fontWeight: 900, color: colors.primary, letterSpacing: '-0.5px' }}>
+                            📊 Consumo de Materiales (Remitos de Salida)
+                        </Typography>
+                        <Chip label="Solo Remitos de Salida" size="small" sx={{ bgcolor: 'rgba(56, 189, 248, 0.15)', color: colors.info, fontWeight: 800, fontSize: '0.68rem' }} />
+                    </Box>
                     <Typography variant="caption" sx={{ color: colors.textDim }}>
-                        Análisis de egresos, ritmo de abastecimiento y proyección de agotamiento de stock
+                        Análisis de egresos a clientes, ritmo de salida y proyección de agotamiento
                     </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -479,14 +584,14 @@ export default function ReporteConsumoDetalladoPage() {
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 1.5 }}>
                 <Paper sx={{ p: 1.8, bgcolor: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 2.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 700, textTransform: 'uppercase', fontSize: '0.65rem' }}>
-                        Total Consumido ({totalDays} días)
+                        Total Despachado ({totalDays} días)
                     </Typography>
                     <Typography variant="h5" sx={{ fontWeight: 900, color: colors.primary }}>
                         {kpis.totalKilos.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}{' '}
                         <small style={{ fontSize: '0.8rem', fontWeight: 500 }}>kg</small>
                     </Typography>
                     <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.72rem' }}>
-                        {kpis.totalBultos > 0 ? `${kpis.totalBultos.toLocaleString('es-AR')} bultos en ` : ''}{kpis.totalMovimientos} operaciones
+                        {kpis.totalBultos > 0 ? `${kpis.totalBultos.toLocaleString('es-AR')} bultos en ` : ''}{kpis.totalMovimientos} remitos de salida
                     </Typography>
                 </Paper>
 
@@ -522,14 +627,14 @@ export default function ReporteConsumoDetalladoPage() {
 
                 <Paper sx={{ p: 1.8, bgcolor: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 2.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 700, textTransform: 'uppercase', fontSize: '0.65rem' }}>
-                        Stock Actual Disponible
+                        Stock Actual de Materiales Activos
                     </Typography>
                     <Typography variant="h5" sx={{ fontWeight: 900, color: colors.text }}>
                         {kpis.stockTotalAnalizado.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}{' '}
                         <small style={{ fontSize: '0.8rem', fontWeight: 500 }}>kg</small>
                     </Typography>
                     <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.72rem' }}>
-                        Presente en los depósitos analizados
+                        {kpis.activeMaterialsCount} materiales tildados
                     </Typography>
                 </Paper>
             </Box>
@@ -539,7 +644,7 @@ export default function ReporteConsumoDetalladoPage() {
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.4fr 1fr' }, gap: 1.5 }}>
                     <Paper sx={{ p: 2, bgcolor: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 2.5, height: '220px' }}>
                         <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 800, textTransform: 'uppercase', fontSize: '0.7rem', display: 'block', mb: 1 }}>
-                            📈 Picos de Consumo Diario (kg)
+                            📈 Picos de Salidas por Remito (kg)
                         </Typography>
                         <ResponsiveContainer width="100%" height="82%">
                             <AreaChart data={chartData.timeline}>
@@ -562,7 +667,7 @@ export default function ReporteConsumoDetalladoPage() {
 
                     <Paper sx={{ p: 2, bgcolor: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 2.5, height: '220px' }}>
                         <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 800, textTransform: 'uppercase', fontSize: '0.7rem', display: 'block', mb: 1 }}>
-                            🏆 Top 5 Materiales Más Consumidos
+                            🏆 Top 5 Materiales Más Despachados
                         </Typography>
                         <ResponsiveContainer width="100%" height="82%">
                             <BarChart data={chartData.top5} layout="vertical">
@@ -633,31 +738,60 @@ export default function ReporteConsumoDetalladoPage() {
                         ))}
                     </TextField>
 
-                    {/* Tipo de Consumo */}
-                    <TextField
-                        select
+                    {/* Botón para Filtro / Destildar Clientes */}
+                    <Button
                         size="small"
-                        value={tipoConsumo}
-                        onChange={(e) => setTipoConsumo(e.target.value as any)}
-                        sx={{ width: '175px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2, fontSize: '0.8rem', height: '34px' } }}
+                        variant="outlined"
+                        startIcon={<FilterListIcon />}
+                        onClick={() => setClientFilterModalOpen(true)}
+                        sx={{
+                            height: '34px',
+                            borderRadius: 2,
+                            fontWeight: 700,
+                            fontSize: '0.78rem',
+                            textTransform: 'none',
+                            color: activeClientsCount < allUniqueClients.length ? colors.primary : colors.text,
+                            borderColor: activeClientsCount < allUniqueClients.length ? colors.primary : colors.border,
+                            bgcolor: activeClientsCount < allUniqueClients.length ? 'rgba(245, 158, 11, 0.1)' : 'transparent'
+                        }}
                     >
-                        <MenuItem value="ALL">Todos los egresos</MenuItem>
-                        <MenuItem value="REMITO_SALIDA">Remitos a Clientes</MenuItem>
-                        <MenuItem value="ENTREGA_PRODUCCION">Entregas a Fábrica</MenuItem>
-                        <MenuItem value="AJUSTE_RESTA">Mermas / Ajustes</MenuItem>
-                    </TextField>
+                        Clientes ({activeClientsCount}/{allUniqueClients.length})
+                    </Button>
 
                     {/* Buscador Multipalabra */}
                     <TextField
                         size="small"
-                        placeholder="Buscar por código, material, proveedor..."
+                        placeholder="Buscar por código, material, cliente o proveedor..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         InputProps={{
                             startAdornment: <SearchIcon sx={{ color: colors.textDim, mr: 0.5, fontSize: '1.1rem' }} />
                         }}
-                        sx={{ flex: '1 1 200px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2, fontSize: '0.8rem', height: '34px' } }}
+                        sx={{ flex: '1 1 220px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2, fontSize: '0.8rem', height: '34px' } }}
                     />
+                </Box>
+
+                {/* Barra de control rápido de tildar/destildar materiales */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 0.5, borderTop: `1px solid ${colors.border}` }}>
+                    <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.72rem' }}>
+                        Podés tildar o destildar materiales en la primera columna para excluirlos del cálculo y gráficos.
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1.5 }}>
+                        <Button 
+                            size="small" 
+                            onClick={selectAllMaterials} 
+                            sx={{ color: colors.info, fontSize: '0.72rem', textTransform: 'none', p: 0, fontWeight: 700 }}
+                        >
+                            ✓ Tildar Todos
+                        </Button>
+                        <Button 
+                            size="small" 
+                            onClick={deselectAllMaterials} 
+                            sx={{ color: colors.textDim, fontSize: '0.72rem', textTransform: 'none', p: 0, fontWeight: 700 }}
+                        >
+                            ✗ Destildar Todos
+                        </Button>
+                    </Box>
                 </Box>
             </Paper>
 
@@ -669,7 +803,7 @@ export default function ReporteConsumoDetalladoPage() {
             ) : filteredRows.length === 0 ? (
                 <Paper sx={{ p: 5, textAlign: 'center', bgcolor: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 3 }}>
                     <Typography variant="body1" sx={{ color: colors.textDim }}>
-                        No se registraron consumos en el período con los filtros seleccionados.
+                        No se encontraron remitos de salida en el período con los filtros seleccionados.
                     </Typography>
                 </Paper>
             ) : (
@@ -678,6 +812,7 @@ export default function ReporteConsumoDetalladoPage() {
                         <MuiTable size="small">
                             <TableHead sx={{ bgcolor: 'rgba(0,0,0,0.25)' }}>
                                 <TableRow sx={{ '& th': { color: colors.textDim, fontWeight: 800, fontSize: '0.72rem', textTransform: 'uppercase', py: 1.2 } }}>
+                                    <TableCell sx={{ width: '40px', textAlign: 'center' }}>Incluir</TableCell>
                                     {viewByGroup ? (
                                         <>
                                             <TableCell>Grupo / Combo</TableCell>
@@ -691,7 +826,7 @@ export default function ReporteConsumoDetalladoPage() {
                                             <TableCell>Categoría</TableCell>
                                         </>
                                     )}
-                                    <TableCell align="right">Consumo Período</TableCell>
+                                    <TableCell align="right">Despachado Período</TableCell>
                                     <TableCell align="right">Ritmo Diario</TableCell>
                                     <TableCell align="right">Stock Actual</TableCell>
                                     <TableCell align="center">Cobertura Estimada</TableCell>
@@ -700,14 +835,37 @@ export default function ReporteConsumoDetalladoPage() {
                             </TableHead>
                             <TableBody>
                                 {pagination.pageItems.map((row: any) => {
+                                    const isExcluded = !!excludedMaterialIds[row.id];
                                     const isCritical = row.stockActual <= 0 || row.diasCobertura < 7;
                                     const isWarning = !isCritical && row.diasCobertura < 15;
 
                                     return (
-                                        <TableRow key={row.id} className="hoverable-row" sx={{ borderBottom: `1px solid ${colors.border}`, '& td': { py: 1 } }}>
+                                        <TableRow 
+                                            key={row.id} 
+                                            className="hoverable-row" 
+                                            sx={{ 
+                                                borderBottom: `1px solid ${colors.border}`, 
+                                                opacity: isExcluded ? 0.45 : 1,
+                                                '& td': { py: 0.9 } 
+                                            }}
+                                        >
+                                            {/* Checkbox para tildar/destildar este material */}
+                                            <TableCell sx={{ textAlign: 'center' }}>
+                                                <Checkbox
+                                                    size="small"
+                                                    checked={!isExcluded}
+                                                    onChange={() => toggleMaterialExcluded(row.id)}
+                                                    sx={{ 
+                                                        color: colors.textDim,
+                                                        p: 0.2,
+                                                        '&.Mui-checked': { color: colors.info }
+                                                    }}
+                                                />
+                                            </TableCell>
+
                                             {viewByGroup ? (
                                                 <>
-                                                    <TableCell sx={{ fontWeight: 800, color: colors.primary, fontSize: '0.85rem' }}>
+                                                    <TableCell sx={{ fontWeight: 800, color: isExcluded ? colors.textDim : colors.primary, fontSize: '0.85rem', textDecoration: isExcluded ? 'line-through' : 'none' }}>
                                                         {row.title}
                                                     </TableCell>
                                                     <TableCell sx={{ color: colors.textDim, fontSize: '0.8rem' }}>
@@ -719,11 +877,11 @@ export default function ReporteConsumoDetalladoPage() {
                                                 </>
                                             ) : (
                                                 <>
-                                                    <TableCell sx={{ fontWeight: 800, color: colors.primary, fontSize: '0.82rem' }}>
+                                                    <TableCell sx={{ fontWeight: 800, color: isExcluded ? colors.textDim : colors.primary, fontSize: '0.82rem', textDecoration: isExcluded ? 'line-through' : 'none' }}>
                                                         {row.codigoInterno}
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Typography sx={{ fontWeight: 600, color: '#fff', fontSize: '0.82rem', lineHeight: 1.2 }}>
+                                                        <Typography sx={{ fontWeight: 600, color: isExcluded ? colors.textDim : '#fff', fontSize: '0.82rem', lineHeight: 1.2 }}>
                                                             {row.descripcion}
                                                         </Typography>
                                                         <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.7rem' }}>
@@ -737,7 +895,7 @@ export default function ReporteConsumoDetalladoPage() {
                                             )}
 
                                             {/* Consumo Período */}
-                                            <TableCell align="right" sx={{ fontWeight: 800, color: colors.info, fontSize: '0.85rem' }}>
+                                            <TableCell align="right" sx={{ fontWeight: 800, color: isExcluded ? colors.textDim : colors.info, fontSize: '0.85rem' }}>
                                                 {row.totalQty.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg
                                                 {row.totalBultos > 0 && (
                                                     <Typography variant="caption" sx={{ color: colors.textDim, display: 'block', fontSize: '0.68rem' }}>
@@ -761,7 +919,7 @@ export default function ReporteConsumoDetalladoPage() {
                                                 {row.stockActual <= 0 ? (
                                                     <Chip label="SIN STOCK" size="small" color="error" sx={{ fontWeight: 800, fontSize: '0.65rem', height: '22px' }} />
                                                 ) : row.consumoDiario <= 0 ? (
-                                                    <Chip label="Sin consumo" size="small" sx={{ bgcolor: 'rgba(255,255,255,0.06)', color: colors.textDim, fontSize: '0.65rem', height: '22px' }} />
+                                                    <Chip label="Sin salidas" size="small" sx={{ bgcolor: 'rgba(255,255,255,0.06)', color: colors.textDim, fontSize: '0.65rem', height: '22px' }} />
                                                 ) : isCritical ? (
                                                     <Tooltip title="Stock en riesgo inminente de quiebre (< 7 días)">
                                                         <Chip label={`🔴 ${Math.round(row.diasCobertura)} días`} size="small" sx={{ bgcolor: 'rgba(239, 68, 68, 0.15)', color: colors.danger, fontWeight: 800, fontSize: '0.7rem', height: '22px' }} />
@@ -789,7 +947,7 @@ export default function ReporteConsumoDetalladoPage() {
                                                             </IconButton>
                                                         </Tooltip>
                                                     )}
-                                                    <Tooltip title="Ver transacciones detalladas">
+                                                    <Tooltip title="Ver detalle de remitos por cliente">
                                                         <IconButton
                                                             size="small"
                                                             onClick={() => setSelectedItemMovements(row)}
@@ -823,7 +981,103 @@ export default function ReporteConsumoDetalladoPage() {
                 </Paper>
             )}
 
-            {/* Modal Flotante de Transacciones Detalladas (Mantiene la página concisa sin estiramientos) */}
+            {/* Modal para Tildar / Destildar Clientes */}
+            <Dialog
+                open={clientFilterModalOpen}
+                onClose={() => setClientFilterModalOpen(false)}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    sx: { bgcolor: colors.bg, color: colors.text, border: `1px solid ${colors.border}`, borderRadius: 3 }
+                }}
+            >
+                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1, borderBottom: `1px solid ${colors.border}` }}>
+                    <Box>
+                        <Typography variant="h6" sx={{ fontWeight: 900, color: colors.primary }}>
+                            Filtrar Clientes
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: colors.textDim }}>
+                            {activeClientsCount} de {allUniqueClients.length} clientes incluidos en el reporte
+                        </Typography>
+                    </Box>
+                    <IconButton size="small" onClick={() => setClientFilterModalOpen(false)} sx={{ color: colors.textDim }}>
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+
+                <DialogContent sx={{ py: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: 'space-between' }}>
+                        <TextField
+                            size="small"
+                            placeholder="Buscar cliente..."
+                            value={clientSearchInModal}
+                            onChange={(e) => setClientSearchInModal(e.target.value)}
+                            sx={{ flex: 1, '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2, fontSize: '0.85rem' } }}
+                        />
+                        <Button size="small" onClick={selectAllClients} sx={{ color: colors.info, fontWeight: 700, textTransform: 'none' }}>
+                            Tildar Todos
+                        </Button>
+                        <Button size="small" onClick={deselectAllClients} sx={{ color: colors.textDim, fontWeight: 700, textTransform: 'none' }}>
+                            Destildar Todos
+                        </Button>
+                    </Box>
+
+                    <Box sx={{ maxHeight: '350px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 0.5, pr: 1 }}>
+                        {filteredClientsInModal.length === 0 ? (
+                            <Typography variant="body2" sx={{ color: colors.textDim, p: 2, textAlign: 'center' }}>
+                                No se encontraron clientes con esa búsqueda
+                            </Typography>
+                        ) : (
+                            filteredClientsInModal.map((clientName) => {
+                                const isChecked = !excludedClientNames[clientName];
+                                return (
+                                    <Paper
+                                        key={clientName}
+                                        onClick={() => toggleClientExcluded(clientName)}
+                                        sx={{
+                                            p: 1,
+                                            px: 1.5,
+                                            bgcolor: isChecked ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.3)',
+                                            border: `1px solid ${isChecked ? 'rgba(56, 189, 248, 0.2)' : colors.border}`,
+                                            borderRadius: 2,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.15s ease'
+                                        }}
+                                    >
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    size="small"
+                                                    checked={isChecked}
+                                                    onChange={() => toggleClientExcluded(clientName)}
+                                                    sx={{ color: colors.textDim, '&.Mui-checked': { color: colors.info } }}
+                                                />
+                                            }
+                                            label={
+                                                <Typography variant="body2" sx={{ fontWeight: isChecked ? 700 : 400, color: isChecked ? '#fff' : colors.textDim }}>
+                                                    {clientName}
+                                                </Typography>
+                                            }
+                                            sx={{ m: 0, pointerEvents: 'none' }}
+                                        />
+                                    </Paper>
+                                );
+                            })
+                        )}
+                    </Box>
+                </DialogContent>
+
+                <DialogActions sx={{ p: 2, borderTop: `1px solid ${colors.border}` }}>
+                    <Button onClick={() => setClientFilterModalOpen(false)} variant="contained" sx={{ bgcolor: colors.primary, color: '#000', fontWeight: 800, borderRadius: 2 }}>
+                        Listo
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Modal Flotante de Transacciones Detalladas con Clientes */}
             {selectedItemMovements && (
                 <Dialog
                     open
@@ -840,7 +1094,7 @@ export default function ReporteConsumoDetalladoPage() {
                                 {viewByGroup ? selectedItemMovements.title : selectedItemMovements.codigoInterno}
                             </Typography>
                             <Typography variant="caption" sx={{ color: colors.textDim }}>
-                                {viewByGroup ? `${selectedItemMovements.itemCount} materiales agrupados` : selectedItemMovements.descripcion} • Total: {selectedItemMovements.totalQty.toFixed(1)} kg en {selectedItemMovements.movements.length} movimientos
+                                {viewByGroup ? `${selectedItemMovements.itemCount} materiales agrupados` : selectedItemMovements.descripcion} • Total: {selectedItemMovements.totalQty.toFixed(1)} kg en {selectedItemMovements.movements.length} remitos
                             </Typography>
                         </Box>
                         <IconButton size="small" onClick={() => setSelectedItemMovements(null)} sx={{ color: colors.textDim }}>
@@ -849,13 +1103,29 @@ export default function ReporteConsumoDetalladoPage() {
                     </DialogTitle>
 
                     <DialogContent sx={{ py: 2 }}>
-                        <TableContainer sx={{ maxHeight: '420px' }}>
+                        {/* Resumen por Cliente */}
+                        <Box sx={{ mb: 2, p: 1.5, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2, border: `1px solid ${colors.border}` }}>
+                            <Typography variant="caption" sx={{ color: colors.primary, fontWeight: 800, textTransform: 'uppercase', fontSize: '0.68rem', display: 'block', mb: 0.8 }}>
+                                👥 Desglose por Cliente:
+                            </Typography>
+                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                {Object.entries(selectedItemMovements.clientsMap as Record<string, number>).map(([cName, cQty]) => (
+                                    <Chip
+                                        key={cName}
+                                        label={`${cName}: ${cQty.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg`}
+                                        size="small"
+                                        sx={{ bgcolor: 'rgba(56, 189, 248, 0.12)', color: colors.info, fontWeight: 700, fontSize: '0.72rem' }}
+                                    />
+                                ))}
+                            </Box>
+                        </Box>
+
+                        <TableContainer sx={{ maxHeight: '380px' }}>
                             <MuiTable size="small" stickyHeader>
                                 <TableHead>
                                     <TableRow sx={{ '& th': { bgcolor: '#111827', color: colors.textDim, fontWeight: 800, fontSize: '0.72rem', textTransform: 'uppercase' } }}>
                                         <TableCell>Fecha</TableCell>
-                                        <TableCell>Tipo</TableCell>
-                                        <TableCell>Cliente / Destino</TableCell>
+                                        <TableCell>Cliente</TableCell>
                                         <TableCell>Lote / Partida</TableCell>
                                         <TableCell align="right">Cantidad</TableCell>
                                         <TableCell align="center">Comprobante</TableCell>
@@ -865,27 +1135,14 @@ export default function ReporteConsumoDetalladoPage() {
                                     {selectedItemMovements.movements.map((mov: any, idx: number) => {
                                         const docNum = mov.documento?.numero || mov.documentoNumero;
                                         const docId = mov.documentoId;
-                                        const clientName = mov.documento?.partner?.name || mov.partner?.name || '—';
+                                        const clientName = getClientNameFromMovement(mov);
 
                                         return (
                                             <TableRow key={mov.id || idx} sx={{ borderBottom: `1px solid ${colors.border}`, '& td': { py: 1 } }}>
                                                 <TableCell sx={{ color: '#fff', fontSize: '0.8rem' }}>
                                                     {formatDate(mov.fecha)}
                                                 </TableCell>
-                                                <TableCell>
-                                                    <Chip
-                                                        label={mov.tipo === 'REMITO_SALIDA' ? 'Remito Salida' : (mov.tipo === 'ENTREGA_PRODUCCION' ? 'A Producción' : mov.tipo)}
-                                                        size="small"
-                                                        sx={{ 
-                                                            fontSize: '0.65rem', 
-                                                            height: '20px', 
-                                                            fontWeight: 700,
-                                                            bgcolor: mov.tipo === 'REMITO_SALIDA' ? 'rgba(56, 189, 248, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                                                            color: mov.tipo === 'REMITO_SALIDA' ? colors.info : colors.primary
-                                                        }}
-                                                    />
-                                                </TableCell>
-                                                <TableCell sx={{ color: '#fff', fontSize: '0.8rem', fontWeight: 500 }}>
+                                                <TableCell sx={{ color: colors.info, fontSize: '0.82rem', fontWeight: 700 }}>
                                                     {clientName}
                                                 </TableCell>
                                                 <TableCell>
