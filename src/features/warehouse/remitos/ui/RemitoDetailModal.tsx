@@ -36,6 +36,12 @@ export const RemitoDetailModal = ({ open, onClose, remito }: RemitoDetailModalPr
     const [deleteSalidaLine, { isLoading: isDeletingSalida }] = useDeleteRemitoSalidaLineMutation();
     const [deleteEntradaLine, { isLoading: isDeletingEntrada }] = useDeleteRemitoEntradaLineMutation();
     const [search, setSearch] = useState('');
+    const [anuladasIds, setAnuladasIds] = useState<string[]>([]);
+
+    // Resetear anuladas locales cuando cambia de remito
+    useMemo(() => {
+        setAnuladasIds([]);
+    }, [remito?.id]);
 
     const isSalida = remito?.tipo?.toUpperCase().includes('SALIDA');
     const isActive = remito?.status === 'ACTIVO';
@@ -76,8 +82,7 @@ export const RemitoDetailModal = ({ open, onClose, remito }: RemitoDetailModalPr
             } else {
                 await deleteEntradaLine(line.id).unwrap();
             }
-            // Actualización optimista o notificación
-            alert('Línea anulada con éxito y stock actualizado.');
+            setAnuladasIds(prev => [...prev, line.id]);
         } catch (e: any) {
             alert(e?.data?.message || 'Error al anular la línea del remito');
         }
@@ -87,7 +92,7 @@ export const RemitoDetailModal = ({ open, onClose, remito }: RemitoDetailModalPr
         window.print();
     };
 
-    const activeLines = lines.filter((l: any) => l.status !== 'ANULADO');
+    const activeLines = lines.filter((l: any) => l.status !== 'ANULADO' && !anuladasIds.includes(l.id));
 
     return (
         <Dialog 
@@ -206,7 +211,7 @@ export const RemitoDetailModal = ({ open, onClose, remito }: RemitoDetailModalPr
                     </TableHead>
                     <TableBody>
                         {filteredLines.map((line: any, idx: number) => {
-                            const isLineAnulada = line.status === 'ANULADO';
+                            const isLineAnulada = line.status === 'ANULADO' || anuladasIds.includes(line.id);
                             return (
                                 <TableRow key={line.id || idx} sx={{ '& td': { color: isLineAnulada ? 'var(--text-muted, #6b7280)' : 'var(--text-white-dynamic, #fff)', py: 1.2, textDecoration: isLineAnulada ? 'line-through' : 'none' } }}>
                                     <TableCell sx={{ fontWeight: 700, color: isLineAnulada ? 'inherit' : '#f59e0b', fontSize: '0.8rem' }}>

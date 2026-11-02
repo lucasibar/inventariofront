@@ -33,6 +33,8 @@ import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 
 import { 
     useGetStockQuery, 
@@ -226,6 +228,25 @@ export default function DashboardDepositoPage() {
     const [moveKilos, setMoveKilos] = useState<string>('');
     const [isManualKilosEdited, setIsManualKilosEdited] = useState<boolean>(false);
     const [feedbackToast, setFeedbackToast] = useState<{ msg: string; severity: 'success' | 'info' | 'error' } | null>(null);
+
+    // Exclusión dinámica de materiales de los cómputos de métricas (ojito)
+    const [excludedItemIds, setExcludedItemIds] = useState<Record<string, boolean>>({});
+
+    const toggleItemInclusion = (e: React.MouseEvent, itemId: string) => {
+        e.stopPropagation();
+        setExcludedItemIds(prev => ({
+            ...prev,
+            [itemId]: !prev[itemId]
+        }));
+    };
+
+    const handleIncludeAll = () => {
+        setExcludedItemIds({});
+    };
+
+    const excludedCount = useMemo(() => {
+        return Object.values(excludedItemIds).filter(Boolean).length;
+    }, [excludedItemIds]);
 
     const getKilosPorCajaRatio = (entry: any) => {
         if (!entry) return null;
@@ -584,9 +605,13 @@ export default function DashboardDepositoPage() {
         filteredStock.forEach((entry: any) => {
             const itemId = entry.batch?.item?.id;
             if (!itemId) return;
-            general.kilos += Number(entry.qtyPrincipal || 0);
-            if (entry.qtySecundaria) general.units += Number(entry.qtySecundaria);
-            if (entry.posicionId) general.positions.add(entry.posicionId);
+
+            // Si el material está excluido con el ojito, NO suma a las métricas generales superiores
+            if (!excludedItemIds[itemId]) {
+                general.kilos += Number(entry.qtyPrincipal || 0);
+                if (entry.qtySecundaria) general.units += Number(entry.qtySecundaria);
+                if (entry.posicionId) general.positions.add(entry.posicionId);
+            }
 
             if (!groups[itemId]) {
                 groups[itemId] = {
@@ -616,7 +641,7 @@ export default function DashboardDepositoPage() {
             groupedData: Object.values(groups).sort((a: any, b: any) => a.item.descripcion.localeCompare(b.item.descripcion)),
             generalMetrics: { ...general, positionsCount: general.positions.size }
         };
-    }, [rawStock, searchTerm]);
+    }, [rawStock, searchTerm, excludedItemIds]);
 
     const detailGroup = useMemo(() => groupedData.find((g: any) => g.item.id === detailGroupId), [groupedData, detailGroupId]);
 
@@ -702,6 +727,46 @@ export default function DashboardDepositoPage() {
                 </Box>
             )}
 
+            {/* Banner de Materiales Excluidos con el Ojito */}
+            {excludedCount > 0 && (
+                <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    bgcolor: 'rgba(245, 158, 11, 0.08)', 
+                    border: '1px solid rgba(245, 158, 11, 0.25)', 
+                    borderRadius: 2.5, 
+                    px: 2, 
+                    py: 1,
+                    gap: 1.5,
+                    flexWrap: 'wrap'
+                }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <VisibilityOffIcon sx={{ color: '#f59e0b', fontSize: 20 }} />
+                        <Typography variant="body2" sx={{ color: '#f59e0b', fontWeight: 700 }}>
+                            Hay <strong>{excludedCount}</strong> material{excludedCount > 1 ? 'es' : ''} excluido{excludedCount > 1 ? 's' : ''} del cálculo de métricas (kilos y ocupación).
+                        </Typography>
+                    </Box>
+                    <Button 
+                        size="small" 
+                        variant="outlined" 
+                        onClick={handleIncludeAll}
+                        sx={{ 
+                            color: '#f59e0b', 
+                            borderColor: 'rgba(245, 158, 11, 0.5)', 
+                            fontWeight: 800, 
+                            borderRadius: 1.5,
+                            textTransform: 'none',
+                            py: 0.3,
+                            px: 1.5,
+                            '&:hover': { bgcolor: 'rgba(245, 158, 11, 0.15)', borderColor: '#f59e0b' }
+                        }}
+                    >
+                        Reactivar todos los ojos
+                    </Button>
+                </Box>
+            )}
+
             {/* Barra de Filtros Sticky en Mobile */}
             <Paper sx={{ 
                 p: 1.5, 
@@ -777,6 +842,7 @@ export default function DashboardDepositoPage() {
                     {groupedData.map((group: any) => {
                         const categoryName = group.item.category?.nombre || group.item.categoria || 'General';
                         const positionsList = Array.from(group.uniquePositions as Set<string>);
+                        const isExcluded = !!excludedItemIds[group.item.id];
 
                         return (
                             <div 
@@ -784,7 +850,7 @@ export default function DashboardDepositoPage() {
                                 className="material-card-hover"
                                 style={{ 
                                     background: colors.cardBg, 
-                                    border: `1px solid ${colors.border}`, 
+                                    border: isExcluded ? '1px dashed rgba(239, 68, 68, 0.45)' : `1px solid ${colors.border}`, 
                                     borderRadius: '14px', 
                                     padding: '16px',
                                     display: 'flex',
@@ -792,13 +858,14 @@ export default function DashboardDepositoPage() {
                                     justifyContent: 'space-between',
                                     gap: '12px',
                                     transition: 'all 0.15s ease-in-out',
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    opacity: isExcluded ? 0.48 : 1,
                                 }}
                                 onClick={() => setDetailGroupId(group.item.id)}
                             >
                                 <div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                                        <div>
+                                        <div style={{ flex: 1, paddingRight: '8px' }}>
                                             {/* Clic en código para editar ficha del material */}
                                             <Tooltip title="Toca para editar ficha y datos técnicos del material">
                                                 <Typography
@@ -820,13 +887,50 @@ export default function DashboardDepositoPage() {
                                                     {group.item.codigoInterno} ✎
                                                 </Typography>
                                             </Tooltip>
-                                            <Typography variant="body1" sx={{ fontWeight: 800, color: '#fff', lineHeight: 1.25, mt: 0.3 }}>
-                                                {group.item.descripcion}
-                                            </Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.8, mt: 0.3 }}>
+                                                <Typography variant="body1" sx={{ fontWeight: 800, color: '#fff', lineHeight: 1.25, textDecoration: isExcluded ? 'line-through' : 'none' }}>
+                                                    {group.item.descripcion}
+                                                </Typography>
+                                                {isExcluded && (
+                                                    <Chip 
+                                                        label="Excluido de métricas" 
+                                                        size="small" 
+                                                        sx={{ 
+                                                            height: 18, 
+                                                            fontSize: '0.62rem', 
+                                                            bgcolor: 'rgba(239, 68, 68, 0.15)', 
+                                                            color: '#f87171', 
+                                                            fontWeight: 800, 
+                                                            border: '1px solid rgba(239, 68, 68, 0.3)' 
+                                                        }} 
+                                                    />
+                                                )}
+                                            </Box>
                                         </div>
-                                        <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.7rem' }}>
-                                            {categoryName}
-                                        </Typography>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                                            <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.7rem' }}>
+                                                {categoryName}
+                                            </Typography>
+                                            <Tooltip title={isExcluded ? "Material excluido de las métricas. Toca el ojo para volver a incluirlo en la cuenta" : "Material incluido en las métricas. Toca el ojo para excluirlo del cálculo"}>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={(e) => toggleItemInclusion(e, group.item.id)}
+                                                    sx={{
+                                                        p: 0.5,
+                                                        color: isExcluded ? '#ef4444' : colors.textDim,
+                                                        bgcolor: isExcluded ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255, 255, 255, 0.04)',
+                                                        borderRadius: 1.5,
+                                                        border: isExcluded ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid transparent',
+                                                        '&:hover': {
+                                                            color: isExcluded ? '#f87171' : '#fff',
+                                                            bgcolor: isExcluded ? 'rgba(239, 68, 68, 0.25)' : 'rgba(255, 255, 255, 0.1)'
+                                                        }
+                                                    }}
+                                                >
+                                                    {isExcluded ? <VisibilityOffIcon sx={{ fontSize: 18 }} /> : <VisibilityIcon sx={{ fontSize: 18 }} />}
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Box>
                                     </div>
                                     
                                     {group.supplier?.name && (
@@ -905,6 +1009,7 @@ export default function DashboardDepositoPage() {
                     <MuiTable size="small">
                         <TableHead sx={{ bgcolor: 'rgba(0,0,0,0.25)' }}>
                             <TableRow sx={{ '& th': { color: colors.textDim, fontWeight: 800, fontSize: '0.72rem', textTransform: 'uppercase', py: 1.2 } }}>
+                                <TableCell align="center" sx={{ width: 44 }}>Métrica</TableCell>
                                 <TableCell>Código</TableCell>
                                 <TableCell>Descripción</TableCell>
                                 <TableCell>Categoría</TableCell>
@@ -918,14 +1023,37 @@ export default function DashboardDepositoPage() {
                             {groupedData.map((group: any) => {
                                 const categoryName = group.item.category?.nombre || group.item.categoria || 'General';
                                 const positionsList = Array.from(group.uniquePositions as Set<string>);
+                                const isExcluded = !!excludedItemIds[group.item.id];
 
                                 return (
                                     <TableRow 
                                         key={group.item.id} 
                                         onClick={() => setDetailGroupId(group.item.id)}
                                         className="hoverable-row"
-                                        sx={{ cursor: 'pointer', borderBottom: `1px solid ${colors.border}`, '& td': { py: 1 } }}
+                                        sx={{ 
+                                            cursor: 'pointer', 
+                                            borderBottom: `1px solid ${colors.border}`, 
+                                            opacity: isExcluded ? 0.45 : 1,
+                                            '& td': { py: 1 } 
+                                        }}
                                     >
+                                        <TableCell align="center" onClick={(e) => e.stopPropagation()}>
+                                            <Tooltip title={isExcluded ? "Excluido de métricas. Clic para volver a incluirlo" : "Incluido en métricas. Clic para excluir del cálculo"}>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={(e) => toggleItemInclusion(e, group.item.id)}
+                                                    sx={{
+                                                        p: 0.4,
+                                                        color: isExcluded ? '#ef4444' : colors.textDim,
+                                                        bgcolor: isExcluded ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
+                                                        borderRadius: 1.5,
+                                                        '&:hover': { color: isExcluded ? '#f87171' : '#fff' }
+                                                    }}
+                                                >
+                                                    {isExcluded ? <VisibilityOffIcon sx={{ fontSize: 17 }} /> : <VisibilityIcon sx={{ fontSize: 17 }} />}
+                                                </IconButton>
+                                            </Tooltip>
+                                        </TableCell>
                                         <TableCell onClick={(e) => { e.stopPropagation(); setEditItemTarget(group.item); }}>
                                             <Tooltip title="Toca para editar ficha del material">
                                                 <Typography sx={{ color: colors.primary, fontWeight: 800, fontSize: '0.78rem', textDecoration: 'underline dotted' }}>
@@ -933,8 +1061,22 @@ export default function DashboardDepositoPage() {
                                                 </Typography>
                                             </Tooltip>
                                         </TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: '#fff', fontSize: '0.82rem' }}>
+                                        <TableCell sx={{ fontWeight: 700, color: '#fff', fontSize: '0.82rem', textDecoration: isExcluded ? 'line-through' : 'none' }}>
                                             {group.item.descripcion}
+                                            {isExcluded && (
+                                                <Chip 
+                                                    label="Excluido" 
+                                                    size="small" 
+                                                    sx={{ 
+                                                        height: 16, 
+                                                        fontSize: '0.6rem', 
+                                                        bgcolor: 'rgba(239, 68, 68, 0.15)', 
+                                                        color: '#f87171', 
+                                                        fontWeight: 800, 
+                                                        ml: 1 
+                                                    }} 
+                                                />
+                                            )}
                                         </TableCell>
                                         <TableCell sx={{ color: colors.textDim, fontSize: '0.75rem' }}>
                                             {categoryName}
