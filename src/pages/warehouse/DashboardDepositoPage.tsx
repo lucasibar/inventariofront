@@ -6,6 +6,7 @@ import {
     TextField, 
     Button,
     Drawer,
+    Dialog,
     MenuItem,
     CircularProgress,
     Autocomplete,
@@ -31,7 +32,6 @@ import GridViewIcon from '@mui/icons-material/GridView';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
@@ -940,51 +940,111 @@ export default function DashboardDepositoPage() {
                                                 )}
                                             </Box>
                                         </div>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                                            <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.7rem' }}>
-                                                {categoryName}
-                                            </Typography>
-                                            <Tooltip title={isExcluded ? "Material excluido de las métricas. Toca el ojo para volver a incluirlo en la cuenta" : "Material incluido en las métricas. Toca el ojo para excluirlo del cálculo"}>
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={(e) => toggleItemInclusion(e, group.item.id)}
-                                                    sx={{
-                                                        p: 0.5,
-                                                        color: isExcluded ? '#ef4444' : colors.textDim,
-                                                        bgcolor: isExcluded ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255, 255, 255, 0.04)',
-                                                        borderRadius: 1.5,
-                                                        border: isExcluded ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid transparent',
-                                                        '&:hover': {
-                                                            color: isExcluded ? '#f87171' : '#fff',
-                                                            bgcolor: isExcluded ? 'rgba(239, 68, 68, 0.25)' : 'rgba(255, 255, 255, 0.1)'
-                                                        }
-                                                    }}
-                                                >
-                                                    {isExcluded ? <VisibilityOffIcon sx={{ fontSize: 18 }} /> : <VisibilityIcon sx={{ fontSize: 18 }} />}
-                                                </IconButton>
-                                            </Tooltip>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.6 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                                                <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                                                    {categoryName}
+                                                </Typography>
+                                                <Tooltip title={isExcluded ? "Material excluido de las métricas. Toca el ojo para volver a incluirlo en la cuenta" : "Material incluido en las métricas. Toca el ojo para excluirlo del cálculo"}>
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={(e) => toggleItemInclusion(e, group.item.id)}
+                                                        sx={{
+                                                            p: 0.4,
+                                                            color: isExcluded ? '#ef4444' : colors.textDim,
+                                                            bgcolor: isExcluded ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255, 255, 255, 0.04)',
+                                                            borderRadius: 1.5,
+                                                            border: isExcluded ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid transparent',
+                                                            '&:hover': {
+                                                                color: isExcluded ? '#f87171' : '#fff',
+                                                                bgcolor: isExcluded ? 'rgba(239, 68, 68, 0.25)' : 'rgba(255, 255, 255, 0.1)'
+                                                            }
+                                                        }}
+                                                    >
+                                                        {isExcluded ? <VisibilityOffIcon sx={{ fontSize: 17 }} /> : <VisibilityIcon sx={{ fontSize: 17 }} />}
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </Box>
+
+                                            {/* Próxima partida FIFO y posición de donde se agarra (Directamente debajo de la categoría) */}
+                                            {group.oldestBatchLot ? (
+                                                <Tooltip title={`Próxima partida a consumir: ${group.oldestBatchLot}. Toca para abrir las acciones de la posición 📍 ${group.oldestBatchPosition}`}>
+                                                    <Box 
+                                                        onClick={(e) => {
+                                                            if (group.oldestBatchEntry) {
+                                                                e.stopPropagation();
+                                                                setActionSheetEntry(group.oldestBatchEntry);
+                                                            }
+                                                        }}
+                                                        sx={{ 
+                                                            display: 'inline-flex', 
+                                                            alignItems: 'center', 
+                                                            gap: 0.6,
+                                                            bgcolor: 'rgba(245, 158, 11, 0.1)',
+                                                            border: '1px solid rgba(245, 158, 11, 0.25)',
+                                                            borderRadius: 1.5,
+                                                            px: 0.8,
+                                                            py: 0.2,
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.15s ease',
+                                                            '&:hover': {
+                                                                bgcolor: 'rgba(245, 158, 11, 0.22)',
+                                                                borderColor: colors.primary
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Typography variant="caption" sx={{ color: colors.primary, fontWeight: 800, fontSize: '0.68rem', letterSpacing: '0.3px' }}>
+                                                            ⏳ {group.oldestBatchLot}
+                                                        </Typography>
+                                                        <Chip 
+                                                            size="small"
+                                                            label={`📍 ${group.oldestBatchPosition || 'S/P'}`}
+                                                            sx={{ 
+                                                                height: 18, 
+                                                                fontSize: '0.65rem', 
+                                                                fontWeight: 900, 
+                                                                bgcolor: 'rgba(59, 130, 246, 0.2)', 
+                                                                color: colors.info,
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        />
+                                                    </Box>
+                                                </Tooltip>
+                                            ) : (
+                                                <Chip 
+                                                    size="small" 
+                                                    label="Sin stock" 
+                                                    sx={{ 
+                                                        height: 18, 
+                                                        fontSize: '0.62rem', 
+                                                        bgcolor: 'rgba(255, 255, 255, 0.05)', 
+                                                        color: colors.textDim, 
+                                                        fontWeight: 700 
+                                                    }} 
+                                                />
+                                            )}
                                         </Box>
                                     </div>
                                     
                                     {group.supplier?.name && (
-                                        <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.72rem', display: 'block', mb: 1 }}>
+                                        <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.72rem', display: 'block', mb: 0.5 }}>
                                             Prov: <strong style={{ color: '#fff' }}>{group.supplier.name}</strong>
                                         </Typography>
                                     )}
 
-                                    {/* Cantidades Totalizadas */}
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mt: 1, p: 1.2, bgcolor: 'rgba(0,0,0,0.25)', borderRadius: 2, border: `1px solid ${colors.border}` }}>
+                                    {/* Cantidades Totalizadas Integradas (sin caja negra pesada) */}
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mt: 1 }}>
                                         <div>
-                                            <Typography variant="caption" sx={{ fontSize: '0.65rem', color: colors.textDim, fontWeight: 700, textTransform: 'uppercase' }}>Stock Total</Typography>
-                                            <Typography variant="h6" sx={{ fontWeight: 900, color: '#fff', lineHeight: 1 }}>
+                                            <Typography variant="caption" sx={{ fontSize: '0.65rem', color: colors.textDim, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Stock Total</Typography>
+                                            <Typography variant="h5" sx={{ fontWeight: 900, color: group.metrics.kilos > 0 ? '#fff' : colors.textDim, lineHeight: 1.1 }}>
                                                 {group.metrics.kilos.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}{' '}
-                                                <small style={{ fontSize: '0.75rem', color: colors.textDim }}>{group.item.unidadPrincipal || 'kg'}</small>
+                                                <small style={{ fontSize: '0.75rem', color: colors.textDim, fontWeight: 500 }}>{group.item.unidadPrincipal || 'kg'}</small>
                                             </Typography>
                                         </div>
                                         {group.metrics.units > 0 && (
                                             <div style={{ textAlign: 'right' }}>
-                                                <Typography variant="caption" sx={{ fontSize: '0.65rem', color: colors.textDim, fontWeight: 700, textTransform: 'uppercase' }}>Bultos</Typography>
-                                                <Typography variant="body1" sx={{ fontWeight: 800, color: colors.success, lineHeight: 1 }}>
+                                                <Typography variant="caption" sx={{ fontSize: '0.65rem', color: colors.textDim, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Bultos</Typography>
+                                                <Typography variant="body1" sx={{ fontWeight: 800, color: colors.success, lineHeight: 1.1 }}>
                                                     {group.metrics.units.toLocaleString('es-AR')}{' '}
                                                     <small style={{ fontSize: '0.7rem', color: colors.textDim }}>{group.item.unidadSecundaria || 'un'}</small>
                                                 </Typography>
@@ -993,45 +1053,44 @@ export default function DashboardDepositoPage() {
                                     </Box>
 
                                     {/* Ubicaciones Resumidas Elegantes */}
-                                    <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap' }}>
-                                        {positionsList.slice(0, 3).map((posCode, pIdx) => (
-                                            <Chip
-                                                key={pIdx}
-                                                size="small"
-                                                label={`📍 ${posCode}`}
-                                                sx={{ 
-                                                    bgcolor: 'rgba(59, 130, 246, 0.12)', 
-                                                    color: colors.info, 
-                                                    fontWeight: 800, 
-                                                    fontSize: '0.72rem', 
-                                                    height: '22px' 
-                                                }}
-                                            />
-                                        ))}
-                                        {positionsList.length > 3 && (
-                                            <Chip
-                                                size="small"
-                                                label={`+${positionsList.length - 3} más`}
-                                                sx={{ 
-                                                    bgcolor: 'rgba(255, 255, 255, 0.06)', 
-                                                    color: colors.textDim, 
-                                                    fontWeight: 700, 
-                                                    fontSize: '0.7rem', 
-                                                    height: '22px' 
-                                                }}
-                                            />
+                                    <Box sx={{ mt: 1.2, display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap' }}>
+                                        {positionsList.length === 0 ? (
+                                            <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.7rem', fontStyle: 'italic' }}>
+                                                Sin posiciones ocupadas
+                                            </Typography>
+                                        ) : (
+                                            <>
+                                                {positionsList.slice(0, 3).map((posCode, pIdx) => (
+                                                    <Chip
+                                                        key={pIdx}
+                                                        size="small"
+                                                        label={`📍 ${posCode}`}
+                                                        sx={{ 
+                                                            bgcolor: 'rgba(59, 130, 246, 0.12)', 
+                                                            color: colors.info, 
+                                                            fontWeight: 800, 
+                                                            fontSize: '0.72rem', 
+                                                            height: '22px' 
+                                                        }}
+                                                    />
+                                                ))}
+                                                {positionsList.length > 3 && (
+                                                    <Chip
+                                                        size="small"
+                                                        label={`+${positionsList.length - 3} más`}
+                                                        sx={{ 
+                                                            bgcolor: 'rgba(255, 255, 255, 0.06)', 
+                                                            color: colors.textDim, 
+                                                            fontWeight: 700, 
+                                                            fontSize: '0.7rem', 
+                                                            height: '22px' 
+                                                        }}
+                                                    />
+                                                )}
+                                            </>
                                         )}
                                     </Box>
                                 </div>
-
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 1, borderTop: `1px solid ${colors.border}` }}>
-                                    <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.7rem' }}>
-                                        {group.entries.length} {group.entries.length === 1 ? 'partida' : 'partidas'}
-                                    </Typography>
-                                    <Typography variant="caption" sx={{ color: colors.primary, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                        Detalle y Acciones <ArrowForwardIcon sx={{ fontSize: 13 }} />
-                                    </Typography>
-                                </Box>
                             </div>
                         );
                     })}
@@ -1113,16 +1172,42 @@ export default function DashboardDepositoPage() {
                                         </TableCell>
                                         <TableCell sx={{ color: colors.textDim, fontSize: '0.75rem' }}>
                                             {categoryName}
+                                            {group.oldestBatchLot && (
+                                                <Box sx={{ mt: 0.3 }}>
+                                                    <Chip 
+                                                        size="small" 
+                                                        label={`⏳ ${group.oldestBatchLot} (📍 ${group.oldestBatchPosition || 'S/P'})`} 
+                                                        onClick={(e) => {
+                                                            if (group.oldestBatchEntry) {
+                                                                e.stopPropagation();
+                                                                setActionSheetEntry(group.oldestBatchEntry);
+                                                            }
+                                                        }}
+                                                        sx={{ 
+                                                            height: 18, 
+                                                            fontSize: '0.62rem', 
+                                                            fontWeight: 800, 
+                                                            bgcolor: 'rgba(245, 158, 11, 0.15)', 
+                                                            color: colors.primary,
+                                                            cursor: 'pointer' 
+                                                        }} 
+                                                    />
+                                                </Box>
+                                            )}
                                         </TableCell>
                                         <TableCell>
-                                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                                                {positionsList.slice(0, 3).map((p, idx) => (
-                                                    <Chip key={idx} size="small" label={p} sx={{ fontSize: '0.68rem', height: '20px', bgcolor: 'rgba(59, 130, 246, 0.12)', color: colors.info, fontWeight: 700 }} />
-                                                ))}
-                                                {positionsList.length > 3 && (
-                                                    <Chip size="small" label={`+${positionsList.length - 3}`} sx={{ fontSize: '0.68rem', height: '20px' }} />
-                                                )}
-                                            </Box>
+                                            {positionsList.length === 0 ? (
+                                                <Typography variant="caption" sx={{ color: colors.textDim, fontStyle: 'italic' }}>—</Typography>
+                                            ) : (
+                                                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                                                    {positionsList.slice(0, 3).map((p, idx) => (
+                                                        <Chip key={idx} size="small" label={p} sx={{ fontSize: '0.68rem', height: '20px', bgcolor: 'rgba(59, 130, 246, 0.12)', color: colors.info, fontWeight: 700 }} />
+                                                    ))}
+                                                    {positionsList.length > 3 && (
+                                                        <Chip size="small" label={`+${positionsList.length - 3}`} sx={{ fontSize: '0.68rem', height: '20px' }} />
+                                                    )}
+                                                </Box>
+                                            )}
                                         </TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 900, color: '#fff', fontSize: '0.85rem' }}>
                                             {group.metrics.kilos.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} <small style={{ color: colors.textDim }}>{group.item.unidadPrincipal}</small>
@@ -1159,15 +1244,34 @@ export default function DashboardDepositoPage() {
                 </Fab>
             )}
 
-            {/* Modal de Detalle de Material */}
+            {/* Listado de Posiciones / Detalle de Material (Emerge desde abajo como Bottom Sheet) */}
             {detailGroup && (
-                <Modal 
+                <Drawer 
+                    anchor="bottom"
                     open={!!detailGroupId} 
                     onClose={() => setDetailGroupId(null)}
-                    sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    PaperProps={{
+                        sx: {
+                            bgcolor: colors.bg,
+                            color: colors.text,
+                            borderTop: `2px solid ${colors.primary}`,
+                            borderTopLeftRadius: 24,
+                            borderTopRightRadius: 24,
+                            p: { xs: 2, sm: 3 },
+                            pb: { xs: 4, sm: 5 },
+                            maxHeight: '85vh',
+                            maxWidth: 1040,
+                            margin: '0 auto',
+                            width: '100%',
+                            boxShadow: '0 -10px 40px rgba(0,0,0,0.8)',
+                            outline: 'none'
+                        }
+                    }}
                 >
-                    <Paper sx={{ width: '94%', maxWidth: 860, bgcolor: colors.bg, border: `1px solid ${colors.border}`, borderRadius: 3.5, p: 2.5, outline: 'none', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', maxHeight: '92vh', overflowY: 'auto' }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                    {/* Tirita / drag pill superior */}
+                    <Box sx={{ width: 44, height: 4, bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 2, mx: 'auto', mb: 2 }} />
+
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                             <Box>
                                 <Typography 
                                     variant="caption" 
@@ -1192,110 +1296,160 @@ export default function DashboardDepositoPage() {
                             </Box>
                         </Box>
                         
-                        <TableContainer sx={{ maxHeight: 460, overflowY: 'auto', border: `1px solid ${colors.border}`, borderRadius: 2 }}>
-                            <MuiTable size="small">
-                                <TableHead sx={{ bgcolor: 'rgba(0,0,0,0.3)' }}>
-                                    <TableRow sx={{ '& th': { color: colors.textDim, fontWeight: 800, fontSize: '0.72rem', textTransform: 'uppercase' } }}>
-                                        <TableCell>Ubicación</TableCell>
-                                        <TableCell>Lote / Partida</TableCell>
-                                        <TableCell align="right">Kilos</TableCell>
-                                        <TableCell align="right">Bultos</TableCell>
-                                        <TableCell align="center">Acciones</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {detailGroup.entries.map((entry: any) => {
-                                        const isOldest = entry.batch?.lotNumber === detailGroup.oldestBatchLot;
-                                        const isDeleting = deletingKeys.includes(getEntryKey(entry));
+                        {detailGroup.entries.length === 0 ? (
+                            <Box sx={{ p: 5, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2.5, border: `1px dashed ${colors.border}` }}>
+                                <Typography variant="body1" sx={{ color: '#fff', fontWeight: 800, mb: 0.5 }}>
+                                    Material sin stock físico
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: colors.textDim, mb: 2.5, maxWidth: 420, mx: 'auto' }}>
+                                    Este material forma parte del catálogo pero actualmente no posee pallets ni partidas en este depósito.
+                                </Typography>
+                                <Button 
+                                    variant="contained" 
+                                    startIcon={<AddIcon />} 
+                                    onClick={() => {
+                                        setDetailGroupId(null);
+                                        setQaItem(detailGroup.item.id);
+                                        setQaSupplier(detailGroup.supplier?.id || '');
+                                        setQuickAddModal(true);
+                                    }}
+                                    sx={{ bgcolor: colors.primary, color: '#000', fontWeight: 800, borderRadius: 2, px: 2.5 }}
+                                >
+                                    Cargar Stock de este Material
+                                </Button>
+                            </Box>
+                        ) : (
+                            <TableContainer sx={{ maxHeight: 460, overflowY: 'auto', border: `1px solid ${colors.border}`, borderRadius: 2 }}>
+                                <MuiTable size="small">
+                                    <TableHead sx={{ bgcolor: 'rgba(0,0,0,0.3)' }}>
+                                        <TableRow sx={{ '& th': { color: colors.textDim, fontWeight: 800, fontSize: '0.72rem', textTransform: 'uppercase' } }}>
+                                            <TableCell>Ubicación</TableCell>
+                                            <TableCell>Lote / Partida</TableCell>
+                                            <TableCell align="right">Kilos</TableCell>
+                                            <TableCell align="right">Bultos</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {detailGroup.entries.map((entry: any) => {
+                                            const isOldest = entry.batch?.lotNumber === detailGroup.oldestBatchLot;
+                                            const isDeleting = deletingKeys.includes(getEntryKey(entry));
 
-                                        return (
-                                            <TableRow key={entry.id} sx={{ opacity: isDeleting ? 0.5 : 1, '& td': { color: '#fff', py: 1.1 } }}>
-                                                {/* Chip táctil de Ubicación abre menú de acciones */}
-                                                <TableCell>
-                                                    <Tooltip title="Toca para abrir menú de acciones de esta ubicación">
-                                                        <Chip 
-                                                            icon={<SwapHorizIcon style={{ fontSize: 15, color: colors.info }} />}
-                                                            label={entry.posicion?.codigo || 'S/P'}
-                                                            onClick={() => setActionSheetEntry(entry)}
-                                                            clickable
-                                                            sx={{ 
-                                                                bgcolor: 'rgba(59, 130, 246, 0.15)', 
-                                                                color: colors.info, 
-                                                                fontWeight: 800, 
-                                                                fontSize: '0.78rem',
-                                                                border: `1px solid rgba(59, 130, 246, 0.3)`,
-                                                                cursor: 'pointer',
-                                                                minHeight: '32px'
-                                                            }}
-                                                        />
-                                                    </Tooltip>
-                                                </TableCell>
+                                            return (
+                                                <TableRow key={entry.id} sx={{ opacity: isDeleting ? 0.5 : 1, '& td': { color: '#fff', py: 1.2 } }}>
+                                                    {/* Chip de Ubicación: al tocarlo abre acciones de mover o despachar */}
+                                                    <TableCell>
+                                                        <Tooltip title="Toca para mover, reubicar o despachar esta posición">
+                                                            <Chip 
+                                                                icon={<SwapHorizIcon style={{ fontSize: 15, color: colors.info }} />}
+                                                                label={entry.posicion?.codigo || 'S/P'}
+                                                                onClick={() => setActionSheetEntry(entry)}
+                                                                clickable
+                                                                sx={{ 
+                                                                    bgcolor: 'rgba(59, 130, 246, 0.15)', 
+                                                                    color: colors.info, 
+                                                                    fontWeight: 800, 
+                                                                    fontSize: '0.78rem',
+                                                                    border: `1px solid rgba(59, 130, 246, 0.3)`,
+                                                                    cursor: 'pointer',
+                                                                    minHeight: '30px',
+                                                                    '&:hover': { bgcolor: 'rgba(59, 130, 246, 0.28)' }
+                                                                }}
+                                                            />
+                                                        </Tooltip>
+                                                    </TableCell>
 
-                                                {/* Lote con indicador FIFO real */}
-                                                <TableCell>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                                                        <Typography 
-                                                            variant="body2" 
-                                                            onClick={() => setEditLotEntry(entry)}
-                                                            sx={{ cursor: 'pointer', textDecoration: 'underline dashed', color: isOldest ? colors.primary : '#fff', fontWeight: isOldest ? 800 : 500 }}
-                                                        >
-                                                            {entry.batch?.lotNumber}
-                                                        </Typography>
-                                                        {isOldest && (
-                                                            <Tooltip title="Partida más antigua de este material en stock (Prioridad de salida FIFO)">
-                                                                <Chip label="FIFO" size="small" sx={{ height: '18px', fontSize: '0.62rem', fontWeight: 900, bgcolor: 'rgba(245, 158, 11, 0.2)', color: colors.primary }} />
+                                                    {/* Lote con manipulación directa: tocarlo cambia o acopla la partida */}
+                                                    <TableCell>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                                                            <Tooltip title="Toca para renombrar, corregir o acoplar esta partida">
+                                                                <Typography 
+                                                                    variant="body2" 
+                                                                    onClick={() => setEditLotEntry(entry)}
+                                                                    sx={{ 
+                                                                        cursor: 'pointer', 
+                                                                        textDecoration: 'underline dotted', 
+                                                                        color: isOldest ? colors.primary : '#fff', 
+                                                                        fontWeight: isOldest ? 800 : 600,
+                                                                        '&:hover': { color: colors.primary }
+                                                                    }}
+                                                                >
+                                                                    {entry.batch?.lotNumber} ✎
+                                                                </Typography>
                                                             </Tooltip>
-                                                        )}
-                                                        {entry.batch?.observaciones && (
-                                                            <Tooltip title={entry.batch.observaciones}>
-                                                                <WarningAmberIcon sx={{ fontSize: 15, color: colors.primary }} />
+                                                            {isOldest && (
+                                                                <Tooltip title="Partida más antigua de este material en stock (Prioridad de salida FIFO)">
+                                                                    <Chip label="FIFO" size="small" sx={{ height: '18px', fontSize: '0.62rem', fontWeight: 900, bgcolor: 'rgba(245, 158, 11, 0.2)', color: colors.primary }} />
+                                                                </Tooltip>
+                                                            )}
+                                                            {entry.batch?.observaciones && (
+                                                                <Tooltip title={`Observación: ${entry.batch.observaciones}. Toca para editar nota.`}>
+                                                                    <IconButton 
+                                                                        size="small" 
+                                                                        onClick={() => setObsModal({ open: true, batchId: entry.batch?.id, text: entry.batch?.observaciones || '' })}
+                                                                        sx={{ p: 0.2, color: colors.primary }}
+                                                                    >
+                                                                        <WarningAmberIcon sx={{ fontSize: 16 }} />
+                                                                    </IconButton>
+                                                                </Tooltip>
+                                                            )}
+                                                        </Box>
+                                                    </TableCell>
+
+                                                    {/* Kilos con manipulación directa: tocarlo abre ajuste de peso */}
+                                                    <TableCell align="right">
+                                                        <Tooltip title="Toca para ajustar o corregir el pesaje de este pallet">
+                                                            <Typography 
+                                                                variant="body2" 
+                                                                onClick={() => setAdjustStockEntry(entry)}
+                                                                sx={{ 
+                                                                    cursor: 'pointer', 
+                                                                    textDecoration: 'underline dotted', 
+                                                                    color: colors.primary, 
+                                                                    fontWeight: 800,
+                                                                    '&:hover': { color: '#fbbf24' }
+                                                                }}
+                                                            >
+                                                                {Number(entry.qtyPrincipal).toFixed(1)} <small style={{ color: colors.textDim }}>{detailGroup.item.unidadPrincipal}</small> ✎
+                                                            </Typography>
+                                                        </Tooltip>
+                                                    </TableCell>
+
+                                                    {/* Bultos con manipulación directa */}
+                                                    <TableCell align="right">
+                                                        {entry.qtySecundaria ? (
+                                                            <Tooltip title="Toca para ajustar la cantidad de bultos">
+                                                                <Typography 
+                                                                    variant="body2" 
+                                                                    onClick={() => setAdjustStockEntry(entry)}
+                                                                    sx={{ 
+                                                                        cursor: 'pointer', 
+                                                                        textDecoration: 'underline dotted', 
+                                                                        color: colors.success, 
+                                                                        fontWeight: 700,
+                                                                        '&:hover': { color: '#34d399' }
+                                                                    }}
+                                                                >
+                                                                    {entry.qtySecundaria} <small style={{ color: colors.textDim }}>{detailGroup.item.unidadSecundaria}</small> ✎
+                                                                </Typography>
                                                             </Tooltip>
+                                                        ) : (
+                                                            <Typography 
+                                                                variant="caption" 
+                                                                onClick={() => setAdjustStockEntry(entry)}
+                                                                sx={{ color: colors.textDim, cursor: 'pointer', '&:hover': { color: '#fff' } }}
+                                                            >
+                                                                + Bultos
+                                                            </Typography>
                                                         )}
-                                                    </Box>
-                                                </TableCell>
-
-                                                {/* Kilos ajustables con diálogo seguro */}
-                                                <TableCell align="right">
-                                                    <Typography 
-                                                        variant="body2" 
-                                                        onClick={() => setAdjustStockEntry(entry)}
-                                                        sx={{ cursor: 'pointer', textDecoration: 'underline dashed', color: colors.primary, fontWeight: 800 }}
-                                                    >
-                                                        {Number(entry.qtyPrincipal).toFixed(1)} <small style={{ color: colors.textDim }}>{detailGroup.item.unidadPrincipal}</small>
-                                                    </Typography>
-                                                </TableCell>
-
-                                                <TableCell align="right">
-                                                    {entry.qtySecundaria ? (
-                                                        <Typography 
-                                                            variant="body2" 
-                                                            onClick={() => setAdjustStockEntry(entry)}
-                                                            sx={{ cursor: 'pointer', textDecoration: 'underline dashed', color: colors.success, fontWeight: 700 }}
-                                                        >
-                                                            {entry.qtySecundaria} <small style={{ color: colors.textDim }}>{detailGroup.item.unidadSecundaria}</small>
-                                                        </Typography>
-                                                    ) : '—'}
-                                                </TableCell>
-
-                                                {/* Botón Acción Rápida */}
-                                                <TableCell align="center">
-                                                    <Button
-                                                        size="small"
-                                                        variant="outlined"
-                                                        onClick={() => setActionSheetEntry(entry)}
-                                                        sx={{ fontSize: '0.7rem', py: 0.2, px: 1, color: colors.info, borderColor: 'rgba(56, 189, 248, 0.4)', borderRadius: 1.5 }}
-                                                    >
-                                                        Acciones
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                </TableBody>
-                            </MuiTable>
-                        </TableContainer>
-                    </Paper>
-                </Modal>
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </MuiTable>
+                            </TableContainer>
+                        )}
+                </Drawer>
             )}
 
             {/* Hoja Táctil de Acciones Unificada para Ubicación */}
@@ -1677,57 +1831,83 @@ export default function DashboardDepositoPage() {
                 </Modal>
             )}
 
-            {/* Empty Positions Modal */}
-            {emptyPositionsModal && (
-                <Modal 
-                    open={emptyPositionsModal} 
-                    onClose={() => setEmptyPositionsModal(false)}
-                    sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >
-                    <Paper sx={{ width: '90%', maxWidth: 450, bgcolor: colors.bg, border: `1px solid ${colors.info}`, borderRadius: 3, p: 2.5, outline: 'none' }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                            <Typography variant="h6" sx={{ fontWeight: 900, color: colors.info }}>Posiciones Libres ({emptyPositions.length})</Typography>
-                            <IconButton onClick={() => setEmptyPositionsModal(false)} sx={{ color: colors.textDim }}><CloseIcon /></IconButton>
-                        </Box>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxHeight: '300px', overflowY: 'auto', p: 1, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 }}>
-                            {emptyPositions.length === 0 ? (
-                                <Typography variant="body2" sx={{ color: colors.textDim, p: 2 }}>No hay posiciones vacías en este depósito.</Typography>
-                            ) : (
-                                emptyPositions.map((p: any) => (
-                                    <Box 
-                                        key={p.id} 
-                                        sx={{ 
-                                            px: 1.2, 
-                                            py: 0.4, 
-                                            bgcolor: 'rgba(255,255,255,0.05)', 
-                                            border: `1px solid ${colors.border}`, 
-                                            borderRadius: 1.5, 
-                                            color: '#fff', 
-                                            fontSize: '0.8rem', 
-                                            fontWeight: 700 
-                                        }}
-                                    >
-                                        📍 {p.codigo}
-                                    </Box>
-                                ))
-                            )}
-                        </Box>
-                    </Paper>
-                </Modal>
-            )}
-
-            {/* Carga Rápida Drawer */}
+            {/* Listado de Posiciones Libres (Emerge desde abajo como Bottom Sheet) */}
             <Drawer 
-                anchor="bottom" 
+                anchor="bottom"
+                open={emptyPositionsModal} 
+                onClose={() => setEmptyPositionsModal(false)}
+                PaperProps={{
+                    sx: {
+                        bgcolor: colors.bg,
+                        color: colors.text,
+                        borderTop: `2px solid ${colors.info}`,
+                        borderTopLeftRadius: 24,
+                        borderTopRightRadius: 24,
+                        p: { xs: 2.5, sm: 3 },
+                        pb: 5,
+                        maxWidth: 680,
+                        margin: '0 auto',
+                        width: '100%',
+                        boxShadow: '0 -8px 32px rgba(0,0,0,0.8)'
+                    }
+                }}
+            >
+                <Box sx={{ width: 44, height: 4, bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 2, mx: 'auto', mb: 2 }} />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 900, color: colors.info }}>Posiciones Libres ({emptyPositions.length})</Typography>
+                    <IconButton onClick={() => setEmptyPositionsModal(false)} sx={{ color: colors.textDim }}><CloseIcon /></IconButton>
+                </Box>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxHeight: '380px', overflowY: 'auto', p: 1.5, bgcolor: 'rgba(0,0,0,0.25)', borderRadius: 2.5 }}>
+                    {emptyPositions.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: colors.textDim, p: 2 }}>No hay posiciones vacías en este depósito.</Typography>
+                    ) : (
+                        emptyPositions.map((p: any) => (
+                            <Box 
+                                key={p.id} 
+                                sx={{ 
+                                    px: 1.4, 
+                                    py: 0.6, 
+                                    bgcolor: 'rgba(255,255,255,0.06)', 
+                                    border: `1px solid ${colors.border}`, 
+                                    borderRadius: 2, 
+                                    color: '#fff', 
+                                    fontSize: '0.85rem', 
+                                    fontWeight: 700 
+                                }}
+                            >
+                                📍 {p.codigo}
+                            </Box>
+                        ))
+                    )}
+                </Box>
+            </Drawer>
+
+            {/* Carga Rápida (Ventana Flotante Centrada) */}
+            <Dialog 
                 open={quickAddModal} 
                 onClose={() => setQuickAddModal(false)}
-                PaperProps={{ sx: { bgcolor: colors.bg, color: colors.text, borderTop: `1px solid ${colors.primary}`, borderTopLeftRadius: 24, borderTopRightRadius: 24, p: 3, pb: 6 } }}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{ 
+                    sx: { 
+                        bgcolor: colors.bg, 
+                        color: colors.text, 
+                        border: `1px solid ${colors.border}`, 
+                        borderRadius: 3.5, 
+                        p: { xs: 2.5, sm: 3 },
+                        boxShadow: '0 20px 60px rgba(0,0,0,0.85)'
+                    } 
+                }}
             >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 900, color: colors.primary }}>CARGA RÁPIDA DE STOCK</Typography>
-                    <IconButton onClick={() => setQuickAddModal(false)} sx={{ color: colors.textDim }}><CloseIcon /></IconButton>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 900, color: colors.primary, letterSpacing: '-0.3px' }}>
+                        ⚡ CARGA RÁPIDA DE STOCK
+                    </Typography>
+                    <IconButton onClick={() => setQuickAddModal(false)} sx={{ color: colors.textDim }}>
+                        <CloseIcon />
+                    </IconButton>
                 </Box>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.8, maxWidth: 540, margin: '0 auto', width: '100%' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.8, width: '100%' }}>
                     <Box sx={{ display: 'flex', gap: 1.5 }}>
                         <TextField 
                             select 
@@ -1825,7 +2005,7 @@ export default function DashboardDepositoPage() {
                         {isQuickAdding ? 'REGISTRANDO...' : 'REGISTRAR STOCK'}
                     </Button>
                 </Box>
-            </Drawer>
+            </Dialog>
 
             {/* Subdialogs para creación al vuelo */}
             <CreateItemDialog open={createItemModal} onClose={() => setCreateItemModal(false)} onSuccess={(item: any) => { setQaItem(item.id); setCreateItemModal(false); }} depositoId={qaDepot} />
