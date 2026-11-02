@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
     useGetArticulosQuery,
+    useGetAlertasResumenQuery,
     useCreateArticuloMutation,
     useUpdateArticuloMutation,
     useGetArticuloEstructurasQuery,
@@ -12,6 +13,7 @@ import {
     useGetCatalogoMaquinasQuery,
     useGetArticuloEquivalenciasQuery,
     useAsociarItemMutation,
+    useReordenarPrioridadesMutation,
     useDesasociarItemMutation,
     useBuscarItemsParaVincularQuery,
     type Articulo,
@@ -43,9 +45,13 @@ export function ArticulosPage() {
     // Filtros de navegación
     const [searchTerm, setSearchTerm] = useState('');
     const [etapaFiltro, setEtapaFiltro] = useState<string>('CON_ETAPA');
+    const [alertaFiltro, setAlertaFiltro] = useState<string>('');
     const [familiaFiltro, setFamiliaFiltro] = useState('');
     const [estadoFiltro, setEstadoFiltro] = useState('');
     const [page, setPage] = useState(1);
+
+    // Resumen en vivo de alertas
+    const { data: resumenAlertas } = useGetAlertasResumenQuery();
 
     // Modal Unificado
     const [modalOpen, setModalOpen] = useState(false);
@@ -107,6 +113,7 @@ export function ArticulosPage() {
         etapa: etapaFiltro === 'CON_ETAPA' || etapaFiltro === 'INACTIVOS' || etapaFiltro === '' ? undefined : etapaFiltro,
         soloConEtapa: etapaFiltro === 'CON_ETAPA',
         activo: etapaFiltro === 'INACTIVOS' ? false : undefined,
+        alerta: alertaFiltro || undefined,
         familia: familiaFiltro || undefined,
         estado: estadoFiltro || undefined,
         page,
@@ -146,6 +153,7 @@ export function ArticulosPage() {
     );
     const [asociarItem, { isLoading: isSavingItem }] = useAsociarItemMutation();
     const [desasociarItem, { isLoading: isDeletingItem }] = useDesasociarItemMutation();
+    const [reordenarPrioridades, { isLoading: isReordenandoPrioridad }] = useReordenarPrioridadesMutation();
 
     const handleOpenNew = () => {
         setEditingArticulo(null);
@@ -346,6 +354,27 @@ export function ArticulosPage() {
         }
     };
 
+    const handleMoverPrioridad = async (indexActual: number, direccion: 'ARRIBA' | 'ABAJO') => {
+        if (!editingArticulo || !equivalencias) return;
+        const nuevoIndex = direccion === 'ARRIBA' ? indexActual - 1 : indexActual + 1;
+        if (nuevoIndex < 0 || nuevoIndex >= equivalencias.length) return;
+
+        const copia = [...equivalencias];
+        const [removido] = copia.splice(indexActual, 1);
+        copia.splice(nuevoIndex, 0, removido);
+
+        const equivalenciaIds = copia.map((c) => c.id);
+        try {
+            await reordenarPrioridades({
+                articuloId: editingArticulo.id,
+                equivalenciaIds,
+            }).unwrap();
+            refetchEquivalencias();
+        } catch (err: any) {
+            alert(err?.data?.message || 'Error reordenando prioridades');
+        }
+    };
+
     return (
         <div style={{ padding: isMobile ? '12px' : '24px', maxWidth: '1600px', margin: '0 auto' }}>
             {/* Encabezado */}
@@ -389,6 +418,94 @@ export function ArticulosPage() {
                     </Btn>
                 </div>
             )}
+
+            {/* CENTRO DE CONTROL DE ALERTAS OPERATIVAS (PÍLDORAS EN VIVO) */}
+            <div style={{
+                background: 'linear-gradient(135deg, rgba(31, 41, 55, 0.7), rgba(17, 24, 39, 0.9))',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '12px',
+                padding: '14px 18px',
+                marginBottom: '18px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 800, color: '#f3f4f6' }}>
+                            🚨 Centro de Control & Alertas de Configuración
+                        </span>
+                        <span style={{ fontSize: '12px', color: '#9ca3af' }}>
+                            {resumenAlertas?.conAlertas || 0} artículo(s) requieren atención técnica o comercial
+                        </span>
+                    </div>
+                    {alertaFiltro && (
+                        <button
+                            onClick={() => { setAlertaFiltro(''); setPage(1); }}
+                            style={{
+                                background: 'rgba(239, 68, 68, 0.15)',
+                                border: '1px solid #ef4444',
+                                color: '#f87171',
+                                fontSize: '11px',
+                                padding: '4px 12px',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontWeight: 700,
+                            }}
+                        >
+                            ✕ Quitar filtro de alerta
+                        </button>
+                    )}
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    {[
+                        { key: 'SIN_ESTRUCTURA', label: '🔴 Sin Receta (Terminados)', count: resumenAlertas?.sinEstructura || 0, color: '#ef4444' },
+                        { key: 'TEJIDO_SIN_SUSI', label: '🟣 Tejido sin SUSI', count: resumenAlertas?.tejidoSinSusi || 0, color: '#a855f7' },
+                        { key: 'MATERIAL_SIN_ITEM', label: '🟠 Insumo/Hilado sin Ítem', count: resumenAlertas?.materialSinItem || 0, color: '#f97316' },
+                        { key: 'SIN_PESO', label: '⚖️ Sin Peso Unitario', count: resumenAlertas?.sinPeso || 0, color: '#eab308' },
+                        { key: 'CON_ALERTAS', label: '⚠️ Todos con Alguna Alerta', count: resumenAlertas?.conAlertas || 0, color: '#f43f5e' },
+                        { key: 'COMPLETO', label: '🟢 100% Configurados', count: Math.max(0, (resumenAlertas?.totalArticulos || 0) - (resumenAlertas?.conAlertas || 0)), color: '#10b981' },
+                    ].map((pildora) => {
+                        const isSelected = alertaFiltro === pildora.key;
+                        return (
+                            <button
+                                key={pildora.key}
+                                onClick={() => {
+                                    setAlertaFiltro(isSelected ? '' : pildora.key);
+                                    setPage(1);
+                                }}
+                                style={{
+                                    padding: '8px 14px',
+                                    borderRadius: '8px',
+                                    border: isSelected ? `2px solid ${pildora.color}` : '1px solid rgba(255, 255, 255, 0.1)',
+                                    background: isSelected ? `${pildora.color}25` : 'rgba(255, 255, 255, 0.04)',
+                                    color: isSelected ? '#ffffff' : '#d1d5db',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    fontSize: '12px',
+                                    fontWeight: isSelected ? 800 : 600,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s ease',
+                                }}
+                            >
+                                <span>{pildora.label}</span>
+                                <span style={{
+                                    background: isSelected ? pildora.color : 'rgba(255,255,255,0.1)',
+                                    color: isSelected ? '#ffffff' : pildora.color,
+                                    padding: '2px 7px',
+                                    borderRadius: '10px',
+                                    fontSize: '11px',
+                                    fontWeight: 800,
+                                }}>
+                                    {pildora.count}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
 
             {/* Pestañas de Etapas y Filtros Rápidos */}
             <Card style={{ marginBottom: '18px', padding: '16px' }}>
@@ -498,9 +615,9 @@ export function ArticulosPage() {
                                 <th style={{ padding: '10px' }}>Código TOTVS</th>
                                 <th style={{ padding: '10px' }}>Descripción</th>
                                 <th style={{ padding: '10px' }}>Etapa</th>
-                                <th style={{ padding: '10px' }}>Match SUSI</th>
+                                <th style={{ padding: '10px' }}>Conexión Operativa & Receta</th>
+                                <th style={{ padding: '10px' }}>Peso Unit.</th>
                                 <th style={{ padding: '10px' }}>Modelo / Talle</th>
-                                <th style={{ padding: '10px' }}>UM</th>
                                 <th style={{ padding: '10px' }}>Estado</th>
                                 <th style={{ padding: '10px', textAlign: 'right' }}>Acciones Rápidas (1 Clic)</th>
                             </tr>
@@ -528,7 +645,15 @@ export function ArticulosPage() {
                                             cursor: 'pointer',
                                             opacity: art.activo === false ? 0.6 : 1,
                                         }}
-                                        onClick={() => handleOpenEdit(art, 'DATOS')}
+                                        onClick={() => {
+                                            if (art.etapa === 'HILADO' || art.etapa === 'INSUMO') {
+                                                handleOpenEdit(art, 'EQUIVALENCIAS');
+                                            } else if (art.etapa === 'TERMINADO' && (!art.componentesCount || art.componentesCount === 0)) {
+                                                handleOpenEdit(art, 'ESTRUCTURA');
+                                            } else {
+                                                handleOpenEdit(art, 'DATOS');
+                                            }
+                                        }}
                                         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)')}
                                         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                                     >
@@ -538,7 +663,7 @@ export function ArticulosPage() {
                                                 <Badge color="#6b7280">Inactivo</Badge>
                                             )}
                                         </td>
-                                        <td style={{ padding: '10px', color: '#f3f4f6', maxWidth: '340px' }}>
+                                        <td style={{ padding: '10px', color: '#f3f4f6', maxWidth: '320px' }}>
                                             <div style={{ fontWeight: 600 }}>{art.descripcion}</div>
                                             <div style={{ fontSize: '11px', color: '#9ca3af' }}>
                                                 {[art.marca, art.familia].filter(Boolean).join(' • ')}
@@ -549,20 +674,68 @@ export function ArticulosPage() {
                                                 {art.etapa || 'SIN ETAPA'}
                                             </Badge>
                                         </td>
-                                        <td style={{ padding: '10px', color: art.codigoSusi ? '#c4b5fd' : '#6b7280' }}>
-                                            {art.codigoSusi ? (
-                                                <span style={{ fontWeight: 600 }}>🏷️ {art.codigoSusi}</span>
-                                            ) : (
-                                                <span style={{ fontSize: '11px', fontStyle: 'italic' }}>Sin match</span>
+                                        
+                                        {/* CONEXIÓN OPERATIVA Y RECETA */}
+                                        <td style={{ padding: '10px' }}>
+                                            {art.etapa === 'TERMINADO' && (
+                                                <div>
+                                                    {(art.componentesCount || 0) > 0 ? (
+                                                        <Badge color="#10b981">📦 BOM: {art.componentesCount} comp.</Badge>
+                                                    ) : (
+                                                        <Badge color="#ef4444">⚠️ Sin Estructura</Badge>
+                                                    )}
+                                                    {art.modelo && (
+                                                        <span style={{ fontSize: '11px', color: '#93c5fd', display: 'block', marginTop: '3px' }}>
+                                                            🛒 Venta: {art.modelo}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {art.etapa === 'TEJIDO' && (
+                                                <div>
+                                                    {art.codigoSusi ? (
+                                                        <Badge color="#8b5cf6">🏷️ SUSI: {art.codigoSusi}</Badge>
+                                                    ) : (
+                                                        <Badge color="#ef4444">⚠️ Falta Código SUSI</Badge>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {(art.etapa === 'HILADO' || art.etapa === 'INSUMO') && (
+                                                <div>
+                                                    {(art.itemsEquivalentesCount || 0) > 0 ? (
+                                                        <Badge color="#10b981">🔗 {art.itemsEquivalentesCount} ítem(s) en depósito</Badge>
+                                                    ) : (
+                                                        <Badge color="#f97316">⚠️ Sin Ítem en Depósito</Badge>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {art.etapa === 'COSTURA' && (
+                                                <Badge color="#3b82f6">✂️ Semielaborado Costura</Badge>
                                             )}
                                         </td>
+
+                                        {/* PESO UNITARIO */}
+                                        <td style={{ padding: '10px' }}>
+                                            {art.pesoU !== null && Number(art.pesoU) > 0 ? (
+                                                <span style={{ fontWeight: 600, color: '#f3f4f6' }}>
+                                                    {(Number(art.pesoU) * 1000).toFixed(1)} g
+                                                </span>
+                                            ) : art.etapa === 'TERMINADO' ? (
+                                                <Badge color="#eab308">⚠️ Falta Peso</Badge>
+                                            ) : (
+                                                <span style={{ color: '#6b7280' }}>—</span>
+                                            )}
+                                        </td>
+
                                         <td style={{ padding: '10px', color: '#9ca3af' }}>
                                             {art.modelo ? <span style={{ color: '#e5e7eb', fontWeight: 600 }}>{art.modelo}</span> : '—'}
                                             {art.talle ? ` (${art.talle})` : ''}
+                                            <span style={{ fontSize: '11px', color: '#6b7280', display: 'block' }}>{art.unidadMedida || 'UN'}</span>
                                         </td>
-                                        <td style={{ padding: '10px', color: '#9ca3af' }}>
-                                            {art.unidadMedida || 'UN'}
-                                        </td>
+
                                         <td style={{ padding: '10px' }}>
                                             <Badge color={ESTADO_COLOR[art.estado || 'CONTROLAR'] || '#6b7280'}>
                                                 {art.estado || 'CONTROLAR'}
@@ -577,7 +750,22 @@ export function ArticulosPage() {
                                                         onClick={() => handleOpenEdit(art, 'ESTRUCTURA')}
                                                         title="Ver / Editar componentes"
                                                     >
-                                                        🧬 BOM
+                                                        🧬 BOM ({art.componentesCount || 0})
+                                                    </Btn>
+                                                )}
+
+                                                {(art.etapa === 'HILADO' || art.etapa === 'INSUMO') && (
+                                                    <Btn
+                                                        small
+                                                        variant="secondary"
+                                                        onClick={() => handleOpenEdit(art, 'EQUIVALENCIAS')}
+                                                        title="Ver / Vincular ítems de depósito y prioridades"
+                                                        style={{
+                                                            border: (art.itemsEquivalentesCount || 0) === 0 ? '1px solid #f97316' : undefined,
+                                                            color: (art.itemsEquivalentesCount || 0) === 0 ? '#f97316' : undefined,
+                                                        }}
+                                                    >
+                                                        🔗 Ítems Stock ({art.itemsEquivalentesCount || 0})
                                                     </Btn>
                                                 )}
 
@@ -589,17 +777,6 @@ export function ArticulosPage() {
                                                         title="Ver / Asignar máquinas y tiempos"
                                                     >
                                                         ⚙️ Máquinas
-                                                    </Btn>
-                                                )}
-
-                                                {(art.etapa === 'HILADO' || art.etapa === 'INSUMO') && (
-                                                    <Btn
-                                                        small
-                                                        variant="secondary"
-                                                        onClick={() => handleOpenEdit(art, 'EQUIVALENCIAS')}
-                                                        title="Ver / Vincular ítems de depósito"
-                                                    >
-                                                        🔗 Match Depo
                                                     </Btn>
                                                 )}
 
@@ -1275,30 +1452,68 @@ export function ArticulosPage() {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {equivalencias.map((eq) => (
+                                                {equivalencias.map((eq, idx) => (
                                                     <tr key={eq.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                                                         <td style={{ padding: '10px 8px' }}>
-                                                            <span
-                                                                style={{
-                                                                    display: 'inline-block',
-                                                                    width: '22px',
-                                                                    height: '22px',
-                                                                    borderRadius: '50%',
-                                                                    textAlign: 'center',
-                                                                    lineHeight: '22px',
-                                                                    fontWeight: 800,
-                                                                    fontSize: '11px',
-                                                                    background: eq.ordenPrioridad === 1 ? '#8b5cf6' : '#374151',
-                                                                    color: '#ffffff',
-                                                                }}
-                                                            >
-                                                                {eq.ordenPrioridad}
-                                                            </span>
-                                                            {eq.ordenPrioridad === 1 && (
-                                                                <span style={{ fontSize: '11px', color: '#c4b5fd', fontWeight: 700, marginLeft: '6px' }}>
-                                                                    ★ PRINCIPAL
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                <span
+                                                                    style={{
+                                                                        display: 'inline-block',
+                                                                        width: '22px',
+                                                                        height: '22px',
+                                                                        borderRadius: '50%',
+                                                                        textAlign: 'center',
+                                                                        lineHeight: '22px',
+                                                                        fontWeight: 800,
+                                                                        fontSize: '11px',
+                                                                        background: eq.ordenPrioridad === 1 ? '#8b5cf6' : '#374151',
+                                                                        color: '#ffffff',
+                                                                    }}
+                                                                >
+                                                                    {eq.ordenPrioridad}
                                                                 </span>
-                                                            )}
+                                                                <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '2px' }}>
+                                                                    <button
+                                                                        disabled={idx === 0 || isReordenandoPrioridad}
+                                                                        onClick={() => handleMoverPrioridad(idx, 'ARRIBA')}
+                                                                        title="Subir prioridad (más preferido)"
+                                                                        style={{
+                                                                            background: 'rgba(255,255,255,0.08)',
+                                                                            border: 'none',
+                                                                            borderRadius: '3px',
+                                                                            color: idx === 0 ? '#4b5563' : '#d1d5db',
+                                                                            cursor: idx === 0 ? 'not-allowed' : 'pointer',
+                                                                            fontSize: '9px',
+                                                                            padding: '1px 4px',
+                                                                            lineHeight: 1,
+                                                                        }}
+                                                                    >
+                                                                        ▲
+                                                                    </button>
+                                                                    <button
+                                                                        disabled={idx === equivalencias.length - 1 || isReordenandoPrioridad}
+                                                                        onClick={() => handleMoverPrioridad(idx, 'ABAJO')}
+                                                                        title="Bajar prioridad (alternativa)"
+                                                                        style={{
+                                                                            background: 'rgba(255,255,255,0.08)',
+                                                                            border: 'none',
+                                                                            borderRadius: '3px',
+                                                                            color: idx === equivalencias.length - 1 ? '#4b5563' : '#d1d5db',
+                                                                            cursor: idx === equivalencias.length - 1 ? 'not-allowed' : 'pointer',
+                                                                            fontSize: '9px',
+                                                                            padding: '1px 4px',
+                                                                            lineHeight: 1,
+                                                                        }}
+                                                                    >
+                                                                        ▼
+                                                                    </button>
+                                                                </div>
+                                                                {eq.ordenPrioridad === 1 && (
+                                                                    <span style={{ fontSize: '11px', color: '#c4b5fd', fontWeight: 700, marginLeft: '4px' }}>
+                                                                        ★ PRINCIPAL
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </td>
                                                         <td style={{ padding: '10px 8px', fontWeight: 700, color: '#60a5fa' }}>
                                                             {eq.codigoItem}

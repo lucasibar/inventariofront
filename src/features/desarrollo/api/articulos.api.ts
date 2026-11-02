@@ -17,8 +17,20 @@ export interface Articulo {
     codigoSusi?: string;
     estado?: 'CHEQUEADO' | 'CONTROLAR' | 'MAL' | 'DESHABILITADO' | string;
     activo: boolean;
+    componentesCount?: number;
+    itemsEquivalentesCount?: number;
+    alertas?: string[];
     createdAt?: string;
     updatedAt?: string;
+}
+
+export interface AlertasResumen {
+    totalArticulos: number;
+    sinEstructura: number;
+    tejidoSinSusi: number;
+    materialSinItem: number;
+    sinPeso: number;
+    conAlertas: number;
 }
 
 export interface ArticuloMaestroEquivalencia {
@@ -192,6 +204,7 @@ export const articulosApi = api.injectEndpoints({
             marca?: string;
             talle?: string;
             activo?: boolean;
+            alerta?: string;
             page?: number;
             limit?: number;
         }>({
@@ -208,10 +221,16 @@ export const articulosApi = api.injectEndpoints({
                 if (params.marca) p.set('marca', params.marca);
                 if (params.talle) p.set('talle', params.talle);
                 if (params.activo !== undefined) p.set('activo', String(params.activo));
+                if (params.alerta) p.set('alerta', params.alerta);
                 if (params.page) p.set('page', String(params.page));
                 if (params.limit) p.set('limit', String(params.limit));
                 return `articulos?${p.toString()}`;
             },
+            providesTags: ['Articulos'],
+        }),
+
+        getAlertasResumen: builder.query<AlertasResumen, void>({
+            query: () => 'articulos/alertas/resumen',
             providesTags: ['Articulos'],
         }),
 
@@ -500,6 +519,7 @@ export const articulosApi = api.injectEndpoints({
 
 export const {
     useGetArticulosQuery,
+    useGetAlertasResumenQuery,
     useGetArticuloByIdQuery,
     useCreateArticuloMutation,
     useUpdateArticuloMutation,

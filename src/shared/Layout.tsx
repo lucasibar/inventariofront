@@ -71,7 +71,6 @@ const navGroups: NavGroup[] = [
         items: [
             { to: '/desarrollo/articulos', label: '📋 Catálogo de Artículos' },
             { to: '/desarrollo/estructuras', label: '🌳 Estructuras (BOM) y Simulador' },
-            { to: '/desarrollo/equivalencias', label: '🔗 Equivalencias y Prioridades' },
             { to: '/desarrollo/maquinas', label: '⚙️ Asignación Máquinas y Tiempos' },
         ]
     },
