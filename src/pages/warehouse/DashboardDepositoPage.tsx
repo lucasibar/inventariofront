@@ -35,6 +35,7 @@ import FlashOnIcon from '@mui/icons-material/FlashOn';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 
 import { 
     useGetStockQuery, 
@@ -59,6 +60,7 @@ import { EditLotDialog } from '../../features/warehouse/stock/ui/EditLotDialog';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser, selectAllowedDepots } from '../../entities/auth/model/authSlice';
 import { useIsMobile } from '../../shared/ui';
+import { PaginationControls, useClientPagination } from '../../shared/pagination';
 
 // Sistema de colores consistente
 const colors = {
@@ -231,6 +233,7 @@ export default function DashboardDepositoPage() {
 
     // Exclusión dinámica de materiales de los cómputos de métricas (ojito)
     const [excludedItemIds, setExcludedItemIds] = useState<Record<string, boolean>>({});
+    const [stockFilter, setStockFilter] = useState<'all' | 'with_stock' | 'zero_stock'>('all');
 
     const toggleItemInclusion = (e: React.MouseEvent, itemId: string) => {
         e.stopPropagation();
@@ -581,58 +584,40 @@ export default function DashboardDepositoPage() {
         }
     }, [rawStock]);
 
-    // Agrupación y Métricas
-    const { groupedData, generalMetrics } = useMemo(() => {
+    // Pre-normalizar índice de búsqueda de catálogo una sola vez en memoria
+    const indexedItems = useMemo(() => {
+        return items.map((item: any) => ({
+            item,
+            searchStr: normalizeText(`${item.codigoInterno} ${item.descripcion} ${item.category?.nombre || item.categoria || ''} ${item.supplier?.name || ''}`)
+        }));
+    }, [items]);
+
+    // Pre-normalizar índice de búsqueda de stock una sola vez en memoria
+    const indexedStock = useMemo(() => {
+        return rawStock.map((entry: any) => ({
+            entry,
+            searchStr: normalizeText(`${entry.batch?.item?.codigoInterno} ${entry.batch?.item?.descripcion} ${entry.batch?.lotNumber} ${entry.batch?.supplier?.name} ${entry.posicion?.codigo} ${entry.batch?.item?.category?.nombre || entry.batch?.item?.categoria || ''}`)
+        }));
+    }, [rawStock]);
+
+    // Agrupación y Métricas de Alto Rendimiento
+    const { groupedData, generalMetrics, withStockCount, zeroStockCount } = useMemo(() => {
         const general = { kilos: 0, units: 0, positions: new Set<string>() };
-        if (!depotId && !rawStock.length && !items.length) return { groupedData: [], generalMetrics: null };
+        if (!depotId) return { groupedData: [], generalMetrics: null, withStockCount: 0, zeroStockCount: 0 };
         const groups: Record<string, any> = {};
         const searchWords = normalizeText(searchTerm).split(' ').filter(w => w.length > 0);
-        
-        // 1. Inicializar con todos los materiales del catálogo (para que aparezcan incluso si tienen stock 0)
-        items.forEach((item: any) => {
-            if (!item?.id) return;
-            const matchesSearch = searchWords.length === 0 || searchWords.every(word => {
-                const itemDesc = normalizeText(item.descripcion || '');
-                const itemCode = normalizeText(item.codigoInterno || '');
-                const supplierName = normalizeText(item.supplier?.name || '');
-                const categoryName = normalizeText(item.category?.nombre || item.categoria || '');
-                return itemDesc.includes(word) || itemCode.includes(word) || supplierName.includes(word) || categoryName.includes(word);
-            });
 
-            if (matchesSearch) {
-                groups[item.id] = {
-                    item: item,
-                    supplier: item.supplier,
-                    entries: [],
-                    oldestBatchDate: '9999-12-31',
-                    oldestBatchLot: null,
-                    oldestBatchPosition: null,
-                    oldestBatchEntry: null,
-                    metrics: { kilos: 0, units: 0 },
-                    uniquePositions: new Set<string>()
-                };
-            }
-        });
-
-        // 2. Filtrado insensible a acentos y mayúsculas de los movimientos de stock
-        const filteredStock = rawStock.filter((entry: any) => {
-            if (searchWords.length === 0) return true;
-            return searchWords.every(word => {
-                const itemDesc = normalizeText(entry.batch?.item?.descripcion || '');
-                const itemCode = normalizeText(entry.batch?.item?.codigoInterno || '');
-                const lotNum = normalizeText(entry.batch?.lotNumber || '');
-                const supplierName = normalizeText(entry.batch?.supplier?.name || '');
-                const posCode = normalizeText(entry.posicion?.codigo || '');
-                const categoryName = normalizeText(entry.batch?.item?.category?.nombre || entry.batch?.item?.categoria || '');
-                return itemDesc.includes(word) || itemCode.includes(word) || lotNum.includes(word) || supplierName.includes(word) || posCode.includes(word) || categoryName.includes(word);
-            });
-        });
-
-        filteredStock.forEach((entry: any) => {
+        // 1. Procesar stock real existente (filtrado instantáneo por substring preindexado)
+        indexedStock.forEach(({ entry, searchStr }) => {
             const itemId = entry.batch?.item?.id;
             if (!itemId) return;
 
-            // Si el material está excluido con el ojito, NO suma a las métricas generales superiores
+            if (searchWords.length > 0) {
+                const matches = searchWords.every(word => searchStr.includes(word));
+                if (!matches) return;
+            }
+
+            // Exclusión de métricas si el ojito está apagado
             if (!excludedItemIds[itemId]) {
                 general.kilos += Number(entry.qtyPrincipal || 0);
                 if (entry.qtySecundaria) general.units += Number(entry.qtySecundaria);
@@ -658,7 +643,7 @@ export default function DashboardDepositoPage() {
             if (entry.qtySecundaria) groups[itemId].metrics.units += Number(entry.qtySecundaria);
             if (entry.posicion?.codigo) groups[itemId].uniquePositions.add(entry.posicion.codigo);
             
-            // FIFO real por fecha de ingreso / producción
+            // FIFO real
             if (entryKilos > 0) {
                 const batchDate = entry.batch?.createdAt || entry.batch?.productionDate || '9999-12-31';
                 if (batchDate < groups[itemId].oldestBatchDate) {
@@ -670,11 +655,68 @@ export default function DashboardDepositoPage() {
             }
         });
 
+        // 2. Incorporar materiales del catálogo que no tienen stock (solo los que coincidan con la búsqueda)
+        indexedItems.forEach(({ item, searchStr }) => {
+            if (!item?.id || groups[item.id]) return;
+
+            if (searchWords.length > 0) {
+                const matches = searchWords.every(word => searchStr.includes(word));
+                if (!matches) return;
+            }
+
+            groups[item.id] = {
+                item: item,
+                supplier: item.supplier,
+                entries: [],
+                oldestBatchDate: '9999-12-31',
+                oldestBatchLot: null,
+                oldestBatchPosition: null,
+                oldestBatchEntry: null,
+                metrics: { kilos: 0, units: 0 },
+                uniquePositions: new Set<string>()
+            };
+        });
+
+        let allGroups = Object.values(groups);
+        let withStock = 0;
+        let zeroStock = 0;
+
+        allGroups.forEach(g => {
+            if (g.metrics.kilos > 0) withStock++;
+            else zeroStock++;
+        });
+
+        // Aplicar filtro de stock (Todos / Con Stock / Sin Stock)
+        if (stockFilter === 'with_stock') {
+            allGroups = allGroups.filter(g => g.metrics.kilos > 0);
+        } else if (stockFilter === 'zero_stock') {
+            allGroups = allGroups.filter(g => g.metrics.kilos <= 0);
+        }
+
+        // Ordenar inteligentemente: primero los que tienen stock físico (por kilos DESC), luego los de stock 0
+        allGroups.sort((a: any, b: any) => {
+            const hasStockA = a.metrics.kilos > 0 ? 1 : 0;
+            const hasStockB = b.metrics.kilos > 0 ? 1 : 0;
+            if (hasStockA !== hasStockB) return hasStockB - hasStockA;
+            if (hasStockA && b.metrics.kilos !== a.metrics.kilos) return b.metrics.kilos - a.metrics.kilos;
+            return (a.item.descripcion || '').localeCompare(b.item.descripcion || '');
+        });
+
         return {
-            groupedData: Object.values(groups).sort((a: any, b: any) => a.item.descripcion.localeCompare(b.item.descripcion)),
-            generalMetrics: { ...general, positionsCount: general.positions.size }
+            groupedData: allGroups,
+            generalMetrics: { ...general, positionsCount: general.positions.size },
+            withStockCount: withStock,
+            zeroStockCount: zeroStock
         };
-    }, [items, rawStock, searchTerm, excludedItemIds, depotId]);
+    }, [indexedItems, indexedStock, searchTerm, excludedItemIds, depotId, stockFilter]);
+
+    // Paginación de alto rendimiento en cliente (24 tarjetas por página para 60 FPS garantizados)
+    const pagination = useClientPagination(groupedData, viewMode === 'grid' ? 24 : 25);
+
+    // Resetear a la primera página al cambiar cualquier filtro
+    useEffect(() => {
+        pagination.setPage(0);
+    }, [searchTerm, depotId, stockFilter]);
 
     const detailGroup = useMemo(() => groupedData.find((g: any) => g.item.id === detailGroupId), [groupedData, detailGroupId]);
 
@@ -839,6 +881,52 @@ export default function DashboardDepositoPage() {
                         sx={{ flex: '1 1 280px', '& .MuiInputLabel-root': { color: colors.textDim }, '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }}
                     />
 
+                    {/* Filtros Rápidos de Stock */}
+                    <Box sx={{ display: 'flex', gap: 0.8, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <Chip
+                            size="small"
+                            label={`Todos (${groupedData.length})`}
+                            onClick={() => setStockFilter('all')}
+                            sx={{
+                                fontWeight: 800,
+                                fontSize: '0.72rem',
+                                cursor: 'pointer',
+                                bgcolor: stockFilter === 'all' ? colors.primary : 'rgba(255,255,255,0.06)',
+                                color: stockFilter === 'all' ? '#000' : colors.textDim,
+                                border: stockFilter === 'all' ? 'none' : `1px solid ${colors.border}`,
+                                '&:hover': { bgcolor: stockFilter === 'all' ? '#d97706' : 'rgba(255,255,255,0.12)' }
+                            }}
+                        />
+                        <Chip
+                            size="small"
+                            label={`Con Stock (${withStockCount})`}
+                            onClick={() => setStockFilter('with_stock')}
+                            sx={{
+                                fontWeight: 800,
+                                fontSize: '0.72rem',
+                                cursor: 'pointer',
+                                bgcolor: stockFilter === 'with_stock' ? colors.success : 'rgba(255,255,255,0.06)',
+                                color: stockFilter === 'with_stock' ? '#000' : colors.textDim,
+                                border: stockFilter === 'with_stock' ? 'none' : `1px solid ${colors.border}`,
+                                '&:hover': { bgcolor: stockFilter === 'with_stock' ? '#059669' : 'rgba(255,255,255,0.12)' }
+                            }}
+                        />
+                        <Chip
+                            size="small"
+                            label={`Sin Stock (${zeroStockCount})`}
+                            onClick={() => setStockFilter('zero_stock')}
+                            sx={{
+                                fontWeight: 800,
+                                fontSize: '0.72rem',
+                                cursor: 'pointer',
+                                bgcolor: stockFilter === 'zero_stock' ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.06)',
+                                color: stockFilter === 'zero_stock' ? '#f87171' : colors.textDim,
+                                border: stockFilter === 'zero_stock' ? '1px solid rgba(239,68,68,0.4)' : `1px solid ${colors.border}`,
+                                '&:hover': { bgcolor: 'rgba(239,68,68,0.3)' }
+                            }}
+                        />
+                    </Box>
+
                     {/* Selector Grilla / Lista */}
                     <Box sx={{ display: 'flex', bgcolor: colors.inputBg, borderRadius: 2, p: 0.4, border: `1px solid ${colors.border}` }}>
                         <IconButton 
@@ -871,8 +959,9 @@ export default function DashboardDepositoPage() {
                     <Typography sx={{ color: colors.textDim }}>No se encontraron registros de stock que coincidan con la búsqueda</Typography>
                 </Paper>
             ) : viewMode === 'grid' ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '14px' }}>
-                    {groupedData.map((group: any) => {
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '14px' }}>
+                        {pagination.pageItems.map((group: any) => {
                         const categoryName = group.item.category?.nombre || group.item.categoria || 'General';
                         const positionsList = Array.from(group.uniquePositions as Set<string>);
                         const isExcluded = !!excludedItemIds[group.item.id];
@@ -968,13 +1057,11 @@ export default function DashboardDepositoPage() {
 
                                             {/* Próxima partida FIFO y posición de donde se agarra (Directamente debajo de la categoría) */}
                                             {group.oldestBatchLot ? (
-                                                <Tooltip title={`Próxima partida a consumir: ${group.oldestBatchLot}. Toca para abrir las acciones de la posición 📍 ${group.oldestBatchPosition}`}>
+                                                <Tooltip title={`Próxima partida a consumir: ${group.oldestBatchLot} en 📍 ${group.oldestBatchPosition || 'S/P'}. Toca para abrir las posiciones y partidas`}>
                                                     <Box 
                                                         onClick={(e) => {
-                                                            if (group.oldestBatchEntry) {
-                                                                e.stopPropagation();
-                                                                setActionSheetEntry(group.oldestBatchEntry);
-                                                            }
+                                                            e.stopPropagation();
+                                                            setDetailGroupId(group.item.id);
                                                         }}
                                                         sx={{ 
                                                             display: 'inline-flex', 
@@ -984,7 +1071,7 @@ export default function DashboardDepositoPage() {
                                                             border: '1px solid rgba(245, 158, 11, 0.25)',
                                                             borderRadius: 1.5,
                                                             px: 0.8,
-                                                            py: 0.2,
+                                                            py: 0.25,
                                                             cursor: 'pointer',
                                                             transition: 'all 0.15s ease',
                                                             '&:hover': {
@@ -998,7 +1085,7 @@ export default function DashboardDepositoPage() {
                                                         </Typography>
                                                         <Chip 
                                                             size="small"
-                                                            label={`📍 ${group.oldestBatchPosition || 'S/P'}`}
+                                                            label={`📍 ${group.oldestBatchPosition || 'S/P'}${positionsList.length > 1 ? ` (+${positionsList.length - 1})` : ''}`}
                                                             sx={{ 
                                                                 height: 18, 
                                                                 fontSize: '0.65rem', 
@@ -1014,12 +1101,17 @@ export default function DashboardDepositoPage() {
                                                 <Chip 
                                                     size="small" 
                                                     label="Sin stock" 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setDetailGroupId(group.item.id);
+                                                    }}
                                                     sx={{ 
                                                         height: 18, 
                                                         fontSize: '0.62rem', 
                                                         bgcolor: 'rgba(255, 255, 255, 0.05)', 
                                                         color: colors.textDim, 
-                                                        fontWeight: 700 
+                                                        fontWeight: 700,
+                                                        cursor: 'pointer'
                                                     }} 
                                                 />
                                             )}
@@ -1051,50 +1143,21 @@ export default function DashboardDepositoPage() {
                                             </div>
                                         )}
                                     </Box>
-
-                                    {/* Ubicaciones Resumidas Elegantes */}
-                                    <Box sx={{ mt: 1.2, display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap' }}>
-                                        {positionsList.length === 0 ? (
-                                            <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.7rem', fontStyle: 'italic' }}>
-                                                Sin posiciones ocupadas
-                                            </Typography>
-                                        ) : (
-                                            <>
-                                                {positionsList.slice(0, 3).map((posCode, pIdx) => (
-                                                    <Chip
-                                                        key={pIdx}
-                                                        size="small"
-                                                        label={`📍 ${posCode}`}
-                                                        sx={{ 
-                                                            bgcolor: 'rgba(59, 130, 246, 0.12)', 
-                                                            color: colors.info, 
-                                                            fontWeight: 800, 
-                                                            fontSize: '0.72rem', 
-                                                            height: '22px' 
-                                                        }}
-                                                    />
-                                                ))}
-                                                {positionsList.length > 3 && (
-                                                    <Chip
-                                                        size="small"
-                                                        label={`+${positionsList.length - 3} más`}
-                                                        sx={{ 
-                                                            bgcolor: 'rgba(255, 255, 255, 0.06)', 
-                                                            color: colors.textDim, 
-                                                            fontWeight: 700, 
-                                                            fontSize: '0.7rem', 
-                                                            height: '22px' 
-                                                        }}
-                                                    />
-                                                )}
-                                            </>
-                                        )}
-                                    </Box>
                                 </div>
                             </div>
                         );
                     })}
-                </div>
+                    </div>
+                    <Box sx={{ p: 1, bgcolor: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 2.5, display: 'flex', justifyContent: 'center' }}>
+                        <PaginationControls
+                            count={groupedData.length}
+                            page={pagination.page}
+                            pageSize={pagination.pageSize}
+                            onPageChange={pagination.setPage}
+                            onPageSizeChange={pagination.setPageSize}
+                        />
+                    </Box>
+                </Box>
             ) : (
                 /* Vista Lista Clickeable */
                 <Paper sx={{ bgcolor: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 2.5, overflowX: 'auto' }}>
@@ -1112,7 +1175,7 @@ export default function DashboardDepositoPage() {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {groupedData.map((group: any) => {
+                            {pagination.pageItems.map((group: any) => {
                                 const categoryName = group.item.category?.nombre || group.item.categoria || 'General';
                                 const positionsList = Array.from(group.uniquePositions as Set<string>);
                                 const isExcluded = !!excludedItemIds[group.item.id];
@@ -1178,10 +1241,8 @@ export default function DashboardDepositoPage() {
                                                         size="small" 
                                                         label={`⏳ ${group.oldestBatchLot} (📍 ${group.oldestBatchPosition || 'S/P'})`} 
                                                         onClick={(e) => {
-                                                            if (group.oldestBatchEntry) {
-                                                                e.stopPropagation();
-                                                                setActionSheetEntry(group.oldestBatchEntry);
-                                                            }
+                                                            e.stopPropagation();
+                                                            setDetailGroupId(group.item.id);
                                                         }}
                                                         sx={{ 
                                                             height: 18, 
@@ -1230,6 +1291,15 @@ export default function DashboardDepositoPage() {
                             })}
                         </TableBody>
                     </MuiTable>
+                    <Box sx={{ p: 1, display: 'flex', justifyContent: 'flex-end', borderTop: `1px solid ${colors.border}` }}>
+                        <PaginationControls
+                            count={groupedData.length}
+                            page={pagination.page}
+                            pageSize={pagination.pageSize}
+                            onPageChange={pagination.setPage}
+                            onPageSizeChange={pagination.setPageSize}
+                        />
+                    </Box>
                 </Paper>
             )}
 
@@ -1244,7 +1314,7 @@ export default function DashboardDepositoPage() {
                 </Fab>
             )}
 
-            {/* Listado de Posiciones / Detalle de Material (Emerge desde abajo como Bottom Sheet) */}
+            {/* Listado de Posiciones / Detalle de Material (Emerge desde abajo como Bottom Sheet - Fullscreen en Mobile) */}
             {detailGroup && (
                 <Drawer 
                     anchor="bottom"
@@ -1254,201 +1324,241 @@ export default function DashboardDepositoPage() {
                         sx: {
                             bgcolor: colors.bg,
                             color: colors.text,
-                            borderTop: `2px solid ${colors.primary}`,
-                            borderTopLeftRadius: 24,
-                            borderTopRightRadius: 24,
-                            p: { xs: 2, sm: 3 },
-                            pb: { xs: 4, sm: 5 },
-                            maxHeight: '85vh',
-                            maxWidth: 1040,
+                            borderTop: { xs: 'none', sm: `2px solid ${colors.primary}` },
+                            borderRadius: { xs: 0, sm: '24px 24px 0 0' },
+                            p: { xs: 1.5, sm: 3 },
+                            pb: { xs: 2, sm: 4 },
+                            height: { xs: '100vh', sm: 'auto' },
+                            maxHeight: { xs: '100vh', sm: '88vh' },
+                            maxWidth: { xs: '100%', sm: 1040 },
                             margin: '0 auto',
                             width: '100%',
                             boxShadow: '0 -10px 40px rgba(0,0,0,0.8)',
-                            outline: 'none'
+                            outline: 'none',
+                            display: 'flex',
+                            flexDirection: 'column'
                         }
                     }}
                 >
-                    {/* Tirita / drag pill superior */}
-                    <Box sx={{ width: 44, height: 4, bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 2, mx: 'auto', mb: 2 }} />
+                    {/* Tirita / drag pill superior (solo en desktop) */}
+                    <Box sx={{ display: { xs: 'none', sm: 'block' }, width: 44, height: 4, bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 2, mx: 'auto', mb: 2 }} />
 
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                            <Box>
-                                <Typography 
-                                    variant="caption" 
-                                    onClick={() => setEditItemTarget(detailGroup.item)}
-                                    sx={{ color: colors.primary, fontWeight: 800, cursor: 'pointer', textDecoration: 'underline dotted' }}
-                                >
-                                    {detailGroup.item.codigoInterno} ✎
-                                </Typography>
-                                <Typography variant="h6" sx={{ fontWeight: 900, color: '#fff', lineHeight: 1.2 }}>
-                                    {detailGroup.item.descripcion}
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: colors.textDim }}>
-                                    Proveedor: <strong>{detailGroup.supplier?.name || '—'}</strong> • Categoría: <strong>{detailGroup.item.category?.nombre || 'General'}</strong>
-                                </Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Chip 
-                                    label={`Total: ${detailGroup.metrics.kilos.toLocaleString('es-AR', { minimumFractionDigits: 1 })} ${detailGroup.item.unidadPrincipal || 'kg'}`}
-                                    sx={{ bgcolor: 'rgba(245, 158, 11, 0.15)', color: colors.primary, fontWeight: 800, fontSize: '0.78rem' }}
-                                />
-                                <IconButton onClick={() => setDetailGroupId(null)} sx={{ color: colors.textDim }}><CloseIcon /></IconButton>
-                            </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2, flexShrink: 0 }}>
+                        <Box sx={{ flex: 1, pr: 1 }}>
+                            <Typography 
+                                variant="caption" 
+                                onClick={() => setEditItemTarget(detailGroup.item)}
+                                sx={{ color: colors.primary, fontWeight: 800, cursor: 'pointer', textDecoration: 'underline dotted' }}
+                            >
+                                {detailGroup.item.codigoInterno} ✎
+                            </Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 900, color: '#fff', lineHeight: 1.2, fontSize: { xs: '1.05rem', sm: '1.25rem' } }}>
+                                {detailGroup.item.descripcion}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: colors.textDim, display: 'block', mt: 0.3 }}>
+                                Prov: <strong style={{ color: '#fff' }}>{detailGroup.supplier?.name || '—'}</strong> • Cat: <strong style={{ color: '#fff' }}>{detailGroup.item.category?.nombre || 'General'}</strong>
+                            </Typography>
                         </Box>
-                        
-                        {detailGroup.entries.length === 0 ? (
-                            <Box sx={{ p: 5, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2.5, border: `1px dashed ${colors.border}` }}>
-                                <Typography variant="body1" sx={{ color: '#fff', fontWeight: 800, mb: 0.5 }}>
-                                    Material sin stock físico
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: colors.textDim, mb: 2.5, maxWidth: 420, mx: 'auto' }}>
-                                    Este material forma parte del catálogo pero actualmente no posee pallets ni partidas en este depósito.
-                                </Typography>
-                                <Button 
-                                    variant="contained" 
-                                    startIcon={<AddIcon />} 
-                                    onClick={() => {
-                                        setDetailGroupId(null);
-                                        setQaItem(detailGroup.item.id);
-                                        setQaSupplier(detailGroup.supplier?.id || '');
-                                        setQuickAddModal(true);
-                                    }}
-                                    sx={{ bgcolor: colors.primary, color: '#000', fontWeight: 800, borderRadius: 2, px: 2.5 }}
-                                >
-                                    Cargar Stock de este Material
-                                </Button>
-                            </Box>
-                        ) : (
-                            <TableContainer sx={{ maxHeight: 460, overflowY: 'auto', border: `1px solid ${colors.border}`, borderRadius: 2 }}>
-                                <MuiTable size="small">
-                                    <TableHead sx={{ bgcolor: 'rgba(0,0,0,0.3)' }}>
-                                        <TableRow sx={{ '& th': { color: colors.textDim, fontWeight: 800, fontSize: '0.72rem', textTransform: 'uppercase' } }}>
-                                            <TableCell>Ubicación</TableCell>
-                                            <TableCell>Lote / Partida</TableCell>
-                                            <TableCell align="right">Kilos</TableCell>
-                                            <TableCell align="right">Bultos</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {detailGroup.entries.map((entry: any) => {
-                                            const isOldest = entry.batch?.lotNumber === detailGroup.oldestBatchLot;
-                                            const isDeleting = deletingKeys.includes(getEntryKey(entry));
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Chip 
+                                label={`Total: ${detailGroup.metrics.kilos.toLocaleString('es-AR', { minimumFractionDigits: 1 })} ${detailGroup.item.unidadPrincipal || 'kg'}`}
+                                sx={{ bgcolor: 'rgba(245, 158, 11, 0.15)', color: colors.primary, fontWeight: 800, fontSize: { xs: '0.72rem', sm: '0.78rem' } }}
+                            />
+                            <IconButton 
+                                onClick={() => setDetailGroupId(null)} 
+                                sx={{ 
+                                    color: colors.textDim,
+                                    bgcolor: 'rgba(255,255,255,0.06)',
+                                    '&:hover': { bgcolor: 'rgba(255,255,255,0.15)', color: '#fff' }
+                                }}
+                            >
+                                <CloseIcon />
+                            </IconButton>
+                        </Box>
+                    </Box>
+                    
+                    {detailGroup.entries.length === 0 ? (
+                        <Box sx={{ p: { xs: 3, sm: 5 }, textAlign: 'center', bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2.5, border: `1px dashed ${colors.border}`, my: 'auto' }}>
+                            <Typography variant="body1" sx={{ color: '#fff', fontWeight: 800, mb: 0.5 }}>
+                                Material sin stock físico
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: colors.textDim, mb: 2.5, maxWidth: 420, mx: 'auto' }}>
+                                Este material forma parte del catálogo pero actualmente no posee pallets ni partidas en este depósito.
+                            </Typography>
+                            <Button 
+                                variant="contained" 
+                                startIcon={<AddIcon />} 
+                                onClick={() => {
+                                    setDetailGroupId(null);
+                                    setQaItem(detailGroup.item.id);
+                                    setQaSupplier(detailGroup.supplier?.id || '');
+                                    setQuickAddModal(true);
+                                }}
+                                sx={{ bgcolor: colors.primary, color: '#000', fontWeight: 800, borderRadius: 2, px: 2.5 }}
+                            >
+                                Cargar Stock de este Material
+                            </Button>
+                        </Box>
+                    ) : (
+                        <TableContainer sx={{ 
+                            flex: 1, 
+                            maxHeight: { xs: 'calc(100vh - 130px)', sm: 480 }, 
+                            overflowY: 'auto', 
+                            border: `1px solid ${colors.border}`, 
+                            borderRadius: 2 
+                        }}>
+                            <MuiTable size="small" stickyHeader>
+                                <TableHead>
+                                    <TableRow sx={{ '& th': { bgcolor: '#161922', color: colors.textDim, fontWeight: 800, fontSize: '0.72rem', textTransform: 'uppercase' } }}>
+                                        <TableCell>Ubicación</TableCell>
+                                        <TableCell>Lote / Partida</TableCell>
+                                        <TableCell align="right">Kilos</TableCell>
+                                        <TableCell align="right">Bultos</TableCell>
+                                        <TableCell align="center">Despacho</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {detailGroup.entries.map((entry: any) => {
+                                        const isOldest = entry.batch?.lotNumber === detailGroup.oldestBatchLot;
+                                        const isDeleting = deletingKeys.includes(getEntryKey(entry));
 
-                                            return (
-                                                <TableRow key={entry.id} sx={{ opacity: isDeleting ? 0.5 : 1, '& td': { color: '#fff', py: 1.2 } }}>
-                                                    {/* Chip de Ubicación: al tocarlo abre acciones de mover o despachar */}
-                                                    <TableCell>
-                                                        <Tooltip title="Toca para mover, reubicar o despachar esta posición">
-                                                            <Chip 
-                                                                icon={<SwapHorizIcon style={{ fontSize: 15, color: colors.info }} />}
-                                                                label={entry.posicion?.codigo || 'S/P'}
-                                                                onClick={() => setActionSheetEntry(entry)}
-                                                                clickable
+                                        return (
+                                            <TableRow key={entry.id} sx={{ opacity: isDeleting ? 0.5 : 1, '& td': { color: '#fff', py: 1.2 } }}>
+                                                {/* 1. Posición: Al tocarla abre directamente el módulo de mover mercadería */}
+                                                <TableCell>
+                                                    <Tooltip title="Toca para mover o reubicar este pallet a otra posición">
+                                                        <Chip 
+                                                            icon={<SwapHorizIcon style={{ fontSize: 15, color: colors.info }} />}
+                                                            label={entry.posicion?.codigo || 'S/P'}
+                                                            onClick={() => openQuickMove(entry)}
+                                                            clickable
+                                                            sx={{ 
+                                                                bgcolor: 'rgba(59, 130, 246, 0.15)', 
+                                                                color: colors.info, 
+                                                                fontWeight: 800, 
+                                                                fontSize: '0.78rem',
+                                                                border: `1px solid rgba(59, 130, 246, 0.3)`,
+                                                                cursor: 'pointer',
+                                                                minHeight: '30px',
+                                                                '&:hover': { bgcolor: 'rgba(59, 130, 246, 0.28)' }
+                                                            }}
+                                                        />
+                                                    </Tooltip>
+                                                </TableCell>
+
+                                                {/* 2. Lote con manipulación directa: tocarlo cambia o acopla la partida */}
+                                                <TableCell>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                                                        <Tooltip title="Toca para renombrar, corregir o acoplar esta partida">
+                                                            <Typography 
+                                                                variant="body2" 
+                                                                onClick={() => setEditLotEntry(entry)}
                                                                 sx={{ 
-                                                                    bgcolor: 'rgba(59, 130, 246, 0.15)', 
-                                                                    color: colors.info, 
-                                                                    fontWeight: 800, 
-                                                                    fontSize: '0.78rem',
-                                                                    border: `1px solid rgba(59, 130, 246, 0.3)`,
-                                                                    cursor: 'pointer',
-                                                                    minHeight: '30px',
-                                                                    '&:hover': { bgcolor: 'rgba(59, 130, 246, 0.28)' }
+                                                                    cursor: 'pointer', 
+                                                                    textDecoration: 'underline dotted', 
+                                                                    color: isOldest ? colors.primary : '#fff', 
+                                                                    fontWeight: isOldest ? 800 : 600,
+                                                                    '&:hover': { color: colors.primary }
                                                                 }}
-                                                            />
+                                                            >
+                                                                {entry.batch?.lotNumber} ✎
+                                                            </Typography>
                                                         </Tooltip>
-                                                    </TableCell>
-
-                                                    {/* Lote con manipulación directa: tocarlo cambia o acopla la partida */}
-                                                    <TableCell>
-                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                                                            <Tooltip title="Toca para renombrar, corregir o acoplar esta partida">
-                                                                <Typography 
-                                                                    variant="body2" 
-                                                                    onClick={() => setEditLotEntry(entry)}
-                                                                    sx={{ 
-                                                                        cursor: 'pointer', 
-                                                                        textDecoration: 'underline dotted', 
-                                                                        color: isOldest ? colors.primary : '#fff', 
-                                                                        fontWeight: isOldest ? 800 : 600,
-                                                                        '&:hover': { color: colors.primary }
-                                                                    }}
-                                                                >
-                                                                    {entry.batch?.lotNumber} ✎
-                                                                </Typography>
+                                                        {isOldest && (
+                                                            <Tooltip title="Partida más antigua de este material en stock (Prioridad de salida FIFO)">
+                                                                <Chip label="FIFO" size="small" sx={{ height: '18px', fontSize: '0.62rem', fontWeight: 900, bgcolor: 'rgba(245, 158, 11, 0.2)', color: colors.primary }} />
                                                             </Tooltip>
-                                                            {isOldest && (
-                                                                <Tooltip title="Partida más antigua de este material en stock (Prioridad de salida FIFO)">
-                                                                    <Chip label="FIFO" size="small" sx={{ height: '18px', fontSize: '0.62rem', fontWeight: 900, bgcolor: 'rgba(245, 158, 11, 0.2)', color: colors.primary }} />
-                                                                </Tooltip>
-                                                            )}
-                                                            {entry.batch?.observaciones && (
-                                                                <Tooltip title={`Observación: ${entry.batch.observaciones}. Toca para editar nota.`}>
-                                                                    <IconButton 
-                                                                        size="small" 
-                                                                        onClick={() => setObsModal({ open: true, batchId: entry.batch?.id, text: entry.batch?.observaciones || '' })}
-                                                                        sx={{ p: 0.2, color: colors.primary }}
-                                                                    >
-                                                                        <WarningAmberIcon sx={{ fontSize: 16 }} />
-                                                                    </IconButton>
-                                                                </Tooltip>
-                                                            )}
-                                                        </Box>
-                                                    </TableCell>
+                                                        )}
+                                                        {entry.batch?.observaciones && (
+                                                            <Tooltip title={`Observación: ${entry.batch.observaciones}. Toca para editar nota.`}>
+                                                                <IconButton 
+                                                                    size="small" 
+                                                                    onClick={() => setObsModal({ open: true, batchId: entry.batch?.id, text: entry.batch?.observaciones || '' })}
+                                                                    sx={{ p: 0.2, color: colors.primary }}
+                                                                >
+                                                                    <WarningAmberIcon sx={{ fontSize: 16 }} />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        )}
+                                                    </Box>
+                                                </TableCell>
 
-                                                    {/* Kilos con manipulación directa: tocarlo abre ajuste de peso */}
-                                                    <TableCell align="right">
-                                                        <Tooltip title="Toca para ajustar o corregir el pesaje de este pallet">
+                                                {/* 3. Kilos con manipulación directa: tocarlo abre ajuste de peso */}
+                                                <TableCell align="right">
+                                                    <Tooltip title="Toca para ajustar o corregir el pesaje de este pallet">
+                                                        <Typography 
+                                                            variant="body2" 
+                                                            onClick={() => setAdjustStockEntry(entry)}
+                                                            sx={{ 
+                                                                cursor: 'pointer', 
+                                                                textDecoration: 'underline dotted', 
+                                                                color: colors.primary, 
+                                                                fontWeight: 800,
+                                                                '&:hover': { color: '#fbbf24' }
+                                                            }}
+                                                        >
+                                                            {Number(entry.qtyPrincipal).toFixed(1)} <small style={{ color: colors.textDim }}>{detailGroup.item.unidadPrincipal}</small> ✎
+                                                        </Typography>
+                                                    </Tooltip>
+                                                </TableCell>
+
+                                                {/* 4. Bultos con manipulación directa */}
+                                                <TableCell align="right">
+                                                    {entry.qtySecundaria ? (
+                                                        <Tooltip title="Toca para ajustar la cantidad de bultos">
                                                             <Typography 
                                                                 variant="body2" 
                                                                 onClick={() => setAdjustStockEntry(entry)}
                                                                 sx={{ 
                                                                     cursor: 'pointer', 
                                                                     textDecoration: 'underline dotted', 
-                                                                    color: colors.primary, 
-                                                                    fontWeight: 800,
-                                                                    '&:hover': { color: '#fbbf24' }
+                                                                    color: colors.success, 
+                                                                    fontWeight: 700,
+                                                                    '&:hover': { color: '#34d399' }
                                                                 }}
                                                             >
-                                                                {Number(entry.qtyPrincipal).toFixed(1)} <small style={{ color: colors.textDim }}>{detailGroup.item.unidadPrincipal}</small> ✎
+                                                                {entry.qtySecundaria} <small style={{ color: colors.textDim }}>{detailGroup.item.unidadSecundaria}</small> ✎
                                                             </Typography>
                                                         </Tooltip>
-                                                    </TableCell>
+                                                    ) : (
+                                                        <Typography 
+                                                            variant="caption" 
+                                                            onClick={() => setAdjustStockEntry(entry)}
+                                                            sx={{ color: colors.textDim, cursor: 'pointer', textDecoration: 'underline dotted', '&:hover': { color: '#fff' } }}
+                                                        >
+                                                            + Bultos ✎
+                                                        </Typography>
+                                                    )}
+                                                </TableCell>
 
-                                                    {/* Bultos con manipulación directa */}
-                                                    <TableCell align="right">
-                                                        {entry.qtySecundaria ? (
-                                                            <Tooltip title="Toca para ajustar la cantidad de bultos">
-                                                                <Typography 
-                                                                    variant="body2" 
-                                                                    onClick={() => setAdjustStockEntry(entry)}
-                                                                    sx={{ 
-                                                                        cursor: 'pointer', 
-                                                                        textDecoration: 'underline dotted', 
-                                                                        color: colors.success, 
-                                                                        fontWeight: 700,
-                                                                        '&:hover': { color: '#34d399' }
-                                                                    }}
-                                                                >
-                                                                    {entry.qtySecundaria} <small style={{ color: colors.textDim }}>{detailGroup.item.unidadSecundaria}</small> ✎
-                                                                </Typography>
-                                                            </Tooltip>
-                                                        ) : (
-                                                            <Typography 
-                                                                variant="caption" 
-                                                                onClick={() => setAdjustStockEntry(entry)}
-                                                                sx={{ color: colors.textDim, cursor: 'pointer', '&:hover': { color: '#fff' } }}
-                                                            >
-                                                                + Bultos
-                                                            </Typography>
-                                                        )}
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-                                    </TableBody>
-                                </MuiTable>
-                            </TableContainer>
-                        )}
+                                                {/* 5. Camioncito para Remito de Salida */}
+                                                <TableCell align="center">
+                                                    <Tooltip title="Despachar con Remito de Salida">
+                                                        <IconButton 
+                                                            size="small" 
+                                                            onClick={() => openDespacho(entry)} 
+                                                            sx={{ 
+                                                                color: colors.primary, 
+                                                                bgcolor: 'rgba(245, 158, 11, 0.12)', 
+                                                                border: '1px solid rgba(245, 158, 11, 0.25)',
+                                                                '&:hover': { 
+                                                                    bgcolor: 'rgba(245, 158, 11, 0.28)',
+                                                                    transform: 'scale(1.08)'
+                                                                },
+                                                                transition: 'all 0.15s ease'
+                                                            }}
+                                                        >
+                                                            <LocalShippingIcon sx={{ fontSize: 18 }} />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                </TableBody>
+                            </MuiTable>
+                        </TableContainer>
+                    )}
                 </Drawer>
             )}
 

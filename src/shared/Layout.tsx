@@ -70,8 +70,6 @@ const navGroups: NavGroup[] = [
         icon: '🧪',
         items: [
             { to: '/desarrollo/articulos', label: '📋 Catálogo de Artículos' },
-            { to: '/desarrollo/estructuras', label: '🌳 Estructuras (BOM) y Simulador' },
-            { to: '/desarrollo/maquinas', label: '⚙️ Asignación Máquinas y Tiempos' },
         ]
     },
     {
