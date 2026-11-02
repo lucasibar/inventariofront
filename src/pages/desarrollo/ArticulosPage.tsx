@@ -694,6 +694,30 @@ export function ArticulosPage() {
                             >
                                 Todos ({etapaFiltro === 'TERMINADO' ? (resumenAlertas?.totalTerminados || 0) : (resumenAlertas?.totalCostura || 0)})
                             </button>
+                            {pedidosSinEstructura.length > 0 && (
+                                <button
+                                    onClick={() => {
+                                        setAlertaFiltro(alertaFiltro === 'PEDIDOS_VENTA_SIN_BOM' ? '' : 'PEDIDOS_VENTA_SIN_BOM');
+                                        setPage(1);
+                                    }}
+                                    style={{
+                                        padding: '6px 12px',
+                                        borderRadius: '8px',
+                                        border: alertaFiltro === 'PEDIDOS_VENTA_SIN_BOM' ? '2px solid #ef4444' : '1px solid rgba(239,68,68,0.4)',
+                                        background: alertaFiltro === 'PEDIDOS_VENTA_SIN_BOM' ? '#ef444425' : 'rgba(239,68,68,0.1)',
+                                        color: '#f87171',
+                                        fontSize: '12px',
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                    }}
+                                >
+                                    <span>🚨 Requeridos en Ventas sin BOM</span>
+                                    <Badge color="#ef4444">{pedidosSinEstructura.length}</Badge>
+                                </button>
+                            )}
                             <button
                                 onClick={() => { setAlertaFiltro(alertaFiltro === 'SIN_ESTRUCTURA' ? '' : 'SIN_ESTRUCTURA'); setPage(1); }}
                                 style={{
@@ -862,7 +886,173 @@ export function ArticulosPage() {
                 </div>
             </Card>
 
-            {/* TABLA PRINCIPAL DE ARTÍCULOS */}
+            {/* VISTA DEDICADA DE PEDIDOS DE VENTAS SIN ESTRUCTURA BOM */}
+            {alertaFiltro === 'PEDIDOS_VENTA_SIN_BOM' ? (
+                <Card style={{ padding: '20px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                        <div>
+                            <div style={{ fontSize: '16px', fontWeight: 800, color: '#f87171', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                🚨 Artículos Requeridos en Pedidos de Venta sin Estructura BOM ({pedidosSinEstructura.length})
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>
+                                Listado de artículos que los clientes compraron pero aún no pueden programarse en tejeduría porque no tienen su receta técnica armada.
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setAlertaFiltro('')}
+                            style={{
+                                background: 'rgba(255,255,255,0.06)',
+                                border: '1px solid rgba(255,255,255,0.15)',
+                                color: '#d1d5db',
+                                padding: '6px 14px',
+                                borderRadius: '8px',
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            ✕ Volver al Catálogo Normal
+                        </button>
+                    </div>
+
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#9ca3af' }}>
+                                    <th style={{ padding: '12px 10px' }}>Pedido Nº</th>
+                                    <th style={{ padding: '12px 10px' }}>Código Artículo Venta</th>
+                                    <th style={{ padding: '12px 10px' }}>Descripción & Cliente</th>
+                                    <th style={{ padding: '12px 10px', textAlign: 'center' }}>Talle</th>
+                                    <th style={{ padding: '12px 10px', textAlign: 'right' }}>Packs Pedidos</th>
+                                    <th style={{ padding: '12px 10px', textAlign: 'center' }}>Estado en Catálogo</th>
+                                    <th style={{ padding: '12px 10px', textAlign: 'right' }}>Acción Inmediata</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {pedidosSinEstructura.map((ped) => {
+                                    const existeEnCatalogo = !!ped.articulo;
+                                    return (
+                                        <tr
+                                            key={ped.id}
+                                            style={{
+                                                borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                                background: 'rgba(239, 68, 68, 0.03)',
+                                            }}
+                                        >
+                                            <td style={{ padding: '12px 10px', fontWeight: 700, color: '#9ca3af' }}>
+                                                {ped.numeroPedido}
+                                            </td>
+                                            <td style={{ padding: '12px 10px', fontWeight: 800, color: '#60a5fa' }}>
+                                                {ped.articuloCodigo}
+                                            </td>
+                                            <td style={{ padding: '12px 10px' }}>
+                                                <div style={{ color: '#f3f4f6', fontWeight: 600 }}>
+                                                    {ped.articuloDescripcion || ped.articulo?.descripcion || 'Sin descripción'}
+                                                </div>
+                                                <div style={{ fontSize: '11px', color: '#38bdf8' }}>
+                                                    Cliente: {ped.cliente}
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '12px 10px', textAlign: 'center' }}>
+                                                <Badge color="#4b5563">{ped.talle || ped.articulo?.talle || '-'}</Badge>
+                                            </td>
+                                            <td style={{ padding: '12px 10px', textAlign: 'right', fontWeight: 700, color: '#fbbf24' }}>
+                                                {ped.packsPedidas} packs
+                                            </td>
+                                            <td style={{ padding: '12px 10px', textAlign: 'center' }}>
+                                                {existeEnCatalogo ? (
+                                                    <span style={{
+                                                        padding: '3px 8px',
+                                                        borderRadius: '6px',
+                                                        fontSize: '11px',
+                                                        fontWeight: 700,
+                                                        background: 'rgba(59, 130, 246, 0.15)',
+                                                        color: '#60a5fa',
+                                                        border: '1px solid rgba(59, 130, 246, 0.3)'
+                                                    }}>
+                                                        ✓ En Catálogo (Falta BOM)
+                                                    </span>
+                                                ) : (
+                                                    <span style={{
+                                                        padding: '3px 8px',
+                                                        borderRadius: '6px',
+                                                        fontSize: '11px',
+                                                        fontWeight: 700,
+                                                        background: 'rgba(239, 68, 68, 0.15)',
+                                                        color: '#f87171',
+                                                        border: '1px solid rgba(239, 68, 68, 0.3)'
+                                                    }}>
+                                                        🚨 Artículo Nuevo (Sin Ficha)
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td style={{ padding: '12px 10px', textAlign: 'right' }}>
+                                                {existeEnCatalogo && ped.articulo ? (
+                                                    <button
+                                                        onClick={() => {
+                                                            handleOpenEdit(ped.articulo as any, 'ESTRUCTURA');
+                                                        }}
+                                                        style={{
+                                                            background: 'rgba(16, 185, 129, 0.2)',
+                                                            border: '1px solid #10b981',
+                                                            color: '#34d399',
+                                                            padding: '6px 12px',
+                                                            borderRadius: '6px',
+                                                            fontSize: '12px',
+                                                            fontWeight: 800,
+                                                            cursor: 'pointer',
+                                                            whiteSpace: 'nowrap',
+                                                        }}
+                                                    >
+                                                        📋 Armar Receta BOM ➜
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingArticulo(null);
+                                                            setForm({
+                                                                codigo: ped.articuloCodigo,
+                                                                descripcion: ped.articuloDescripcion || `MEDIA ${ped.articuloCodigo}`,
+                                                                etapa: 'TERMINADO',
+                                                                familia: 'MEDIA',
+                                                                modelo: ped.articuloCodigo.split('_')[0] || '',
+                                                                talle: ped.talle || '',
+                                                                destino: ped.articuloCodigo.split('_')[2] || '',
+                                                                variante: '',
+                                                                marca: ped.cliente || 'NIKE',
+                                                                unidadMedida: 'UN',
+                                                                pesoU: null,
+                                                                codigoSusi: '',
+                                                                estado: 'CONTROLAR',
+                                                                activo: true,
+                                                            });
+                                                            setActiveTab('DATOS');
+                                                            setModalOpen(true);
+                                                        }}
+                                                        style={{
+                                                            background: 'rgba(96, 165, 250, 0.2)',
+                                                            border: '1px solid #3b82f6',
+                                                            color: '#60a5fa',
+                                                            padding: '6px 12px',
+                                                            borderRadius: '6px',
+                                                            fontSize: '12px',
+                                                            fontWeight: 800,
+                                                            cursor: 'pointer',
+                                                            whiteSpace: 'nowrap',
+                                                        }}
+                                                    >
+                                                        ➕ Crear Artículo Terminado ➜
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </Card>
+            ) : (
+                /* TABLA PRINCIPAL DE ARTÍCULOS */
             <Card style={{ padding: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1154,6 +1344,7 @@ export function ArticulosPage() {
                     </Btn>
                 </div>
             </Card>
+            )}
 
             {/* MODAL INTEGRAL / UNIFICADO (A 1 CLIC) */}
             {modalOpen && (

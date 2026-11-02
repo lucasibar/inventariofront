@@ -9,9 +9,10 @@ import {
     useSincronizarPlanillaConPedidosMutation,
     useLimpiarPlanillasProduccionMutation,
 } from '../../features/quality/ordenes-produccion/api/ordenesProduccion.api';
-import type { ProduccionParseResult } from '../../features/quality/ordenes-produccion/types/ordenesProduccion.types';
+import type { ProduccionParseResult, ArticuloProduccionSummary } from '../../features/quality/ordenes-produccion/types/ordenesProduccion.types';
 import { PdfUploader } from '../../features/quality/ordenes-produccion/components/PdfUploader';
 import { ArticulosTejidoTab } from '../../features/quality/ordenes-produccion/components/ArticulosTejidoTab';
+import { ConciliarSusiModal } from '../../features/quality/ordenes-produccion/components/ConciliarSusiModal';
 import { MaquinasTab } from '../../features/quality/ordenes-produccion/components/MaquinasTab';
 import { ColoresTab } from '../../features/quality/ordenes-produccion/components/ColoresTab';
 import { MaterialesAsignadosTab } from '../../features/quality/ordenes-produccion/components/MaterialesAsignadosTab';
@@ -55,6 +56,7 @@ export default function OrdenesProduccionPage({ sectorMode }: OrdenesProduccionP
     };
 
     const [result, setResult] = useState<ProduccionParseResult | null>(null);
+    const [articuloConciliar, setArticuloConciliar] = useState<ArticuloProduccionSummary | null>(null);
     const [activeTab, setActiveTab] = useState<TabType>(() => {
         if (effectiveSector === 'DEPOSITO') return 'picking';
         if (effectiveSector === 'COMPRAS') return 'materiales';
@@ -859,6 +861,7 @@ export default function OrdenesProduccionPage({ sectorMode }: OrdenesProduccionP
                         <ArticulosTejidoTab
                             articulos={filteredArticulos}
                             onSelectMachine={handleSelectMachineFromTab}
+                            onConciliarSusi={(a) => setArticuloConciliar(a)}
                         />
                     )}
 
@@ -901,6 +904,16 @@ export default function OrdenesProduccionPage({ sectorMode }: OrdenesProduccionP
                     )}
                 </div>
             )}
-        </div>
+        
+            {/* Modal de Conciliacion In-Situ Codigo Susana */}
+            <ConciliarSusiModal
+                isOpen={!!articuloConciliar}
+                onClose={() => setArticuloConciliar(null)}
+                articuloSusi={articuloConciliar}
+                onSuccess={() => {
+                    refetchUltima();
+                }}
+            />
+</div>
     );
 }

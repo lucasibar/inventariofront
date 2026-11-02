@@ -7,6 +7,7 @@ interface ArticulosTejidoTabProps {
     articulos: ArticuloProduccionSummary[];
     onSelectMachine?: (machineNum: number) => void;
     onEditArticle?: (a: ArticuloProduccionSummary) => void;
+    onConciliarSusi?: (a: ArticuloProduccionSummary) => void;
 }
 
 const ROL_LABELS: Record<string, string> = {
@@ -33,6 +34,7 @@ export const ArticulosTejidoTab: React.FC<ArticulosTejidoTabProps> = ({
     articulos,
     onSelectMachine,
     onEditArticle,
+    onConciliarSusi,
 }) => {
     const [q, setQ] = useState('');
     const [selectedMarca, setSelectedMarca] = useState<string>('ALL');
@@ -169,25 +171,51 @@ export const ArticulosTejidoTab: React.FC<ArticulosTejidoTabProps> = ({
             );
         }
         return (
-            <span
-                onClick={(e) => handleBadgeClick(e, a)}
-                style={{
-                    padding: '4px 8px',
-                    borderRadius: '6px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    background: 'rgba(239, 68, 68, 0.22)',
-                    color: '#ef4444',
-                    border: '1px solid #ef4444',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    cursor: onEditArticle ? 'pointer' : 'default',
-                }}
-                title="Artículo no encontrado en el catálogo. Clic para darlo de alta ahora"
-            >
-                ⚠️ No en Catálogo ➕
-            </span>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                <span
+                    onClick={(e) => handleBadgeClick(e, a)}
+                    style={{
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        background: 'rgba(239, 68, 68, 0.22)',
+                        color: '#ef4444',
+                        border: '1px solid #ef4444',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        cursor: onEditArticle ? 'pointer' : 'default',
+                    }}
+                    title="Artículo no encontrado en el catálogo técnico"
+                >
+                    🚨 No en Catálogo
+                </span>
+                {onConciliarSusi && (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onConciliarSusi(a);
+                        }}
+                        style={{
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            background: 'rgba(245, 158, 11, 0.25)',
+                            color: '#fbbf24',
+                            border: '1px solid #f59e0b',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                        }}
+                        title="Vincular código SUSI de este artículo con el catálogo"
+                    >
+                        ⚡ Vincular SUSI
+                    </button>
+                )}
+            </div>
         );
     };
 

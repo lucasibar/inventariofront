@@ -22,7 +22,11 @@ import {
     Snackbar,
     Alert,
     Chip,
-    Fab
+    Fab,
+    Checkbox,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
@@ -46,6 +50,7 @@ import {
     useLazyCheckBatchQuery,
     useUpdateBatchObservationsMutation,
     useMoveStockMutation,
+    useBulkMoveStockMutation,
 } from '../../features/warehouse/stock/api/stock.api';
 import { useDespachoDirectoMutation } from '../../features/warehouse/remitosSalida/api/remitos-salida.api';
 import { useSearchParams } from 'react-router-dom';
@@ -220,15 +225,14 @@ export default function DashboardDepositoPage() {
     const [obsModal, setObsModal] = useState({ open: false, batchId: '', text: '' });
     const [obsSaving, setObsSaving] = useState(false);
 
-    // Movimiento Rápido state
-    const [moveStockMutation, { isLoading: isMovingStock }] = useMoveStockMutation();
+    // Movimiento Rápido / Pallet Completo state
+    const [moveStockMutation] = useMoveStockMutation();
+    const [bulkMoveStockMutation, { isLoading: isMovingStock }] = useBulkMoveStockMutation();
     const [moveModal, setMoveModal] = useState(false);
     const [moveEntry, setMoveEntry] = useState<any>(null);
     const [moveDestDepot, setMoveDestDepot] = useState<string>('');
     const [moveDestPos, setMoveDestPos] = useState<string>('');
-    const [moveCajas, setMoveCajas] = useState<string>('');
-    const [moveKilos, setMoveKilos] = useState<string>('');
-    const [isManualKilosEdited, setIsManualKilosEdited] = useState<boolean>(false);
+    const [moveItemsState, setMoveItemsState] = useState<Record<string, { selected: boolean; kilos: string; cajas: string; isManualKilos: boolean }>>({});
     const [feedbackToast, setFeedbackToast] = useState<{ msg: string; severity: 'success' | 'info' | 'error' } | null>(null);
 
     // Exclusión dinámica de materiales de los cómputos de métricas (ojito)
@@ -260,49 +264,94 @@ export default function DashboardDepositoPage() {
         return null;
     };
 
+    const handleLineCajasChange = (entry: any, valStr: string) => {
+        const cajasNum = parseFloat(valStr.replace(',', '.'));
+        const maxSec = Number(entry.qtySecundaria || 0);
+        const maxPrinc = Number(entry.qtyPrincipal || 0);
+        const ratio = getKilosPorCajaRatio(entry);
+
+        let calculatedKilos = moveItemsState[entry.id]?.kilos || '';
+
+        if (!isNaN(cajasNum) && cajasNum > 0) {
+            if (maxSec > 0 && Math.abs(cajasNum - maxSec) < 0.001) {
+                calculatedKilos = String(maxPrinc);
+            } else if (ratio != null) {
+                const calculated = Math.round(cajasNum * ratio * 100) / 100;
+                const capped = maxPrinc > 0 ? Math.min(calculated, maxPrinc) : calculated;
+                calculatedKilos = String(capped);
+            }
+        } else if (!valStr.trim() && !moveItemsState[entry.id]?.isManualKilos) {
+            calculatedKilos = '';
+        }
+
+        setMoveItemsState(prev => ({
+            ...prev,
+            [entry.id]: {
+                ...prev[entry.id],
+                cajas: valStr,
+                kilos: calculatedKilos,
+                isManualKilos: false
+            }
+        }));
+    };
+
+    const handleLineKilosChange = (entryId: string, valStr: string) => {
+        setMoveItemsState(prev => ({
+            ...prev,
+            [entryId]: {
+                ...prev[entryId],
+                kilos: valStr,
+                isManualKilos: true
+            }
+        }));
+    };
+
+    const handleLineToggle = (entryId: string) => {
+        setMoveItemsState(prev => ({
+            ...prev,
+            [entryId]: {
+                ...prev[entryId],
+                selected: !prev[entryId]?.selected
+            }
+        }));
+    };
+
+    const handleSelectAllLines = (selectAll: boolean = true) => {
+        const next: Record<string, any> = {};
+        originStockItems.forEach((item: any) => {
+            next[item.id] = {
+                selected: selectAll,
+                kilos: selectAll ? String(item.qtyPrincipal || 0) : '0',
+                cajas: selectAll ? (item.qtySecundaria ? String(item.qtySecundaria) : '') : '',
+                isManualKilos: false
+            };
+        });
+        setMoveItemsState(next);
+    };
+
     const openQuickMove = (entry: any) => {
         setMoveEntry(entry);
         const entryDepot = entry.depositoId || depotId;
         setMoveDestDepot(entryDepot);
         setMoveDestPos('');
-        setMoveCajas('');
-        setMoveKilos('');
-        setIsManualKilosEdited(false);
+
+        const pool = globalStock.length > 0 ? globalStock : rawStock;
+        const positionItems = entry.posicionId 
+            ? pool.filter((s: any) => s.posicionId === entry.posicionId && Number(s.qtyPrincipal) > 0)
+            : [entry];
+        const itemsToInit = positionItems.length > 0 ? positionItems : [entry];
+
+        const initialMap: Record<string, { selected: boolean; kilos: string; cajas: string; isManualKilos: boolean }> = {};
+        itemsToInit.forEach((item: any) => {
+            initialMap[item.id] = {
+                selected: true,
+                kilos: String(item.qtyPrincipal || 0),
+                cajas: item.qtySecundaria ? String(item.qtySecundaria) : '',
+                isManualKilos: false
+            };
+        });
+        setMoveItemsState(initialMap);
         setMoveModal(true);
-    };
-
-    const handleCajasChange = (valStr: string) => {
-        setMoveCajas(valStr);
-        const cajasNum = parseFloat(valStr.replace(',', '.'));
-        if (!isNaN(cajasNum) && cajasNum > 0 && moveEntry) {
-            const ratio = getKilosPorCajaRatio(moveEntry);
-            const maxSec = Number(moveEntry.qtySecundaria || 0);
-            const maxPrinc = Number(moveEntry.qtyPrincipal || 0);
-
-            if (maxSec > 0 && Math.abs(cajasNum - maxSec) < 0.001) {
-                setMoveKilos(String(maxPrinc));
-            } else if (ratio != null) {
-                const calculated = Math.round(cajasNum * ratio * 100) / 100;
-                const capped = maxPrinc > 0 ? Math.min(calculated, maxPrinc) : calculated;
-                setMoveKilos(String(capped));
-            }
-            setIsManualKilosEdited(false);
-        } else if (!valStr.trim() && !isManualKilosEdited) {
-            setMoveKilos('');
-        }
-    };
-
-    const handleKilosChange = (valStr: string) => {
-        setMoveKilos(valStr);
-        setIsManualKilosEdited(true);
-    };
-
-    const handleMoveAll = () => {
-        if (!moveEntry) return;
-        const maxSec = moveEntry.qtySecundaria ? String(moveEntry.qtySecundaria) : '';
-        setMoveCajas(maxSec);
-        setMoveKilos(String(moveEntry.qtyPrincipal));
-        setIsManualKilosEdited(true);
     };
 
     // Despacho Directo state
@@ -524,44 +573,108 @@ export default function DashboardDepositoPage() {
         return destPositions.find((p: any) => p.id === moveDestPos) || null;
     }, [destPositions, moveDestPos]);
 
+    // Ítems presentes en la posición de origen del movimiento
+    const originStockItems = useMemo(() => {
+        if (!moveEntry) return [];
+        if (!moveEntry.posicionId) return [moveEntry];
+        const pool = globalStock.length > 0 ? globalStock : rawStock;
+        const found = pool.filter((s: any) => s.posicionId === moveEntry.posicionId && Number(s.qtyPrincipal) > 0);
+        return found.length > 0 ? found : [moveEntry];
+    }, [globalStock, rawStock, moveEntry]);
+
+    // Ítems presentes en la posición de destino seleccionada (para ver qué contiene)
+    const selectedDestStock = useMemo(() => {
+        if (!moveDestPos) return [];
+        const pool = globalStock.length > 0 ? globalStock : rawStock;
+        return pool.filter((s: any) => s.posicionId === moveDestPos && Number(s.qtyPrincipal) > 0);
+    }, [globalStock, rawStock, moveDestPos]);
+
+    const selectedLinesToMove = useMemo(() => {
+        return originStockItems.filter((entry: any) => {
+            const state = moveItemsState[entry.id];
+            if (!state?.selected) return false;
+            const kilos = parseFloat(String(state.kilos).replace(',', '.'));
+            return !isNaN(kilos) && kilos > 0;
+        }).map((entry: any) => {
+            const state = moveItemsState[entry.id];
+            const kilos = parseFloat(String(state.kilos).replace(',', '.'));
+            const cajas = state.cajas ? parseFloat(String(state.cajas).replace(',', '.')) : null;
+            return {
+                entry,
+                kilos,
+                cajas: cajas !== null && !isNaN(cajas) ? cajas : null
+            };
+        });
+    }, [originStockItems, moveItemsState]);
+
+    const totalKilosToMove = useMemo(() => {
+        return selectedLinesToMove.reduce((acc, curr) => acc + curr.kilos, 0);
+    }, [selectedLinesToMove]);
+
+    const totalCajasToMove = useMemo(() => {
+        return selectedLinesToMove.reduce((acc, curr) => acc + (curr.cajas || 0), 0);
+    }, [selectedLinesToMove]);
+
     const handleConfirmMove = async () => {
         if (!moveEntry || !moveDestDepot || !moveDestPos) {
             alert('Por favor seleccioná una posición de destino.');
             return;
         }
-        const kilos = parseFloat(String(moveKilos).replace(',', '.'));
-        if (isNaN(kilos) || kilos <= 0) {
-            alert('Ingresá una cantidad de kilos válida.');
+        if (selectedLinesToMove.length === 0) {
+            alert('Seleccioná al menos un ítem con kilos válidos para mover.');
             return;
         }
-        const maxKilos = Number(moveEntry.qtyPrincipal);
-        if (kilos > maxKilos + 0.001) {
-            alert(`No podés mover más de los ${maxKilos} disponibles.`);
-            return;
-        }
-        const cajas = moveCajas ? parseFloat(String(moveCajas).replace(',', '.')) : null;
-        if (cajas !== null && !isNaN(cajas)) {
-            const maxCajas = Number(moveEntry.qtySecundaria || 0);
-            if (maxCajas > 0 && cajas > maxCajas) {
-                alert(`No podés mover más de las ${maxCajas} cajas disponibles.`);
+
+        // Validación de stock disponible
+        for (const line of selectedLinesToMove) {
+            const maxKilos = Number(line.entry.qtyPrincipal || 0);
+            if (line.kilos > maxKilos + 0.001) {
+                alert(`Para el ítem ${line.entry.batch?.item?.codigoInterno} no podés mover más de los ${maxKilos} kg disponibles.`);
+                return;
+            }
+            const maxCajas = Number(line.entry.qtySecundaria || 0);
+            if (line.cajas !== null && maxCajas > 0 && line.cajas > maxCajas) {
+                alert(`Para el ítem ${line.entry.batch?.item?.codigoInterno} no podés mover más de las ${maxCajas} cajas disponibles.`);
                 return;
             }
         }
 
         try {
-            await moveStockMutation({
-                depositoId: moveDestDepot,
-                posicionIdOrigen: moveEntry.posicionId,
-                posicionIdDestino: moveDestPos,
-                itemId: moveEntry.batch?.item?.id || moveEntry.itemId,
-                lotId: moveEntry.lotId || moveEntry.batch?.id,
-                qtyPrincipal: kilos,
-                qtySecundaria: cajas && !isNaN(cajas) ? cajas : null,
-                fecha: new Date().toISOString(),
-            }).unwrap();
-
             const destPosName = destPositions.find((p: any) => p.id === moveDestPos)?.codigo || 'la nueva posición';
-            setFeedbackToast({ msg: `✅ Movimiento completado: ${kilos} kg a ${destPosName}`, severity: 'success' });
+            const originPosName = moveEntry.posicion?.codigo || 'S/P';
+
+            if (selectedLinesToMove.length === 1) {
+                const single = selectedLinesToMove[0];
+                await moveStockMutation({
+                    depositoId: moveDestDepot,
+                    posicionIdOrigen: single.entry.posicionId,
+                    posicionIdDestino: moveDestPos,
+                    itemId: single.entry.batch?.item?.id || single.entry.itemId,
+                    lotId: single.entry.lotId || single.entry.batch?.id,
+                    qtyPrincipal: single.kilos,
+                    qtySecundaria: single.cajas,
+                    fecha: new Date().toISOString(),
+                }).unwrap();
+            } else {
+                await bulkMoveStockMutation({
+                    items: selectedLinesToMove.map(line => ({
+                        depositoId: moveDestDepot,
+                        posicionIdOrigen: line.entry.posicionId,
+                        posicionIdDestino: moveDestPos,
+                        itemId: line.entry.batch?.item?.id || line.entry.itemId,
+                        lotId: line.entry.lotId || line.entry.batch?.id,
+                        qtyPrincipal: line.kilos,
+                        qtySecundaria: line.cajas,
+                    })),
+                    fecha: new Date().toISOString(),
+                    observaciones: `Transferencia de pallet de ${originPosName} a ${destPosName}`
+                }).unwrap();
+            }
+
+            setFeedbackToast({ 
+                msg: `✅ Movimiento completado: ${totalKilosToMove.toFixed(1)} kg (${selectedLinesToMove.length} lote/s) movidos a ${destPosName}`, 
+                severity: 'success' 
+            });
             setMoveModal(false);
             setMoveEntry(null);
         } catch (err: any) {
@@ -1525,60 +1638,172 @@ export default function DashboardDepositoPage() {
                 />
             )}
 
-            {/* Quick Move Modal */}
+            {/* Modal Rediseñado de Movimiento de Mercadería / Pallet Completo */}
             {moveModal && moveEntry && (
-                <Modal
+                <Dialog
                     open={moveModal}
                     onClose={() => { if (!isMovingStock) { setMoveModal(false); setMoveEntry(null); } }}
-                    sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    fullScreen={isMobile}
+                    maxWidth="md"
+                    fullWidth
+                    PaperProps={{
+                        sx: {
+                            bgcolor: colors.bg,
+                            color: colors.text,
+                            border: { xs: 'none', sm: `1px solid ${colors.info}` },
+                            borderRadius: { xs: 0, sm: 3.5 },
+                            boxShadow: '0 16px 48px rgba(0,0,0,0.8)',
+                            outline: 'none',
+                            maxHeight: { xs: '100vh', sm: '92vh' },
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }
+                    }}
                 >
-                    <Paper sx={{ 
-                        width: '94%', 
-                        maxWidth: 520, 
-                        bgcolor: colors.bg, 
-                        border: `1px solid ${colors.info}`, 
-                        borderRadius: 3.5, 
-                        p: 2.5, 
-                        outline: 'none', 
-                        boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
-                        maxHeight: '92vh',
-                        overflowY: 'auto'
-                    }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <SwapHorizIcon sx={{ color: colors.info, fontSize: '1.6rem' }} />
-                                <Typography variant="h6" sx={{ fontWeight: 900, color: '#fff' }}>
-                                    Mover de Ubicación
+                    {/* Header */}
+                    <DialogTitle sx={{ p: { xs: 2, sm: 2.5 }, pb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${colors.border}` }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                            <SwapHorizIcon sx={{ color: colors.info, fontSize: '1.8rem' }} />
+                            <Box>
+                                <Typography variant="h6" sx={{ fontWeight: 900, color: '#fff', lineHeight: 1.15 }}>
+                                    Mover Mercadería / Pallet
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: colors.textDim }}>
+                                    Transferencia de ubicación entre racks y posiciones
                                 </Typography>
                             </Box>
-                            <IconButton onClick={() => { setMoveModal(false); setMoveEntry(null); }} sx={{ color: colors.textDim }}>
-                                <CloseIcon />
-                            </IconButton>
                         </Box>
+                        <IconButton onClick={() => { setMoveModal(false); setMoveEntry(null); }} sx={{ color: colors.textDim }}>
+                            <CloseIcon />
+                        </IconButton>
+                    </DialogTitle>
 
-                        {/* Detalle del origen */}
-                        <Box sx={{ p: 1.5, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2.5, border: `1px solid ${colors.border}`, mb: 2 }}>
-                            <Typography variant="caption" sx={{ color: colors.primary, fontWeight: 800 }}>
-                                {moveEntry.batch?.item?.codigoInterno}
+                    {/* Content */}
+                    <DialogContent sx={{ p: { xs: 2, sm: 2.5 }, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                        
+                        {/* 1. SECCIÓN ORIGEN: Lo que sacás */}
+                        <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 3, border: `1px solid ${colors.border}` }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="subtitle2" sx={{ color: colors.info, fontWeight: 900, textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>
+                                        📍 Origen: Posición {moveEntry.posicion?.codigo || 'S/P'}
+                                    </Typography>
+                                    <Chip 
+                                        size="small" 
+                                        label={`${originStockItems.length} ${originStockItems.length === 1 ? 'lote' : 'lotes'} en pallet`} 
+                                        sx={{ height: 20, fontSize: '0.68rem', fontWeight: 800, bgcolor: 'rgba(59, 130, 246, 0.15)', color: colors.info }} 
+                                    />
+                                </Box>
+                                <Button
+                                    size="small"
+                                    variant="outlined"
+                                    startIcon={<FlashOnIcon sx={{ fontSize: 14 }} />}
+                                    onClick={() => handleSelectAllLines(true)}
+                                    sx={{ 
+                                        color: colors.primary, 
+                                        borderColor: colors.primary, 
+                                        fontWeight: 800, 
+                                        fontSize: '0.72rem', 
+                                        textTransform: 'none',
+                                        py: 0.3,
+                                        px: 1.2,
+                                        borderRadius: 2,
+                                        bgcolor: 'rgba(245, 158, 11, 0.08)',
+                                        '&:hover': { bgcolor: 'rgba(245, 158, 11, 0.2)' }
+                                    }}
+                                >
+                                    Mover Todo el Pallet
+                                </Button>
+                            </Box>
+
+                            <Typography variant="caption" sx={{ color: colors.textDim, display: 'block', mb: 1.5, fontSize: '0.72rem' }}>
+                                Seleccioná y confirmá las cantidades a transferir de este pallet:
                             </Typography>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#fff', lineHeight: 1.2, mb: 1 }}>
-                                {moveEntry.batch?.item?.descripcion}
-                            </Typography>
-                            
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, alignItems: 'center' }}>
-                                <Chip size="small" label={`📍 Origen: ${moveEntry.posicion?.codigo || 'S/P'}`} sx={{ bgcolor: 'rgba(59, 130, 246, 0.15)', color: colors.info, fontWeight: 800 }} />
-                                <Chip size="small" label={`Lote: ${moveEntry.batch?.lotNumber}`} sx={{ bgcolor: 'rgba(255,255,255,0.06)', color: '#fff', fontWeight: 700 }} />
-                                <Chip size="small" label={`Disponible: ${moveEntry.qtyPrincipal} ${moveEntry.batch?.item?.unidadPrincipal || 'kg'}`} sx={{ bgcolor: 'rgba(16, 185, 129, 0.15)', color: colors.success, fontWeight: 800 }} />
+
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2, maxHeight: { xs: 260, sm: 300 }, overflowY: 'auto', pr: 0.5 }}>
+                                {originStockItems.map((entry: any) => {
+                                    const lineState = moveItemsState[entry.id] || { selected: false, kilos: '', cajas: '', isManualKilos: false };
+                                    const isSelected = !!lineState.selected;
+                                    const maxKilos = Number(entry.qtyPrincipal || 0);
+                                    const maxCajas = Number(entry.qtySecundaria || 0);
+
+                                    return (
+                                        <Box 
+                                            key={entry.id} 
+                                            sx={{ 
+                                                p: 1.5, 
+                                                borderRadius: 2.5, 
+                                                border: `1px solid ${isSelected ? 'rgba(59, 130, 246, 0.5)' : colors.border}`,
+                                                bgcolor: isSelected ? 'rgba(59, 130, 246, 0.08)' : 'rgba(255,255,255,0.02)',
+                                                transition: 'all 0.15s ease'
+                                            }}
+                                        >
+                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, flex: 1 }}>
+                                                    <Checkbox 
+                                                        size="small"
+                                                        checked={isSelected}
+                                                        onChange={() => handleLineToggle(entry.id)}
+                                                        sx={{ p: 0.2, mt: 0.2, color: colors.textDim, '&.Mui-checked': { color: colors.info } }}
+                                                    />
+                                                    <Box sx={{ flex: 1 }}>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                                            <Typography variant="caption" sx={{ color: colors.primary, fontWeight: 900, letterSpacing: '0.4px' }}>
+                                                                {entry.batch?.item?.codigoInterno}
+                                                            </Typography>
+                                                            <Chip 
+                                                                size="small" 
+                                                                label={`Lote: ${entry.batch?.lotNumber || '—'}`} 
+                                                                sx={{ height: 18, fontSize: '0.65rem', fontWeight: 800, bgcolor: 'rgba(255,255,255,0.08)', color: '#fff' }} 
+                                                            />
+                                                        </Box>
+                                                        <Typography variant="body2" sx={{ fontWeight: 800, color: '#fff', lineHeight: 1.25, mt: 0.3 }}>
+                                                            {entry.batch?.item?.descripcion}
+                                                        </Typography>
+                                                        <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.72rem', display: 'block', mt: 0.4 }}>
+                                                            Disponible en pallet: <strong style={{ color: colors.success }}>{maxKilos.toFixed(1)} {entry.batch?.item?.unidadPrincipal || 'kg'}</strong>
+                                                            {maxCajas > 0 && ` • ${maxCajas} ${entry.batch?.item?.unidadSecundaria || 'cajas'}`}
+                                                            {entry.batch?.supplier?.name && ` • Prov: ${entry.batch.supplier.name}`}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+                                            </Box>
+
+                                            {isSelected && (
+                                                <Box sx={{ mt: 1.2, pt: 1.2, borderTop: `1px dashed ${colors.border}`, display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
+                                                    <TextField
+                                                        label={`Cajas a mover (${entry.batch?.item?.unidadSecundaria || 'un'})`}
+                                                        type="number"
+                                                        size="small"
+                                                        placeholder={maxCajas > 0 ? `Máx: ${maxCajas}` : '0'}
+                                                        value={lineState.cajas}
+                                                        onChange={(e) => handleLineCajasChange(entry, e.target.value)}
+                                                        sx={{ flex: '1 1 130px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }}
+                                                    />
+                                                    <TextField
+                                                        label={`Kilos a mover * (${entry.batch?.item?.unidadPrincipal || 'kg'})`}
+                                                        type="number"
+                                                        size="small"
+                                                        placeholder={`Máx: ${maxKilos}`}
+                                                        value={lineState.kilos}
+                                                        onChange={(e) => handleLineKilosChange(entry.id, e.target.value)}
+                                                        sx={{ flex: '1 1 130px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }}
+                                                    />
+                                                </Box>
+                                            )}
+                                        </Box>
+                                    );
+                                })}
                             </Box>
                         </Box>
 
-                        {/* Destino con consulta global de ocupación */}
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
-                            <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 800, textTransform: 'uppercase', fontSize: '0.7rem' }}>
-                                1. ¿A qué posición lo querés mover?
+                        {/* 2. SECCIÓN DESTINO: A dónde mandás y qué tiene actualmente */}
+                        <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 3, border: `1px solid ${colors.border}` }}>
+                            <Typography variant="subtitle2" sx={{ color: colors.textDim, fontWeight: 900, textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px', mb: 1.5 }}>
+                                2. Posición de Destino
                             </Typography>
 
-                            <Box sx={{ display: 'flex', gap: 1.5 }}>
+                            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mb: 1.5 }}>
                                 {depots.length > 1 && (
                                     <TextField
                                         select
@@ -1627,113 +1852,107 @@ export default function DashboardDepositoPage() {
                                     value={destPositions.find((p: any) => p.id === moveDestPos) || null}
                                     onChange={(_e, val: any) => setMoveDestPos(val?.id || '')}
                                     size="small"
-                                    sx={{ flex: '2 1 220px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }}
-                                    renderInput={(params) => <TextField {...params} label="Posición Destino *" placeholder="Buscar posición..." />}
+                                    sx={{ flex: '2 1 240px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }}
+                                    renderInput={(params) => <TextField {...params} label="Posición Destino *" placeholder="Escribí o seleccioná posición..." />}
                                 />
                             </Box>
 
-                            {selectedDestPosData && (
-                                !selectedDestPosData.isOccupied ? (
-                                    <Box sx={{ p: 1.2, bgcolor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: 2 }}>
-                                        <Typography variant="body2" sx={{ color: colors.success, fontSize: '0.78rem', fontWeight: 700 }}>
-                                            ✅ Posición {selectedDestPosData.codigo} libre y disponible.
-                                        </Typography>
+                            {/* Detalle visual de lo que tiene la posición de destino elegida */}
+                            {selectedDestPosData ? (
+                                selectedDestStock.length === 0 ? (
+                                    <Box sx={{ p: 1.5, bgcolor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: 2.5, display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                                        <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: colors.success, flexShrink: 0 }} />
+                                        <Box>
+                                            <Typography variant="body2" sx={{ color: colors.success, fontWeight: 800 }}>
+                                                Posición {selectedDestPosData.codigo} Vacía y Disponible
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: colors.textDim }}>
+                                                Esta posición no contiene mercadería. El pallet se ubicará de forma limpia y exclusiva.
+                                            </Typography>
+                                        </Box>
                                     </Box>
                                 ) : (
-                                    <Box sx={{ p: 1.2, bgcolor: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)', borderRadius: 2 }}>
-                                        <Typography variant="caption" sx={{ color: colors.primary, fontWeight: 800, textTransform: 'uppercase', fontSize: '0.68rem', display: 'block', mb: 0.5 }}>
-                                            📦 Mercadería en {selectedDestPosData.codigo}:
+                                    <Box sx={{ p: 1.5, bgcolor: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: 2.5 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: colors.primary, flexShrink: 0 }} />
+                                            <Typography variant="subtitle2" sx={{ color: colors.primary, fontWeight: 900 }}>
+                                                Posición {selectedDestPosData.codigo} Ocupada ({selectedDestStock.length} lote/s existentes)
+                                            </Typography>
+                                        </Box>
+                                        <Typography variant="caption" sx={{ color: colors.textDim, display: 'block', mb: 1 }}>
+                                            Mercadería que ya está en esta posición (el nuevo pallet se acoplará aquí):
                                         </Typography>
-                                        <Typography variant="caption" sx={{ color: '#fff', fontSize: '0.75rem', lineHeight: 1.3, display: 'block' }}>
-                                            {selectedDestPosData.contentsSummary}
-                                        </Typography>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, maxHeight: 180, overflowY: 'auto' }}>
+                                            {selectedDestStock.map((s: any, idx: number) => (
+                                                <Box key={idx} sx={{ p: 1, bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 1.5, border: `1px solid ${colors.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
+                                                    <Box>
+                                                        <Typography variant="caption" sx={{ fontWeight: 800, color: '#fff', display: 'block' }}>
+                                                            [{s.batch?.item?.codigoInterno}] {s.batch?.item?.descripcion}
+                                                        </Typography>
+                                                        <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.7rem' }}>
+                                                            Lote: <strong style={{ color: colors.primary }}>{s.batch?.lotNumber || '—'}</strong> • Prov: {s.batch?.supplier?.name || '—'}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Box sx={{ textAlign: 'right' }}>
+                                                        <Typography variant="body2" sx={{ fontWeight: 800, color: '#fff' }}>
+                                                            {Number(s.qtyPrincipal).toFixed(1)} <small style={{ color: colors.textDim }}>{s.batch?.item?.unidadPrincipal || 'kg'}</small>
+                                                        </Typography>
+                                                        {s.qtySecundaria && (
+                                                            <Typography variant="caption" sx={{ color: colors.success, fontWeight: 700, display: 'block' }}>
+                                                                {s.qtySecundaria} {s.batch?.item?.unidadSecundaria || 'un'}
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                </Box>
+                                            ))}
+                                        </Box>
                                     </Box>
                                 )
+                            ) : (
+                                <Box sx={{ p: 1.2, bgcolor: 'rgba(255,255,255,0.02)', border: `1px dashed ${colors.border}`, borderRadius: 2, textAlign: 'center' }}>
+                                    <Typography variant="caption" sx={{ color: colors.textDim }}>
+                                        Seleccioná una posición de destino para verificar su disponibilidad y contenido actual.
+                                    </Typography>
+                                </Box>
                             )}
                         </Box>
+                    </DialogContent>
 
-                        {/* Cantidades */}
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Typography variant="caption" sx={{ color: colors.textDim, fontWeight: 800, textTransform: 'uppercase', fontSize: '0.7rem' }}>
-                                    2. ¿Cuánto querés mover?
-                                </Typography>
-                                <Button
-                                    size="small"
-                                    startIcon={<FlashOnIcon sx={{ fontSize: 14 }} />}
-                                    onClick={handleMoveAll}
-                                    sx={{ color: colors.primary, fontWeight: 800, fontSize: '0.72rem', textTransform: 'none', p: 0.5 }}
-                                >
-                                    Mover Todo el Pallet
-                                </Button>
-                            </Box>
-
-                            <Box sx={{ display: 'flex', gap: 1.5 }}>
-                                <TextField
-                                    label={`Cajas (${moveEntry.batch?.item?.unidadSecundaria || 'Cajas'})`}
-                                    type="number"
-                                    size="small"
-                                    fullWidth
-                                    placeholder={moveEntry.qtySecundaria ? `Disp: ${moveEntry.qtySecundaria}` : '0'}
-                                    value={moveCajas}
-                                    onChange={(e) => handleCajasChange(e.target.value)}
-                                    InputProps={{ sx: { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }}
-                                />
-
-                                <TextField
-                                    label={`Kilos * (${moveEntry.batch?.item?.unidadPrincipal || 'kg'})`}
-                                    type="number"
-                                    size="small"
-                                    fullWidth
-                                    placeholder={`Disp: ${moveEntry.qtyPrincipal}`}
-                                    value={moveKilos}
-                                    onChange={(e) => handleKilosChange(e.target.value)}
-                                    InputProps={{ sx: { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }}
-                                />
-                            </Box>
-
-                            {/* Recomendación de equivalencia de kilos */}
-                            {(() => {
-                                const ratio = getKilosPorCajaRatio(moveEntry);
-                                const cajasNum = parseFloat(moveCajas.replace(',', '.'));
-                                if (ratio && !isNaN(cajasNum) && cajasNum > 0) {
-                                    return (
-                                        <Box sx={{ p: 1, bgcolor: 'rgba(59, 130, 246, 0.08)', border: `1px dashed rgba(59, 130, 246, 0.3)`, borderRadius: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <Typography variant="caption" sx={{ color: colors.info, fontSize: '0.74rem' }}>
-                                                💡 Estimado: <strong>~{ratio.toFixed(2)} kg/caja</strong>
-                                            </Typography>
-                                            {isManualKilosEdited && (
-                                                <Button 
-                                                    size="small" 
-                                                    onClick={() => handleCajasChange(moveCajas)} 
-                                                    sx={{ fontSize: '0.68rem', color: colors.info, textTransform: 'none', p: 0.2 }}
-                                                >
-                                                    Recalcular
-                                                </Button>
-                                            )}
-                                        </Box>
-                                    );
-                                }
-                                return null;
-                            })()}
+                    {/* Footer */}
+                    <DialogActions sx={{ p: { xs: 2, sm: 2.5 }, borderTop: `1px solid ${colors.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Chip 
+                                label={`A mover: ${totalKilosToMove.toFixed(1)} kg${totalCajasToMove > 0 ? ` · ${totalCajasToMove} bultos` : ''} (${selectedLinesToMove.length} lote/s)`}
+                                sx={{ bgcolor: 'rgba(59, 130, 246, 0.15)', color: colors.info, fontWeight: 800, fontSize: '0.75rem' }}
+                            />
                         </Box>
-
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 2, borderTop: `1px solid ${colors.border}`, pt: 1.5 }}>
-                            <Button variant="text" onClick={() => { setMoveModal(false); setMoveEntry(null); }} sx={{ color: colors.textDim }}>
+                        <Box sx={{ display: 'flex', gap: 1.5 }}>
+                            <Button 
+                                variant="text" 
+                                onClick={() => { setMoveModal(false); setMoveEntry(null); }} 
+                                sx={{ color: colors.textDim }}
+                            >
                                 Cancelar
                             </Button>
                             <Button
                                 variant="contained"
-                                disabled={isMovingStock || !moveDestPos || !moveKilos || parseFloat(moveKilos) <= 0}
+                                disabled={isMovingStock || !moveDestPos || selectedLinesToMove.length === 0 || totalKilosToMove <= 0}
                                 onClick={handleConfirmMove}
                                 startIcon={isMovingStock ? <CircularProgress size={16} color="inherit" /> : <SwapHorizIcon />}
-                                sx={{ bgcolor: colors.info, color: '#fff', fontWeight: 800, borderRadius: 2, px: 2.5, '&:hover': { bgcolor: '#2563eb' } }}
+                                sx={{ 
+                                    bgcolor: colors.info, 
+                                    color: '#fff', 
+                                    fontWeight: 800, 
+                                    borderRadius: 2, 
+                                    px: 2.5, 
+                                    '&:hover': { bgcolor: '#2563eb' } 
+                                }}
                             >
                                 {isMovingStock ? 'Moviendo...' : 'Confirmar Movimiento'}
                             </Button>
                         </Box>
-                    </Paper>
-                </Modal>
+                    </DialogActions>
+                </Dialog>
             )}
 
             {/* Toast feedback unificado */}
