@@ -233,7 +233,6 @@ export default function DashboardDepositoPage() {
 
     // Exclusión dinámica de materiales de los cómputos de métricas (ojito)
     const [excludedItemIds, setExcludedItemIds] = useState<Record<string, boolean>>({});
-    const [stockFilter, setStockFilter] = useState<'all' | 'with_stock' | 'zero_stock'>('all');
 
     const toggleItemInclusion = (e: React.MouseEvent, itemId: string) => {
         e.stopPropagation();
@@ -584,14 +583,6 @@ export default function DashboardDepositoPage() {
         }
     }, [rawStock]);
 
-    // Pre-normalizar índice de búsqueda de catálogo una sola vez en memoria
-    const indexedItems = useMemo(() => {
-        return items.map((item: any) => ({
-            item,
-            searchStr: normalizeText(`${item.codigoInterno} ${item.descripcion} ${item.category?.nombre || item.categoria || ''} ${item.supplier?.name || ''}`)
-        }));
-    }, [items]);
-
     // Pre-normalizar índice de búsqueda de stock una sola vez en memoria
     const indexedStock = useMemo(() => {
         return rawStock.map((entry: any) => ({
@@ -600,14 +591,14 @@ export default function DashboardDepositoPage() {
         }));
     }, [rawStock]);
 
-    // Agrupación y Métricas de Alto Rendimiento
-    const { groupedData, generalMetrics, withStockCount, zeroStockCount } = useMemo(() => {
+    // Agrupación y Métricas de Alto Rendimiento basadas exclusivamente en el stock del balance del depósito
+    const { groupedData, generalMetrics } = useMemo(() => {
         const general = { kilos: 0, units: 0, positions: new Set<string>() };
-        if (!depotId) return { groupedData: [], generalMetrics: null, withStockCount: 0, zeroStockCount: 0 };
+        if (!depotId) return { groupedData: [], generalMetrics: null };
         const groups: Record<string, any> = {};
         const searchWords = normalizeText(searchTerm).split(' ').filter(w => w.length > 0);
 
-        // 1. Procesar stock real existente (filtrado instantáneo por substring preindexado)
+        // Procesar exclusivamente el stock existente del depósito seleccionado
         indexedStock.forEach(({ entry, searchStr }) => {
             const itemId = entry.batch?.item?.id;
             if (!itemId) return;
@@ -655,60 +646,19 @@ export default function DashboardDepositoPage() {
             }
         });
 
-        // 2. Incorporar materiales del catálogo que no tienen stock (solo los que coincidan con la búsqueda)
-        indexedItems.forEach(({ item, searchStr }) => {
-            if (!item?.id || groups[item.id]) return;
+        const allGroups = Object.values(groups);
 
-            if (searchWords.length > 0) {
-                const matches = searchWords.every(word => searchStr.includes(word));
-                if (!matches) return;
-            }
-
-            groups[item.id] = {
-                item: item,
-                supplier: item.supplier,
-                entries: [],
-                oldestBatchDate: '9999-12-31',
-                oldestBatchLot: null,
-                oldestBatchPosition: null,
-                oldestBatchEntry: null,
-                metrics: { kilos: 0, units: 0 },
-                uniquePositions: new Set<string>()
-            };
-        });
-
-        let allGroups = Object.values(groups);
-        let withStock = 0;
-        let zeroStock = 0;
-
-        allGroups.forEach(g => {
-            if (g.metrics.kilos > 0) withStock++;
-            else zeroStock++;
-        });
-
-        // Aplicar filtro de stock (Todos / Con Stock / Sin Stock)
-        if (stockFilter === 'with_stock') {
-            allGroups = allGroups.filter(g => g.metrics.kilos > 0);
-        } else if (stockFilter === 'zero_stock') {
-            allGroups = allGroups.filter(g => g.metrics.kilos <= 0);
-        }
-
-        // Ordenar inteligentemente: primero los que tienen stock físico (por kilos DESC), luego los de stock 0
+        // Ordenar por kilos DESC y luego alfabéticamente
         allGroups.sort((a: any, b: any) => {
-            const hasStockA = a.metrics.kilos > 0 ? 1 : 0;
-            const hasStockB = b.metrics.kilos > 0 ? 1 : 0;
-            if (hasStockA !== hasStockB) return hasStockB - hasStockA;
-            if (hasStockA && b.metrics.kilos !== a.metrics.kilos) return b.metrics.kilos - a.metrics.kilos;
+            if (b.metrics.kilos !== a.metrics.kilos) return b.metrics.kilos - a.metrics.kilos;
             return (a.item.descripcion || '').localeCompare(b.item.descripcion || '');
         });
 
         return {
             groupedData: allGroups,
-            generalMetrics: { ...general, positionsCount: general.positions.size },
-            withStockCount: withStock,
-            zeroStockCount: zeroStock
+            generalMetrics: { ...general, positionsCount: general.positions.size }
         };
-    }, [indexedItems, indexedStock, searchTerm, excludedItemIds, depotId, stockFilter]);
+    }, [indexedStock, searchTerm, excludedItemIds, depotId]);
 
     // Paginación de alto rendimiento en cliente (24 tarjetas por página para 60 FPS garantizados)
     const pagination = useClientPagination(groupedData, viewMode === 'grid' ? 24 : 25);
@@ -716,7 +666,7 @@ export default function DashboardDepositoPage() {
     // Resetear a la primera página al cambiar cualquier filtro
     useEffect(() => {
         pagination.setPage(0);
-    }, [searchTerm, depotId, stockFilter]);
+    }, [searchTerm, depotId]);
 
     const detailGroup = useMemo(() => groupedData.find((g: any) => g.item.id === detailGroupId), [groupedData, detailGroupId]);
 
@@ -881,48 +831,17 @@ export default function DashboardDepositoPage() {
                         sx={{ flex: '1 1 280px', '& .MuiInputLabel-root': { color: colors.textDim }, '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }}
                     />
 
-                    {/* Filtros Rápidos de Stock */}
-                    <Box sx={{ display: 'flex', gap: 0.8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    {/* Conteo de Materiales con Stock */}
+                    <Box sx={{ display: 'flex', gap: 0.8, alignItems: 'center' }}>
                         <Chip
                             size="small"
-                            label={`Todos (${groupedData.length})`}
-                            onClick={() => setStockFilter('all')}
+                            label={`${groupedData.length} ${groupedData.length === 1 ? 'material' : 'materiales'} en stock`}
                             sx={{
                                 fontWeight: 800,
-                                fontSize: '0.72rem',
-                                cursor: 'pointer',
-                                bgcolor: stockFilter === 'all' ? colors.primary : 'rgba(255,255,255,0.06)',
-                                color: stockFilter === 'all' ? '#000' : colors.textDim,
-                                border: stockFilter === 'all' ? 'none' : `1px solid ${colors.border}`,
-                                '&:hover': { bgcolor: stockFilter === 'all' ? '#d97706' : 'rgba(255,255,255,0.12)' }
-                            }}
-                        />
-                        <Chip
-                            size="small"
-                            label={`Con Stock (${withStockCount})`}
-                            onClick={() => setStockFilter('with_stock')}
-                            sx={{
-                                fontWeight: 800,
-                                fontSize: '0.72rem',
-                                cursor: 'pointer',
-                                bgcolor: stockFilter === 'with_stock' ? colors.success : 'rgba(255,255,255,0.06)',
-                                color: stockFilter === 'with_stock' ? '#000' : colors.textDim,
-                                border: stockFilter === 'with_stock' ? 'none' : `1px solid ${colors.border}`,
-                                '&:hover': { bgcolor: stockFilter === 'with_stock' ? '#059669' : 'rgba(255,255,255,0.12)' }
-                            }}
-                        />
-                        <Chip
-                            size="small"
-                            label={`Sin Stock (${zeroStockCount})`}
-                            onClick={() => setStockFilter('zero_stock')}
-                            sx={{
-                                fontWeight: 800,
-                                fontSize: '0.72rem',
-                                cursor: 'pointer',
-                                bgcolor: stockFilter === 'zero_stock' ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.06)',
-                                color: stockFilter === 'zero_stock' ? '#f87171' : colors.textDim,
-                                border: stockFilter === 'zero_stock' ? '1px solid rgba(239,68,68,0.4)' : `1px solid ${colors.border}`,
-                                '&:hover': { bgcolor: 'rgba(239,68,68,0.3)' }
+                                fontSize: '0.75rem',
+                                bgcolor: 'rgba(255, 255, 255, 0.06)',
+                                color: colors.textDim,
+                                border: `1px solid ${colors.border}`
                             }}
                         />
                     </Box>
