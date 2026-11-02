@@ -619,7 +619,7 @@ export function ArticulosPage() {
                                 <th style={{ padding: '10px' }}>Peso Unit.</th>
                                 <th style={{ padding: '10px' }}>Modelo / Talle</th>
                                 <th style={{ padding: '10px' }}>Estado</th>
-                                <th style={{ padding: '10px', textAlign: 'right' }}>Acciones Rápidas (1 Clic)</th>
+                                <th style={{ padding: '10px', textAlign: 'right', width: '40px' }}></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -741,53 +741,8 @@ export function ArticulosPage() {
                                                 {art.estado || 'CONTROLAR'}
                                             </Badge>
                                         </td>
-                                        <td style={{ padding: '10px', textAlign: 'right', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
-                                            <div style={{ display: 'inline-flex', gap: '6px' }}>
-                                                {(art.etapa === 'TERMINADO' || art.etapa === 'COSTURA' || art.etapa === 'TEJIDO') && (
-                                                    <Btn
-                                                        small
-                                                        variant="secondary"
-                                                        onClick={() => handleOpenEdit(art, 'ESTRUCTURA')}
-                                                        title="Ver / Editar componentes"
-                                                    >
-                                                        🧬 BOM ({art.componentesCount || 0})
-                                                    </Btn>
-                                                )}
-
-                                                {(art.etapa === 'HILADO' || art.etapa === 'INSUMO') && (
-                                                    <Btn
-                                                        small
-                                                        variant="secondary"
-                                                        onClick={() => handleOpenEdit(art, 'EQUIVALENCIAS')}
-                                                        title="Ver / Vincular ítems de depósito y prioridades"
-                                                        style={{
-                                                            border: (art.itemsEquivalentesCount || 0) === 0 ? '1px solid #f97316' : undefined,
-                                                            color: (art.itemsEquivalentesCount || 0) === 0 ? '#f97316' : undefined,
-                                                        }}
-                                                    >
-                                                        🔗 Ítems Stock ({art.itemsEquivalentesCount || 0})
-                                                    </Btn>
-                                                )}
-
-                                                {(art.etapa === 'TEJIDO' || art.etapa === 'COSTURA' || art.etapa === 'TERMINADO') && (
-                                                    <Btn
-                                                        small
-                                                        variant="secondary"
-                                                        onClick={() => handleOpenEdit(art, 'MAQUINAS')}
-                                                        title="Ver / Asignar máquinas y tiempos"
-                                                    >
-                                                        ⚙️ Máquinas
-                                                    </Btn>
-                                                )}
-
-                                                <Btn
-                                                    small
-                                                    variant="secondary"
-                                                    onClick={() => handleOpenEdit(art, 'DATOS')}
-                                                >
-                                                    ✏️ Ver / Editar
-                                                </Btn>
-                                            </div>
+                                        <td style={{ padding: '10px', textAlign: 'right', color: '#6b7280', fontSize: '16px' }}>
+                                            ➔
                                         </td>
                                     </tr>
                                 ))
