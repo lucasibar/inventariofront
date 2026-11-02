@@ -378,13 +378,13 @@ export function ArticulosPage() {
     return (
         <div style={{ padding: isMobile ? '12px' : '24px', maxWidth: '1600px', margin: '0 auto' }}>
             {/* Encabezado */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px', marginBottom: '18px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px', marginBottom: '20px' }}>
                 <PageHeader
-                    title="📋 Catálogo Maestro y Edición Integral de Artículos"
-                    subtitle="Gestión unificada a 2 clics: Ficha Técnica, Estructuras BOM, Máquinas Permitidas, Tiempos de Ciclo y Match Depósito / SUSI"
+                    title="Catálogo Maestro de Artículos & Conexiones Operativas"
+                    subtitle="Auditoría integral: Ficha Técnica, Recetas BOM, Código SUSI de Tejeduría y Equivalencias con Depósito de Stock"
                 />
                 <Btn variant="primary" onClick={handleOpenNew}>
-                    ➕ Nuevo Artículo
+                    + Nuevo Artículo
                 </Btn>
             </div>
 
@@ -404,7 +404,7 @@ export function ArticulosPage() {
                     gap: '12px',
                 }}>
                     <div>
-                        <strong style={{ fontSize: '14px' }}>⚠️ Alerta de Ventas:</strong> Hay <strong>{pedidosSinEstructura.length}</strong> artículo(s) ingresados en pedidos de venta sin estructura técnica (BOM).
+                        <strong style={{ fontSize: '14px' }}>🚨 Alerta de Ventas:</strong> Hay <strong>{pedidosSinEstructura.length}</strong> artículo(s) ingresados en pedidos de venta sin estructura técnica (BOM).
                         <span style={{ fontSize: '12px', display: 'block', color: '#f87171', marginTop: '4px' }}>
                             Artículos requeridos: {pedidosSinEstructura.map(p => p.articuloCodigo).slice(0, 4).join(', ')}{pedidosSinEstructura.length > 4 ? ` (+${pedidosSinEstructura.length - 4} más)` : ''}
                         </span>
@@ -419,142 +419,407 @@ export function ArticulosPage() {
                 </div>
             )}
 
-            {/* CENTRO DE CONTROL DE ALERTAS OPERATIVAS (PÍLDORAS EN VIVO) */}
+            {/* PESTAÑAS PRINCIPALES POR ETAPA DEL FLUJO TEXTIL */}
+            <div style={{
+                display: 'flex',
+                gap: '8px',
+                flexWrap: 'wrap',
+                marginBottom: '14px',
+                background: 'rgba(17, 24, 39, 0.6)',
+                padding: '6px',
+                borderRadius: '12px',
+                border: '1px solid rgba(255,255,255,0.06)'
+            }}>
+                {[
+                    { key: '', label: 'TODOS', count: resumenAlertas?.totalArticulos, color: '#9ca3af', icon: '📋' },
+                    { key: 'TERMINADO', label: 'TERMINADOS', count: resumenAlertas?.totalTerminados, color: '#10b981', icon: '🧦' },
+                    { key: 'COSTURA', label: 'COSTURA (_C)', count: resumenAlertas?.totalCostura, color: '#3b82f6', icon: '✂️' },
+                    { key: 'TEJIDO', label: 'TEJIDO (CRUDO)', count: resumenAlertas?.totalTejido, color: '#8b5cf6', icon: '🧶' },
+                    { key: 'HILADO', label: 'HILADOS', count: resumenAlertas?.totalHilados, color: '#f59e0b', icon: '🧵' },
+                    { key: 'INSUMO', label: 'INSUMOS (AVÍOS)', count: resumenAlertas?.totalInsumos, color: '#ec4899', icon: '🏷️' },
+                ].map((tab) => {
+                    const isSelected = etapaFiltro === tab.key;
+                    return (
+                        <button
+                            key={tab.key}
+                            onClick={() => {
+                                setEtapaFiltro(tab.key);
+                                setAlertaFiltro('');
+                                setPage(1);
+                            }}
+                            style={{
+                                padding: '10px 18px',
+                                borderRadius: '10px',
+                                border: isSelected ? `2px solid ${tab.color}` : '1px solid rgba(255,255,255,0.08)',
+                                background: isSelected ? `${tab.color}25` : 'rgba(255,255,255,0.02)',
+                                color: isSelected ? '#ffffff' : '#9ca3af',
+                                fontWeight: isSelected ? 800 : 600,
+                                fontSize: '13px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                            }}
+                        >
+                            <span>{tab.icon}</span>
+                            <span>{tab.label}</span>
+                            {tab.count !== undefined && (
+                                <span style={{
+                                    background: isSelected ? tab.color : 'rgba(255,255,255,0.08)',
+                                    color: isSelected ? '#ffffff' : '#9ca3af',
+                                    padding: '2px 8px',
+                                    borderRadius: '12px',
+                                    fontSize: '11px',
+                                    fontWeight: 700,
+                                }}>
+                                    {tab.count.toLocaleString()}
+                                </span>
+                            )}
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* BARRA DE FILTROS RÁPIDOS DE AUDITORÍA CONTEXTUAL */}
             <div style={{
                 background: 'linear-gradient(135deg, rgba(31, 41, 55, 0.7), rgba(17, 24, 39, 0.9))',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
                 borderRadius: '12px',
-                padding: '14px 18px',
+                padding: '12px 18px',
                 marginBottom: '18px',
                 display: 'flex',
-                flexDirection: 'column',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
                 gap: '12px',
             }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '14px', fontWeight: 800, color: '#f3f4f6' }}>
-                            🚨 Centro de Control & Alertas de Configuración
-                        </span>
-                        <span style={{ fontSize: '12px', color: '#9ca3af' }}>
-                            {resumenAlertas?.conAlertas || 0} artículo(s) requieren atención técnica o comercial
-                        </span>
-                    </div>
-                    {alertaFiltro && (
-                        <button
-                            onClick={() => { setAlertaFiltro(''); setPage(1); }}
-                            style={{
-                                background: 'rgba(239, 68, 68, 0.15)',
-                                border: '1px solid #ef4444',
-                                color: '#f87171',
-                                fontSize: '11px',
-                                padding: '4px 12px',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                                fontWeight: 700,
-                            }}
-                        >
-                            ✕ Quitar filtro de alerta
-                        </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', marginRight: '6px' }}>
+                        Filtro Rápido:
+                    </span>
+
+                    {/* Filtros específicos para INSUMOS */}
+                    {etapaFiltro === 'INSUMO' && (
+                        <>
+                            <button
+                                onClick={() => { setAlertaFiltro(''); setPage(1); }}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '8px',
+                                    border: alertaFiltro === '' ? '2px solid #ec4899' : '1px solid rgba(255,255,255,0.1)',
+                                    background: alertaFiltro === '' ? '#ec489925' : 'transparent',
+                                    color: alertaFiltro === '' ? '#ffffff' : '#d1d5db',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                Todos ({resumenAlertas?.totalInsumos || 0})
+                            </button>
+                            <button
+                                onClick={() => { setAlertaFiltro(alertaFiltro === 'INSUMO_SIN_ITEM' ? '' : 'INSUMO_SIN_ITEM'); setPage(1); }}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '8px',
+                                    border: alertaFiltro === 'INSUMO_SIN_ITEM' ? '2px solid #ef4444' : '1px solid rgba(239,68,68,0.3)',
+                                    background: alertaFiltro === 'INSUMO_SIN_ITEM' ? '#ef444425' : 'rgba(239,68,68,0.08)',
+                                    color: '#f87171',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                }}
+                            >
+                                <span>🔴 Solo sin Ítem Stock</span>
+                                <Badge color="#ef4444">{resumenAlertas?.insumosSinItem || 0}</Badge>
+                            </button>
+                            <button
+                                onClick={() => { setAlertaFiltro(alertaFiltro === 'INSUMO_CON_ITEM' ? '' : 'INSUMO_CON_ITEM'); setPage(1); }}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '8px',
+                                    border: alertaFiltro === 'INSUMO_CON_ITEM' ? '2px solid #10b981' : '1px solid rgba(16,185,129,0.3)',
+                                    background: alertaFiltro === 'INSUMO_CON_ITEM' ? '#10b98125' : 'rgba(16,185,129,0.08)',
+                                    color: '#34d399',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                }}
+                            >
+                                <span>🟢 Con Ítem Asignado</span>
+                                <Badge color="#10b981">{resumenAlertas?.insumosConItem || 0}</Badge>
+                            </button>
+                        </>
+                    )}
+
+                    {/* Filtros específicos para HILADOS */}
+                    {etapaFiltro === 'HILADO' && (
+                        <>
+                            <button
+                                onClick={() => { setAlertaFiltro(''); setPage(1); }}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '8px',
+                                    border: alertaFiltro === '' ? '2px solid #f59e0b' : '1px solid rgba(255,255,255,0.1)',
+                                    background: alertaFiltro === '' ? '#f59e0b25' : 'transparent',
+                                    color: alertaFiltro === '' ? '#ffffff' : '#d1d5db',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                Todos ({resumenAlertas?.totalHilados || 0})
+                            </button>
+                            <button
+                                onClick={() => { setAlertaFiltro(alertaFiltro === 'HILADO_SIN_ITEM' ? '' : 'HILADO_SIN_ITEM'); setPage(1); }}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '8px',
+                                    border: alertaFiltro === 'HILADO_SIN_ITEM' ? '2px solid #ef4444' : '1px solid rgba(239,68,68,0.3)',
+                                    background: alertaFiltro === 'HILADO_SIN_ITEM' ? '#ef444425' : 'rgba(239,68,68,0.08)',
+                                    color: '#f87171',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                }}
+                            >
+                                <span>🔴 Solo sin Hilado Stock</span>
+                                <Badge color="#ef4444">{resumenAlertas?.hiladosSinItem || 0}</Badge>
+                            </button>
+                            <button
+                                onClick={() => { setAlertaFiltro(alertaFiltro === 'HILADO_CON_ITEM' ? '' : 'HILADO_CON_ITEM'); setPage(1); }}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '8px',
+                                    border: alertaFiltro === 'HILADO_CON_ITEM' ? '2px solid #10b981' : '1px solid rgba(16,185,129,0.3)',
+                                    background: alertaFiltro === 'HILADO_CON_ITEM' ? '#10b98125' : 'rgba(16,185,129,0.08)',
+                                    color: '#34d399',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                }}
+                            >
+                                <span>🟢 Con Hilado Asignado</span>
+                                <Badge color="#10b981">{resumenAlertas?.hiladosConItem || 0}</Badge>
+                            </button>
+                        </>
+                    )}
+
+                    {/* Filtros específicos para TEJIDO */}
+                    {etapaFiltro === 'TEJIDO' && (
+                        <>
+                            <button
+                                onClick={() => { setAlertaFiltro(''); setPage(1); }}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '8px',
+                                    border: alertaFiltro === '' ? '2px solid #8b5cf6' : '1px solid rgba(255,255,255,0.1)',
+                                    background: alertaFiltro === '' ? '#8b5cf625' : 'transparent',
+                                    color: alertaFiltro === '' ? '#ffffff' : '#d1d5db',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                Todos ({resumenAlertas?.totalTejido || 0})
+                            </button>
+                            <button
+                                onClick={() => { setAlertaFiltro(alertaFiltro === 'TEJIDO_SIN_SUSI' ? '' : 'TEJIDO_SIN_SUSI'); setPage(1); }}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '8px',
+                                    border: alertaFiltro === 'TEJIDO_SIN_SUSI' ? '2px solid #a855f7' : '1px solid rgba(168,85,247,0.3)',
+                                    background: alertaFiltro === 'TEJIDO_SIN_SUSI' ? '#a855f725' : 'rgba(168,85,247,0.08)',
+                                    color: '#c084fc',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                }}
+                            >
+                                <span>🟡 Solo sin Código SUSI</span>
+                                <Badge color="#a855f7">{resumenAlertas?.tejidoSinSusi || 0}</Badge>
+                            </button>
+                            <button
+                                onClick={() => { setAlertaFiltro(alertaFiltro === 'TEJIDO_CON_SUSI' ? '' : 'TEJIDO_CON_SUSI'); setPage(1); }}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '8px',
+                                    border: alertaFiltro === 'TEJIDO_CON_SUSI' ? '2px solid #10b981' : '1px solid rgba(16,185,129,0.3)',
+                                    background: alertaFiltro === 'TEJIDO_CON_SUSI' ? '#10b98125' : 'rgba(16,185,129,0.08)',
+                                    color: '#34d399',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                }}
+                            >
+                                <span>🟢 Con Código SUSI</span>
+                                <Badge color="#10b981">{resumenAlertas?.tejidoConSusi || 0}</Badge>
+                            </button>
+                        </>
+                    )}
+
+                    {/* Filtros específicos para TERMINADO o COSTURA */}
+                    {(etapaFiltro === 'TERMINADO' || etapaFiltro === 'COSTURA') && (
+                        <>
+                            <button
+                                onClick={() => { setAlertaFiltro(''); setPage(1); }}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '8px',
+                                    border: alertaFiltro === '' ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.1)',
+                                    background: alertaFiltro === '' ? '#10b98125' : 'transparent',
+                                    color: alertaFiltro === '' ? '#ffffff' : '#d1d5db',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                Todos ({etapaFiltro === 'TERMINADO' ? (resumenAlertas?.totalTerminados || 0) : (resumenAlertas?.totalCostura || 0)})
+                            </button>
+                            <button
+                                onClick={() => { setAlertaFiltro(alertaFiltro === 'SIN_ESTRUCTURA' ? '' : 'SIN_ESTRUCTURA'); setPage(1); }}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '8px',
+                                    border: alertaFiltro === 'SIN_ESTRUCTURA' ? '2px solid #ef4444' : '1px solid rgba(239,68,68,0.3)',
+                                    background: alertaFiltro === 'SIN_ESTRUCTURA' ? '#ef444425' : 'rgba(239,68,68,0.08)',
+                                    color: '#f87171',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                }}
+                            >
+                                <span>🔴 Sin Receta BOM</span>
+                                <Badge color="#ef4444">{resumenAlertas?.sinEstructura || 0}</Badge>
+                            </button>
+                            {etapaFiltro === 'TERMINADO' && (
+                                <button
+                                    onClick={() => { setAlertaFiltro(alertaFiltro === 'SIN_PESO' ? '' : 'SIN_PESO'); setPage(1); }}
+                                    style={{
+                                        padding: '6px 12px',
+                                        borderRadius: '8px',
+                                        border: alertaFiltro === 'SIN_PESO' ? '2px solid #eab308' : '1px solid rgba(234,179,8,0.3)',
+                                        background: alertaFiltro === 'SIN_PESO' ? '#eab30825' : 'rgba(234,179,8,0.08)',
+                                        color: '#facc15',
+                                        fontSize: '12px',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                    }}
+                                >
+                                    <span>⚖️ Sin Peso Unitario</span>
+                                    <Badge color="#eab308">{resumenAlertas?.sinPeso || 0}</Badge>
+                                </button>
+                            )}
+                        </>
+                    )}
+
+                    {/* Filtros generales si está en TODOS */}
+                    {etapaFiltro === '' && (
+                        <>
+                            <button
+                                onClick={() => { setAlertaFiltro(''); setPage(1); }}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '8px',
+                                    border: alertaFiltro === '' ? '2px solid #60a5fa' : '1px solid rgba(255,255,255,0.1)',
+                                    background: alertaFiltro === '' ? '#60a5fa25' : 'transparent',
+                                    color: alertaFiltro === '' ? '#ffffff' : '#d1d5db',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                Todos ({resumenAlertas?.totalArticulos || 0})
+                            </button>
+                            <button
+                                onClick={() => { setAlertaFiltro(alertaFiltro === 'CON_ALERTAS' ? '' : 'CON_ALERTAS'); setPage(1); }}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '8px',
+                                    border: alertaFiltro === 'CON_ALERTAS' ? '2px solid #f43f5e' : '1px solid rgba(244,63,94,0.3)',
+                                    background: alertaFiltro === 'CON_ALERTAS' ? '#f43f5e25' : 'rgba(244,63,94,0.08)',
+                                    color: '#fb7185',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                }}
+                            >
+                                <span>🚨 Con Alguna Alerta</span>
+                                <Badge color="#f43f5e">{resumenAlertas?.conAlertas || 0}</Badge>
+                            </button>
+                            <button
+                                onClick={() => { setAlertaFiltro(alertaFiltro === 'COMPLETO' ? '' : 'COMPLETO'); setPage(1); }}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '8px',
+                                    border: alertaFiltro === 'COMPLETO' ? '2px solid #10b981' : '1px solid rgba(16,185,129,0.3)',
+                                    background: alertaFiltro === 'COMPLETO' ? '#10b98125' : 'rgba(16,185,129,0.08)',
+                                    color: '#34d399',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                <span>🟢 100% Configurados</span>
+                            </button>
+                        </>
                     )}
                 </div>
 
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    {[
-                        { key: 'SIN_ESTRUCTURA', label: '🔴 Sin Receta (Terminados)', count: resumenAlertas?.sinEstructura || 0, color: '#ef4444' },
-                        { key: 'TEJIDO_SIN_SUSI', label: '🟣 Tejido sin SUSI', count: resumenAlertas?.tejidoSinSusi || 0, color: '#a855f7' },
-                        { key: 'MATERIAL_SIN_ITEM', label: '🟠 Insumo/Hilado sin Ítem', count: resumenAlertas?.materialSinItem || 0, color: '#f97316' },
-                        { key: 'SIN_PESO', label: '⚖️ Sin Peso Unitario', count: resumenAlertas?.sinPeso || 0, color: '#eab308' },
-                        { key: 'CON_ALERTAS', label: '⚠️ Todos con Alguna Alerta', count: resumenAlertas?.conAlertas || 0, color: '#f43f5e' },
-                        { key: 'COMPLETO', label: '🟢 100% Configurados', count: Math.max(0, (resumenAlertas?.totalArticulos || 0) - (resumenAlertas?.conAlertas || 0)), color: '#10b981' },
-                    ].map((pildora) => {
-                        const isSelected = alertaFiltro === pildora.key;
-                        return (
-                            <button
-                                key={pildora.key}
-                                onClick={() => {
-                                    setAlertaFiltro(isSelected ? '' : pildora.key);
-                                    setPage(1);
-                                }}
-                                style={{
-                                    padding: '8px 14px',
-                                    borderRadius: '8px',
-                                    border: isSelected ? `2px solid ${pildora.color}` : '1px solid rgba(255, 255, 255, 0.1)',
-                                    background: isSelected ? `${pildora.color}25` : 'rgba(255, 255, 255, 0.04)',
-                                    color: isSelected ? '#ffffff' : '#d1d5db',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    fontSize: '12px',
-                                    fontWeight: isSelected ? 800 : 600,
-                                    cursor: 'pointer',
-                                    transition: 'all 0.15s ease',
-                                }}
-                            >
-                                <span>{pildora.label}</span>
-                                <span style={{
-                                    background: isSelected ? pildora.color : 'rgba(255,255,255,0.1)',
-                                    color: isSelected ? '#ffffff' : pildora.color,
-                                    padding: '2px 7px',
-                                    borderRadius: '10px',
-                                    fontSize: '11px',
-                                    fontWeight: 800,
-                                }}>
-                                    {pildora.count}
-                                </span>
-                            </button>
-                        );
-                    })}
-                </div>
+                {alertaFiltro && (
+                    <button
+                        onClick={() => { setAlertaFiltro(''); setPage(1); }}
+                        style={{
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            color: '#9ca3af',
+                            fontSize: '11px',
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        ✕ Limpiar filtro
+                    </button>
+                )}
             </div>
 
-            {/* Pestañas de Etapas y Filtros Rápidos */}
+            {/* BARRA DE BÚSQUEDA Y FILTROS SECUNDARIOS */}
             <Card style={{ marginBottom: '18px', padding: '16px' }}>
-                {/* Selector rápido de Etapa / Proceso */}
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px', paddingBottom: '14px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                    {[
-                        { key: 'CON_ETAPA', label: '⭐ Catálogo Activo', color: '#818cf8' },
-                        { key: 'TERMINADO', label: '🟢 Terminados', color: '#10b981' },
-                        { key: 'COSTURA', label: '🔵 Costura (_C)', color: '#3b82f6' },
-                        { key: 'TEJIDO', label: '🟣 Tejidos (Crudo)', color: '#8b5cf6' },
-                        { key: 'HILADO', label: '🟠 Hilados (Materia Prima)', color: '#f59e0b' },
-                        { key: 'INSUMO', label: '🩷 Insumos (Avíos/Pack)', color: '#ec4899' },
-                        { key: 'INACTIVOS', label: '⚫ Desactivados', color: '#6b7280' },
-                        { key: '', label: 'Todos (Histórico TOTVS)', color: '#9ca3af' },
-                    ].map((tab) => {
-                        const isSelected = etapaFiltro === tab.key;
-                        return (
-                            <button
-                                key={tab.key}
-                                onClick={() => {
-                                    setEtapaFiltro(tab.key);
-                                    setPage(1);
-                                }}
-                                style={{
-                                    padding: '7px 14px',
-                                    borderRadius: '8px',
-                                    border: isSelected ? `2px solid ${tab.color}` : '1px solid rgba(255,255,255,0.1)',
-                                    background: isSelected ? `${tab.color}22` : 'rgba(255,255,255,0.03)',
-                                    color: isSelected ? tab.color : '#9ca3af',
-                                    fontWeight: isSelected ? 800 : 500,
-                                    fontSize: '12px',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.15s ease',
-                                }}
-                            >
-                                {tab.label}
-                            </button>
-                        );
-                    })}
-                </div>
-
-                {/* Filtros de búsqueda */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-end' }}>
-                    <div style={{ flex: '1 1 280px' }}>
+                    <div style={{ flex: '1 1 320px' }}>
                         <label style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px', display: 'block' }}>
                             Buscar por Código, Descripción, Modelo o Código SUSI
                         </label>
                         <Input
-                            placeholder="Ej: JV7402, A161BLANCO, SX4700..."
+                            placeholder="Ej: A161BLANCO, BL_15X35, 564, JZ0534..."
                             value={searchTerm}
                             onChange={(val) => {
                                 setSearchTerm(val);
@@ -584,9 +849,9 @@ export function ArticulosPage() {
                             options={[
                                 { value: '', label: 'Todos los estados' },
                                 { value: 'CHEQUEADO', label: '✅ CHEQUEADO' },
-                                { value: 'CONTROLAR', label: '🟡 CONTROLAR' },
-                                { value: 'MAL', label: '🔴 MAL' },
-                                { value: 'DESHABILITADO', label: '⚫ DESHABILITADO' },
+                                { value: 'CONTROLAR', label: '⚠️ CONTROLAR' },
+                                { value: 'MAL', label: '❌ MAL' },
+                                { value: 'DESHABILITADO', label: '🚫 DESHABILITADO' },
                             ]}
                             onChange={(val) => {
                                 setEstadoFiltro(val);
@@ -600,9 +865,14 @@ export function ArticulosPage() {
             {/* TABLA PRINCIPAL DE ARTÍCULOS */}
             <Card style={{ padding: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#f3f4f6' }}>
-                        Artículos encontrados: {data?.total?.toLocaleString() || 0}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 800, color: '#f3f4f6' }}>
+                            Artículos encontrados: {data?.total?.toLocaleString() || 0}
+                        </span>
+                        {alertaFiltro && (
+                            <Badge color="#ef4444">Filtro: {alertaFiltro}</Badge>
+                        )}
+                    </div>
                     <span style={{ fontSize: '12px', color: '#9ca3af' }}>
                         Página {page} de {data?.totalPages || 1}
                     </span>
@@ -612,14 +882,14 @@ export function ArticulosPage() {
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
                         <thead>
                             <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#9ca3af' }}>
-                                <th style={{ padding: '10px' }}>Código TOTVS</th>
-                                <th style={{ padding: '10px' }}>Descripción</th>
-                                <th style={{ padding: '10px' }}>Etapa</th>
-                                <th style={{ padding: '10px' }}>Conexión Operativa & Receta</th>
-                                <th style={{ padding: '10px' }}>Peso Unit.</th>
-                                <th style={{ padding: '10px' }}>Modelo / Talle</th>
-                                <th style={{ padding: '10px' }}>Estado</th>
-                                <th style={{ padding: '10px', textAlign: 'right', width: '40px' }}></th>
+                                <th style={{ padding: '12px 10px' }}>Código Artículo</th>
+                                <th style={{ padding: '12px 10px' }}>Descripción</th>
+                                <th style={{ padding: '12px 10px' }}>Etapa</th>
+                                <th style={{ padding: '12px 10px' }}>Conexión Operativa & Stock</th>
+                                <th style={{ padding: '12px 10px' }}>Peso Unit.</th>
+                                <th style={{ padding: '12px 10px' }}>Modelo / Talle</th>
+                                <th style={{ padding: '12px 10px' }}>Estado</th>
+                                <th style={{ padding: '12px 10px', textAlign: 'right' }}>Acción</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -642,51 +912,85 @@ export function ArticulosPage() {
                                         style={{
                                             borderBottom: '1px solid rgba(255,255,255,0.04)',
                                             transition: 'background-color 0.15s ease',
-                                            cursor: 'pointer',
                                             opacity: art.activo === false ? 0.6 : 1,
-                                        }}
-                                        onClick={() => {
-                                            if (art.etapa === 'HILADO' || art.etapa === 'INSUMO') {
-                                                handleOpenEdit(art, 'EQUIVALENCIAS');
-                                            } else if (art.etapa === 'TERMINADO' && (!art.componentesCount || art.componentesCount === 0)) {
-                                                handleOpenEdit(art, 'ESTRUCTURA');
-                                            } else {
-                                                handleOpenEdit(art, 'DATOS');
-                                            }
                                         }}
                                         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)')}
                                         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                                     >
-                                        <td style={{ padding: '10px', fontWeight: 700, color: '#60a5fa' }}>
+                                        <td style={{ padding: '12px 10px', fontWeight: 700, color: '#60a5fa' }}>
                                             <div>{art.codigo}</div>
                                             {art.activo === false && (
                                                 <Badge color="#6b7280">Inactivo</Badge>
                                             )}
                                         </td>
-                                        <td style={{ padding: '10px', color: '#f3f4f6', maxWidth: '320px' }}>
+                                        <td style={{ padding: '12px 10px', color: '#f3f4f6', maxWidth: '300px' }}>
                                             <div style={{ fontWeight: 600 }}>{art.descripcion}</div>
                                             <div style={{ fontSize: '11px', color: '#9ca3af' }}>
                                                 {[art.marca, art.familia].filter(Boolean).join(' • ')}
                                             </div>
                                         </td>
-                                        <td style={{ padding: '10px' }}>
+                                        <td style={{ padding: '12px 10px' }}>
                                             <Badge color={ETAPA_COLOR[art.etapa || ''] || '#6b7280'}>
                                                 {art.etapa || 'SIN ETAPA'}
                                             </Badge>
                                         </td>
                                         
-                                        {/* CONEXIÓN OPERATIVA Y RECETA */}
-                                        <td style={{ padding: '10px' }}>
+                                        {/* CONEXIÓN OPERATIVA Y ESTADO STOCK */}
+                                        <td style={{ padding: '12px 10px' }}>
                                             {art.etapa === 'TERMINADO' && (
                                                 <div>
                                                     {(art.componentesCount || 0) > 0 ? (
-                                                        <Badge color="#10b981">📦 BOM: {art.componentesCount} comp.</Badge>
+                                                        <Badge color="#10b981">📋 BOM: {art.componentesCount} comp.</Badge>
                                                     ) : (
-                                                        <Badge color="#ef4444">⚠️ Sin Estructura</Badge>
+                                                        <span
+                                                            onClick={() => handleOpenEdit(art, 'ESTRUCTURA')}
+                                                            style={{
+                                                                cursor: 'pointer',
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '4px',
+                                                                background: 'rgba(239, 68, 68, 0.15)',
+                                                                color: '#f87171',
+                                                                padding: '3px 8px',
+                                                                borderRadius: '6px',
+                                                                fontSize: '11px',
+                                                                fontWeight: 700,
+                                                                border: '1px solid rgba(239, 68, 68, 0.3)'
+                                                            }}
+                                                        >
+                                                            🚨 Falta Receta BOM ➜
+                                                        </span>
                                                     )}
                                                     {art.modelo && (
                                                         <span style={{ fontSize: '11px', color: '#93c5fd', display: 'block', marginTop: '3px' }}>
-                                                            🛒 Venta: {art.modelo}
+                                                            🏷️ Ventas: {art.modelo}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {art.etapa === 'COSTURA' && (
+                                                <div>
+                                                    {(art.componentesCount || 0) > 0 ? (
+                                                        <Badge color="#3b82f6">✂️ BOM: {art.componentesCount} comp.</Badge>
+                                                    ) : (
+                                                        <span
+                                                            onClick={() => handleOpenEdit(art, 'ESTRUCTURA')}
+                                                            style={{
+                                                                cursor: 'pointer',
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '4px',
+                                                                background: 'rgba(59, 130, 246, 0.15)',
+                                                                color: '#93c5fd',
+                                                                padding: '3px 8px',
+                                                                borderRadius: '6px',
+                                                                fontSize: '11px',
+                                                                fontWeight: 700,
+                                                                border: '1px solid rgba(59, 130, 246, 0.3)'
+                                                            }}
+                                                        >
+                                                            ✂️ Definir Componentes ➜
                                                         </span>
                                                     )}
                                                 </div>
@@ -695,9 +999,26 @@ export function ArticulosPage() {
                                             {art.etapa === 'TEJIDO' && (
                                                 <div>
                                                     {art.codigoSusi ? (
-                                                        <Badge color="#8b5cf6">🏷️ SUSI: {art.codigoSusi}</Badge>
+                                                        <Badge color="#8b5cf6">🧶 SUSI: {art.codigoSusi}</Badge>
                                                     ) : (
-                                                        <Badge color="#ef4444">⚠️ Falta Código SUSI</Badge>
+                                                        <span
+                                                            onClick={() => handleOpenEdit(art, 'DATOS')}
+                                                            style={{
+                                                                cursor: 'pointer',
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '4px',
+                                                                background: 'rgba(168, 85, 247, 0.15)',
+                                                                color: '#c084fc',
+                                                                padding: '3px 8px',
+                                                                borderRadius: '6px',
+                                                                fontSize: '11px',
+                                                                fontWeight: 700,
+                                                                border: '1px solid rgba(168, 85, 247, 0.3)'
+                                                            }}
+                                                        >
+                                                            🚨 Falta Código SUSI ➜
+                                                        </span>
                                                     )}
                                                 </div>
                                             )}
@@ -705,44 +1026,105 @@ export function ArticulosPage() {
                                             {(art.etapa === 'HILADO' || art.etapa === 'INSUMO') && (
                                                 <div>
                                                     {(art.itemsEquivalentesCount || 0) > 0 ? (
-                                                        <Badge color="#10b981">🔗 {art.itemsEquivalentesCount} ítem(s) en depósito</Badge>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                                            <span
+                                                                onClick={() => handleOpenEdit(art, 'EQUIVALENCIAS')}
+                                                                style={{
+                                                                    cursor: 'pointer',
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '4px',
+                                                                    background: 'rgba(16, 185, 129, 0.15)',
+                                                                    color: '#34d399',
+                                                                    padding: '3px 8px',
+                                                                    borderRadius: '6px',
+                                                                    fontSize: '11px',
+                                                                    fontWeight: 700,
+                                                                    border: '1px solid rgba(16, 185, 129, 0.3)'
+                                                                }}
+                                                            >
+                                                                📦 {art.itemPrincipalCodigo || 'Ítem Asignado'}
+                                                            </span>
+                                                            {(art.itemsEquivalentesCount || 0) > 1 && (
+                                                                <span style={{ fontSize: '10px', color: '#9ca3af', background: 'rgba(255,255,255,0.08)', padding: '2px 5px', borderRadius: '4px' }}>
+                                                                    +{(art.itemsEquivalentesCount || 0) - 1} alt
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     ) : (
-                                                        <Badge color="#f97316">⚠️ Sin Ítem en Depósito</Badge>
+                                                        <span
+                                                            onClick={() => handleOpenEdit(art, 'EQUIVALENCIAS')}
+                                                            style={{
+                                                                cursor: 'pointer',
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '4px',
+                                                                background: 'rgba(239, 68, 68, 0.15)',
+                                                                color: '#f87171',
+                                                                padding: '3px 8px',
+                                                                borderRadius: '6px',
+                                                                fontSize: '11px',
+                                                                fontWeight: 700,
+                                                                border: '1px solid rgba(239, 68, 68, 0.3)'
+                                                            }}
+                                                        >
+                                                            🚨 Falta Ítem Stock ➜
+                                                        </span>
                                                     )}
                                                 </div>
-                                            )}
-
-                                            {art.etapa === 'COSTURA' && (
-                                                <Badge color="#3b82f6">✂️ Semielaborado Costura</Badge>
                                             )}
                                         </td>
 
                                         {/* PESO UNITARIO */}
-                                        <td style={{ padding: '10px' }}>
-                                            {art.pesoU !== null && Number(art.pesoU) > 0 ? (
-                                                <span style={{ fontWeight: 600, color: '#f3f4f6' }}>
-                                                    {(Number(art.pesoU) * 1000).toFixed(1)} g
-                                                </span>
+                                        <td style={{ padding: '12px 10px' }}>
+                                            {art.pesoU !== null && art.pesoU !== undefined && Number(art.pesoU) > 0 ? (
+                                                <span style={{ color: '#d1d5db', fontWeight: 600 }}>{Number(art.pesoU).toFixed(2)} g</span>
                                             ) : art.etapa === 'TERMINADO' ? (
-                                                <Badge color="#eab308">⚠️ Falta Peso</Badge>
+                                                <Badge color="#eab308">Sin Peso</Badge>
                                             ) : (
-                                                <span style={{ color: '#6b7280' }}>—</span>
+                                                <span style={{ color: '#6b7280' }}>-</span>
                                             )}
                                         </td>
 
-                                        <td style={{ padding: '10px', color: '#9ca3af' }}>
-                                            {art.modelo ? <span style={{ color: '#e5e7eb', fontWeight: 600 }}>{art.modelo}</span> : '—'}
-                                            {art.talle ? ` (${art.talle})` : ''}
-                                            <span style={{ fontSize: '11px', color: '#6b7280', display: 'block' }}>{art.unidadMedida || 'UN'}</span>
+                                        {/* MODELO / TALLE */}
+                                        <td style={{ padding: '12px 10px', color: '#9ca3af' }}>
+                                            <div>{art.modelo || '-'}</div>
+                                            {art.talle && <Badge color="#4b5563">{art.talle}</Badge>}
                                         </td>
 
-                                        <td style={{ padding: '10px' }}>
-                                            <Badge color={ESTADO_COLOR[art.estado || 'CONTROLAR'] || '#6b7280'}>
+                                        {/* ESTADO */}
+                                        <td style={{ padding: '12px 10px' }}>
+                                            <Badge color={ESTADO_COLOR[art.estado || ''] || '#6b7280'}>
                                                 {art.estado || 'CONTROLAR'}
                                             </Badge>
                                         </td>
-                                        <td style={{ padding: '10px', textAlign: 'right', color: '#6b7280', fontSize: '16px' }}>
-                                            ➔
+
+                                        {/* ACCIONES */}
+                                        <td style={{ padding: '12px 10px', textAlign: 'right' }}>
+                                            <button
+                                                onClick={() => {
+                                                    if (art.etapa === 'HILADO' || art.etapa === 'INSUMO') {
+                                                        handleOpenEdit(art, 'EQUIVALENCIAS');
+                                                    } else if (art.etapa === 'TERMINADO' && (!art.componentesCount || art.componentesCount === 0)) {
+                                                        handleOpenEdit(art, 'ESTRUCTURA');
+                                                    } else {
+                                                        handleOpenEdit(art, 'DATOS');
+                                                    }
+                                                }}
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.06)',
+                                                    border: '1px solid rgba(255,255,255,0.12)',
+                                                    color: '#f3f4f6',
+                                                    padding: '5px 10px',
+                                                    borderRadius: '6px',
+                                                    fontSize: '11px',
+                                                    fontWeight: 600,
+                                                    cursor: 'pointer',
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
+                                                Editar ⚙️
+                                            </button>
                                         </td>
                                     </tr>
                                 ))
@@ -758,7 +1140,7 @@ export function ArticulosPage() {
                         disabled={page <= 1}
                         onClick={() => setPage((p) => Math.max(1, p - 1))}
                     >
-                        ← Anterior
+                        ◀ Anterior
                     </Btn>
                     <span style={{ color: '#9ca3af', alignSelf: 'center', fontSize: '13px' }}>
                         Página {page} de {data?.totalPages || 1}
@@ -768,7 +1150,7 @@ export function ArticulosPage() {
                         disabled={!data || page >= data.totalPages}
                         onClick={() => setPage((p) => p + 1)}
                     >
-                        Siguiente →
+                        Siguiente ▶
                     </Btn>
                 </div>
             </Card>

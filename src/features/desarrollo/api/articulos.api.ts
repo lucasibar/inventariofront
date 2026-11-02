@@ -19,6 +19,7 @@ export interface Articulo {
     activo: boolean;
     componentesCount?: number;
     itemsEquivalentesCount?: number;
+    itemPrincipalCodigo?: string;
     alertas?: string[];
     createdAt?: string;
     updatedAt?: string;
@@ -26,8 +27,19 @@ export interface Articulo {
 
 export interface AlertasResumen {
     totalArticulos: number;
+    totalTerminados?: number;
+    totalCostura?: number;
+    totalTejido?: number;
+    totalHilados?: number;
+    totalInsumos?: number;
     sinEstructura: number;
+    conEstructura?: number;
     tejidoSinSusi: number;
+    tejidoConSusi?: number;
+    hiladosSinItem?: number;
+    hiladosConItem?: number;
+    insumosSinItem?: number;
+    insumosConItem?: number;
     materialSinItem: number;
     sinPeso: number;
     conAlertas: number;

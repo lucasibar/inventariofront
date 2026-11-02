@@ -584,11 +584,37 @@ export default function DashboardDepositoPage() {
     // Agrupación y Métricas
     const { groupedData, generalMetrics } = useMemo(() => {
         const general = { kilos: 0, units: 0, positions: new Set<string>() };
-        if (!rawStock.length) return { groupedData: [], generalMetrics: null };
+        if (!depotId && !rawStock.length && !items.length) return { groupedData: [], generalMetrics: null };
         const groups: Record<string, any> = {};
         const searchWords = normalizeText(searchTerm).split(' ').filter(w => w.length > 0);
         
-        // Filtrado insensible a acentos y mayúsculas
+        // 1. Inicializar con todos los materiales del catálogo (para que aparezcan incluso si tienen stock 0)
+        items.forEach((item: any) => {
+            if (!item?.id) return;
+            const matchesSearch = searchWords.length === 0 || searchWords.every(word => {
+                const itemDesc = normalizeText(item.descripcion || '');
+                const itemCode = normalizeText(item.codigoInterno || '');
+                const supplierName = normalizeText(item.supplier?.name || '');
+                const categoryName = normalizeText(item.category?.nombre || item.categoria || '');
+                return itemDesc.includes(word) || itemCode.includes(word) || supplierName.includes(word) || categoryName.includes(word);
+            });
+
+            if (matchesSearch) {
+                groups[item.id] = {
+                    item: item,
+                    supplier: item.supplier,
+                    entries: [],
+                    oldestBatchDate: '9999-12-31',
+                    oldestBatchLot: null,
+                    oldestBatchPosition: null,
+                    oldestBatchEntry: null,
+                    metrics: { kilos: 0, units: 0 },
+                    uniquePositions: new Set<string>()
+                };
+            }
+        });
+
+        // 2. Filtrado insensible a acentos y mayúsculas de los movimientos de stock
         const filteredStock = rawStock.filter((entry: any) => {
             if (searchWords.length === 0) return true;
             return searchWords.every(word => {
@@ -618,22 +644,29 @@ export default function DashboardDepositoPage() {
                     item: entry.batch.item,
                     supplier: entry.batch.supplier,
                     entries: [],
-                    oldestBatchDate: entry.batch?.createdAt || entry.batch?.productionDate || '9999-12-31',
-                    oldestBatchLot: entry.batch?.lotNumber,
+                    oldestBatchDate: '9999-12-31',
+                    oldestBatchLot: null,
+                    oldestBatchPosition: null,
+                    oldestBatchEntry: null,
                     metrics: { kilos: 0, units: 0 },
                     uniquePositions: new Set<string>()
                 };
             }
             groups[itemId].entries.push(entry);
-            groups[itemId].metrics.kilos += Number(entry.qtyPrincipal || 0);
+            const entryKilos = Number(entry.qtyPrincipal || 0);
+            groups[itemId].metrics.kilos += entryKilos;
             if (entry.qtySecundaria) groups[itemId].metrics.units += Number(entry.qtySecundaria);
             if (entry.posicion?.codigo) groups[itemId].uniquePositions.add(entry.posicion.codigo);
             
-            // FIFO real por fecha de ingreso
-            const batchDate = entry.batch?.createdAt || entry.batch?.productionDate || '9999-12-31';
-            if (batchDate < groups[itemId].oldestBatchDate) {
-                groups[itemId].oldestBatchDate = batchDate;
-                groups[itemId].oldestBatchLot = entry.batch?.lotNumber;
+            // FIFO real por fecha de ingreso / producción
+            if (entryKilos > 0) {
+                const batchDate = entry.batch?.createdAt || entry.batch?.productionDate || '9999-12-31';
+                if (batchDate < groups[itemId].oldestBatchDate) {
+                    groups[itemId].oldestBatchDate = batchDate;
+                    groups[itemId].oldestBatchLot = entry.batch?.lotNumber;
+                    groups[itemId].oldestBatchPosition = entry.posicion?.codigo || 'S/P';
+                    groups[itemId].oldestBatchEntry = entry;
+                }
             }
         });
 
@@ -641,7 +674,7 @@ export default function DashboardDepositoPage() {
             groupedData: Object.values(groups).sort((a: any, b: any) => a.item.descripcion.localeCompare(b.item.descripcion)),
             generalMetrics: { ...general, positionsCount: general.positions.size }
         };
-    }, [rawStock, searchTerm, excludedItemIds]);
+    }, [items, rawStock, searchTerm, excludedItemIds, depotId]);
 
     const detailGroup = useMemo(() => groupedData.find((g: any) => g.item.id === detailGroupId), [groupedData, detailGroupId]);
 
