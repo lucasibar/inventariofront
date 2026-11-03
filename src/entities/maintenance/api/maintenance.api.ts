@@ -196,11 +196,18 @@ export const maintenanceApi = api.injectEndpoints({
             query: () => 'maintenance/types',
             providesTags: ['Maintenance'],
         }),
-        getMachines: builder.query({
-            query: ({ plantId, typeId }: any) => {
-                let url = `maintenance/machines?plantId=${plantId}`;
-                if (typeId) url += `&typeId=${typeId}`;
-                return url;
+                getMachines: builder.query({
+            query: (params: any = {}) => {
+                const { plantId, typeId } = params || {};
+                const q = new URLSearchParams();
+                if (plantId && plantId !== 'ALL' && plantId !== 'undefined') {
+                    q.append('plantId', plantId);
+                }
+                if (typeId && typeId !== 'ALL' && typeId !== 'undefined') {
+                    q.append('typeId', typeId);
+                }
+                const qs = q.toString();
+                return `maintenance/machines${qs ? '?' + qs : ''}`;
             },
             providesTags: ['Maintenance'],
         }),

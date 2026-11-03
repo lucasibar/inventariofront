@@ -227,5 +227,26 @@ if (wsC26) {
     });
 }
 
-fs.writeFileSync(OUTPUT_PATH, JSON.stringify(ordenes, null, 2), 'utf-8');
-console.log(`✅ ¡Éxito! Se generaron ${ordenes.length} Órdenes de Compra en: ${OUTPUT_PATH}`);
+    // Ordenar: primero los que van a venir (arriba, por fecha estimada de arribo ascendente),
+    // y los entregados abajo (por fecha descendente)
+    const isPorVenir = (estado) => estado === 'EN_CAMINO' || estado === 'PARCIAL' || estado === 'BORRADOR';
+    ordenes.sort((a, b) => {
+        const aActive = isPorVenir(a.estado);
+        const bActive = isPorVenir(b.estado);
+
+        if (aActive && !bActive) return -1;
+        if (!aActive && bActive) return 1;
+
+        if (aActive && bActive) {
+            const fechaA = a.fechaArriboEstimada || a.fechaEmision || '9999-99-99';
+            const fechaB = b.fechaArriboEstimada || b.fechaEmision || '9999-99-99';
+            return fechaA.localeCompare(fechaB);
+        } else {
+            const fechaA = a.fechaArriboEstimada || a.fechaEmision || '0000-00-00';
+            const fechaB = b.fechaArriboEstimada || b.fechaEmision || '0000-00-00';
+            return fechaB.localeCompare(fechaA);
+        }
+    });
+
+    fs.writeFileSync(OUTPUT_PATH, JSON.stringify(ordenes, null, 2), 'utf-8');
+    console.log(`✅ ¡Éxito! Se generaron ${ordenes.length} Órdenes de Compra ordenadas en: ${OUTPUT_PATH}`);

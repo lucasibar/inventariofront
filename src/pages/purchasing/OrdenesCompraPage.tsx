@@ -93,10 +93,12 @@ export default function OrdenesCompraPage() {
         };
     }, [ordenes]);
 
-    // Filtrar órdenes
+    // Filtrar y ordenar órdenes:
+    // 1. Los que van a venir arriba (EN_CAMINO, PARCIAL, BORRADOR) ordenados por fecha de arribo más próxima (ascendente).
+    // 2. Los ya entregados abajo (COMPLETADA, CANCELADA) ordenados por fecha más reciente (descendente).
     const filteredOrdenes = useMemo(() => {
         const q = search.trim().toLowerCase();
-        return ordenes.filter(oc => {
+        const filtered = ordenes.filter(oc => {
             if (statusFilter !== 'ALL' && oc.estado !== statusFilter) return false;
             if (!q) return true;
 
@@ -107,6 +109,31 @@ export default function OrdenesCompraPage() {
             );
 
             return matchesPartner || matchesNumero || matchesLineas;
+        });
+
+        const isPorVenir = (estado: string) => estado === 'EN_CAMINO' || estado === 'PARCIAL' || estado === 'BORRADOR';
+
+        return [...filtered].sort((a, b) => {
+            const aActive = isPorVenir(a.estado);
+            const bActive = isPorVenir(b.estado);
+
+            // Primero los que van a venir
+            if (aActive && !bActive) return -1;
+            if (!aActive && bActive) return 1;
+
+            if (aActive && bActive) {
+                // Los que van a venir: ordenar por fecha de arribo más próxima (ascendente)
+                const fechaA = a.fechaArriboEstimada || a.fechaEmision || '9999-99-99';
+                const fechaB = b.fechaArriboEstimada || b.fechaEmision || '9999-99-99';
+                const cmp = fechaA.localeCompare(fechaB);
+                return cmp !== 0 ? cmp : a.numero.localeCompare(b.numero);
+            } else {
+                // Los ya entregados / finalizados: ordenar por fecha más reciente primero (descendente)
+                const fechaA = a.fechaArriboEstimada || a.fechaEmision || '0000-00-00';
+                const fechaB = b.fechaArriboEstimada || b.fechaEmision || '0000-00-00';
+                const cmp = fechaB.localeCompare(fechaA);
+                return cmp !== 0 ? cmp : a.numero.localeCompare(b.numero);
+            }
         });
     }, [ordenes, statusFilter, search]);
 

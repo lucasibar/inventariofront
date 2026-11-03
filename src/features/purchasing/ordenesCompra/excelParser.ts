@@ -330,6 +330,27 @@ export async function parseExcelCompras(file: File): Promise<ParseExcelResult> {
         };
     }
 
+    // Ordenar: primero los que van a venir (arriba, por fecha estimada de arribo ascendente),
+    // y los entregados abajo (por fecha descendente)
+    const isPorVenir = (estado: string) => estado === 'EN_CAMINO' || estado === 'PARCIAL' || estado === 'BORRADOR';
+    ordenes.sort((a, b) => {
+        const aActive = isPorVenir(a.estado);
+        const bActive = isPorVenir(b.estado);
+
+        if (aActive && !bActive) return -1;
+        if (!aActive && bActive) return 1;
+
+        if (aActive && bActive) {
+            const fechaA = a.fechaArriboEstimada || a.fechaEmision || '9999-99-99';
+            const fechaB = b.fechaArriboEstimada || b.fechaEmision || '9999-99-99';
+            return fechaA.localeCompare(fechaB);
+        } else {
+            const fechaA = a.fechaArriboEstimada || a.fechaEmision || '0000-00-00';
+            const fechaB = b.fechaArriboEstimada || b.fechaEmision || '0000-00-00';
+            return fechaB.localeCompare(fechaA);
+        }
+    });
+
     const totalLineas = ordenes.reduce((acc, o) => acc + o.lineas.length, 0);
     const totalKg = ordenes.reduce((acc, o) => acc + o.lineas.reduce((lAcc, l) => lAcc + Number(l.cantidadPedidaKg || 0), 0), 0);
     const completadas = ordenes.filter(o => o.estado === 'COMPLETADA').length;

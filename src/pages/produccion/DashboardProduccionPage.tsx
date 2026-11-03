@@ -1,8 +1,10 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Btn, Badge, Spinner, useIsMobile } from '../../shared/ui';
 import { useGetUltimaPlanillaProduccionQuery } from '../../features/quality/ordenes-produccion/api/ordenesProduccion.api';
 import {
+    useGetPlantsQuery,
+    useGetMachineTypesQuery,
     useGetMachinesQuery,
     useGetMachineChangeReportQuery,
 } from '../../entities/maintenance/api/maintenance.api';
@@ -11,34 +13,67 @@ export default function DashboardProduccionPage() {
     const isMobile = useIsMobile();
     const navigate = useNavigate();
 
-    // 1. Datos de Planilla de Producción Diaria
+    // 1. Filtros Maestros de Planta y Tipo de Máquina
+    const [selectedPlantId, setSelectedPlantId] = useState<string>('ALL');
+    const [selectedTypeId, setSelectedTypeId] = useState<string>('ALL');
+
+    const { data: plants = [], isLoading: loadingPlants } = useGetPlantsQuery();
+    const { data: machineTypes = [] } = useGetMachineTypesQuery();
+
+    // 2. Datos de Máquinas en Vivo (con soporte multi-planta y multi-tipo)
+    const { data: allMachines = [], isLoading: loadingMachines } = useGetMachinesQuery({
+        plantId: selectedPlantId,
+        typeId: selectedTypeId,
+    });
+
+    // 3. Planilla de Producción Diaria (Última cargada)
     const { data: activePlanilla, isLoading: loadingPlanilla } = useGetUltimaPlanillaProduccionQuery();
 
-    // 2. Datos del Parque de Máquinas en Vivo
-    const { data: allMachines = [], isLoading: loadingMachines } = useGetMachinesQuery({});
-
-    // 3. Tiempos Históricos de Cambios cargados por Marina
+    // 4. Tiempos Históricos de Cambios cargados por Marina
     const { data: marinaReport } = useGetMachineChangeReportQuery({});
 
-    // Cálculos del Parque de Máquinas
+    // Cálculos y Métricas del Parque de Máquinas
     const parkMetrics = useMemo(() => {
-        const total = allMachines.length || 190;
+        const total = allMachines.length;
         const activas = allMachines.filter((m: any) => m.status === 'ACTIVA').length;
         const noActivas = allMachines.filter((m: any) => m.status !== 'ACTIVA');
         const disponibilidadPct = total > 0 ? Math.round((activas / total) * 1000) / 10 : 0;
 
-        // Conteo por estado
+        // Desglose de no activas
         const paradas = noActivas.filter((m: any) => m.status === 'PARADA').length;
         const revisar = noActivas.filter((m: any) => m.status === 'REVISAR').length;
         const muestras = noActivas.filter((m: any) => m.status === 'MUESTRAS').length;
         const repuestos = noActivas.filter((m: any) => m.status === 'REPUESTOS').length;
         const otros = noActivas.length - (paradas + revisar + muestras + repuestos);
 
+        // Agrupación por Planta
+        const porPlanta: Record<string, { name: string; total: number; activas: number }> = {};
+        allMachines.forEach((m: any) => {
+            const pId = m.plantId || m.plant?.id || 'sin-planta';
+            const pName = m.plant?.name || 'Planta Principal';
+            if (!porPlanta[pId]) {
+                porPlanta[pId] = { name: pName, total: 0, activas: 0 };
+            }
+            porPlanta[pId].total++;
+            if (m.status === 'ACTIVA') porPlanta[pId].activas++;
+        });
+
+        // Agrupación por Tipo de Máquina
+        const porTipo: Record<string, { name: string; total: number; activas: number }> = {};
+        allMachines.forEach((m: any) => {
+            const tId = m.typeId || m.type?.id || 'sin-tipo';
+            const tName = m.type?.name || m.machineTypeName || 'Máquina';
+            if (!porTipo[tId]) {
+                porTipo[tId] = { name: tName, total: 0, activas: 0 };
+            }
+            porTipo[tId].total++;
+            if (m.status === 'ACTIVA') porTipo[tId].activas++;
+        });
+
         return {
             total,
             activas,
             noActivasCount: noActivas.length,
-            noActivas,
             noActivasList: noActivas,
             disponibilidadPct,
             paradas,
@@ -46,6 +81,8 @@ export default function DashboardProduccionPage() {
             muestras,
             repuestos,
             otros,
+            porPlanta: Object.values(porPlanta),
+            porTipo: Object.values(porTipo),
         };
     }, [allMachines]);
 
@@ -57,7 +94,6 @@ export default function DashboardProduccionPage() {
                 totalPares: 0,
                 totalMedias: 0,
                 totalCambios: 0,
-                cambiosConHilado: 0,
                 kilosConsumo: 0,
                 kilosABajar: 0,
                 coberturaPickingPct: 100,
@@ -110,7 +146,6 @@ export default function DashboardProduccionPage() {
             maquinas: data.maquinas.size,
         }));
 
-        // Artículos y estructuras
         const articulosCount = activePlanilla.articulos?.length || 0;
         const articulosSinEstructura = activePlanilla.articulos?.filter((a: any) =>
             a.estadoRevision === 'INCOMPLETO' || a.estadoRevision === 'NO_ENCONTRADO' || a.isUnreviewed
@@ -130,7 +165,7 @@ export default function DashboardProduccionPage() {
         };
     }, [activePlanilla]);
 
-    // Métricas de Tiempos de Cambio (Marina)
+    // Tiempos de Cambio Marina
     const changeTimeMetrics = useMemo(() => {
         const total = planMetrics.totalCambios;
         const medianTotalMin = marinaReport?.totalMedianDurationMs
@@ -147,31 +182,31 @@ export default function DashboardProduccionPage() {
         };
     }, [planMetrics.totalCambios, marinaReport, parkMetrics.total]);
 
-    if (loadingPlanilla && loadingMachines) {
+    if ((loadingPlanilla && loadingMachines) || loadingPlants) {
         return (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh', color: '#9ca3af' }}>
-                <Spinner /> <span style={{ marginLeft: '12px' }}>Cargando Cockpit Ejecutivo de Producción...</span>
+                <Spinner /> <span style={{ marginLeft: '12px' }}>Cargando Cockpit de Producción...</span>
             </div>
         );
     }
 
     return (
         <div style={{
-            padding: isMobile ? '12px' : '18px 24px',
+            padding: isMobile ? '12px' : '16px 24px',
             maxWidth: '1700px',
             margin: '0 auto',
             minHeight: isMobile ? 'auto' : 'calc(100vh - 70px)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: '16px',
+            gap: '14px',
         }}>
-            {/* 1. BARRA SUPERIOR: PANORÁMICA & ACCESOS RÁPIDAS A 1 CLIC */}
+            {/* 1. BARRA SUPERIOR: ENCABEZADO + SELECTORES DE PLANTA Y TIPO */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <h1 style={{ margin: 0, fontSize: isMobile ? '18px' : '22px', fontWeight: 900, color: '#f3f4f6', letterSpacing: '-0.5px' }}>
-                            📊 Cockpit Ejecutivo de Producción
+                            📊 Cockpit General de Producción
                         </h1>
                         <span style={{
                             fontSize: '11px',
@@ -189,46 +224,100 @@ export default function DashboardProduccionPage() {
                         </span>
                     </div>
                     <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>
-                        Visión panorámica del sector: salud operativa del parque, metas de tejeduría, abastecimiento y cambios programados
+                        Supervisión integral de máquinas, plantas, metas de tejido y cambios programados
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                {/* FILTROS MAESTROS DE PLANTA Y TIPO DE MÁQUINA */}
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    {/* Selector de Planta */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: 700 }}>Planta:</span>
+                        <select
+                            value={selectedPlantId}
+                            onChange={(e) => setSelectedPlantId(e.target.value)}
+                            style={{
+                                padding: '6px 12px',
+                                background: 'var(--bg-secondary, #1a1d2e)',
+                                border: '1px solid var(--border-color, #2a2d3e)',
+                                borderRadius: '8px',
+                                color: '#f3f4f6',
+                                fontSize: '12px',
+                                outline: 'none',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            <option value="ALL">🏭 Todas las Plantas ({plants.length})</option>
+                            {plants.map((p: any) => (
+                                <option key={p.id} value={p.id}>
+                                    {p.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Selector de Tipo de Máquina */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: 700 }}>Tipo:</span>
+                        <select
+                            value={selectedTypeId}
+                            onChange={(e) => setSelectedTypeId(e.target.value)}
+                            style={{
+                                padding: '6px 12px',
+                                background: 'var(--bg-secondary, #1a1d2e)',
+                                border: '1px solid var(--border-color, #2a2d3e)',
+                                borderRadius: '8px',
+                                color: '#f3f4f6',
+                                fontSize: '12px',
+                                outline: 'none',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            <option value="ALL">⚙️ Todos los Tipos</option>
+                            {machineTypes.map((t: any) => (
+                                <option key={t.id} value={t.id}>
+                                    {t.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Botones de Acción Inmediata */}
                     <Btn
                         onClick={() => navigate('/produccion/planificacion')}
                         style={{
                             background: '#6366f1',
                             color: '#ffffff',
                             fontSize: '12px',
-                            padding: '8px 14px',
+                            padding: '7px 12px',
                             fontWeight: 700,
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '6px',
+                            gap: '5px',
                         }}
                     >
-                        <span>📥</span> Carga de Producción del Día
+                        <span>📥</span> Carga del Día
                     </Btn>
 
                     <Btn
                         variant="secondary"
                         onClick={() => navigate('/produccion/programacion-gantt')}
-                        style={{ fontSize: '12px', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                        style={{ fontSize: '12px', padding: '7px 12px', display: 'flex', alignItems: 'center', gap: '5px' }}
                     >
-                        <span>📅</span> Gantt Máquinas
+                        <span>📅</span> Gantt
                     </Btn>
 
                     <Btn
                         variant="secondary"
                         onClick={() => navigate('/produccion/cambios')}
-                        style={{ fontSize: '12px', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                        style={{ fontSize: '12px', padding: '7px 12px', display: 'flex', alignItems: 'center', gap: '5px' }}
                     >
                         <span>📝</span> Registrar Cambio
                     </Btn>
                 </div>
             </div>
 
-            {/* 2. FRANJA DE 5 KPIS ESTRATÉGICOS DEL SECTOR (TODO A LA VISTA) */}
+            {/* 2. FRANJA DE 5 KPIS ESTRATÉGICOS (TODO EN 1 VISTA) */}
             <div style={{
                 display: 'grid',
                 gridTemplateColumns: isMobile ? '1fr' : 'repeat(5, 1fr)',
@@ -238,7 +327,7 @@ export default function DashboardProduccionPage() {
                 <Card style={{ padding: '14px 16px', background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-color, #2a2d3e)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 800, textTransform: 'uppercase' }}>
-                            🏭 OEE Parque Tejeduría
+                            🏭 OEE Operativo
                         </span>
                         <span style={{ fontSize: '12px', fontWeight: 800, color: parkMetrics.disponibilidadPct >= 90 ? '#10b981' : '#f59e0b' }}>
                             {parkMetrics.disponibilidadPct}%
@@ -343,22 +432,22 @@ export default function DashboardProduccionPage() {
                 </Card>
             </div>
 
-            {/* 3. VISTA DEL BOSQUE: 3 PANELES VISUALES INTEGRADOS (SIN SCROLL FORZADO) */}
+            {/* 3. VISTA DEL BOSQUE: 3 PANELES VISUALES INTEGRADOS */}
             <div style={{
                 display: 'grid',
                 gridTemplateColumns: isMobile ? '1fr' : '1.1fr 1fr 0.9fr',
                 gap: '14px',
                 flex: 1,
             }}>
-                {/* PANEL 1: ESTADO DEL PARQUE DE MÁQUINAS (ENFERMERÍA & SALUD) */}
+                {/* PANEL 1: ESTADO DEL PARQUE DE MÁQUINAS (ENFERMERÍA Y PLANTAS) */}
                 <Card style={{ padding: '16px 18px', background: 'var(--bg-secondary, #1a1d2e)', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                         <div>
                             <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#f3f4f6' }}>
                                 🏭 Salud del Parque ({parkMetrics.total} Máquinas)
                             </h3>
                             <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
-                                Distribución de estados en vivo y máquinas detenidas
+                                Estados en vivo por planta y máquinas detenidas
                             </div>
                         </div>
                         <Btn variant="secondary" onClick={() => navigate('/produccion/cambios')} style={{ fontSize: '11px', padding: '4px 8px' }}>
@@ -366,8 +455,35 @@ export default function DashboardProduccionPage() {
                         </Btn>
                     </div>
 
+                    {/* Desglose de disponibilidad por Planta (si hay más de 1 o seleccionadas todas) */}
+                    {parkMetrics.porPlanta.length > 0 && (
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                            {parkMetrics.porPlanta.map((pl, idx) => {
+                                const pct = pl.total > 0 ? Math.round((pl.activas / pl.total) * 100) : 0;
+                                return (
+                                    <div
+                                        key={idx}
+                                        style={{
+                                            padding: '4px 8px',
+                                            borderRadius: '6px',
+                                            background: 'rgba(255,255,255,0.04)',
+                                            fontSize: '11px',
+                                            display: 'flex',
+                                            gap: '6px',
+                                            alignItems: 'center',
+                                        }}
+                                    >
+                                        <strong style={{ color: '#f3f4f6' }}>{pl.name}:</strong>
+                                        <span style={{ color: pct >= 90 ? '#10b981' : '#f59e0b', fontWeight: 700 }}>{pct}%</span>
+                                        <span style={{ color: '#9ca3af' }}>({pl.activas}/{pl.total})</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
                     {/* Barra Apilada Visual */}
-                    <div style={{ height: '14px', width: '100%', display: 'flex', borderRadius: '7px', overflow: 'hidden', marginBottom: '14px' }}>
+                    <div style={{ height: '12px', width: '100%', display: 'flex', borderRadius: '6px', overflow: 'hidden', marginBottom: '10px' }}>
                         <div style={{ width: `${parkMetrics.disponibilidadPct}%`, background: '#10b981' }} title={`Activas: ${parkMetrics.activas}`} />
                         <div style={{ width: `${parkMetrics.total > 0 ? (parkMetrics.paradas / parkMetrics.total) * 100 : 0}%`, background: '#ef4444' }} title={`Paradas: ${parkMetrics.paradas}`} />
                         <div style={{ width: `${parkMetrics.total > 0 ? (parkMetrics.revisar / parkMetrics.total) * 100 : 0}%`, background: '#f59e0b' }} title={`En revisión: ${parkMetrics.revisar}`} />
@@ -376,18 +492,18 @@ export default function DashboardProduccionPage() {
                     </div>
 
                     {/* Leyenda de la Barra */}
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '11px', color: '#9ca3af', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', fontSize: '11px', color: '#9ca3af', marginBottom: '10px' }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#10b981' }} /> Activas ({parkMetrics.activas})</span>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#ef4444' }} /> Paradas ({parkMetrics.paradas})</span>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#f59e0b' }} /> Revisar ({parkMetrics.revisar})</span>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#3b82f6' }} /> Muestras ({parkMetrics.muestras})</span>
                     </div>
 
-                    {/* Lista Rápida de Máquinas No Activas */}
-                    <div style={{ flex: 1, overflowY: 'auto', maxHeight: '200px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {/* Lista Rápida de Máquinas No Activas con Planta y Tipo */}
+                    <div style={{ flex: 1, overflowY: 'auto', maxHeight: '180px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
                         {parkMetrics.noActivasList.length === 0 ? (
                             <div style={{ padding: '20px', textAlign: 'center', color: '#10b981', fontSize: '12px' }}>
-                                🎉 ¡Excelente! Todo el parque de tejeduría está operando en estado ACTIVA.
+                                🎉 ¡Excelente! Todo el parque seleccionado está operando en estado ACTIVA.
                             </div>
                         ) : (
                             parkMetrics.noActivasList.map((m: any) => (
@@ -406,10 +522,16 @@ export default function DashboardProduccionPage() {
                                 >
                                     <div>
                                         <strong style={{ color: '#f3f4f6' }}>M{m.number}</strong>
-                                        <span style={{ color: '#9ca3af', marginLeft: '6px', fontSize: '11px' }}>{m.plant?.name || 'Tejeduría'}</span>
+                                        <span style={{ color: '#9ca3af', marginLeft: '6px', fontSize: '11px' }}>
+                                            {m.plant?.name || 'Planta'} • {m.type?.name || m.machineTypeName || 'Máq.'}
+                                        </span>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <span style={{ fontSize: '10px', color: '#9ca3af' }}>{m.lastChangeBy ? `Por: ${m.lastChangeBy}` : ''}</span>
+                                        {m.lastObservation && (
+                                            <span style={{ fontSize: '10px', color: '#9ca3af', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={m.lastObservation}>
+                                                {m.lastObservation}
+                                            </span>
+                                        )}
                                         <Badge color={m.status === 'PARADA' ? '#ef4444' : '#f59e0b'}>{m.status}</Badge>
                                     </div>
                                 </div>
@@ -423,10 +545,10 @@ export default function DashboardProduccionPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                         <div>
                             <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#f3f4f6' }}>
-                                ⚖️ Distribución de Carga por Áreas
+                                ⚖️ Carga de Tejido por Áreas
                             </h3>
                             <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
-                                Balance de docenas asignadas y densidad de máquinas
+                                Distribución de docenas programadas y máquinas asignadas
                             </div>
                         </div>
                         <span style={{ fontSize: '12px', color: '#38bdf8', fontWeight: 700 }}>
