@@ -307,13 +307,23 @@ export default function DashboardDepositoPage() {
     };
 
     const handleLineToggle = (entryId: string) => {
-        setMoveItemsState(prev => ({
-            ...prev,
-            [entryId]: {
-                ...prev[entryId],
-                selected: !prev[entryId]?.selected
-            }
-        }));
+        setMoveItemsState(prev => {
+            const current = prev[entryId];
+            const willBeSelected = !current?.selected;
+            const originItem = originStockItems.find((s: any) => s.id === entryId);
+            const defaultKilos = originItem ? String(originItem.qtyPrincipal || 0) : '0';
+            const defaultCajas = originItem && originItem.qtySecundaria ? String(originItem.qtySecundaria) : '';
+
+            return {
+                ...prev,
+                [entryId]: {
+                    ...current,
+                    selected: willBeSelected,
+                    kilos: willBeSelected && (!current?.kilos || current.kilos === '0') ? defaultKilos : (current?.kilos || defaultKilos),
+                    cajas: willBeSelected && !current?.cajas ? defaultCajas : (current?.cajas || defaultCajas),
+                }
+            };
+        });
     };
 
     const handleSelectAllLines = (selectAll: boolean = true) => {
@@ -343,8 +353,9 @@ export default function DashboardDepositoPage() {
 
         const initialMap: Record<string, { selected: boolean; kilos: string; cajas: string; isManualKilos: boolean }> = {};
         itemsToInit.forEach((item: any) => {
+            const isTarget = item.id === entry.id;
             initialMap[item.id] = {
-                selected: true,
+                selected: isTarget,
                 kilos: String(item.qtyPrincipal || 0),
                 cajas: item.qtySecundaria ? String(item.qtySecundaria) : '',
                 isManualKilos: false
@@ -614,6 +625,28 @@ export default function DashboardDepositoPage() {
     const totalCajasToMove = useMemo(() => {
         return selectedLinesToMove.reduce((acc, curr) => acc + (curr.cajas || 0), 0);
     }, [selectedLinesToMove]);
+
+    const allLinesSelected = useMemo(() => {
+        return originStockItems.length > 0 && originStockItems.every((item: any) => !!moveItemsState[item.id]?.selected);
+    }, [originStockItems, moveItemsState]);
+
+    const handleToggleAllLinesOrTarget = () => {
+        if (allLinesSelected) {
+            const next: Record<string, any> = {};
+            originStockItems.forEach((item: any) => {
+                const isTarget = item.id === moveEntry?.id;
+                next[item.id] = {
+                    selected: isTarget,
+                    kilos: String(item.qtyPrincipal || 0),
+                    cajas: item.qtySecundaria ? String(item.qtySecundaria) : '',
+                    isManualKilos: false
+                };
+            });
+            setMoveItemsState(next);
+        } else {
+            handleSelectAllLines(true);
+        }
+    };
 
     const handleConfirmMove = async () => {
         if (!moveEntry || !moveDestDepot || !moveDestPos) {
@@ -1694,26 +1727,28 @@ export default function DashboardDepositoPage() {
                                         sx={{ height: 20, fontSize: '0.68rem', fontWeight: 800, bgcolor: 'rgba(59, 130, 246, 0.15)', color: colors.info }} 
                                     />
                                 </Box>
-                                <Button
-                                    size="small"
-                                    variant="outlined"
-                                    startIcon={<FlashOnIcon sx={{ fontSize: 14 }} />}
-                                    onClick={() => handleSelectAllLines(true)}
-                                    sx={{ 
-                                        color: colors.primary, 
-                                        borderColor: colors.primary, 
-                                        fontWeight: 800, 
-                                        fontSize: '0.72rem', 
-                                        textTransform: 'none',
-                                        py: 0.3,
-                                        px: 1.2,
-                                        borderRadius: 2,
-                                        bgcolor: 'rgba(245, 158, 11, 0.08)',
-                                        '&:hover': { bgcolor: 'rgba(245, 158, 11, 0.2)' }
-                                    }}
-                                >
-                                    Mover Todo el Pallet
-                                </Button>
+                                {originStockItems.length > 1 && (
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        startIcon={<FlashOnIcon sx={{ fontSize: 14 }} />}
+                                        onClick={handleToggleAllLinesOrTarget}
+                                        sx={{ 
+                                            color: allLinesSelected ? colors.info : colors.primary, 
+                                            borderColor: allLinesSelected ? colors.info : colors.primary, 
+                                            fontWeight: 800, 
+                                            fontSize: '0.72rem', 
+                                            textTransform: 'none',
+                                            py: 0.3,
+                                            px: 1.2,
+                                            borderRadius: 2,
+                                            bgcolor: allLinesSelected ? 'rgba(59, 130, 246, 0.08)' : 'rgba(245, 158, 11, 0.08)',
+                                            '&:hover': { bgcolor: allLinesSelected ? 'rgba(59, 130, 246, 0.2)' : 'rgba(245, 158, 11, 0.2)' }
+                                        }}
+                                    >
+                                        {allLinesSelected ? 'Solo ítem seleccionado' : 'Mover Todo el Pallet'}
+                                    </Button>
+                                )}
                             </Box>
 
                             <Typography variant="caption" sx={{ color: colors.textDim, display: 'block', mb: 1.5, fontSize: '0.72rem' }}>
