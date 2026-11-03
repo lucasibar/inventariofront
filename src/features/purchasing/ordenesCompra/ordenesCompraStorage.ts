@@ -1,139 +1,30 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { OrdenCompra } from './types';
+import excelSeedRaw from './ordenesExcelSeed.json';
 export type { OrdenCompra, OrdenCompraLinea, EstadoOrdenCompra, EstadoLineaOrdenCompra } from './types';
 
 const STORAGE_KEY = 'erp_ordenes_compra';
 const EVENT_KEY = 'erp_ordenes_compra_changed';
 
-// Función para calcular fecha relativa (ej. hoy + N días)
-const getDateOffset = (days: number): string => {
-    const d = new Date();
-    d.setDate(d.getDate() + days);
-    return d.toISOString().split('T')[0];
-};
-
-const SEED_DATA: OrdenCompra[] = [
-    {
-        id: 'oc-seed-001',
-        numero: 'OC-2026-001',
-        partnerId: 'partner-tn-platex',
-        partnerNombre: 'TN Platex S.A.',
-        fechaEmision: getDateOffset(-5),
-        fechaArriboEstimada: getDateOffset(7),
-        estado: 'EN_CAMINO',
-        observaciones: 'Lote hilado blanco para programa de invierno. Despacho confirmado por transporte expreso.',
-        creadoEn: new Date(Date.now() - 5 * 86400000).toISOString(),
-        actualizadoEn: new Date().toISOString(),
-        lineas: [
-            {
-                id: 'linea-001',
-                itemId: 'item-alg-24-1-bco',
-                codigoInterno: 'ALG-24-1-BCO',
-                descripcion: 'Algodón 24/1 Peinado Blanco Crudo',
-                categoriaNombre: 'Algodón 24/1 Blanco',
-                cantidadPedidaKg: 2500,
-                cantidadRecibidaKg: 0,
-                fechaArriboEstimada: getDateOffset(7),
-                estado: 'PENDIENTE',
-                precioUnitarioUsd: 4.85,
-                remitosAsociados: [],
-                recepcionesManuales: []
-            },
-            {
-                id: 'linea-002',
-                itemId: 'item-alg-24-1-neg',
-                codigoInterno: 'ALG-24-1-NEG',
-                descripcion: 'Algodón 24/1 Teñido Negro Intenso',
-                categoriaNombre: 'Algodón 24/1 Negro',
-                cantidadPedidaKg: 1200,
-                cantidadRecibidaKg: 0,
-                fechaArriboEstimada: getDateOffset(9),
-                estado: 'PENDIENTE',
-                precioUnitarioUsd: 5.20,
-                remitosAsociados: [],
-                recepcionesManuales: []
-            }
-        ]
-    },
-    {
-        id: 'oc-seed-002',
-        numero: 'OC-2026-002',
-        partnerId: 'partner-enod',
-        partnerNombre: 'ENOD Hilandería',
-        fechaEmision: getDateOffset(-12),
-        fechaArriboEstimada: getDateOffset(3),
-        estado: 'PARCIAL',
-        observaciones: 'Entrega en 2 tramos. Primer tramo ingresó con remito R-0004-0019283.',
-        creadoEn: new Date(Date.now() - 12 * 86400000).toISOString(),
-        actualizadoEn: new Date().toISOString(),
-        lineas: [
-            {
-                id: 'linea-003',
-                itemId: 'item-spun-30-1',
-                codigoInterno: 'SPUN-30-1-GRIS',
-                descripcion: 'Poliester Spun 30/1 Gris Melange',
-                categoriaNombre: 'Spun 30/1 Melange',
-                cantidadPedidaKg: 3000,
-                cantidadRecibidaKg: 1500,
-                fechaArriboEstimada: getDateOffset(3),
-                estado: 'PARCIAL',
-                precioUnitarioUsd: 3.40,
-                remitosAsociados: [
-                    {
-                        id: 'rec-rem-001',
-                        remitoId: 'rem-ent-982',
-                        remitoNumero: 'R-0004-0019283',
-                        fecha: getDateOffset(-2),
-                        cantidadKg: 1500,
-                        notas: 'Primer tramo recibido conforme en planta central.',
-                        creadoEn: new Date(Date.now() - 2 * 86400000).toISOString()
-                    }
-                ],
-                recepcionesManuales: []
-            }
-        ]
-    },
-    {
-        id: 'oc-seed-003',
-        numero: 'OC-2026-003',
-        partnerId: 'partner-textil-norte',
-        partnerNombre: 'Textil Norte Hilados',
-        fechaEmision: getDateOffset(-2),
-        fechaArriboEstimada: getDateOffset(18),
-        estado: 'EN_CAMINO',
-        observaciones: 'Pedido programado para cubrir producción del mes próximo.',
-        creadoEn: new Date(Date.now() - 2 * 86400000).toISOString(),
-        actualizadoEn: new Date().toISOString(),
-        lineas: [
-            {
-                id: 'linea-004',
-                itemId: 'item-licra-40',
-                codigoInterno: 'ELAST-40-REC',
-                descripcion: 'Elastano 40 Recubierto con Poliamida',
-                categoriaNombre: 'Elastano / Lycra',
-                cantidadPedidaKg: 800,
-                cantidadRecibidaKg: 0,
-                fechaArriboEstimada: getDateOffset(18),
-                estado: 'PENDIENTE',
-                precioUnitarioUsd: 8.90,
-                remitosAsociados: [],
-                recepcionesManuales: []
-            }
-        ]
-    }
-];
+export const EXCEL_SEED_DATA: OrdenCompra[] = excelSeedRaw as unknown as OrdenCompra[];
 
 export const getOrdenesCompra = (): OrdenCompra[] => {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_DATA));
-            return SEED_DATA;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(EXCEL_SEED_DATA));
+            return EXCEL_SEED_DATA;
         }
-        return JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        // Si el storage tiene los datos dummy de prueba iniciales, auto-migrar al conjunto completo de Excel
+        if (Array.isArray(parsed) && (parsed.length <= 3 && parsed.some(o => o.id === 'oc-seed-001'))) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(EXCEL_SEED_DATA));
+            return EXCEL_SEED_DATA;
+        }
+        return parsed;
     } catch (e) {
         console.error('Error al leer órdenes de compra de storage:', e);
-        return SEED_DATA;
+        return EXCEL_SEED_DATA;
     }
 };
 
@@ -313,7 +204,17 @@ export const getArribosProgramados = (itemIdentifier?: string): ArriboProgramado
     return arribos.sort((a, b) => a.fecha.localeCompare(b.fecha));
 };
 
-// 5. Hook reactivo para componentes
+// 5. Cargar / Resetear datos desde el Registro de Compras (Excel)
+export const cargarDatosDesdeExcel = (): void => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(EXCEL_SEED_DATA));
+    emitChangeEvent();
+};
+
+if (typeof window !== 'undefined') {
+    (window as any).cargarOrdenesExcel = cargarDatosDesdeExcel;
+}
+
+// 6. Hook reactivo para componentes
 export const useOrdenesCompra = () => {
     const [ordenes, setOrdenes] = useState<OrdenCompra[]>(getOrdenesCompra);
 
@@ -334,6 +235,7 @@ export const useOrdenesCompra = () => {
         remove: deleteOrdenCompra,
         asociarRemito: asociarRemitoEntradaALinea,
         declararEntrega: declararEntregaManualALinea,
+        cargarDesdeExcel: cargarDatosDesdeExcel,
         kilosPendientesMap: getKilosPendientesByItem()
     };
 };

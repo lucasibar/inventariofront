@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation, useNavigation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useGetAlertsQuery } from '../features/warehouse/stock/api/stock.api';
@@ -143,6 +143,7 @@ const navGroups: NavGroup[] = [
         items: [
             { to: '/compras/materiales-criticos-dashboard', label: '⚡ Tablero de Compras' },
             { to: '/compras/ordenes-compra', label: '📋 Órdenes de Compra' },
+            { to: '/reporte-consumo-detallado', label: '📊 Consumo de Materiales' },
             {
                 id: 'compras-configuracion',
                 label: '⚙️ Configuración',

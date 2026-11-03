@@ -32,6 +32,7 @@ import LinkIcon from '@mui/icons-material/Link';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 
 import { useOrdenesCompra } from '../../features/purchasing/ordenesCompra/ordenesCompraStorage';
 import type { OrdenCompra, OrdenCompraLinea } from '../../features/purchasing/ordenesCompra/types';
@@ -44,7 +45,7 @@ import { useGetItemsQuery } from '../../features/warehouse/materiales/api/items.
 import { useGetStockQuery, useGetRecentMovementsQuery } from '../../features/warehouse/stock/api/stock.api';
 
 export default function OrdenesCompraPage() {
-    const { ordenes, remove } = useOrdenesCompra();
+    const { ordenes, remove, cargarDesdeExcel } = useOrdenesCompra();
 
     // Consultas de datos maestros para creación y cálculo de sierra
     const { data: partners = [] } = useGetPartnersQuery({});
@@ -206,6 +207,32 @@ export default function OrdenesCompraPage() {
                 </Box>
 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Tooltip title="Recarga o sincroniza todas las órdenes reales del archivo Excel 'Registro de Compras' (102 órdenes)">
+                        <Button
+                            variant="outlined"
+                            onClick={() => {
+                                if (window.confirm('¿Deseas recargar y sincronizar las 102 órdenes de compra desde el Registro de Compras (Excel)?')) {
+                                    cargarDesdeExcel();
+                                }
+                            }}
+                            startIcon={<CloudDownloadIcon />}
+                            sx={{
+                                borderColor: 'rgba(56, 189, 248, 0.4)',
+                                color: colors.info,
+                                fontWeight: 700,
+                                textTransform: 'none',
+                                fontSize: '13px',
+                                px: 1.8,
+                                '&:hover': {
+                                    borderColor: colors.info,
+                                    bgcolor: 'rgba(56, 189, 248, 0.1)'
+                                }
+                            }}
+                        >
+                            Cargar Datos Excel
+                        </Button>
+                    </Tooltip>
+
                     <Button
                         variant="contained"
                         onClick={() => setNewOrderModalOpen(true)}

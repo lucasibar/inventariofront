@@ -1,4 +1,4 @@
-﻿import { lazy, Suspense } from 'react';
+import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { PrivateRoute, RoleGuard, SectorGuard } from './PrivateRoute';
 import { LoginPage } from '../../pages/login/LoginPage';
@@ -195,6 +195,7 @@ export const router = createBrowserRouter([
               { path: "compras/materiales-criticos", element: <LazyRoute element={MaterialesCriticosPage} /> },
               { path: "compras/materiales-criticos-dashboard", element: <LazyRoute element={MaterialesCriticosDashboardPage} /> },
               { path: "compras/ordenes-compra", element: <LazyRoute element={OrdenesCompraPage} /> },
+              { path: "reporte-consumo-detallado", element: <LazyRoute element={ReporteConsumoDetalladoPage} /> },
             ]
           },
           // SECTOR: MANTENIMIENTO
