@@ -85,17 +85,18 @@ const navGroups: NavGroup[] = [
         label: 'Depósito',
         icon: '🏭',
         items: [
-            { to: '/deposito/dashboard', label: '🎯 Centro de Comando' },
-            { to: '/stock', label: '📋 Stock' },
-            { to: '/movimientos', label: '🔄 Movimientos' },
+            { to: '/deposito/dashboard', label: '📊 Dashboard' },
+            { to: '/deposito/centro-comando', label: '🎯 Centro de Comando' },
             {
                 id: 'deposito-operaciones',
                 label: '🚚 Operaciones',
                 isSubGroup: true,
                 items: [
-                    { to: '/deposito/picking-produccion', label: '📋 Picking para Producción' },
+                    { to: '/stock', label: '📋 Stock' },
+                    { to: '/movimientos', label: '🔄 Movimientos' },
                     { to: '/remitos-entrada', label: '📥 Entrada de mercadería' },
                     { to: '/remitos-salida', label: '📤 Salida de mercadería' },
+                    { to: '/deposito/picking', label: '🧶 Picking de Hilados' },
                 ]
             },
             {
@@ -103,21 +104,10 @@ const navGroups: NavGroup[] = [
                 label: '📊 Informes',
                 isSubGroup: true,
                 items: [
-                    { to: '/deposito/informes-produccion?tipo=HILADO', label: '🧶 Necesidad Diaria Hilado' },
-                    { to: '/deposito/informes-produccion?tipo=INSUMO', label: '📦 Necesidad Diaria Insumos' },
-                    { to: '/deposito/capacidad', label: '📦 Medidores de Capacidad' },
-                    { to: '/deposito/materiales-estancados', label: '🧊 Materiales Estancados' },
+                    { to: '/deposito/capacidad', label: '📦 Medidor de Capacidad' },
+                    { to: '/deposito/materiales-estancados', label: '🧊 Material Estancado' },
                     { to: '/reporte-consumo-detallado', label: '📊 Consumo de Materiales' },
-                ]
-            },
-            {
-                id: 'deposito-sistema',
-                label: '🛡️ Sistema',
-                isSubGroup: true,
-                items: [
-                    { to: '/admin/auditoria', label: '🔎 Auditoría del sistema' },
-                    { to: '/admin/movements', label: '🛡️ Auditoría de stock' },
-                    { to: '/deposito/completitud-materiales', label: '✅ Completitud materiales' },
+                    { to: '/deposito/completitud-materiales', label: '✅ Completitud de Materiales' },
                 ]
             },
             {
@@ -140,6 +130,7 @@ const navGroups: NavGroup[] = [
                     { to: '/items/box-types', label: '📦 Cajas/Embalaje' },
                     { to: '/deposito', label: '🏢 Depósitos' },
                     { to: '/socios', label: '🤝 Socios' },
+                    { to: '/admin/movements', label: '🛡️ Auditoría de Stock' },
                 ]
             }
         ]
@@ -324,7 +315,7 @@ export default function Layout() {
 
         const sectorRoutes: Record<string, string[]> = {
             DEPOSITO: [
-                '/deposito/dashboard', '/stock', '/movimientos',
+                '/deposito/dashboard', '/deposito/centro-comando', '/stock', '/movimientos', '/deposito/picking',
                 '/deposito/picking-produccion',
                 '/remitos-entrada', '/remitos-salida',
                 '/deposito/capacidad',
@@ -490,7 +481,7 @@ export default function Layout() {
             `}</style>
 
             {/* Mobile Header */}
-            {isMobile && !['/mantenimiento/dashboard', '/deposito/dashboard'].includes(location.pathname) && (
+            {isMobile && !['/mantenimiento/dashboard', '/deposito/dashboard', '/deposito/centro-comando'].includes(location.pathname) && (
                 <header style={{
                     height: '56px', background: 'var(--bg-secondary, #1a1d2e)', borderBottom: '1px solid var(--border-color, #2a2d3e)',
                     display: 'flex', alignItems: 'center', padding: '0 12px', zIndex: 997,

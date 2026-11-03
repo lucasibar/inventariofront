@@ -22,7 +22,9 @@ const RemitosEntradaPage = lazy(() => import('../../pages/warehouse/RemitosEntra
 const RemitosSalidaPage = lazy(() => import('../../pages/warehouse/RemitosSalidaPage'));
 const WorkspaceTasksPage = lazy(() => import('../../pages/warehouse/WorkspaceTasksPage'));
 const ReporteConsumoDetalladoPage = lazy(() => import('../../pages/warehouse/ReporteConsumoDetalladoPage'));
+const DashboardGeneralDepositoPage = lazy(() => import('../../pages/warehouse/DashboardGeneralDepositoPage'));
 const DashboardDepositoPage = lazy(() => import('../../pages/warehouse/DashboardDepositoPage'));
+const PickingHiladoPage = lazy(() => import('../../pages/warehouse/PickingHiladoPage'));
 const ChequeoInventarioPage = lazy(() => import('../../pages/warehouse/ChequeoInventarioPage'));
 const ChequeoCategoriaPage = lazy(() => import('../../pages/warehouse/ChequeoCategoriaPage'));
 const ReporteChequeoPage = lazy(() => import('../../pages/warehouse/ReporteChequeoPage'));
@@ -171,9 +173,11 @@ export const router = createBrowserRouter([
           {
             element: <SectorGuard allowedSectors={['DEPOSITO']} />,
             children: [
-              { path: "deposito/dashboard", element: <LazyRoute element={DashboardDepositoPage} /> },
+              { path: "deposito/dashboard", element: <LazyRoute element={DashboardGeneralDepositoPage} /> },
+              { path: "deposito/centro-comando", element: <LazyRoute element={DashboardDepositoPage} /> },
+              { path: "deposito/picking", element: <LazyRoute element={PickingHiladoPage} /> },
+              { path: "deposito/picking-produccion", element: <Navigate to="/deposito/picking" replace /> },
               { path: "deposito/informes-produccion", element: <LazyRoute element={InformeProduccionDepositoPage} /> },
-              { path: "deposito/picking-produccion", element: <LazyRoute element={OrdenesProduccionPage} props={{ sectorMode: 'DEPOSITO' }} /> },
               { path: "deposito/capacidad", element: <LazyRoute element={CapacityDashboardPage} /> },
               { path: "remitos-salida", element: <LazyRoute element={RemitosSalidaPage} /> },
               { path: "reporte-consumo-detallado", element: <LazyRoute element={ReporteConsumoDetalladoPage} /> },
