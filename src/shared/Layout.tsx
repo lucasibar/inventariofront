@@ -141,11 +141,8 @@ const navGroups: NavGroup[] = [
         label: 'Compras',
         icon: '🛒',
         items: [
-            { to: '/compras/dashboard', label: '📊 Dashboard Compras' },
-            { to: '/reporte-consumo-detallado', label: '📊 Consumo de Materiales' },
-            { to: '/compras/faltantes-produccion', label: '🧶 Faltantes Hilado Producción' },
-            { to: '/compras/materiales-criticos-dashboard', label: '⚡ Tablero de Compras (Nuevo)' },
-            { to: '/compras/materiales-criticos', label: '🔥 Materiales Críticos (Clásico)' },
+            { to: '/compras/materiales-criticos-dashboard', label: '⚡ Tablero de Compras' },
+            { to: '/compras/ordenes-compra', label: '📋 Órdenes de Compra' },
             {
                 id: 'compras-configuracion',
                 label: '⚙️ Configuración',

@@ -38,13 +38,14 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import LayersIcon from '@mui/icons-material/Layers';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import ViewListIcon from '@mui/icons-material/ViewList';
 import TuneIcon from '@mui/icons-material/Tune';
 import BlockIcon from '@mui/icons-material/Block';
 import CheckIcon from '@mui/icons-material/Check';
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import { useOrdenesCompra } from '../../features/purchasing/ordenesCompra/ordenesCompraStorage';
 
 import { useSelector } from 'react-redux';
 import { selectAllowedDepots } from '../../entities/auth/model/authSlice';
@@ -150,7 +151,10 @@ export default function MaterialesCriticosDashboardPage() {
     const [updateItem] = useUpdateItemMutation();
     const [updateItemCategory] = useUpdateItemCategoryMutation();
 
-    // 3. Estados de Filtros y Navegación
+    // 3. Órdenes de Compra Activas (kilos en camino sincronizados)
+    const { kilosPendientesMap } = useOrdenesCompra();
+
+    // 4. Estados de Filtros y Navegación
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<'ALL' | 'CRITICAL' | 'WARNING' | 'OK' | 'SOBRANTES'>('ALL');
     const [hideZeroStockSuppliers, setHideZeroStockSuppliers] = useState(true);
@@ -229,13 +233,13 @@ export default function MaterialesCriticosDashboardPage() {
             const stockActual = stockTotalsByItem.get(item.id) || 0;
             const stockMinimo = item.stockMinimo !== null && item.stockMinimo !== undefined ? Number(item.stockMinimo) : null;
             const stockMaximo = item.stockMaximo !== null && item.stockMaximo !== undefined ? Number(item.stockMaximo) : null;
-            const porVenir = Number(item.meta?.porVenir || item.porVenir || 0);
+            const normCode = item.codigoInterno ? String(item.codigoInterno).trim().toUpperCase() : '';
+            const porVenirOC = kilosPendientesMap.get(item.id) || (normCode ? kilosPendientesMap.get(normCode) : 0) || 0;
+            const porVenir = porVenirOC > 0 ? porVenirOC : Number(item.meta?.porVenir || item.porVenir || 0);
             const esSobrante = Boolean(item.meta?.excluirDeCompras || item.meta?.esSobrante);
             const stockComputable = esSobrante ? 0 : stockActual;
             const stockProyectado = stockComputable + porVenir;
             const isIgnored = Boolean(item.meta?.ignorarStockMinimo);
-
-            const normCode = item.codigoInterno ? String(item.codigoInterno).trim().toUpperCase() : '';
 
             // A. Consumo Proyectado (demanda requerida por pedidos de producción)
             const consumoProyectado = projectedConsumptionByItem.get(item.id)
@@ -758,22 +762,23 @@ export default function MaterialesCriticosDashboardPage() {
                         </Button>
                     </Tooltip>
 
-                    {/* Botón Switch a Vista Clásica */}
+                    {/* Botón Acceso Rápido a Órdenes de Compra */}
                     <Button
                         variant="outlined"
                         size="small"
-                        onClick={() => navigate('/compras/materiales-criticos')}
-                        startIcon={<ViewListIcon fontSize="small" />}
+                        onClick={() => navigate('/compras/ordenes-compra')}
+                        startIcon={<LocalShippingIcon fontSize="small" />}
                         sx={{
                             height: 36,
-                            borderColor: colors.border,
-                            color: colors.textSecondary,
+                            borderColor: 'rgba(56, 189, 248, 0.4)',
+                            color: colors.info,
                             fontSize: '12px',
                             textTransform: 'none',
-                            '&:hover': { borderColor: colors.primary, color: colors.primary }
+                            fontWeight: 700,
+                            '&:hover': { borderColor: colors.info, bgcolor: 'rgba(56, 189, 248, 0.1)' }
                         }}
                     >
-                        {isMobile ? 'Clásica' : 'Vista Clásica'}
+                        {isMobile ? 'OC' : 'Órdenes de Compra'}
                     </Button>
                 </Box>
             </Box>
