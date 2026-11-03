@@ -1124,11 +1124,11 @@ export default function MaterialesCriticosPage() {
                                                     />
                                                 </Tooltip>
                                             )}
-                                            {group.totalConsumo90d > 0 && (
-                                                <Tooltip title={`Consumo real de los últimos 3 meses: ${group.totalConsumo90d.toLocaleString()} kg (promedio mensual: ~${group.totalConsumoMensual.toLocaleString()} kg/mes)`}>
+                                            {group.totalConsumoMensual > 0 && (
+                                                <Tooltip title={`Consumo total últimos 3 meses: ${group.totalConsumo90d.toLocaleString()} kg (promedio mensual calculado)`}>
                                                     <Chip 
                                                         size="small" 
-                                                        label={`📊 Consumo 3m: ${group.totalConsumo90d.toLocaleString()} kg (~${group.totalConsumoMensual.toLocaleString()} kg/m)`} 
+                                                        label={`📊 Consumo Mensual: ~${group.totalConsumoMensual.toLocaleString()} kg/mes`} 
                                                         sx={{ height: 22, fontSize: '0.68rem', fontWeight: 800, bgcolor: 'rgba(245, 158, 11, 0.15)', color: colors.primary, border: '1px solid rgba(245, 158, 11, 0.3)' }} 
                                                     />
                                                 </Tooltip>

@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import { useGetItemsQuery, useDeleteItemMutation } from '../../features/warehouse/materiales/api/items.api';
-import { PageHeader, Card, Btn, Table, Badge, SearchBar, Spinner } from '../../shared/ui';
+import { PageHeader, Card, Btn, Table, Badge, SearchBar, Spinner, Modal } from '../../shared/ui';
+import { useGetCategoriesCostSummaryQuery, useBulkAssignCostsMutation } from '../../features/finance/api/finance.api';
 import { CreateItemDialog } from '../../features/warehouse/materiales/components/CreateItemDialog';
 
 const ROTACION_COLORS: Record<string, string> = {
@@ -37,12 +38,18 @@ export default function MaterialesPage() {
     const [q, setQ] = useState('');
     const { data: items = [], isLoading } = useGetItemsQuery({});
 
+    // Bulk cost modal state
+    const [showBulkCostModal, setShowBulkCostModal] = useState(false);
+    const { data: categoriesSummary = [], isLoading: loadingCats, refetch: refetchCats } = useGetCategoriesCostSummaryQuery();
+    const [bulkAssignCosts, { isLoading: savingCosts }] = useBulkAssignCostsMutation();
+    const [categoryPrices, setCategoryPrices] = useState<Record<string, string>>({});
+
     const filteredItems = useMemo(() => {
         if (!q) return items;
-        const words = q.toLowerCase().split(' ').filter(w => w.length > 0);
+        const words = q.toLowerCase().split(' ').filter((w) => w.length > 0);
         return items.filter((it: any) => {
-            return words.every(word => 
-                it.descripcion.toLowerCase().includes(word) || 
+            return words.every((word) =>
+                it.descripcion.toLowerCase().includes(word) ||
                 it.codigoInterno.toLowerCase().includes(word) ||
                 (it.supplier?.name || '').toLowerCase().includes(word) ||
                 (it.category?.nombre || '').toLowerCase().includes(word) ||
@@ -83,14 +90,15 @@ export default function MaterialesPage() {
         }
 
         const rows = dataToExport.map((it: any) => ({
-            'Código': it.codigoInterno || '',
-            'Descripción': it.descripcion || '',
-            'Tono': it.tono ? (TONO_LABELS[it.tono] ? TONO_LABELS[it.tono].replace(/^[^\s]+\s/, '') : it.tono) : '',
-            'Categoría': it.category?.nombre || it.categoria || '',
-            'Depósito': it.depot?.nombre || it.category?.depot?.nombre || '',
-            'Proveedor': it.supplier?.name || '',
+            Código: it.codigoInterno || '',
+            Descripción: it.descripcion || '',
+            Tono: it.tono ? (TONO_LABELS[it.tono] ? TONO_LABELS[it.tono].replace(/^[^\s]+\s/, '') : it.tono) : '',
+            Categoría: it.category?.nombre || it.categoria || '',
+            'Costo Unitario USD': it.costoUnitario != null ? Number(it.costoUnitario) : (it.meta?.costoUnitario != null ? Number(it.meta.costoUnitario) : ''),
+            Depósito: it.depot?.nombre || it.category?.depot?.nombre || '',
+            Proveedor: it.supplier?.name || '',
             'CUIT Proveedor': it.supplier?.taxId || '',
-            'Rotación': it.rotacion || '',
+            Rotación: it.rotacion || '',
             'Stock Mínimo': it.stockMinimo != null ? Number(it.stockMinimo) : '',
             'Stock Máximo': it.stockMaximo != null ? Number(it.stockMaximo) : '',
             'Tipo de Embalaje': it.boxType?.nombre || '',
@@ -98,13 +106,13 @@ export default function MaterialesPage() {
             'Unidad Principal': it.unidadPrincipal || '',
             'Unidad Secundaria': it.unidadSecundaria || '',
             'Lead Time (Días)': it.leadTime != null ? Number(it.leadTime) : '',
-            'Estado': it.activo === false ? 'Inactivo' : 'Activo',
+            Estado: it.activo === false ? 'Inactivo' : 'Activo',
         }));
 
         const worksheet = XLSX.utils.json_to_sheet(rows);
 
         const colKeys = Object.keys(rows[0] || {});
-        worksheet['!cols'] = colKeys.map(key => {
+        worksheet['!cols'] = colKeys.map((key) => {
             const maxLen = Math.max(
                 key.length,
                 ...rows.map((row: any) => String(row[key] ?? '').length)
@@ -122,27 +130,42 @@ export default function MaterialesPage() {
 
     return (
         <div style={{ padding: '24px' }}>
-            <PageHeader 
-                title="Configuración de Materiales" 
+            <PageHeader
+                title="Configuración de Materiales & Precios"
                 subtitle="Catálogo maestro de artículos. Hacé clic en cualquier material para ver y editar toda su información."
             >
-                <Btn 
-                    variant="secondary" 
-                    onClick={handleExportExcel} 
-                    disabled={isLoading || items.length === 0} 
+                <Btn
+                    variant="secondary"
+                    onClick={handleExportExcel}
+                    disabled={isLoading || items.length === 0}
                     title="Descargar catálogo de materiales en formato Excel"
                     style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
                     📥 Exportar Excel
                 </Btn>
+                <Btn
+                    variant="secondary"
+                    onClick={() => {
+                        const initial: Record<string, string> = {};
+                        categoriesSummary.forEach((c) => {
+                            if (c.costoPromedioUsd > 0) initial[c.categoryId] = String(c.costoPromedioUsd);
+                        });
+                        setCategoryPrices(initial);
+                        setShowBulkCostModal(true);
+                    }}
+                    title="Asignar o actualizar el costo unitario de todos los materiales por categoría"
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                    ⚡ Asignar Precios por Categoría
+                </Btn>
                 <Btn onClick={handleCreateNew}>+ Nuevo Material</Btn>
             </PageHeader>
 
             <Card style={{ marginBottom: '20px' }}>
-                <SearchBar 
-                    value={q} 
-                    onChange={setQ} 
-                    placeholder="Filtrar por nombre, código, tono, proveedor, depósito o categoría..." 
+                <SearchBar
+                    value={q}
+                    onChange={setQ}
+                    placeholder="Filtrar por nombre, código, tono, proveedor, depósito o categoría..."
                 />
             </Card>
 
@@ -151,60 +174,176 @@ export default function MaterialesPage() {
             ) : (
                 <Card>
                     <Table
-                        cols={['Código & Tono', 'Material & Prov.', 'Categoría, Rotación & Depósito', 'Stock (Mín/Máx)', 'Embalaje', 'Unidades', 'Acciones']}
+                        cols={['Código & Tono', 'Material & Prov.', 'Categoría, Rotación & Depósito', 'Costo Unit. (USD)', 'Stock (Mín/Máx)', 'Embalaje', 'Unidades', 'Acciones']}
                         onRowClick={(index) => handleEdit(filteredItems[index])}
-                        rows={filteredItems.map((it: any) => [
-                            <div key="code" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                <code style={{ color: '#818cf8', fontWeight: 600, fontSize: '13px' }}>{it.codigoInterno}</code>
-                                {it.tono && (
-                                    <span style={{ fontSize: '11px', color: 'var(--text-muted, #9ca3af)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
-                                        {TONO_LABELS[it.tono] || it.tono}
+                        rows={filteredItems.map((it: any) => {
+                            const costVal = it.costoUnitario != null ? Number(it.costoUnitario) : (it.meta?.costoUnitario != null ? Number(it.meta.costoUnitario) : 0);
+                            return [
+                                <div key="code" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    <code style={{ color: '#818cf8', fontWeight: 600, fontSize: '13px' }}>{it.codigoInterno}</code>
+                                    {it.tono && (
+                                        <span style={{ fontSize: '11px', color: 'var(--text-muted, #9ca3af)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
+                                            {TONO_LABELS[it.tono] || it.tono}
+                                        </span>
+                                    )}
+                                </div>,
+                                <div key="desc" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <div style={{ fontWeight: 600, color: 'var(--text-primary, #f3f4f6)' }}>{it.descripcion}</div>
+                                    <div style={{ fontSize: '11px', color: 'var(--text-subtle, #6b7280)' }}>Prov: {it.supplier?.name || '—'}</div>
+                                </div>,
+                                <div key="cat-rot" style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                                    <Badge>{it.category?.nombre || 'General'}</Badge>
+                                    <Badge color={ROTACION_COLORS[it.rotacion] || 'var(--text-muted, #9ca3af)'}>
+                                        {ROTACION_LABELS[it.rotacion] || it.rotacion || 'Media'}
+                                    </Badge>
+                                    {it.depot?.nombre && (
+                                        <span style={{ fontSize: '11px', color: '#818cf8', fontWeight: 600, marginTop: '2px' }}>
+                                            🏛️ {it.depot.nombre}
+                                        </span>
+                                    )}
+                                </div>,
+                                <div key="cost" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <span style={{ fontWeight: 700, color: costVal > 0 ? '#10b981' : 'var(--text-subtle, #6b7280)', fontSize: '13px' }}>
+                                        {costVal > 0 ? `U$S ${costVal.toFixed(2)}` : 'Sin asignar'}
                                     </span>
-                                )}
-                            </div>,
-                            <div key="desc" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <div style={{ fontWeight: 600, color: 'var(--text-primary, #f3f4f6)' }}>{it.descripcion}</div>
-                                <div style={{ fontSize: '11px', color: 'var(--text-subtle, #6b7280)' }}>Prov: {it.supplier?.name || '—'}</div>
-                            </div>,
-                            <div key="cat-rot" style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
-                                <Badge>{it.category?.nombre || 'General'}</Badge>
-                                <Badge color={ROTACION_COLORS[it.rotacion] || 'var(--text-muted, #9ca3af)'}>
-                                    {ROTACION_LABELS[it.rotacion] || it.rotacion || 'Media'}
-                                </Badge>
-                                {it.depot?.nombre && (
-                                    <span style={{ fontSize: '11px', color: '#818cf8', fontWeight: 600, marginTop: '2px' }}>
-                                        🏛️ {it.depot.nombre}
+                                    <span style={{ fontSize: '11px', color: 'var(--text-subtle, #9ca3af)' }}>
+                                        por {it.unidadPrincipal || 'kg'}
                                     </span>
-                                )}
-                            </div>,
-                            <div key="stock" style={{ fontSize: '12px', color: 'var(--text-secondary, #d1d5db)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <div><span style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '11px' }}>Mín:</span> {it.stockMinimo != null ? it.stockMinimo : '—'}</div>
-                                <div><span style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '11px' }}>Máx:</span> {it.stockMaximo != null ? it.stockMaximo : '—'}</div>
-                            </div>,
-                            <div key="box" style={{ fontSize: '12px', color: 'var(--text-secondary, #d1d5db)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <div style={{ fontWeight: 500 }}>{it.boxType?.nombre || '—'}</div>
-                                <div style={{ fontSize: '11px', color: 'var(--text-subtle, #6b7280)' }}>
-                                    {it.kilosPorCaja ? `${it.kilosPorCaja} kg/caja` : '—'}
-                                </div>
-                            </div>,
-                            <div key="units" style={{ fontSize: '12px', color: 'var(--text-secondary, #d1d5db)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <div><span style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '11px' }}>P:</span> {it.unidadPrincipal}</div>
-                                <div><span style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '11px' }}>S:</span> {it.unidadSecundaria || '—'}</div>
-                            </div>,
-                            <div key="actions" style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
-                                <Btn small variant="secondary" onClick={(e) => { e.stopPropagation(); handleEdit(it); }} title="Editar material">✏️</Btn>
-                                <Btn small variant="danger" onClick={(e) => { e.stopPropagation(); handleDelete(it.id); }} title="Eliminar material">🗑</Btn>
-                            </div>
-                        ])}
+                                </div>,
+                                <div key="stock" style={{ fontSize: '12px', color: 'var(--text-secondary, #d1d5db)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <div><span style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '11px' }}>Mín:</span> {it.stockMinimo != null ? it.stockMinimo : '—'}</div>
+                                    <div><span style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '11px' }}>Máx:</span> {it.stockMaximo != null ? it.stockMaximo : '—'}</div>
+                                </div>,
+                                <div key="box" style={{ fontSize: '12px', color: 'var(--text-secondary, #d1d5db)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <div style={{ fontWeight: 500 }}>{it.boxType?.nombre || '—'}</div>
+                                    <div style={{ fontSize: '11px', color: 'var(--text-subtle, #6b7280)' }}>
+                                        {it.kilosPorCaja ? `${it.kilosPorCaja} kg/caja` : '—'}
+                                    </div>
+                                </div>,
+                                <div key="units" style={{ fontSize: '12px', color: 'var(--text-secondary, #d1d5db)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <div><span style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '11px' }}>P:</span> {it.unidadPrincipal}</div>
+                                    <div><span style={{ color: 'var(--text-subtle, #6b7280)', fontSize: '11px' }}>S:</span> {it.unidadSecundaria || '—'}</div>
+                                </div>,
+                                <div key="actions" style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
+                                    <Btn small variant="secondary" onClick={(e: any) => { e.stopPropagation(); handleEdit(it); }} title="Editar material">✏️</Btn>
+                                    <Btn small variant="danger" onClick={(e: any) => { e.stopPropagation(); handleDelete(it.id); }} title="Eliminar material">🗑</Btn>
+                                </div>,
+                            ];
+                        })}
                     />
                 </Card>
             )}
 
-            <CreateItemDialog 
-                open={isCreateOpen} 
-                onClose={() => { setIsCreateOpen(false); setEditTarget(null); }} 
+            <CreateItemDialog
+                open={isCreateOpen}
+                onClose={() => { setIsCreateOpen(false); setEditTarget(null); }}
                 editTarget={editTarget}
             />
+
+            {/* Modal Carga Rápida de Costos por Categoría */}
+            {showBulkCostModal && (
+                <Modal
+                    title="⚡ Asignación Rápida de Precios por Categoría"
+                    onClose={() => setShowBulkCostModal(false)}
+                >
+                    <div style={{ marginBottom: '16px', fontSize: '13px', color: 'var(--text-muted, #9ca3af)', lineHeight: '1.5' }}>
+                        Ingresá el valor en <strong>Dólares (USD)</strong> por kilo o unidad para cada categoría. Al guardar, se actualizará automáticamente el costo unitario de todos los materiales que pertenecen a esa categoría.
+                    </div>
+
+                    <div style={{ maxHeight: '420px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', paddingRight: '4px' }}>
+                        {loadingCats ? (
+                            <div style={{ textAlign: 'center', padding: '20px' }}>Cargando categorías...</div>
+                        ) : categoriesSummary.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '20px', color: '#9ca3af' }}>No hay categorías registradas</div>
+                        ) : (
+                            categoriesSummary.map((cat) => {
+                                const currentVal = categoryPrices[cat.categoryId] ?? (cat.costoPromedioUsd > 0 ? String(cat.costoPromedioUsd) : '');
+                                return (
+                                    <div
+                                        key={cat.categoryId}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            gap: '12px',
+                                            padding: '10px 14px',
+                                            background: 'var(--bg-hover-row, rgba(255,255,255,0.03))',
+                                            borderRadius: '8px',
+                                            border: '1px solid var(--border-color, rgba(255,255,255,0.05))',
+                                        }}
+                                    >
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary, #f3f4f6)' }}>
+                                                {cat.categoria}
+                                            </div>
+                                            <div style={{ fontSize: '11px', color: 'var(--text-subtle, #9ca3af)', marginTop: '2px' }}>
+                                                {cat.totalItems} materiales • {cat.stockTotal.toLocaleString()} kg/u en stock
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ fontSize: '12px', color: '#10b981', fontWeight: 600 }}>USD</span>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                placeholder="0.00"
+                                                value={currentVal}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setCategoryPrices((prev) => ({ ...prev, [cat.categoryId]: val }));
+                                                }}
+                                                style={{
+                                                    width: '95px',
+                                                    background: 'var(--bg-primary, #0f1117)',
+                                                    border: '1px solid var(--border-color, #2a2d3e)',
+                                                    color: 'var(--text-primary, #f3f4f6)',
+                                                    borderRadius: '6px',
+                                                    padding: '6px 10px',
+                                                    fontSize: '13px',
+                                                    textAlign: 'right',
+                                                    fontWeight: 600,
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                        <Btn variant="secondary" onClick={() => setShowBulkCostModal(false)}>
+                            Cancelar
+                        </Btn>
+                        <Btn
+                            onClick={async () => {
+                                const updates = Object.entries(categoryPrices)
+                                    .filter(([_, val]) => val !== '' && !isNaN(Number(val)))
+                                    .map(([categoryId, val]) => ({
+                                        categoryId,
+                                        costoUnitario: Number(val),
+                                    }));
+
+                                if (updates.length === 0) {
+                                    alert('Por favor ingresá al menos un valor de costo para una categoría.');
+                                    return;
+                                }
+
+                                try {
+                                    const res = await bulkAssignCosts({ updates }).unwrap();
+                                    alert(`¡Listo! Se actualizaron ${res.totalItemsUpdated} materiales en ${res.updatedCategories} categorías.`);
+                                    setShowBulkCostModal(false);
+                                    refetchCats();
+                                } catch (err: any) {
+                                    alert(err?.data?.message || 'Error al asignar precios');
+                                }
+                            }}
+                            disabled={savingCosts}
+                        >
+                            {savingCosts ? 'Guardando...' : 'Aplicar Precios a Todos los Materiales'}
+                        </Btn>
+                    </div>
+                </Modal>
+            )}
         </div>
     );
 }

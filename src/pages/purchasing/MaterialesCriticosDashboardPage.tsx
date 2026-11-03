@@ -778,10 +778,10 @@ export default function MaterialesCriticosDashboardPage() {
                 </Box>
             </Box>
 
-            {/* 2. STATS STRIP (Indicadores Clave con Consumo Proyectado y Consumo Histórico) */}
+            {/* 2. STATS STRIP (Indicadores Clave Sin Redundancias) */}
             <Box sx={{
                 display: 'grid',
-                gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(5, 1fr)' },
+                gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' },
                 gap: 1.5,
                 mb: 1.5
             }}>
@@ -805,39 +805,39 @@ export default function MaterialesCriticosDashboardPage() {
                     </Box>
                 </Card>
 
-                {/* 2. Consumo Proyectado (Pedidos de Producción en Cola) */}
-                <Card sx={{ bgcolor: colors.surface, border: `1px solid ${colors.info}`, borderRadius: 2, p: 1.2 }}>
+                {/* 2. Demanda Proyectada (Pedidos de Producción en Cola) */}
+                <Card sx={{ bgcolor: colors.surface, border: `1px solid rgba(56, 189, 248, 0.25)`, borderRadius: 2, p: 1.2 }}>
                     <Typography variant="caption" sx={{ color: colors.info, fontWeight: 700, textTransform: 'uppercase', fontSize: '10px', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <PrecisionManufacturingIcon sx={{ fontSize: 13 }} />
-                        🧵 Proyectado Pedidos
+                        🧵 Demanda Pedidos
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mt: 0.2 }}>
                         <Typography variant="h5" sx={{ fontWeight: 900, color: colors.info }}>
                             {globalStats.totalConsumoProyectado.toLocaleString()} kg
                         </Typography>
                         <Typography variant="caption" sx={{ color: colors.textMuted }}>
-                            demanda en cola
+                            requerido en cola
                         </Typography>
                     </Box>
                 </Card>
 
-                {/* 3. Consumo Histórico Mensual (Últimos 3 meses) */}
-                <Card sx={{ bgcolor: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 2, p: 1.2 }}>
+                {/* 3. Consumo Promedio Mensual */}
+                <Card sx={{ bgcolor: colors.surface, border: `1px solid rgba(245, 158, 11, 0.25)`, borderRadius: 2, p: 1.2 }}>
                     <Typography variant="caption" sx={{ color: colors.warning, fontWeight: 700, textTransform: 'uppercase', fontSize: '10px', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <TrendingDownIcon sx={{ fontSize: 13 }} />
-                        📊 Histórico (3 meses)
+                        📊 Consumo Promedio
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mt: 0.2 }}>
                         <Typography variant="h5" sx={{ fontWeight: 900, color: colors.warning }}>
                             ~{globalStats.totalConsumoMensual.toLocaleString()} kg
                         </Typography>
                         <Typography variant="caption" sx={{ color: colors.textMuted }}>
-                            /mes
+                            /mes ({globalStats.totalConsumo90d.toLocaleString()} kg en 3m)
                         </Typography>
                     </Box>
                 </Card>
 
-                {/* 4. Stock Computable */}
+                {/* 4. Stock Computable (+ en camino) */}
                 <Card sx={{ bgcolor: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 2, p: 1.2 }}>
                     <Typography variant="caption" sx={{ color: colors.success, fontWeight: 700, textTransform: 'uppercase', fontSize: '10px' }}>
                         📦 Stock Computable
@@ -846,23 +846,8 @@ export default function MaterialesCriticosDashboardPage() {
                         <Typography variant="h5" sx={{ fontWeight: 900, color: colors.text }}>
                             {globalStats.totalStockComputable.toLocaleString()} kg
                         </Typography>
-                        <Typography variant="caption" sx={{ color: colors.textMuted }}>
-                            disponible
-                        </Typography>
-                    </Box>
-                </Card>
-
-                {/* 5. Por Venir (En Tránsito) */}
-                <Card sx={{ bgcolor: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 2, p: 1.2 }}>
-                    <Typography variant="caption" sx={{ color: colors.textSecondary, fontWeight: 700, textTransform: 'uppercase', fontSize: '10px' }}>
-                        🚚 En Tránsito / Pedido
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mt: 0.2 }}>
-                        <Typography variant="h5" sx={{ fontWeight: 900, color: colors.text }}>
-                            +{globalStats.totalPorVenir.toLocaleString()} kg
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: colors.textMuted }}>
-                            por recibir
+                        <Typography variant="caption" sx={{ color: colors.info }}>
+                            {globalStats.totalPorVenir > 0 ? `(+${globalStats.totalPorVenir.toLocaleString()} kg ped.)` : 'disponible'}
                         </Typography>
                     </Box>
                 </Card>
@@ -963,22 +948,6 @@ export default function MaterialesCriticosDashboardPage() {
                             }
                         }}
                     />
-
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                size="small"
-                                checked={hideZeroStockSuppliers}
-                                onChange={(e) => setHideZeroStockSuppliers(e.target.checked)}
-                                sx={{
-                                    '& .MuiSwitch-switchBase.Mui-checked': { color: colors.primary },
-                                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: colors.primary }
-                                }}
-                            />
-                        }
-                        label={<Typography sx={{ fontSize: '12px', color: colors.textSecondary }}>Ocultar 0 kg</Typography>}
-                        sx={{ m: 0, display: { xs: 'none', md: 'flex' } }}
-                    />
                 </Box>
             </Box>
 
@@ -986,7 +955,7 @@ export default function MaterialesCriticosDashboardPage() {
             <Box sx={{
                 flex: 1,
                 display: 'grid',
-                gridTemplateColumns: { xs: '1fr', lg: '56% 44%' },
+                gridTemplateColumns: { xs: '1fr', md: '340px 1fr', lg: '360px 1fr' },
                 gap: 2,
                 minHeight: 0,
                 overflow: 'hidden'
@@ -1047,160 +1016,71 @@ export default function MaterialesCriticosDashboardPage() {
                                 const isSelected = group.id === selectedCategoryId;
                                 const isCritical = group.categoryStatus === 'CRITICAL';
                                 const isWarning = group.categoryStatus === 'WARNING';
-                                const coveragePercent = group.minimo && group.minimo > 0
-                                    ? Math.min(100, Math.round(((group.totalStock + group.totalPorVenir) / group.minimo) * 100))
-                                    : 100;
 
                                 return (
                                     <Box
                                         key={group.id}
                                         onClick={() => setSelectedCategoryId(group.id)}
                                         sx={{
-                                            p: 1.5,
-                                            borderRadius: 2,
+                                            px: 1.5,
+                                            py: 1.2,
+                                            borderRadius: 1.5,
                                             cursor: 'pointer',
-                                            transition: 'all 0.15s ease-in-out',
-                                            bgcolor: isSelected ? 'rgba(245, 158, 11, 0.08)' : colors.surfaceElevated,
-                                            border: `1.5px solid ${isSelected ? colors.primary : isCritical ? 'rgba(239, 68, 68, 0.4)' : colors.border}`,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            transition: 'all 0.12s ease-in-out',
+                                            bgcolor: isSelected ? 'rgba(245, 158, 11, 0.1)' : 'transparent',
+                                            borderLeft: isSelected
+                                                ? `3px solid ${colors.primary}`
+                                                : isCritical
+                                                ? `3px solid ${colors.danger}`
+                                                : isWarning
+                                                ? `3px solid ${colors.warning}`
+                                                : '3px solid transparent',
                                             '&:hover': {
-                                                bgcolor: isSelected ? 'rgba(245, 158, 11, 0.12)' : colors.surfaceHover,
-                                                borderColor: isSelected ? colors.primary : colors.textMuted
+                                                bgcolor: isSelected ? 'rgba(245, 158, 11, 0.15)' : colors.surfaceHover
                                             }
                                         }}
                                     >
-                                        {/* Fila 1: Nombre de Categoría + Badge de Estado */}
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.8 }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Typography sx={{ fontWeight: 800, fontSize: '14px', color: isSelected ? colors.primary : colors.text }}>
+                                        {/* Nombre y subtítulo */}
+                                        <Box sx={{ minWidth: 0, pr: 1 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                                                <Typography sx={{
+                                                    fontWeight: isSelected ? 800 : 600,
+                                                    fontSize: '13px',
+                                                    color: isSelected ? colors.primary : colors.text,
+                                                    whiteSpace: 'nowrap',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis'
+                                                }}>
                                                     {group.nombre}
                                                 </Typography>
                                                 {group.totalSobrante > 0 && (
-                                                    <Tooltip title={`${group.totalSobrante.toLocaleString()} kg en remanentes aislados que no contaminan compras`}>
-                                                        <Chip
-                                                            label={`🧊 +${group.totalSobrante.toLocaleString()} kg excl.`}
-                                                            size="small"
-                                                            sx={{ height: 18, fontSize: '10px', bgcolor: 'rgba(168, 85, 247, 0.15)', color: colors.purple, fontWeight: 700 }}
-                                                        />
+                                                    <Tooltip title={`Posee ${group.totalSobrante.toLocaleString()} kg excluidos en lotes sobrantes`}>
+                                                        <Typography component="span" sx={{ fontSize: '11px', color: colors.purple, cursor: 'default' }}>🧊</Typography>
                                                     </Tooltip>
                                                 )}
                                             </Box>
-
-                                            {/* Badge de Criticidad / Déficit */}
-                                            {isCritical ? (
-                                                <Chip
-                                                    label={`🔴 Falta: ${group.categoryDeficit.toLocaleString()} kg`}
-                                                    size="small"
-                                                    sx={{ height: 22, fontSize: '11px', bgcolor: colors.dangerBg, color: colors.danger, fontWeight: 800 }}
-                                                />
-                                            ) : isWarning ? (
-                                                <Chip
-                                                    label="🟡 Cubierto en Tránsito"
-                                                    size="small"
-                                                    sx={{ height: 22, fontSize: '11px', bgcolor: colors.warningBg, color: colors.warning, fontWeight: 700 }}
-                                                />
-                                            ) : (
-                                                <Chip
-                                                    label="🟢 Abastecido"
-                                                    size="small"
-                                                    sx={{ height: 22, fontSize: '11px', bgcolor: colors.successBg, color: colors.success, fontWeight: 700 }}
-                                                />
-                                            )}
-                                        </Box>
-
-                                        {/* Fila 2: Barra de Progreso de Cobertura */}
-                                        <Box sx={{ mb: 1 }}>
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: colors.textSecondary, mb: 0.4 }}>
-                                                <span>
-                                                    Stock Computable: <strong>{group.totalStock.toLocaleString()} kg</strong>
-                                                    {group.totalPorVenir > 0 && (
-                                                        <span style={{ color: colors.info, marginLeft: '6px' }}>
-                                                            (+{group.totalPorVenir.toLocaleString()} kg ped.)
-                                                        </span>
-                                                    )}
-                                                </span>
-                                                <span>
-                                                    Objetivo Mín: <strong>{group.minimo ? `${group.minimo.toLocaleString()} kg` : 'Sin fijar'}</strong> ({coveragePercent}%)
-                                                </span>
-                                            </Box>
-                                            <LinearProgress
-                                                variant="determinate"
-                                                value={coveragePercent}
-                                                sx={{
-                                                    height: 6,
-                                                    borderRadius: 1,
-                                                    bgcolor: 'rgba(255,255,255,0.06)',
-                                                    '& .MuiLinearProgress-bar': {
-                                                        bgcolor: isCritical ? colors.danger : isWarning ? colors.warning : colors.success
-                                                    }
-                                                }}
-                                            />
-                                        </Box>
-
-                                        {/* Fila 3: Consumo Proyectado (Pedidos) vs Consumo Histórico (3 meses) */}
-                                        <Box sx={{
-                                            display: 'grid',
-                                            gridTemplateColumns: '1fr 1fr',
-                                            gap: 1,
-                                            p: 0.8,
-                                            borderRadius: 1.5,
-                                            bgcolor: 'rgba(0,0,0,0.25)',
-                                            border: '1px solid rgba(255,255,255,0.04)',
-                                            mb: 1
-                                        }}>
-                                            {/* Consumo Proyectado de Pedidos */}
-                                            <Box>
-                                                <Typography variant="caption" sx={{ color: colors.info, fontSize: '10px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                    <PrecisionManufacturingIcon sx={{ fontSize: 12 }} />
-                                                    🧵 Proyectado (Pedidos):
-                                                </Typography>
-                                                <Typography sx={{ fontWeight: 800, fontSize: '12px', color: colors.info }}>
-                                                    {group.totalConsumoProyectado > 0 ? `${group.totalConsumoProyectado.toLocaleString()} kg` : '0 kg'}
-                                                </Typography>
-                                            </Box>
-
-                                            {/* Consumo Histórico (3 meses) */}
-                                            <Box>
-                                                <Typography variant="caption" sx={{ color: colors.warning, fontSize: '10px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                    <TrendingDownIcon sx={{ fontSize: 12 }} />
-                                                    📊 Histórico (3m):
-                                                </Typography>
-                                                <Typography sx={{ fontWeight: 800, fontSize: '12px', color: colors.warning }}>
-                                                    {group.totalConsumo90d > 0 ? `${group.totalConsumo90d.toLocaleString()} kg` : '0 kg'}
-                                                    <span style={{ fontSize: '10px', color: colors.textMuted, marginLeft: '4px' }}>
-                                                        (~{group.totalConsumoMensual.toLocaleString()} kg/m)
-                                                    </span>
-                                                </Typography>
-                                            </Box>
-                                        </Box>
-
-                                        {/* Fila 4: Proveedores con Stock */}
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap' }}>
-                                            <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '10px' }}>
-                                                Proveedores:
+                                            <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '11px', display: 'block' }}>
+                                                {group.items.length} {group.items.length === 1 ? 'ítem' : 'ítems'}
+                                                {group.minimo ? ` • Mín: ${group.minimo.toLocaleString()} kg` : ''}
                                             </Typography>
-                                            {group.activeSuppliers.length === 0 ? (
-                                                <Typography variant="caption" sx={{ color: colors.textMuted, fontStyle: 'italic' }}>
-                                                    Sin stock activo en proveedores
+                                        </Box>
+
+                                        {/* Balance rápido a la derecha */}
+                                        <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+                                            {isCritical ? (
+                                                <Typography sx={{ fontWeight: 800, fontSize: '12px', color: colors.danger }}>
+                                                    -{group.categoryDeficit.toLocaleString()} kg
+                                                </Typography>
+                                            ) : isWarning ? (
+                                                <Typography sx={{ fontWeight: 700, fontSize: '11px', color: colors.warning }}>
+                                                    En camino
                                                 </Typography>
                                             ) : (
-                                                group.activeSuppliers.slice(0, 3).map((sup, idx) => (
-                                                    <Chip
-                                                        key={idx}
-                                                        label={`${sup.name}: ${sup.stock.toLocaleString()} kg`}
-                                                        size="small"
-                                                        sx={{
-                                                            height: 18,
-                                                            fontSize: '10px',
-                                                            bgcolor: 'rgba(255,255,255,0.04)',
-                                                            color: colors.textSecondary,
-                                                            border: `1px solid ${colors.border}`
-                                                        }}
-                                                    />
-                                                ))
-                                            )}
-                                            {group.activeSuppliers.length > 3 && (
-                                                <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '10px' }}>
-                                                    +{group.activeSuppliers.length - 3} más
+                                                <Typography sx={{ fontWeight: 700, fontSize: '12px', color: colors.textSecondary }}>
+                                                    {group.totalStock.toLocaleString()} kg
                                                 </Typography>
                                             )}
                                         </Box>
@@ -1226,133 +1106,106 @@ export default function MaterialesCriticosDashboardPage() {
                             <Box sx={{
                                 p: 2,
                                 borderBottom: `1px solid ${colors.border}`,
-                                bgcolor: 'rgba(255,255,255,0.02)'
+                                bgcolor: 'rgba(255,255,255,0.015)'
                             }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                                    <Box>
-                                        <Typography variant="h6" sx={{ fontWeight: 900, color: colors.text, fontSize: '18px' }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1.5, mb: 1.5 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+                                        <Typography variant="h5" sx={{ fontWeight: 900, color: colors.text, fontSize: '20px' }}>
                                             {selectedGroup.nombre}
                                         </Typography>
-                                        <Typography variant="caption" sx={{ color: colors.textSecondary }}>
-                                            Ficha Ejecutiva de Abastecimiento • {selectedGroup.items.length} SKUs asociados
-                                        </Typography>
+                                        {selectedGroup.categoryStatus === 'CRITICAL' ? (
+                                            <Chip
+                                                label={`🔴 Quiebre: Faltan ${selectedGroup.categoryDeficit.toLocaleString()} kg`}
+                                                size="small"
+                                                sx={{ height: 24, fontSize: '11px', bgcolor: colors.dangerBg, color: colors.danger, fontWeight: 800 }}
+                                            />
+                                        ) : selectedGroup.categoryStatus === 'WARNING' ? (
+                                            <Chip
+                                                label="🟡 En Riesgo (Cubierto en Tránsito)"
+                                                size="small"
+                                                sx={{ height: 24, fontSize: '11px', bgcolor: colors.warningBg, color: colors.warning, fontWeight: 700 }}
+                                            />
+                                        ) : (
+                                            <Chip
+                                                label="🟢 Stock en Nivel Óptimo"
+                                                size="small"
+                                                sx={{ height: 24, fontSize: '11px', bgcolor: colors.successBg, color: colors.success, fontWeight: 700 }}
+                                            />
+                                        )}
+                                        {selectedGroup.totalSobrante > 0 && (
+                                            <Chip
+                                                label={`🧊 ${selectedGroup.totalSobrante.toLocaleString()} kg excluidos`}
+                                                size="small"
+                                                sx={{ height: 24, fontSize: '11px', bgcolor: 'rgba(168, 85, 247, 0.15)', color: colors.purple, fontWeight: 700 }}
+                                            />
+                                        )}
                                     </Box>
 
-                                    {/* Botón Acción 1: Ajustar Mín/Máx con Benchmarking de Consumos */}
-                                    <Button
-                                        size="small"
-                                        variant="outlined"
-                                        onClick={() => {
-                                            setCatMinInput(selectedGroup.minimo !== null ? String(selectedGroup.minimo) : '');
-                                            setCatMaxInput(selectedGroup.maximo !== null ? String(selectedGroup.maximo) : '');
-                                            setEditCategoryLimitsOpen(true);
-                                        }}
-                                        startIcon={<TuneIcon fontSize="small" />}
-                                        sx={{
-                                            fontSize: '11px',
-                                            borderColor: colors.border,
-                                            color: colors.primary,
-                                            textTransform: 'none',
-                                            fontWeight: 700,
-                                            '&:hover': { borderColor: colors.primary, bgcolor: 'rgba(245,158,11,0.08)' }
-                                        }}
-                                    >
-                                        Editar Mín/Máx
-                                    </Button>
-                                </Box>
+                                    {/* Límites de Stock y Botón de Edición */}
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                        <Box sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 1.5,
+                                            px: 1.5,
+                                            py: 0.6,
+                                            borderRadius: 1.5,
+                                            bgcolor: 'rgba(255,255,255,0.03)',
+                                            border: `1px solid ${colors.border}`,
+                                            fontSize: '12px'
+                                        }}>
+                                            <span style={{ color: colors.textSecondary }}>
+                                                Mín: <strong style={{ color: colors.text }}>{selectedGroup.minimo !== null ? `${selectedGroup.minimo.toLocaleString()} kg` : 'Sin fijar'}</strong>
+                                            </span>
+                                            <span style={{ color: colors.border }}>•</span>
+                                            <span style={{ color: colors.textSecondary }}>
+                                                Máx: <strong style={{ color: colors.text }}>{selectedGroup.maximo !== null ? `${selectedGroup.maximo.toLocaleString()} kg` : 'Sin fijar'}</strong>
+                                            </span>
+                                        </Box>
 
-                                {/* Indicadores Clave de la Categoría: Stock, Proyectado (Pedidos) e Histórico (3m) */}
-                                <Box sx={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(4, 1fr)',
-                                    gap: 1,
-                                    mt: 1.5,
-                                    p: 1.2,
-                                    bgcolor: 'rgba(0,0,0,0.25)',
-                                    borderRadius: 1.5,
-                                    border: `1px solid ${colors.border}`
-                                }}>
-                                    {/* 1. Stock Computable */}
-                                    <Box>
-                                        <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '10px' }}>
-                                            Stock Computable
-                                        </Typography>
-                                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: colors.text }}>
-                                            {selectedGroup.totalStock.toLocaleString()} kg
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '9px', display: 'block' }}>
-                                            (+{selectedGroup.totalPorVenir.toLocaleString()} kg ped.)
-                                        </Typography>
-                                    </Box>
-
-                                    {/* 2. Consumo Proyectado (Pedidos) */}
-                                    <Box>
-                                        <Typography variant="caption" sx={{ color: colors.info, fontSize: '10px', fontWeight: 700 }}>
-                                            🧵 Proyectado Pedidos
-                                        </Typography>
-                                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: colors.info }}>
-                                            {selectedGroup.totalConsumoProyectado.toLocaleString()} kg
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '9px', display: 'block' }}>
-                                            demanda en cola
-                                        </Typography>
-                                    </Box>
-
-                                    {/* 3. Consumo Histórico (3 meses) */}
-                                    <Box>
-                                        <Typography variant="caption" sx={{ color: colors.warning, fontSize: '10px', fontWeight: 700 }}>
-                                            📊 Histórico (3m)
-                                        </Typography>
-                                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: colors.warning }}>
-                                            ~{selectedGroup.totalConsumoMensual.toLocaleString()} kg
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '9px', display: 'block' }}>
-                                            {selectedGroup.totalConsumo90d.toLocaleString()} kg total
-                                        </Typography>
-                                    </Box>
-
-                                    {/* 4. Déficit a Comprar */}
-                                    <Box>
-                                        <Typography variant="caption" sx={{ color: selectedGroup.categoryDeficit > 0 ? colors.danger : colors.success, fontSize: '10px', fontWeight: 700 }}>
-                                            {selectedGroup.categoryDeficit > 0 ? 'Déficit a Comprar' : 'Autonomía'}
-                                        </Typography>
-                                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: selectedGroup.categoryDeficit > 0 ? colors.danger : colors.success }}>
-                                            {selectedGroup.categoryDeficit > 0
-                                                ? `-${selectedGroup.categoryDeficit.toLocaleString()} kg`
-                                                : selectedGroup.mesesAutonomia ? `${selectedGroup.mesesAutonomia} meses` : '✓ Óptimo'}
-                                        </Typography>
+                                        <Button
+                                            size="small"
+                                            variant="outlined"
+                                            onClick={() => {
+                                                setCatMinInput(selectedGroup.minimo !== null ? String(selectedGroup.minimo) : '');
+                                                setCatMaxInput(selectedGroup.maximo !== null ? String(selectedGroup.maximo) : '');
+                                                setEditCategoryLimitsOpen(true);
+                                            }}
+                                            startIcon={<TuneIcon fontSize="small" />}
+                                            sx={{
+                                                height: 32,
+                                                fontSize: '12px',
+                                                borderColor: colors.border,
+                                                color: colors.primary,
+                                                textTransform: 'none',
+                                                fontWeight: 700,
+                                                '&:hover': { borderColor: colors.primary, bgcolor: 'rgba(245,158,11,0.08)' }
+                                            }}
+                                        >
+                                            Editar Mín/Máx
+                                        </Button>
                                     </Box>
                                 </Box>
 
-                                {/* Mini Fila de Límites Activos de la Categoría */}
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1, px: 0.5, fontSize: '11px', color: colors.textSecondary }}>
-                                    <span>
-                                        Mínimo Categoría: <strong style={{ color: colors.text }}>{selectedGroup.minimo ? `${selectedGroup.minimo.toLocaleString()} kg` : 'Sin configurar'}</strong>
-                                    </span>
-                                    <span>
-                                        Máximo Categoría: <strong style={{ color: colors.text }}>{selectedGroup.maximo ? `${selectedGroup.maximo.toLocaleString()} kg` : 'Sin configurar'}</strong>
-                                    </span>
-                                </Box>
-
-                                {/* Banner de Decisión Inmediata de Compra (si hay quiebre) */}
+                                {/* Banner de Quiebre / Acción Directa de Compra */}
                                 {selectedGroup.categoryDeficit > 0 && (
                                     <Box sx={{
-                                        mt: 1.5,
-                                        p: 1.2,
+                                        p: 1.5,
+                                        mb: 1.5,
                                         bgcolor: colors.dangerBg,
                                         border: `1px solid ${colors.danger}`,
-                                        borderRadius: 1.5,
+                                        borderRadius: 2,
                                         display: 'flex',
                                         justifyContent: 'space-between',
                                         alignItems: 'center',
-                                        gap: 1
+                                        gap: 1.5
                                     }}>
                                         <Box>
-                                            <Typography sx={{ fontWeight: 800, color: colors.danger, fontSize: '12px' }}>
-                                                🚨 Quiebre Detectado: Comprar {selectedGroup.categoryDeficit.toLocaleString()} kg
+                                            <Typography sx={{ fontWeight: 800, color: colors.danger, fontSize: '13px' }}>
+                                                🚨 Déficit de {selectedGroup.categoryDeficit.toLocaleString()} kg detectado
                                             </Typography>
                                             <Typography variant="caption" sx={{ color: colors.textSecondary }}>
-                                                Cubre la demanda de pedidos y alcanza el mínimo sugerido de {selectedGroup.minimo?.toLocaleString()} kg.
+                                                Se necesitan para cubrir pedidos de producción y mantener el stock de seguridad mínimo ({selectedGroup.minimo?.toLocaleString()} kg).
                                             </Typography>
                                         </Box>
                                         <Button
@@ -1368,9 +1221,10 @@ export default function MaterialesCriticosDashboardPage() {
                                                 bgcolor: colors.danger,
                                                 color: '#fff',
                                                 fontWeight: 800,
-                                                fontSize: '11px',
+                                                fontSize: '12px',
                                                 textTransform: 'none',
                                                 whiteSpace: 'nowrap',
+                                                px: 2,
                                                 '&:hover': { bgcolor: '#dc2626' }
                                             }}
                                         >
@@ -1378,13 +1232,93 @@ export default function MaterialesCriticosDashboardPage() {
                                         </Button>
                                     </Box>
                                 )}
+
+                                {/* 4 Indicadores Clave de Diagnóstico */}
+                                <Box sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' },
+                                    gap: 1.5
+                                }}>
+                                    {/* 1. Stock Computable */}
+                                    <Box sx={{ p: 1.5, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 1.5, border: `1px solid ${colors.border}` }}>
+                                        <Typography variant="caption" sx={{ color: colors.textSecondary, fontSize: '11px', fontWeight: 600 }}>
+                                            Stock Computable
+                                        </Typography>
+                                        <Typography variant="h6" sx={{ fontWeight: 900, color: colors.text, mt: 0.3 }}>
+                                            {selectedGroup.totalStock.toLocaleString()} kg
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '10px' }}>
+                                            {selectedGroup.totalPorVenir > 0 ? `+${selectedGroup.totalPorVenir.toLocaleString()} kg en camino` : 'Sin pedidos en camino'}
+                                        </Typography>
+                                    </Box>
+
+                                    {/* 2. Demanda de Pedidos */}
+                                    <Box sx={{ p: 1.5, bgcolor: 'rgba(56, 189, 248, 0.04)', borderRadius: 1.5, border: `1px solid rgba(56, 189, 248, 0.2)` }}>
+                                        <Typography variant="caption" sx={{ color: colors.info, fontSize: '11px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                            <PrecisionManufacturingIcon sx={{ fontSize: 13 }} />
+                                            Demanda Pedidos
+                                        </Typography>
+                                        <Typography variant="h6" sx={{ fontWeight: 900, color: colors.info, mt: 0.3 }}>
+                                            {selectedGroup.totalConsumoProyectado.toLocaleString()} kg
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '10px' }}>
+                                            Requerimiento producción
+                                        </Typography>
+                                    </Box>
+
+                                    {/* 3. Consumo Promedio Mensual */}
+                                    <Box sx={{ p: 1.5, bgcolor: 'rgba(245, 158, 11, 0.04)', borderRadius: 1.5, border: `1px solid rgba(245, 158, 11, 0.2)` }}>
+                                        <Typography variant="caption" sx={{ color: colors.warning, fontSize: '11px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                            <TrendingDownIcon sx={{ fontSize: 13 }} />
+                                            Consumo Mensual
+                                        </Typography>
+                                        <Typography variant="h6" sx={{ fontWeight: 900, color: colors.warning, mt: 0.3 }}>
+                                            ~{selectedGroup.totalConsumoMensual.toLocaleString()} kg/mes
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '10px' }}>
+                                            {selectedGroup.totalConsumo90d.toLocaleString()} kg en 3 meses
+                                        </Typography>
+                                    </Box>
+
+                                    {/* 4. Autonomía / Cobertura */}
+                                    <Box sx={{ p: 1.5, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 1.5, border: `1px solid ${colors.border}` }}>
+                                        <Typography variant="caption" sx={{ color: selectedGroup.categoryDeficit > 0 ? colors.danger : colors.success, fontSize: '11px', fontWeight: 700 }}>
+                                            {selectedGroup.categoryDeficit > 0 ? 'Déficit Inmediato' : 'Cobertura Estimada'}
+                                        </Typography>
+                                        <Typography variant="h6" sx={{ fontWeight: 900, color: selectedGroup.categoryDeficit > 0 ? colors.danger : colors.success, mt: 0.3 }}>
+                                            {selectedGroup.categoryDeficit > 0
+                                                ? `-${selectedGroup.categoryDeficit.toLocaleString()} kg`
+                                                : selectedGroup.mesesAutonomia ? `~${selectedGroup.mesesAutonomia} meses` : '✓ Óptimo'}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '10px' }}>
+                                            {selectedGroup.diasAutonomia ? `Alcanza para ~${selectedGroup.diasAutonomia} días` : 'Según ritmo histórico'}
+                                        </Typography>
+                                    </Box>
+                                </Box>
                             </Box>
 
-                            {/* Tabla Operativa de Proveedores & SKUs con Consumo Proyectado y Consumo Histórico */}
-                            <Box sx={{ flex: 1, overflowY: 'auto', p: 1.5 }}>
-                                <Typography variant="caption" sx={{ color: colors.textMuted, fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
-                                    Detalle Operativo por Proveedor ({selectedGroup.items.length} ítems)
-                                </Typography>
+                            {/* Detalle Operativo por Proveedor */}
+                            <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: colors.text, textTransform: 'uppercase', fontSize: '11px', letterSpacing: 0.5 }}>
+                                        Proveedores & Materiales ({selectedGroup.items.length})
+                                    </Typography>
+                                    <FormControlLabel
+                                        control={
+                                            <Switch
+                                                size="small"
+                                                checked={hideZeroStockSuppliers}
+                                                onChange={(e) => setHideZeroStockSuppliers(e.target.checked)}
+                                                sx={{
+                                                    '& .MuiSwitch-switchBase.Mui-checked': { color: colors.primary },
+                                                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: colors.primary }
+                                                }}
+                                            />
+                                        }
+                                        label={<Typography sx={{ fontSize: '11px', color: colors.textSecondary }}>Ocultar sin stock (0 kg)</Typography>}
+                                        sx={{ m: 0 }}
+                                    />
+                                </Box>
 
                                 <TableContainer sx={{ border: `1px solid ${colors.border}`, borderRadius: 1.5 }}>
                                     <Table size="small">
@@ -1393,8 +1327,8 @@ export default function MaterialesCriticosDashboardPage() {
                                                 <TableCell sx={{ color: colors.textMuted, fontSize: '11px', fontWeight: 700 }}>Proveedor / SKU</TableCell>
                                                 <TableCell align="right" sx={{ color: colors.textMuted, fontSize: '11px', fontWeight: 700 }}>Stock Físico</TableCell>
                                                 <TableCell align="right" sx={{ color: colors.textMuted, fontSize: '11px', fontWeight: 700 }}>Por Venir</TableCell>
-                                                <TableCell align="right" sx={{ color: colors.info, fontSize: '11px', fontWeight: 700 }}>🧵 Proyectado</TableCell>
-                                                <TableCell align="right" sx={{ color: colors.warning, fontSize: '11px', fontWeight: 700 }}>📊 Histórico (90d)</TableCell>
+                                                <TableCell align="right" sx={{ color: colors.info, fontSize: '11px', fontWeight: 700 }}>🧵 Demanda Pedidos</TableCell>
+                                                <TableCell align="right" sx={{ color: colors.warning, fontSize: '11px', fontWeight: 700 }}>📊 Consumo Mensual</TableCell>
                                                 <TableCell align="center" sx={{ color: colors.textMuted, fontSize: '11px', fontWeight: 700 }}>Tratamiento</TableCell>
                                                 <TableCell align="center" sx={{ color: colors.textMuted, fontSize: '11px', fontWeight: 700 }}>Acciones</TableCell>
                                             </TableRow>
@@ -1461,18 +1395,18 @@ export default function MaterialesCriticosDashboardPage() {
                                                                 </Typography>
                                                             </TableCell>
 
-                                                            {/* Consumo Histórico Individual */}
+                                                            {/* Consumo Mensual Promedio Individual */}
                                                             <TableCell align="right">
                                                                 <Typography sx={{
-                                                                    fontWeight: 700,
+                                                                    fontWeight: 800,
                                                                     fontSize: '12px',
-                                                                    color: item.consumo90d > 0 ? colors.warning : colors.textMuted
+                                                                    color: item.consumoMensual > 0 ? colors.warning : colors.textMuted
                                                                 }}>
-                                                                    {item.consumo90d.toLocaleString()} kg
+                                                                    ~{item.consumoMensual.toLocaleString()} kg/mes
                                                                 </Typography>
                                                                 {item.consumo90d > 0 && (
                                                                     <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '9px', display: 'block' }}>
-                                                                        ~{item.consumoMensual.toLocaleString()} kg/m
+                                                                        ({item.consumo90d.toLocaleString()} kg en 3m)
                                                                     </Typography>
                                                                 )}
                                                             </TableCell>
@@ -1505,20 +1439,35 @@ export default function MaterialesCriticosDashboardPage() {
 
                                                             {/* Acciones del Ítem */}
                                                             <TableCell align="center">
-                                                                <Tooltip title="Editar Mín/Máx y Pedido por venir del ítem">
-                                                                    <IconButton
-                                                                        size="small"
-                                                                        onClick={() => {
-                                                                            setEditItemLimitsTarget(item);
-                                                                            setItemMinInput(item.stockMinimo !== null ? String(item.stockMinimo) : '');
-                                                                            setItemMaxInput(item.stockMaximo !== null ? String(item.stockMaximo) : '');
-                                                                            setItemPorVenirInput(String(item.porVenir || 0));
-                                                                        }}
-                                                                        sx={{ color: colors.textSecondary, '&:hover': { color: colors.primary } }}
-                                                                    >
-                                                                        <EditIcon fontSize="small" />
-                                                                    </IconButton>
-                                                                </Tooltip>
+                                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                                                                    <Tooltip title="Pedir este material">
+                                                                        <IconButton
+                                                                            size="small"
+                                                                            onClick={() => {
+                                                                                setQuickOrderTarget(selectedGroup);
+                                                                                setQuickOrderQty(String(selectedGroup.categoryDeficit > 0 ? selectedGroup.categoryDeficit : 500));
+                                                                                setQuickOrderSupplierId(item.supplierId || '');
+                                                                            }}
+                                                                            sx={{ color: colors.primary, '&:hover': { bgcolor: 'rgba(245,158,11,0.1)' } }}
+                                                                        >
+                                                                            <AddShoppingCartIcon fontSize="small" />
+                                                                        </IconButton>
+                                                                    </Tooltip>
+                                                                    <Tooltip title="Editar Mín/Máx y Pedido por venir del ítem">
+                                                                        <IconButton
+                                                                            size="small"
+                                                                            onClick={() => {
+                                                                                setEditItemLimitsTarget(item);
+                                                                                setItemMinInput(item.stockMinimo !== null ? String(item.stockMinimo) : '');
+                                                                                setItemMaxInput(item.stockMaximo !== null ? String(item.stockMaximo) : '');
+                                                                                setItemPorVenirInput(String(item.porVenir || 0));
+                                                                            }}
+                                                                            sx={{ color: colors.textSecondary, '&:hover': { color: colors.primary } }}
+                                                                        >
+                                                                            <EditIcon fontSize="small" />
+                                                                        </IconButton>
+                                                                    </Tooltip>
+                                                                </Box>
                                                             </TableCell>
                                                         </TableRow>
                                                     );

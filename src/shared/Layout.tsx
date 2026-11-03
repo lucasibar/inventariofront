@@ -146,6 +146,15 @@ const navGroups: NavGroup[] = [
             { to: '/compras/faltantes-produccion', label: '🧶 Faltantes Hilado Producción' },
             { to: '/compras/materiales-criticos-dashboard', label: '⚡ Tablero de Compras (Nuevo)' },
             { to: '/compras/materiales-criticos', label: '🔥 Materiales Críticos (Clásico)' },
+            {
+                id: 'compras-configuracion',
+                label: '⚙️ Configuración',
+                isSubGroup: true,
+                items: [
+                    { to: '/items', label: '🏷️ Materiales y Precios' },
+                    { to: '/socios', label: '🤝 Proveedores / Socios' },
+                ]
+            },
         ]
     },
     {

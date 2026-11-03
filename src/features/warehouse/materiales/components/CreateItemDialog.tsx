@@ -44,6 +44,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
         stockMaximo: '', // New
         kilosPorCaja: '', // New
         pesoConoKg: '',
+        costoUnitario: '',
         unidadPrincipal: 'KG',
         unidadSecundaria: '',
         tono: '', // New
@@ -71,6 +72,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                     stockMaximo: editTarget.stockMaximo != null ? String(editTarget.stockMaximo) : '',
                     kilosPorCaja: editTarget.kilosPorCaja != null ? String(editTarget.kilosPorCaja) : '',
                     pesoConoKg: editTarget.pesoConoKg != null ? String(editTarget.pesoConoKg) : '',
+                    costoUnitario: editTarget.costoUnitario != null ? String(editTarget.costoUnitario) : (editTarget.meta?.costoUnitario != null ? String(editTarget.meta.costoUnitario) : ''),
                     unidadPrincipal: editTarget.unidadPrincipal || 'KG',
                     unidadSecundaria: editTarget.unidadSecundaria || '',
                     tono: editTarget.tono || '',
@@ -89,6 +91,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                     stockMaximo: '',
                     kilosPorCaja: '',
                     pesoConoKg: '',
+                    costoUnitario: '',
                     unidadPrincipal: 'KG',
                     unidadSecundaria: '',
                     tono: '',
@@ -164,6 +167,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                 stockMaximo: form.stockMaximo ? Number(form.stockMaximo) : undefined,
                 kilosPorCaja: form.kilosPorCaja ? Number(form.kilosPorCaja) : undefined,
                 pesoConoKg: form.pesoConoKg ? Number(form.pesoConoKg) : undefined,
+                costoUnitario: form.costoUnitario ? Number(form.costoUnitario) : 0,
             };
             
             let result;
@@ -185,6 +189,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                 stockMaximo: '',
                 kilosPorCaja: '',
                 pesoConoKg: '',
+                costoUnitario: '',
                 unidadPrincipal: 'KG',
                 unidadSecundaria: '',
                 tono: '',
@@ -232,6 +237,7 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                                         stockMaximo: newValue.stockMaximo != null ? String(newValue.stockMaximo) : '',
                                         kilosPorCaja: newValue.kilosPorCaja != null ? String(newValue.kilosPorCaja) : '',
                                         pesoConoKg: newValue.pesoConoKg != null ? String(newValue.pesoConoKg) : '',
+                                        costoUnitario: newValue.costoUnitario != null ? String(newValue.costoUnitario) : '',
                                         unidadPrincipal: newValue.unidadPrincipal || 'KG',
                                         unidadSecundaria: newValue.unidadSecundaria || '',
                                         tono: newValue.tono || '',
@@ -424,6 +430,17 @@ export const CreateItemDialog = ({ open, onClose, onSuccess, initialSupplierId, 
                             variant="filled"
                             value={form.kilosPorCaja}
                             onChange={(e) => setForm({ ...form, kilosPorCaja: e.target.value })}
+                        />
+                    </Box>
+                    <Box>
+                        <TextField
+                            label="Costo Unitario (USD)"
+                            type="number"
+                            fullWidth
+                            variant="filled"
+                            helperText="Valor de referencia por kg o unidad"
+                            value={form.costoUnitario}
+                            onChange={(e) => setForm({ ...form, costoUnitario: e.target.value })}
                         />
                     </Box>
                     <Box>
