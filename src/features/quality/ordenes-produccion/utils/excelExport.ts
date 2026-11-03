@@ -160,3 +160,35 @@ export function exportMatrizMaquinasToExcel(maquinas: ParsedMachineEntry[], file
     XLSX.utils.book_append_sheet(wb, ws, 'Matriz Máquinas');
     XLSX.writeFile(wb, filename);
 }
+
+export interface InformeCambioExcelRow {
+    maquina: number;
+    area: string;
+    articuloSaliente: string;
+    articuloEntrante: string;
+    talleColorEntrante: string;
+    tipoCambio: string;
+    tiempoEstimado: string;
+    fuenteTiempo: string;
+    hiladosEntrantes: string;
+}
+
+export function exportInformeCambiosToExcel(items: InformeCambioExcelRow[], filename = 'informe_cambios_maquinas.xlsx') {
+    const data = items.map((c, idx) => ({
+        'N°': idx + 1,
+        'Máquina': 'M' + c.maquina,
+        'Área': c.area || '-',
+        'Artículo Saliente': c.articuloSaliente || '-',
+        'Artículo Entrante': c.articuloEntrante || '-',
+        'Talle y Color Entrante': c.talleColorEntrante || '-',
+        'Tipo de Cambio': c.tipoCambio || '-',
+        'Tiempo Estimado Parada': c.tiempoEstimado || '-',
+        'Origen del Estimado': c.fuenteTiempo || '-',
+        'Hilados a Llevar a Pie de Máquina': c.hiladosEntrantes || 'Ninguno requerido',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Cambios Programados');
+    XLSX.writeFile(wb, filename);
+}

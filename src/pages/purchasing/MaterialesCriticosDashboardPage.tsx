@@ -43,6 +43,7 @@ import BlockIcon from '@mui/icons-material/Block';
 import CheckIcon from '@mui/icons-material/Check';
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import { useOrdenesCompra } from '../../features/purchasing/ordenesCompra/ordenesCompraStorage';
@@ -779,6 +780,25 @@ export default function MaterialesCriticosDashboardPage() {
                         }}
                     >
                         {isMobile ? 'OC' : 'Órdenes de Compra'}
+                    </Button>
+
+                    {/* Botón Gráfico Diente de Sierra */}
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => navigate('/compras/diente-de-sierra')}
+                        startIcon={<TrendingUpIcon fontSize="small" />}
+                        sx={{
+                            height: 36,
+                            borderColor: 'rgba(245, 158, 11, 0.4)',
+                            color: colors.primary,
+                            fontSize: '12px',
+                            textTransform: 'none',
+                            fontWeight: 700,
+                            '&:hover': { borderColor: colors.primary, bgcolor: 'rgba(245, 158, 11, 0.1)' }
+                        }}
+                    >
+                        {isMobile ? 'Sierra' : 'Gráfico Sierra'}
                     </Button>
                 </Box>
             </Box>

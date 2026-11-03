@@ -367,7 +367,7 @@ export default function OrdenesProduccionPage({ sectorMode }: OrdenesProduccionP
             {/* Results Section */}
             {result && (
                 <div>
-                    {/* Botones de Redirección a Informes Generados */}
+                    {/* 2 INFORMES PRINCIPALES GENERADOS POR CARGA DE PRODUCCIÓN */}
                     {effectiveSector === 'PRODUCCION' && (
                         <div
                             className="no-print"
@@ -382,24 +382,24 @@ export default function OrdenesProduccionPage({ sectorMode }: OrdenesProduccionP
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
                                 <div>
                                     <div style={{ fontSize: '15px', fontWeight: 800, color: '#f3f4f6', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span>📊</span> Informes de Producción Generados
-                                        <Badge color="#10b981">Planilla Analizada</Badge>
+                                        <span>📊</span> Los 2 Informes Operativos de Producción
+                                        <Badge color="#10b981">Planilla Procesada</Badge>
                                     </div>
                                     <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '3px' }}>
-                                        La producción diaria fue calculada con éxito. Navegá directamente a los dashboards especializados de Depósito y Producción:
+                                        Planificación calculada con éxito. Accedé e imprimí directamente los 2 informes requeridos para planta y depósito:
                                     </div>
                                 </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
-                                {/* Botón 1: Hilado en Depósito */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
+                                {/* Informe 1: Hilado para Armar Zona de Picking */}
                                 <div
-                                    onClick={() => navigate('/deposito/informes-produccion?tipo=HILADO')}
+                                    onClick={() => setActiveTab('picking')}
                                     style={{
-                                        background: 'rgba(245, 158, 11, 0.1)',
-                                        border: '1px solid rgba(245, 158, 11, 0.4)',
-                                        borderRadius: '10px',
-                                        padding: '14px 16px',
+                                        background: activeTab === 'picking' ? 'rgba(56, 189, 248, 0.15)' : 'rgba(56, 189, 248, 0.08)',
+                                        border: '1px solid rgba(56, 189, 248, 0.4)',
+                                        borderRadius: '12px',
+                                        padding: '16px 18px',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease',
                                     }}
@@ -407,101 +407,33 @@ export default function OrdenesProduccionPage({ sectorMode }: OrdenesProduccionP
                                     onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}
                                 >
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '14px', fontWeight: 800, color: '#f59e0b' }}>
-                                            🧶 Necesidad de Hilado (Depósito)
+                                        <span style={{ fontSize: '14px', fontWeight: 800, color: '#38bdf8' }}>
+                                            🧶 1. Hilado para Armar la Zona de Picking
                                         </span>
-                                        <span style={{ fontSize: '16px' }}>↗️</span>
+                                        <span style={{ fontSize: '14px', color: '#38bdf8', fontWeight: 700 }}>Ver Planilla ➔</span>
                                     </div>
-                                    <div style={{ fontSize: '11px', color: '#d1d5db', marginTop: '6px' }}>
-                                        Kilos, conos, stock picking vs depósito, alertas stock mínimo en rojo y próximo corte de proveedor.
+                                    <div style={{ fontSize: '12px', color: '#d1d5db', marginTop: '6px' }}>
+                                        Informe directo para que Depósito baje conos y kilos desde reserva al rack de picking de tejeduría.
                                     </div>
-                                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#f59e0b' }}>
+                                    <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#38bdf8' }}>
                                             {(result.resumenAlertas.totalKilosHiladoDia || 0).toLocaleString('es-AR')} kg
                                         </span>
-                                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>•</span>
-                                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>
-                                            {filteredMateriales.length} hilados
+                                        <span style={{ fontSize: '12px', color: '#9ca3af' }}>•</span>
+                                        <span style={{ fontSize: '12px', color: '#9ca3af' }}>
+                                            {filteredHojaPicking.length} hilados requeridos
                                         </span>
                                     </div>
                                 </div>
 
-                                {/* Botón 2: Insumos en Depósito */}
+                                {/* Informe 2: Cambios de Máquina, Hilado Entrante & Tiempos Marina */}
                                 <div
-                                    onClick={() => navigate('/deposito/informes-produccion?tipo=INSUMO')}
+                                    onClick={() => navigate('/produccion/dashboard')}
                                     style={{
-                                        background: 'rgba(236, 72, 153, 0.1)',
-                                        border: '1px solid rgba(236, 72, 153, 0.4)',
-                                        borderRadius: '10px',
-                                        padding: '14px 16px',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                    }}
-                                    onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
-                                    onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}
-                                >
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '14px', fontWeight: 800, color: '#ec4899' }}>
-                                            📦 Necesidad de Insumos (Depósito)
-                                        </span>
-                                        <span style={{ fontSize: '16px' }}>↗️</span>
-                                    </div>
-                                    <div style={{ fontSize: '11px', color: '#d1d5db', marginTop: '6px' }}>
-                                        Avíos, packaging y etiquetas requeridas para la terminación en depósito de insumos.
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#ec4899' }}>
-                                            Depósito Insumos
-                                        </span>
-                                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>•</span>
-                                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>
-                                            Picking y Reserva
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Botón 3: Plan de Tejeduría en Producción */}
-                                <div
-                                    onClick={() => navigate('/produccion/informe-tejeduria')}
-                                    style={{
-                                        background: 'rgba(16, 185, 129, 0.1)',
-                                        border: '1px solid rgba(16, 185, 129, 0.4)',
-                                        borderRadius: '10px',
-                                        padding: '14px 16px',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                    }}
-                                    onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
-                                    onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}
-                                >
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '14px', fontWeight: 800, color: '#10b981' }}>
-                                            ⚙️ Plan de Tejeduría Diario
-                                        </span>
-                                        <span style={{ fontSize: '16px' }}>↗️</span>
-                                    </div>
-                                    <div style={{ fontSize: '11px', color: '#d1d5db', marginTop: '6px' }}>
-                                        Qué artículo se teje en qué máquina y estimado en docenas/pares al final del día.
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#10b981' }}>
-                                            {(result.resumenAlertas.totalDocenasEstimadas || 0).toLocaleString('es-AR')} doc.
-                                        </span>
-                                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>•</span>
-                                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>
-                                            {new Set(filteredMaquinas.map((m) => m.machine)).size} máquinas
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Botón 4: Informe de Cambios en Producción */}
-                                <div
-                                    onClick={() => navigate('/produccion/informe-cambios-dia')}
-                                    style={{
-                                        background: 'rgba(139, 92, 246, 0.1)',
-                                        border: '1px solid rgba(139, 92, 246, 0.4)',
-                                        borderRadius: '10px',
-                                        padding: '14px 16px',
+                                        background: 'rgba(167, 139, 250, 0.08)',
+                                        border: '1px solid rgba(167, 139, 250, 0.4)',
+                                        borderRadius: '12px',
+                                        padding: '16px 18px',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease',
                                     }}
@@ -510,20 +442,20 @@ export default function OrdenesProduccionPage({ sectorMode }: OrdenesProduccionP
                                 >
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <span style={{ fontSize: '14px', fontWeight: 800, color: '#a78bfa' }}>
-                                            🔄 Informe de Cambios de Máquina
+                                            🔄 2. Cambios de Máquina & Hilados Entrantes
                                         </span>
-                                        <span style={{ fontSize: '16px' }}>↗️</span>
+                                        <span style={{ fontSize: '14px', color: '#a78bfa', fontWeight: 700 }}>Ver en Dashboard ↗️</span>
                                     </div>
-                                    <div style={{ fontSize: '11px', color: '#d1d5db', marginTop: '6px' }}>
-                                        Cuántos cambios son, en qué máquinas, qué tipo de cambio y cuánto se estima que tarda.
+                                    <div style={{ fontSize: '12px', color: '#d1d5db', marginTop: '6px' }}>
+                                        De qué artículo a qué artículo se cambia, hilados a llevar a pie de máquina y tiempos históricos de Marina.
                                     </div>
-                                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#a78bfa' }}>
-                                            {result.resumenAlertas.totalCambiosProgramados08AM || 0} cambios
+                                    <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#a78bfa' }}>
+                                            {result.resumenAlertas.totalCambiosProgramados08AM || 0} cambios 08:00 AM
                                         </span>
-                                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>•</span>
-                                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>
-                                            08:00 AM y entre turnos
+                                        <span style={{ fontSize: '12px', color: '#9ca3af' }}>•</span>
+                                        <span style={{ fontSize: '12px', color: '#9ca3af' }}>
+                                            Tiempos promedio cronometrados
                                         </span>
                                     </div>
                                 </div>

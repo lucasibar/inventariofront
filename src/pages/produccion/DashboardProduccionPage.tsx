@@ -6,18 +6,18 @@ import {
     useListarPlanillasProduccionQuery,
     useLazyGetPlanillaProduccionByIdQuery,
 } from '../../features/quality/ordenes-produccion/api/ordenesProduccion.api';
-import {
-    useGetPlantsQuery,
-    useGetMachineTypesQuery,
-    useGetAvailabilityTimelineQuery,
-} from '../../entities/maintenance/api/maintenance.api';
+import { useGetMachineChangeReportQuery } from '../../entities/maintenance/api/maintenance.api';
 import type { ProduccionParseResult } from '../../features/quality/ordenes-produccion/types/ordenesProduccion.types';
+import {
+    exportHojaPickingToExcel,
+    exportInformeCambiosToExcel,
+} from '../../features/quality/ordenes-produccion/utils/excelExport';
 
 export default function DashboardProduccionPage() {
     const isMobile = useIsMobile();
     const navigate = useNavigate();
 
-    // 1. Datos de Planilla de Producción (Susana)
+    // 1. Datos de Planilla de Producción
     const { data: ultimaPlanilla, isLoading: loadingPlanilla } = useGetUltimaPlanillaProduccionQuery();
     const { data: historialPlanillas = [] } = useListarPlanillasProduccionQuery();
     const [fetchPlanillaById] = useLazyGetPlanillaProduccionByIdQuery();
@@ -38,981 +38,999 @@ export default function DashboardProduccionPage() {
         }
     };
 
-    // 2. Datos de Mantenimiento y Paradas de Máquinas
-    const { data: plants } = useGetPlantsQuery();
-    const { data: types } = useGetMachineTypesQuery();
-    const plantId = plants?.[0]?.id || '';
-    const typeId = types?.find((t: any) => t.name.toLowerCase().includes('tejedur'))?.id || types?.[0]?.id || '';
+    // 2. Tiempos Históricos de Cambios cargados por Marina (Mantenimiento)
+    const { data: marinaChangesReport } = useGetMachineChangeReportQuery({});
 
-    const { data: availabilityData, isLoading: loadingAvailability } = useGetAvailabilityTimelineQuery(
-        { plantId, typeId, period: '24h' },
-        { skip: !plantId }
-    );
+    // Mapa de tiempos históricos de Marina por tipo/combinación de cambio
+    const marinaDurationsMap = useMemo(() => {
+        const map = new Map<string, { medianMs: number; formatted: string; count: number }>();
+        if (!marinaChangesReport?.report) return map;
 
-    // Filtros de navegación rápida
-    const [filtroSeccion, setFiltroSeccion] = useState<'TODOS' | 'CORTES' | 'PARADAS' | 'CAMBIOS'>('TODOS');
-    const [filtroTipoMaterial, setFiltroTipoMaterial] = useState<'TODOS' | 'HILADO' | 'INSUMO'>('TODOS');
-    const [searchMaterial, setSearchMaterial] = useState('');
-    const [filtroTipoCambio, setFiltroTipoCambio] = useState<string>('TODOS');
-
-    // =========================================================================
-    // SECCIÓN 1: Faltante y Corte de Materiales (Hilados e Insumos)
-    // =========================================================================
-    const alertasMateriales = useMemo(() => {
-        if (!activePlanilla || !activePlanilla.materiales) return [];
-
-        return activePlanilla.materiales.map((m) => {
-            const cat = (m.categoriaNombre || '').toUpperCase();
-            const rol = (m.rol || '').toUpperCase();
-            const desc = (m.descripcion || '').toUpperCase();
-            const isHilado =
-                rol === 'HILADO' ||
-                cat.includes('HILADO') ||
-                cat.includes('ALGODON') ||
-                cat.includes('GOMA') ||
-                cat.includes('LYCRA') ||
-                cat.includes('POLIAMIDA') ||
-                desc.includes('HILADO') ||
-                m.unidadPrincipal === 'KG';
-
-            const tipoClasif: 'HILADO' | 'INSUMO' = isHilado ? 'HILADO' : 'INSUMO';
-
-            const consumoTotal = Number(m.consumoTotalKg) || 0;
-            const consumoManana = Number(m.consumoMananaKg) || 0;
-            const stockPicking = Number(m.stockEnPickingKg) || 0;
-            const stockReserva = Number(m.stockEnReservaKg) || 0;
-            const stockTotal = Number(m.stockActualTotalKg) || (stockPicking + stockReserva);
-            const stockMinimo = Number(m.stockMinimoKg) || 0;
-
-            // Ritmo de consumo (24 horas)
-            const tasaHora = consumoTotal > 0 ? consumoTotal / 24 : 0;
-            const horasAutonomiaPicking = tasaHora > 0 ? stockPicking / tasaHora : 999;
-            const horasAutonomiaTotal = tasaHora > 0 ? stockTotal / tasaHora : 999;
-
-            // Diagnóstico de Corte
-            let nivelAlerta: 'CRITICO' | 'REPONER' | 'MINIMO' | 'OK' = 'OK';
-            let mensajeCorte = 'Producción del día cubierta con stock disponible';
-            let horaProyectadaCorte: string | null = null;
-            let hayOtroMaterialEnReserva = false;
-            let faltanteNeto = 0;
-
-            if (stockTotal < consumoTotal) {
-                // CORTE TOTAL DE PRODUCCIÓN
-                nivelAlerta = 'CRITICO';
-                faltanteNeto = Math.round((consumoTotal - stockTotal) * 100) / 100;
-                hayOtroMaterialEnReserva = false;
-
-                const horasEnteras = Math.floor(horasAutonomiaTotal);
-                const minutos = Math.round((horasAutonomiaTotal % 1) * 60);
-                const horaReloj = (6 + horasEnteras) % 24;
-                const horaStr = `${String(horaReloj).padStart(2, '0')}:${String(minutos).padStart(2, '0')} hs`;
-
-                horaProyectadaCorte = horasAutonomiaTotal < 12
-                    ? `Turno Mañana (~${horaStr}, a las ${horasEnteras}h ${minutos}m de inicio)`
-                    : `Turno Noche (~${horaStr}, a las ${horasEnteras}h ${minutos}m de inicio)`;
-
-                mensajeCorte = `🛑 Se agota el stock antes de terminar la producción. Faltan ${faltanteNeto} ${m.unidadPrincipal || 'kg'}.`;
-            } else if (stockPicking < consumoTotal && stockReserva > 0) {
-                // SE TERMINA EN PICKING, PERO HAY EN RESERVA (CAMBIO DE LOTE O PROVEEDOR)
-                nivelAlerta = 'REPONER';
-                hayOtroMaterialEnReserva = true;
-
-                const horasEnteras = Math.floor(horasAutonomiaPicking);
-                const minutos = Math.round((horasAutonomiaPicking % 1) * 60);
-                const horaReloj = (6 + horasEnteras) % 24;
-                const horaStr = `${String(horaReloj).padStart(2, '0')}:${String(minutos).padStart(2, '0')} hs`;
-
-                horaProyectadaCorte = `Picking se agota ~${horaStr} (${horasEnteras}h ${minutos}m)`;
-                mensajeCorte = `⚠️ Picking insuficiente para todo el día. Hay ${stockReserva} ${m.unidadPrincipal || 'kg'} en Reserva para pasar o cambiar de lote/proveedor.`;
-            } else if (stockTotal - consumoTotal < stockMinimo && stockMinimo > 0) {
-                // ALERTA STOCK MÍNIMO
-                nivelAlerta = 'MINIMO';
-                hayOtroMaterialEnReserva = stockReserva > 0;
-                mensajeCorte = `🟡 Alcanza para la producción de hoy, pero el remanente (${Math.round((stockTotal - consumoTotal) * 10) / 10} kg) quedará debajo del stock mínimo (${stockMinimo} kg).`;
+        marinaChangesReport.report.forEach((item: any) => {
+            const key = (item.combination || []).slice().sort().join('+').toUpperCase();
+            if (key) {
+                map.set(key, {
+                    medianMs: item.medianDurationMs || 0,
+                    formatted: item.medianDurationFormatted || item.avgDurationFormatted || `${Math.round((item.medianDurationMs || 0) / 60000)}m`,
+                    count: item.count || 0,
+                });
             }
-
-            return {
-                ...m,
-                tipoClasif,
-                consumoTotal,
-                consumoManana,
-                stockPicking,
-                stockReserva,
-                stockTotal,
-                stockMinimo,
-                tasaHora: Math.round(tasaHora * 100) / 100,
-                horasAutonomiaPicking: Math.round(horasAutonomiaPicking * 10) / 10,
-                horasAutonomiaTotal: Math.round(horasAutonomiaTotal * 10) / 10,
-                nivelAlerta,
-                mensajeCorte,
-                horaProyectadaCorte,
-                hayOtroMaterialEnReserva,
-                faltanteNeto,
-            };
         });
-    }, [activePlanilla]);
+        return map;
+    }, [marinaChangesReport]);
 
-    const materialesFiltrados = useMemo(() => {
-        return alertasMateriales.filter((m) => {
-            if (filtroTipoMaterial !== 'TODOS' && m.tipoClasif !== filtroTipoMaterial) return false;
-            if (filtroSeccion === 'CORTES' && m.nivelAlerta !== 'CRITICO' && m.nivelAlerta !== 'REPONER') return false;
+    // Pestaña activa: 'PICKING' o 'CAMBIOS'
+    const [activeTab, setActiveTab] = useState<'PICKING' | 'CAMBIOS'>('PICKING');
 
-            if (searchMaterial.trim()) {
-                const term = searchMaterial.toLowerCase();
-                const matchDesc = m.descripcion.toLowerCase().includes(term);
-                const matchCod = m.codigoInterno.toLowerCase().includes(term);
-                const matchProv = (m.proveedor || '').toLowerCase().includes(term);
-                const matchCol = (m.colorNombre || '').toLowerCase().includes(term);
-                if (!matchDesc && !matchCod && !matchProv && !matchCol) return false;
-            }
-
-            return true;
-        }).sort((a, b) => {
-            const peso: Record<string, number> = { CRITICO: 1, REPONER: 2, MINIMO: 3, OK: 4 };
-            return (peso[a.nivelAlerta] || 5) - (peso[b.nivelAlerta] || 5);
-        });
-    }, [alertasMateriales, filtroTipoMaterial, filtroSeccion, searchMaterial]);
+    // Filtros de búsqueda rápidos
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filtroArea, setFiltroArea] = useState('ALL');
+    const [filtroEstadoPicking, setFiltroEstadoPicking] = useState<'ALL' | 'BAJAR' | 'FALTANTE' | 'OK'>('ALL');
 
     // =========================================================================
-    // SECCIÓN 2: Máquinas Paradas por Mucho Tiempo
+    // INFORME 1: Picking y Abastecimiento de Hilados para Depósito & Tejeduría
     // =========================================================================
-    const maquinasParadas = useMemo(() => {
-        if (!availabilityData?.machines) {
-            // Si aún no cargó mantenimiento, inferir desde las máquinas de la planilla con horas reducidas o paradas
-            if (!activePlanilla || !activePlanilla.maquinas) return [];
-            return activePlanilla.maquinas
-                .filter((m) => (m.netHours && m.netHours < 10) || m.machineStatus === 'PARADA' || m.machineStatus === 'REVISAR')
-                .map((m) => ({
-                    number: m.machine,
-                    nombre: `Máquina ${m.machine}`,
-                    status: m.machineStatus || 'REVISAR',
-                    tipo: m.machineTypeName || 'Tejeduría',
-                    area: m.area,
-                    tiempoParadaHoras: Math.round((12 - (m.netHours || 0)) * 10) / 10,
-                    tiempoParadaMs: (12 - (m.netHours || 0)) * 3600000,
-                    disponibilidadPct: Math.round(((m.netHours || 0) / 12) * 100),
-                    motivo: m.hasChangeover ? `Cambio programado: ${m.changeoverType || '08:00 AM'}` : 'Parada prolongada / velocidad reducida',
-                    articulo: m.articleCode || m.articleRaw,
-                    talle: m.talle,
-                }))
-                .sort((a, b) => b.tiempoParadaHoras - a.tiempoParadaHoras);
+    const itemsPicking = useMemo(() => {
+        if (!activePlanilla) return [];
+
+        // Si la planilla ya calculó hojaPicking, la usamos enriquecida
+        if (activePlanilla.hojaPicking && activePlanilla.hojaPicking.length > 0) {
+            return activePlanilla.hojaPicking;
         }
 
-        // Cruzar con los datos precisos de disponibilidad de mantenimiento
-        const list = availabilityData.machines
-            .filter((m: any) => {
-                const downtimeMs = (m.stats?.downtimeNovedadesMs || 0) + (m.stats?.downtimeChangesMs || 0) + (m.stats?.reducedMs || 0);
-                const isParada = m.status === 'PARADA' || m.status === 'REVISAR' || m.status === 'VELOCIDAD_REDUCIDA';
-                return isParada || downtimeMs > 3600000; // más de 1 hora parada
-            })
-            .map((m: any) => {
-                const downtimeMs = (m.stats?.downtimeNovedadesMs || 0) + (m.stats?.downtimeChangesMs || 0) + (m.stats?.reducedMs || 0);
-                const totalHorasParada = Math.round((downtimeMs / 3600000) * 10) / 10;
-                const horasParadaFormateada = `${Math.floor(downtimeMs / 3600000)}h ${Math.round((downtimeMs % 3600000) / 60000)}m`;
+        // Si no, derivamos de materiales clasificados como hilado
+        if (activePlanilla.materiales && activePlanilla.materiales.length > 0) {
+            return activePlanilla.materiales
+                .filter((m) => {
+                    const cat = (m.categoriaNombre || '').toUpperCase();
+                    const rol = (m.rol || '').toUpperCase();
+                    const desc = (m.descripcion || '').toUpperCase();
+                    return (
+                        rol === 'HILADO' ||
+                        cat.includes('HILADO') ||
+                        cat.includes('ALGODON') ||
+                        cat.includes('GOMA') ||
+                        cat.includes('LYCRA') ||
+                        cat.includes('POLIAMIDA') ||
+                        cat.includes('NYLON') ||
+                        cat.includes('POLYSOFT') ||
+                        desc.includes('HILADO') ||
+                        m.unidadPrincipal === 'KG'
+                    );
+                })
+                .map((m) => {
+                    const consumo = Number(m.consumoTotalKg) || 0;
+                    const picking = Number(m.stockEnPickingKg) || 0;
+                    const reserva = Number(m.stockEnReservaKg) || 0;
+                    const aPasar = Number(m.aPasarAPickingKg) || Math.max(0, Math.min(reserva, consumo - picking));
+                    const total = Number(m.stockActualTotalKg) || (picking + reserva);
 
-                // Buscar qué artículo le tocaba tejer según la planilla de producción
-                const planMatch = activePlanilla?.maquinas?.find((pm) => pm.machine === m.number);
+                    let estadoAbast: 'OK' | 'BAJAR_A_PICKING' | 'CRITICO_COMPRAR' = 'OK';
+                    if (total < consumo) {
+                        estadoAbast = 'CRITICO_COMPRAR';
+                    } else if (picking < consumo) {
+                        estadoAbast = 'BAJAR_A_PICKING';
+                    }
 
-                return {
-                    number: m.number,
-                    nombre: m.nombre || `Máquina ${m.number}`,
-                    status: m.status,
-                    tipo: m.tipo?.name || 'Tejeduría',
-                    tiempoParadaMs: downtimeMs,
-                    tiempoParadaHoras: totalHorasParada,
-                    horasParadaFormateada,
-                    disponibilidadPct: Math.round(Number(m.availabilityPct || 0)),
-                    motivo: m.stats?.lastNovedadMotivo || (m.stats?.downtimeChangesMs > 0 ? 'Parada por cambio de artículo' : 'Sin motivo registrado'),
-                    articulo: planMatch?.articleCode || planMatch?.articleRaw || 'No asignado',
-                    talle: planMatch?.talle || '',
-                    area: planMatch?.area || 'Planta',
-                };
-            })
-            .sort((a: any, b: any) => b.tiempoParadaMs - a.tiempoParadaMs);
+                    return {
+                        codigoMaterial: m.codigoInterno,
+                        descripcionMaterial: m.descripcion,
+                        categoriaNombre: m.categoriaNombre || 'HILADO',
+                        rol: m.rol || 'HILADO',
+                        tono: m.tono || '',
+                        colorNombre: m.colorNombre || '',
+                        proveedor: m.proveedor || '',
+                        consumoDiaKg: consumo,
+                        conosNecesarios: m.conosTotales || Math.ceil(consumo / 1.5),
+                        stockEnPickingKg: picking,
+                        stockEnReservaKg: reserva,
+                        aPasarAPickingKg: aPasar,
+                        posicionesPickingSugeridas: m.posicionesPickingSugeridas || [],
+                        posicionesStockReserva: [],
+                        stockRestanteTotalKg: Math.max(0, total - consumo),
+                        aComprarKg: Math.max(0, consumo - total),
+                        estadoAbastecimiento: estadoAbast,
+                        maquinasCount: m.maquinasCount || 0,
+                        maquinas: m.maquinas || [],
+                        areas: [],
+                        articulos: (m.articulosAsignados || []).map((a) => a.codigoArticulo),
+                    };
+                });
+        }
 
-        return list;
-    }, [availabilityData, activePlanilla]);
-
-    // =========================================================================
-    // SECCIÓN 3: Tipos de Cambios en Ejecución por Máquina
-    // =========================================================================
-    const cambiosEnEjecucion = useMemo(() => {
-        if (!activePlanilla || !activePlanilla.maquinas) return [];
-
-        const conCambio = activePlanilla.maquinas.filter((m) => m.hasChangeover);
-
-        return conCambio.filter((m) => {
-            if (filtroTipoCambio !== 'TODOS' && m.changeoverType !== filtroTipoCambio) return false;
-            return true;
-        });
-    }, [activePlanilla, filtroTipoCambio]);
-
-    const tiposDeCambioUnicos = useMemo(() => {
-        if (!activePlanilla || !activePlanilla.maquinas) return [];
-        const set = new Set<string>();
-        activePlanilla.maquinas.forEach((m) => {
-            if (m.changeoverType) set.add(m.changeoverType);
-        });
-        return Array.from(set);
+        return [];
     }, [activePlanilla]);
 
-    // Conteo de KPIs Ejecutivos
-    const kpiCriticosCorte = useMemo(() => alertasMateriales.filter((m) => m.nivelAlerta === 'CRITICO').length, [alertasMateriales]);
-    const kpiReponerPicking = useMemo(() => alertasMateriales.filter((m) => m.nivelAlerta === 'REPONER').length, [alertasMateriales]);
-    const kpiMaquinasParadas = useMemo(() => maquinasParadas.length, [maquinasParadas]);
-    const kpiTotalCambios = useMemo(() => cambiosEnEjecucion.length, [cambiosEnEjecucion]);
+    // Filtrado de Picking
+    const filteredPicking = useMemo(() => {
+        return itemsPicking.filter((it: any) => {
+            if (filtroEstadoPicking === 'BAJAR') {
+                if (it.aPasarAPickingKg <= 0 && it.estadoAbastecimiento !== 'BAJAR_A_PICKING') return false;
+            } else if (filtroEstadoPicking === 'FALTANTE') {
+                if (it.estadoAbastecimiento !== 'CRITICO_COMPRAR' && (it.aComprarKg || 0) <= 0) return false;
+            } else if (filtroEstadoPicking === 'OK') {
+                if (it.estadoAbastecimiento !== 'OK' && it.aPasarAPickingKg > 0) return false;
+            }
+
+            if (searchQuery.trim()) {
+                const term = searchQuery.toLowerCase();
+                const matchCod = (it.codigoMaterial || '').toLowerCase().includes(term);
+                const matchDesc = (it.descripcionMaterial || '').toLowerCase().includes(term);
+                const matchTono = (it.tono || it.colorNombre || '').toLowerCase().includes(term);
+                const matchArt = (it.articulos || []).some((a: string) => a.toLowerCase().includes(term));
+                if (!matchCod && !matchDesc && !matchTono && !matchArt) return false;
+            }
+
+            return true;
+        });
+    }, [itemsPicking, filtroEstadoPicking, searchQuery]);
+
+    // Totales Picking
+    const statsPicking = useMemo(() => {
+        let totalKilosConsumo = 0;
+        let totalItems = itemsPicking.length;
+        let cubiertosEnPicking = 0;
+        let requierenBajar = 0;
+        let faltantesCriticos = 0;
+        let kilosABajarTotal = 0;
+
+        itemsPicking.forEach((it: any) => {
+            totalKilosConsumo += Number(it.consumoDiaKg) || 0;
+            const aPasar = Number(it.aPasarAPickingKg) || 0;
+            const aComprar = Number(it.aComprarKg) || 0;
+
+            if (it.estadoAbastecimiento === 'CRITICO_COMPRAR' || aComprar > 0) {
+                faltantesCriticos++;
+            } else if (it.estadoAbastecimiento === 'BAJAR_A_PICKING' || aPasar > 0) {
+                requierenBajar++;
+                kilosABajarTotal += aPasar;
+            } else {
+                cubiertosEnPicking++;
+            }
+        });
+
+        return {
+            totalKilosConsumo: Math.round(totalKilosConsumo * 10) / 10,
+            totalItems,
+            cubiertosEnPicking,
+            requierenBajar,
+            faltantesCriticos,
+            kilosABajarTotal: Math.round(kilosABajarTotal * 10) / 10,
+        };
+    }, [itemsPicking]);
+
+    // =========================================================================
+    // INFORME 2: Matriz de Cambios de Máquina & Hilados Entrantes
+    // =========================================================================
+    const cambiosDetallados = useMemo(() => {
+        if (!activePlanilla || !activePlanilla.maquinas) return [];
+
+        // Agrupar entradas por máquina para reconstruir: Artículo Saliente ➔ Artículo Entrante
+        const porMaquina: Record<number, any[]> = {};
+        activePlanilla.maquinas.forEach((m) => {
+            if (!porMaquina[m.machine]) porMaquina[m.machine] = [];
+            porMaquina[m.machine].push(m);
+        });
+
+        const listaCambios: any[] = [];
+
+        Object.entries(porMaquina).forEach(([mStr, entries]) => {
+            const machineNum = parseInt(mStr, 10);
+            const conCambio = entries.find((e) => e.hasChangeover);
+
+            if (!conCambio && entries.length <= 1) return;
+
+            // Identificar saliente y entrante
+            let saliente = entries.find((e) => e.changeoverRole === 'SALIENTE_08AM');
+            let entrante = entries.find((e) => e.changeoverRole === 'ENTRANTE_08AM');
+
+            if (!saliente && !entrante) {
+                // Ordenar por orden en turno
+                const sorted = [...entries].sort((a, b) => (a.orderInShift || 1) - (b.orderInShift || 2));
+                if (sorted.length >= 2) {
+                    saliente = sorted[0];
+                    entrante = sorted[1];
+                } else if (conCambio) {
+                    entrante = conCambio;
+                }
+            }
+
+            const activeEntry = entrante || conCambio || entries[0];
+            const area = activeEntry?.area ? `Área ${activeEntry.area}` : 'Planta';
+
+            // Tipo de cambio y clave para contrastar con Marina
+            const tipos: string[] = activeEntry?.changeoverTypes && activeEntry.changeoverTypes.length > 0
+                ? activeEntry.changeoverTypes
+                : (activeEntry?.changeoverType ? [activeEntry.changeoverType] : ['ARTICULO']);
+
+            const keyMarina = tipos.slice().sort().join('+').toUpperCase();
+            const marinaStat = marinaDurationsMap.get(keyMarina);
+
+            let tiempoEstimadoMinutos = 0;
+            let tiempoFormateado = '';
+            let fuenteTiempo: 'MARINA' | 'CALCULADO' = 'CALCULADO';
+
+            if (marinaStat && marinaStat.medianMs > 0) {
+                tiempoEstimadoMinutos = Math.round(marinaStat.medianMs / 60000);
+                tiempoFormateado = marinaStat.formatted;
+                fuenteTiempo = 'MARINA';
+            } else if (activeEntry?.changeoverDurationMinutes) {
+                tiempoEstimadoMinutos = activeEntry.changeoverDurationMinutes;
+                tiempoFormateado = `${tiempoEstimadoMinutos} min`;
+            } else {
+                tiempoEstimadoMinutos = 45; // Default promedio estándar de tejeduría
+                tiempoFormateado = '45 min';
+            }
+
+            // Hilados que requiere el artículo entrante para arrancar
+            const hiladosEntrantes = (entrante?.hiladosMaquina || activeEntry?.hiladosMaquina || []).map((h: any) => ({
+                codigo: h.codigoItem || h.codigoComponente || '-',
+                descripcion: h.descripcion || 'Hilado',
+                consumoKg: Number(h.consumoKg) || 0,
+                conosEstimados: Number(h.conosEstimados) || Math.ceil((Number(h.consumoKg) || 1) / 1.5),
+            }));
+
+            listaCambios.push({
+                maquina: machineNum,
+                area,
+                areaNumero: activeEntry?.area || '',
+                tipoCambio: tipos.join(' + ') || 'CAMBIO',
+                tipos,
+                saliente: {
+                    codigo: saliente?.articleCode || saliente?.articleRaw || '(Anterior)',
+                    descripcion: saliente?.matchedArticle?.descripcion || saliente?.descRaw || '-',
+                    talle: saliente?.talle || '-',
+                    color: saliente?.colorRaw || '-',
+                },
+                entrante: {
+                    codigo: entrante?.articleCode || entrante?.articleRaw || activeEntry?.articleCode || activeEntry?.articleRaw || '(Nuevo)',
+                    descripcion: entrante?.matchedArticle?.descripcion || entrante?.descRaw || activeEntry?.matchedArticle?.descripcion || activeEntry?.descRaw || '-',
+                    talle: entrante?.talle || activeEntry?.talle || '-',
+                    color: entrante?.colorRaw || activeEntry?.colorRaw || '-',
+                },
+                tiempoEstimadoMinutos,
+                tiempoFormateado,
+                fuenteTiempo,
+                muestrasMarina: marinaStat?.count || 0,
+                hiladosEntrantes,
+                horasRestantesTejido: activeEntry?.netHours ?? 10,
+            });
+        });
+
+        return listaCambios.sort((a, b) => a.maquina - b.maquina);
+    }, [activePlanilla, marinaDurationsMap]);
+
+    // Filtrado de Cambios
+    const filteredCambios = useMemo(() => {
+        return cambiosDetallados.filter((c) => {
+            if (filtroArea !== 'ALL' && String(c.areaNumero) !== String(filtroArea)) {
+                return false;
+            }
+
+            if (searchQuery.trim()) {
+                const term = searchQuery.toLowerCase();
+                const matchM = `m${c.maquina}`.includes(term) || String(c.maquina).includes(term);
+                const matchSal = (c.saliente.codigo + ' ' + c.saliente.descripcion).toLowerCase().includes(term);
+                const matchEnt = (c.entrante.codigo + ' ' + c.entrante.descripcion).toLowerCase().includes(term);
+                const matchTipo = (c.tipoCambio || '').toLowerCase().includes(term);
+                const matchHil = c.hiladosEntrantes.some((h: any) =>
+                    (h.codigo + ' ' + h.descripcion).toLowerCase().includes(term)
+                );
+                if (!matchM && !matchSal && !matchEnt && !matchTipo && !matchHil) return false;
+            }
+
+            return true;
+        });
+    }, [cambiosDetallados, filtroArea, searchQuery]);
+
+    // Totales Cambios
+    const statsCambios = useMemo(() => {
+        const totalCambios = cambiosDetallados.length;
+        const minutosParada = cambiosDetallados.reduce((acc, c) => acc + c.tiempoEstimadoMinutos, 0);
+        const horasParada = Math.round((minutosParada / 60) * 10) / 10;
+        const promedioMin = totalCambios > 0 ? Math.round(minutosParada / totalCambios) : 0;
+        const conMarina = cambiosDetallados.filter((c) => c.fuenteTiempo === 'MARINA').length;
+
+        return {
+            totalCambios,
+            minutosParada,
+            horasParada,
+            promedioMin,
+            conMarina,
+        };
+    }, [cambiosDetallados]);
+
+    // Exportadores a Excel
+    const handleExportExcel = () => {
+        if (activeTab === 'PICKING') {
+            exportHojaPickingToExcel(filteredPicking as any, `picking_hilados_${activePlanilla?.fechas?.[0] || 'dia'}.xlsx`);
+        } else {
+            const dataToExport = filteredCambios.map((c) => ({
+                maquina: c.maquina,
+                area: c.area,
+                articuloSaliente: `${c.saliente.codigo} (${c.saliente.talle}) - ${c.saliente.descripcion}`,
+                articuloEntrante: `${c.entrante.codigo} (${c.entrante.talle}) - ${c.entrante.descripcion}`,
+                talleColorEntrante: `${c.entrante.talle} / ${c.entrante.color}`,
+                tipoCambio: c.tipoCambio,
+                tiempoEstimado: c.tiempoFormateado,
+                fuenteTiempo: c.fuenteTiempo === 'MARINA' ? `Histórico Marina (${c.muestrasMarina} registros)` : 'Estimado base',
+                hiladosEntrantes: c.hiladosEntrantes.map((h: any) => `${h.codigo} (${h.consumoKg}kg / ~${h.conosEstimados} conos)`).join(' | '),
+            }));
+            exportInformeCambiosToExcel(dataToExport, `cambios_maquinas_${activePlanilla?.fechas?.[0] || 'dia'}.xlsx`);
+        }
+    };
+
+    const handlePrint = () => {
+        window.print();
+    };
+
+    if (loadingPlanilla && !activePlanilla) {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', color: '#9ca3af' }}>
+                <Spinner /> <span style={{ marginLeft: '12px', fontSize: '14px' }}>Cargando Centro de Control de Producción...</span>
+            </div>
+        );
+    }
 
     return (
-        <div style={{ padding: isMobile ? '12px' : '24px', maxWidth: '1680px', margin: '0 auto' }}>
-            {/* Header */}
-            <div style={{ marginBottom: '22px' }}>
+        <div style={{ padding: isMobile ? '12px' : '24px', maxWidth: '1600px', margin: '0 auto' }}>
+            {/* CSS para impresión limpia del vale de picking / cambios */}
+            <style>{`
+                @media print {
+                    body * { visibility: hidden !important; }
+                    .printable-content, .printable-content * { visibility: visible !important; }
+                    .printable-content {
+                        position: absolute !important;
+                        left: 0 !important;
+                        top: 0 !important;
+                        width: 100% !important;
+                        background: #ffffff !important;
+                        color: #000000 !important;
+                    }
+                    .no-print { display: none !important; }
+                    table { border-collapse: collapse !important; width: 100% !important; font-size: 11px !important; }
+                    th, td { border: 1px solid #ddd !important; padding: 6px !important; color: #000 !important; }
+                    th { background-color: #f3f4f6 !important; font-weight: bold !important; }
+                }
+            `}</style>
+
+            {/* ENCABEZADO PRINCIPAL & ACCIONES RÁPIDAS (REGLA DE 2 CLICS) */}
+            <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
                 <PageHeader
-                    title="⚡ Dashboard de Producción — Alertas, Cortes y Máquinas"
-                    subtitle="Centro de control integral: cuándo se terminan los materiales y si hay sustituto en depósito, qué máquinas están paradas por mucho tiempo y qué cambios se ejecutan."
-                >
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                        {historialPlanillas.length > 0 && (
-                            <select
-                                value={activePlanilla?.planillaId || ''}
-                                onChange={(e) => handleSelectPlanillaHistorica(e.target.value)}
-                                style={{
-                                    padding: '7px 12px',
-                                    background: 'var(--bg-secondary, #1a1d2e)',
-                                    border: '1px solid var(--border-color, #2a2d3e)',
-                                    borderRadius: '8px',
-                                    color: 'var(--text-primary, #f3f4f6)',
-                                    fontSize: '12px',
-                                }}
-                            >
-                                <option value="">📅 Planilla de Producción Activa</option>
-                                {historialPlanillas.map((p: any) => (
-                                    <option key={p.id} value={p.id}>
-                                        Fecha: {p.fecha} ({new Date(p.creado_en).toLocaleDateString('es-AR')})
-                                    </option>
-                                ))}
-                            </select>
-                        )}
+                    title="📊 Dashboard de Producción"
+                    subtitle="Centro de control operativo: abastecimiento de picking para depósito y matriz de cambios de máquina con tiempos reales"
+                />
 
-                        <Btn
-                            variant="secondary"
-                            onClick={() => navigate('/produccion/planificacion')}
-                            style={{ fontSize: '12px' }}
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    {/* Selector de Planilla */}
+                    <div style={{ minWidth: '220px' }}>
+                        <select
+                            value={activePlanilla?.planillaId || ''}
+                            onChange={(e) => handleSelectPlanillaHistorica(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '9px 12px',
+                                background: 'var(--bg-secondary, #1a1d2e)',
+                                border: '1px solid var(--border-color, #2a2d3e)',
+                                borderRadius: '8px',
+                                color: '#f3f4f6',
+                                fontSize: '13px',
+                                outline: 'none',
+                                cursor: 'pointer',
+                            }}
                         >
-                            📑 Cargar Nueva Planilla PDF
-                        </Btn>
-
-                        <Btn
-                            variant="secondary"
-                            onClick={() => navigate('/produccion/informe-tejeduria')}
-                            style={{ fontSize: '12px' }}
-                        >
-                            ⚙️ Plan de Tejeduría Detallado ↗️
-                        </Btn>
+                            <option value="">📅 Producción del día (Última cargada)</option>
+                            {historialPlanillas.map((p: any) => (
+                                <option key={p.id} value={p.id}>
+                                    Planilla: {p.fecha} ({new Date(p.creado_en).toLocaleDateString('es-AR')})
+                                </option>
+                            ))}
+                        </select>
                     </div>
-                </PageHeader>
+
+                    {/* Botones directos a 1 clic */}
+                    <Btn
+                        variant="secondary"
+                        onClick={() => navigate('/produccion/programacion-gantt')}
+                        style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                        <span>📅</span> Programación Gantt
+                    </Btn>
+
+                    <Btn
+                        onClick={() => navigate('/produccion/planificacion')}
+                        style={{ fontSize: '13px', background: 'var(--primary, #6366f1)', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                        <span>📥</span> Carga de Producción
+                    </Btn>
+                </div>
             </div>
 
-            {loadingPlanilla && (
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '40vh', gap: '12px', color: '#9ca3af' }}>
-                    <Spinner /> <span>Cargando datos del dashboard de producción...</span>
-                </div>
-            )}
-
-            {!activePlanilla && !loadingPlanilla && (
-                <Card style={{ padding: '40px', textAlign: 'center', background: 'var(--bg-secondary, #1a1d2e)' }}>
-                    <div style={{ fontSize: '32px', marginBottom: '12px' }}>📑</div>
-                    <div style={{ fontSize: '18px', fontWeight: 700, color: '#f3f4f6', marginBottom: '8px' }}>
-                        No hay ninguna planilla de producción activa cargada
-                    </div>
-                    <div style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '20px' }}>
-                        Subí las hojas de producción de Susana (PDF) para calcular automáticamente el consumo de hilados, horas de corte y cambios por máquina.
-                    </div>
-                    <Btn onClick={() => navigate('/produccion/planificacion')}>
-                        Ir a Cargar Planilla PDF
+            {/* AVISO SI NO HAY PLANILLA ACTIVA */}
+            {!activePlanilla && (
+                <Card style={{ padding: '40px 20px', textAlign: 'center', marginBottom: '24px' }}>
+                    <div style={{ fontSize: '42px', marginBottom: '12px' }}>📥</div>
+                    <h3 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 8px 0', color: '#f3f4f6' }}>
+                        No hay una planilla de producción cargada aún
+                    </h3>
+                    <p style={{ fontSize: '13px', color: '#9ca3af', maxWidth: '520px', margin: '0 auto 20px auto' }}>
+                        Subí las planillas diarias de tejeduría (PDFs) desde la sección de Carga de Producción para sincronizar máquinas, cambios de artículo y abastecimiento de hilado.
+                    </p>
+                    <Btn onClick={() => navigate('/produccion/planificacion')} style={{ background: '#6366f1', color: '#fff' }}>
+                        Ir a Carga de Producción ➔
                     </Btn>
                 </Card>
             )}
 
             {activePlanilla && (
-                <div>
-                    {/* Tarjetas de Resumen Ejecutivo y Alertas Clave */}
+                <>
+                    {/* 4 TARJETAS KPI DE ALTO IMPACTO (SIN RELLENO INÚTIL) */}
                     <div
+                        className="no-print"
                         style={{
                             display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
                             gap: '14px',
-                            marginBottom: '24px',
+                            marginBottom: '22px',
                         }}
                     >
-                        {/* KPI 1: Cortes Críticos */}
-                        <Card
-                            onClick={() => setFiltroSeccion(filtroSeccion === 'CORTES' ? 'TODOS' : 'CORTES')}
-                            style={{
-                                padding: '16px 20px',
-                                background: kpiCriticosCorte > 0 ? 'rgba(239, 68, 68, 0.12)' : 'var(--bg-secondary, #1a1d2e)',
-                                border: kpiCriticosCorte > 0 ? '1px solid rgba(239, 68, 68, 0.5)' : '1px solid var(--border-color, #2a2d3e)',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                            }}
-                        >
+                        {/* KPI 1: Producción Programada */}
+                        <Card style={{ padding: '16px 18px', background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-color, #2a2d3e)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '12px', fontWeight: 700, color: kpiCriticosCorte > 0 ? '#f87171' : '#9ca3af', textTransform: 'uppercase' }}>
-                                    🛑 Cortes de Producción
+                                <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 700, textTransform: 'uppercase' }}>
+                                    🧦 Producción Neta Día
                                 </span>
-                                <Badge color={kpiCriticosCorte > 0 ? '#ef4444' : '#10b981'}>
-                                    {kpiCriticosCorte > 0 ? 'Faltante Crítico' : 'Cubierto'}
-                                </Badge>
+                                <Badge color="#10b981">Planilla Activa</Badge>
                             </div>
-                            <div style={{ fontSize: '28px', fontWeight: 900, color: kpiCriticosCorte > 0 ? '#ef4444' : '#10b981', marginTop: '6px' }}>
-                                {kpiCriticosCorte} materiales
+                            <div style={{ fontSize: '24px', fontWeight: 800, color: '#f3f4f6', marginTop: '6px' }}>
+                                {(activePlanilla.resumenAlertas?.totalDocenasEstimadas || 0).toLocaleString('es-AR')} doc.
                             </div>
                             <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
-                                {kpiCriticosCorte > 0 ? 'No alcanzan para terminar el turno' : 'Stock suficiente para todo el día'}
+                                {(activePlanilla.resumenAlertas?.totalParesEstimados || 0).toLocaleString('es-AR')} pares proyectados en 24h
                             </div>
                         </Card>
 
-                        {/* KPI 2: Reposición / Cambio de Lote */}
+                        {/* KPI 2: Abastecimiento Zona de Picking */}
                         <Card
-                            onClick={() => setFiltroSeccion('CORTES')}
+                            onClick={() => setActiveTab('PICKING')}
                             style={{
-                                padding: '16px 20px',
-                                background: kpiReponerPicking > 0 ? 'rgba(245, 158, 11, 0.12)' : 'var(--bg-secondary, #1a1d2e)',
-                                border: kpiReponerPicking > 0 ? '1px solid rgba(245, 158, 11, 0.5)' : '1px solid var(--border-color, #2a2d3e)',
+                                padding: '16px 18px',
+                                background: activeTab === 'PICKING' ? 'rgba(56, 189, 248, 0.08)' : 'var(--bg-secondary, #1a1d2e)',
+                                border: activeTab === 'PICKING' ? '1px solid #38bdf8' : '1px solid var(--border-color, #2a2d3e)',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s ease',
                             }}
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '12px', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase' }}>
-                                    ⚠️ Reposición / Cambio Lote
+                                <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 700, textTransform: 'uppercase' }}>
+                                    🧶 Zona de Picking Hilado
                                 </span>
-                                <Badge color="#f59e0b">En Reserva</Badge>
+                                <span style={{ fontSize: '12px', color: '#38bdf8' }}>↗️ Ver</span>
                             </div>
-                            <div style={{ fontSize: '28px', fontWeight: 900, color: '#f59e0b', marginTop: '6px' }}>
-                                {kpiReponerPicking} materiales
+                            <div style={{ fontSize: '24px', fontWeight: 800, color: statsPicking.requierenBajar > 0 ? '#f59e0b' : '#10b981', marginTop: '6px' }}>
+                                {statsPicking.requierenBajar > 0 ? `${statsPicking.requierenBajar} a bajar` : '100% Cubierto'}
                             </div>
                             <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
-                                Se termina el picking pero hay stock en depósito para no cortar
+                                {statsPicking.kilosABajarTotal > 0
+                                    ? `${statsPicking.kilosABajarTotal} kg a pasar de reserva a picking`
+                                    : `${statsPicking.cubiertosEnPicking} de ${statsPicking.totalItems} hilados listos en planta`}
                             </div>
                         </Card>
 
-                        {/* KPI 3: Máquinas Paradas */}
+                        {/* KPI 3: Cambios de Máquina Programados */}
                         <Card
-                            onClick={() => setFiltroSeccion(filtroSeccion === 'PARADAS' ? 'TODOS' : 'PARADAS')}
+                            onClick={() => setActiveTab('CAMBIOS')}
                             style={{
-                                padding: '16px 20px',
-                                background: kpiMaquinasParadas > 0 ? 'rgba(239, 68, 68, 0.08)' : 'var(--bg-secondary, #1a1d2e)',
-                                border: kpiMaquinasParadas > 0 ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--border-color, #2a2d3e)',
+                                padding: '16px 18px',
+                                background: activeTab === 'CAMBIOS' ? 'rgba(167, 139, 250, 0.08)' : 'var(--bg-secondary, #1a1d2e)',
+                                border: activeTab === 'CAMBIOS' ? '1px solid #a78bfa' : '1px solid var(--border-color, #2a2d3e)',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s ease',
                             }}
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '12px', fontWeight: 700, color: '#f87171', textTransform: 'uppercase' }}>
-                                    ⏸️ Máquinas Paradas / Inactivas
+                                <span style={{ fontSize: '11px', color: '#a78bfa', fontWeight: 700, textTransform: 'uppercase' }}>
+                                    🔄 Cambios de Máquina Hoy
                                 </span>
-                                <Badge color={kpiMaquinasParadas > 0 ? '#ef4444' : '#10b981'}>
-                                    {kpiMaquinasParadas > 0 ? 'Atención' : 'Normal'}
-                                </Badge>
+                                <span style={{ fontSize: '12px', color: '#a78bfa' }}>↗️ Ver</span>
                             </div>
-                            <div style={{ fontSize: '28px', fontWeight: 900, color: '#f87171', marginTop: '6px' }}>
-                                {kpiMaquinasParadas} máquinas
+                            <div style={{ fontSize: '24px', fontWeight: 800, color: '#a78bfa', marginTop: '6px' }}>
+                                {statsCambios.totalCambios} máquinas
                             </div>
                             <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
-                                Con paradas prolongadas o velocidad reducida en el turno
+                                {statsCambios.horasParada}h paradas estimadas ({statsCambios.promedioMin} min prom/cambio)
                             </div>
                         </Card>
 
-                        {/* KPI 4: Cambios en Ejecución */}
-                        <Card
-                            onClick={() => setFiltroSeccion(filtroSeccion === 'CAMBIOS' ? 'TODOS' : 'CAMBIOS')}
-                            style={{
-                                padding: '16px 20px',
-                                background: 'rgba(139, 92, 246, 0.1)',
-                                border: '1px solid rgba(139, 92, 246, 0.4)',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                            }}
-                        >
+                        {/* KPI 4: Faltantes Críticos de Compra */}
+                        <Card style={{ padding: '16px 18px', background: 'var(--bg-secondary, #1a1d2e)', border: '1px solid var(--border-color, #2a2d3e)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '12px', fontWeight: 700, color: '#a78bfa', textTransform: 'uppercase' }}>
-                                    🔄 Cambios en Ejecución
+                                <span style={{ fontSize: '11px', color: statsPicking.faltantesCriticos > 0 ? '#ef4444' : '#10b981', fontWeight: 700, textTransform: 'uppercase' }}>
+                                    🚨 Faltantes Stock General
                                 </span>
-                                <Badge color="#8b5cf6">08:00 AM y Turnos</Badge>
+                                {statsPicking.faltantesCriticos > 0 && <Badge color="#ef4444">Atención</Badge>}
                             </div>
-                            <div style={{ fontSize: '28px', fontWeight: 900, color: '#a78bfa', marginTop: '6px' }}>
-                                {kpiTotalCambios} máquinas
+                            <div style={{ fontSize: '24px', fontWeight: 800, color: statsPicking.faltantesCriticos > 0 ? '#ef4444' : '#10b981', marginTop: '6px' }}>
+                                {statsPicking.faltantesCriticos} hilados
                             </div>
                             <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
-                                Cambios de artículo, talle y color programados
+                                {statsPicking.faltantesCriticos > 0 ? 'Stock total menor al consumo del día' : 'Stock suficiente para todo el programa'}
                             </div>
                         </Card>
                     </div>
 
-                    {/* Barra de Filtros de Sección */}
-                    <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
-                        <Btn
-                            variant={filtroSeccion === 'TODOS' ? 'primary' : 'secondary'}
-                            onClick={() => setFiltroSeccion('TODOS')}
-                            style={{ fontSize: '13px' }}
-                        >
-                            📊 Ver Todo el Dashboard
-                        </Btn>
-                        <Btn
-                            variant={filtroSeccion === 'CORTES' ? 'primary' : 'secondary'}
-                            onClick={() => setFiltroSeccion('CORTES')}
+                    {/* SELECTOR DE LOS 2 INFORMES PRINCIPALES (TABS) */}
+                    <div
+                        className="no-print"
+                        style={{
+                            display: 'flex',
+                            gap: '8px',
+                            borderBottom: '1px solid var(--border-color, #2a2d3e)',
+                            marginBottom: '20px',
+                        }}
+                    >
+                        <button
+                            type="button"
+                            onClick={() => { setActiveTab('PICKING'); setSearchQuery(''); }}
                             style={{
-                                fontSize: '13px',
-                                background: filtroSeccion === 'CORTES' ? '#ef4444' : undefined,
-                                borderColor: filtroSeccion === 'CORTES' ? '#ef4444' : undefined,
+                                padding: '12px 20px',
+                                background: 'transparent',
+                                border: 'none',
+                                borderBottom: activeTab === 'PICKING' ? '3px solid #38bdf8' : '3px solid transparent',
+                                color: activeTab === 'PICKING' ? '#38bdf8' : '#9ca3af',
+                                fontWeight: activeTab === 'PICKING' ? 700 : 500,
+                                fontSize: '14px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
                             }}
                         >
-                            🛑 Alertas de Faltante y Cortes ({kpiCriticosCorte + kpiReponerPicking})
-                        </Btn>
-                        <Btn
-                            variant={filtroSeccion === 'PARADAS' ? 'primary' : 'secondary'}
-                            onClick={() => setFiltroSeccion('PARADAS')}
+                            <span>🧶</span> Informe 1: Abastecimiento & Zona de Picking
+                            <span style={{
+                                fontSize: '11px',
+                                padding: '2px 8px',
+                                borderRadius: '12px',
+                                background: statsPicking.requierenBajar > 0 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+                                color: statsPicking.requierenBajar > 0 ? '#f59e0b' : '#10b981',
+                                fontWeight: 700,
+                            }}>
+                                {statsPicking.requierenBajar > 0 ? `${statsPicking.requierenBajar} a bajar` : 'OK'}
+                            </span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => { setActiveTab('CAMBIOS'); setSearchQuery(''); }}
                             style={{
-                                fontSize: '13px',
-                                background: filtroSeccion === 'PARADAS' ? '#dc2626' : undefined,
+                                padding: '12px 20px',
+                                background: 'transparent',
+                                border: 'none',
+                                borderBottom: activeTab === 'CAMBIOS' ? '3px solid #a78bfa' : '3px solid transparent',
+                                color: activeTab === 'CAMBIOS' ? '#a78bfa' : '#9ca3af',
+                                fontWeight: activeTab === 'CAMBIOS' ? 700 : 500,
+                                fontSize: '14px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
                             }}
                         >
-                            ⏸️ Máquinas Paradas ({kpiMaquinasParadas})
-                        </Btn>
-                        <Btn
-                            variant={filtroSeccion === 'CAMBIOS' ? 'primary' : 'secondary'}
-                            onClick={() => setFiltroSeccion('CAMBIOS')}
-                            style={{
-                                fontSize: '13px',
-                                background: filtroSeccion === 'CAMBIOS' ? '#7c3aed' : undefined,
-                            }}
-                        >
-                            🔄 Cambios en Ejecución ({kpiTotalCambios})
-                        </Btn>
+                            <span>🔄</span> Informe 2: Matriz de Cambios de Máquina & Hilados Entrantes
+                            <span style={{
+                                fontSize: '11px',
+                                padding: '2px 8px',
+                                borderRadius: '12px',
+                                background: 'rgba(167, 139, 250, 0.2)',
+                                color: '#a78bfa',
+                                fontWeight: 700,
+                            }}>
+                                {statsCambios.totalCambios} máquinas
+                            </span>
+                        </button>
                     </div>
 
-                    {/* ========================================================================= */}
-                    {/* BLOQUE 1: ALERTAS DE FALTANTE Y CORTE DE MATERIALES (HILADOS E INSUMOS)    */}
-                    {/* ========================================================================= */}
-                    {(filtroSeccion === 'TODOS' || filtroSeccion === 'CORTES') && (
-                        <div style={{ marginBottom: '36px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '12px' }}>
-                                <div>
-                                    <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#f3f4f6', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span>🛑</span> Alertas de Faltante y Corte de Materiales (Hilados e Insumos)
-                                    </h2>
-                                    <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>
-                                        Proyección exacta de consumo vs stock: cuándo se corta el hilado o insumo, si se termina la producción y si hay material del otro proveedor en depósito.
+                    {/* BARRA DE ACCIÓN Y FILTROS RÁPIDOS */}
+                    <div
+                        className="no-print"
+                        style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            flexWrap: 'wrap',
+                            gap: '12px',
+                            marginBottom: '16px',
+                        }}
+                    >
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                            {/* Buscador */}
+                            <input
+                                type="text"
+                                placeholder={activeTab === 'PICKING' ? '🔍 Buscar hilado, código, artículo...' : '🔍 Buscar máquina, artículo, hilado...'}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                style={{
+                                    padding: '8px 14px',
+                                    background: 'var(--bg-secondary, #1a1d2e)',
+                                    border: '1px solid var(--border-color, #2a2d3e)',
+                                    borderRadius: '8px',
+                                    color: '#f3f4f6',
+                                    fontSize: '13px',
+                                    minWidth: isMobile ? '100%' : '260px',
+                                    outline: 'none',
+                                }}
+                            />
+
+                            {/* Filtro específico de Picking */}
+                            {activeTab === 'PICKING' && (
+                                <select
+                                    value={filtroEstadoPicking}
+                                    onChange={(e) => setFiltroEstadoPicking(e.target.value as any)}
+                                    style={{
+                                        padding: '8px 12px',
+                                        background: 'var(--bg-secondary, #1a1d2e)',
+                                        border: '1px solid var(--border-color, #2a2d3e)',
+                                        borderRadius: '8px',
+                                        color: '#f3f4f6',
+                                        fontSize: '13px',
+                                        outline: 'none',
+                                    }}
+                                >
+                                    <option value="ALL">Todos los Estados ({itemsPicking.length})</option>
+                                    <option value="BAJAR">⚡ Requiere Bajar a Picking ({statsPicking.requierenBajar})</option>
+                                    <option value="FALTANTE">🚨 Faltante Crítico Compra ({statsPicking.faltantesCriticos})</option>
+                                    <option value="OK">🟢 Cubiertos en Picking ({statsPicking.cubiertosEnPicking})</option>
+                                </select>
+                            )}
+
+                            {/* Filtro específico de Cambios (Áreas) */}
+                            {activeTab === 'CAMBIOS' && (
+                                <select
+                                    value={filtroArea}
+                                    onChange={(e) => setFiltroArea(e.target.value)}
+                                    style={{
+                                        padding: '8px 12px',
+                                        background: 'var(--bg-secondary, #1a1d2e)',
+                                        border: '1px solid var(--border-color, #2a2d3e)',
+                                        borderRadius: '8px',
+                                        color: '#f3f4f6',
+                                        fontSize: '13px',
+                                        outline: 'none',
+                                    }}
+                                >
+                                    <option value="ALL">Todas las Áreas ({cambiosDetallados.length} cambios)</option>
+                                    <option value="1">Área 1 (M1-M22)</option>
+                                    <option value="2">Área 2 (M23-M67)</option>
+                                    <option value="3">Área 3 (M73-M117)</option>
+                                    <option value="4">Área 4 (M126-M170)</option>
+                                    <option value="5">Área 5 (M171-M190)</option>
+                                </select>
+                            )}
+                        </div>
+
+                        {/* Botones de Exportar e Imprimir Vale */}
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <Btn
+                                variant="secondary"
+                                onClick={handlePrint}
+                                style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                            >
+                                <span>🖨️</span> {activeTab === 'PICKING' ? 'Imprimir Vale para Depósito' : 'Imprimir Plan para Mecánicos'}
+                            </Btn>
+                            <Btn
+                                variant="secondary"
+                                onClick={handleExportExcel}
+                                style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                            >
+                                <span>📥</span> Exportar a Excel
+                            </Btn>
+                        </div>
+                    </div>
+
+                    {/* VISTA CONTENIDO IMPRIMIBLE & EN PANTALLA */}
+                    <div className="printable-content">
+                        {/* Cabecera solo visible al imprimir */}
+                        <div style={{ display: 'none' }} className="only-print">
+                            <h2 style={{ margin: '0 0 4px 0' }}>
+                                {activeTab === 'PICKING'
+                                    ? 'VALE DE PICKING Y ABASTECIMIENTO DE HILADOS — DEPÓSITO'
+                                    : 'PLAN DE CAMBIOS DE MÁQUINA Y HILADOS ENTRANTES — PLANTA'}
+                            </h2>
+                            <p style={{ margin: '0 0 12px 0', fontSize: '12px' }}>
+                                Planilla Fecha: {activePlanilla.fechas?.join(', ') || 'Hoy'} | Generado el: {new Date().toLocaleString('es-AR')}
+                            </p>
+                        </div>
+
+                        {/* =========================================================================
+                            TAB 1: TABLA DE ABASTECIMIENTO & ZONA DE PICKING
+                        ========================================================================= */}
+                        {activeTab === 'PICKING' && (
+                            <Card style={{ padding: '0px', overflow: 'hidden', border: '1px solid var(--border-color, #2a2d3e)' }}>
+                                <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color, #2a2d3e)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#f3f4f6' }}>
+                                            🧶 Hilados Requeridos para la Producción ({filteredPicking.length})
+                                        </h3>
+                                        <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>
+                                            Informe directo para armar la zona de picking de tejeduría con los conos y kilos necesarios
+                                        </div>
+                                    </div>
+                                    <div style={{ fontSize: '12px', color: '#9ca3af' }}>
+                                        Total a consumir hoy: <strong style={{ color: '#f3f4f6' }}>{statsPicking.totalKilosConsumo} kg</strong>
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                    <input
-                                        type="text"
-                                        placeholder="🔍 Buscar hilado, insumo o proveedor..."
-                                        value={searchMaterial}
-                                        onChange={(e) => setSearchMaterial(e.target.value)}
-                                        style={{
-                                            padding: '7px 12px',
-                                            background: 'var(--bg-secondary, #1a1d2e)',
-                                            border: '1px solid var(--border-color, #2a2d3e)',
-                                            borderRadius: '8px',
-                                            color: '#f3f4f6',
-                                            fontSize: '12px',
-                                            width: isMobile ? '100%' : '260px',
-                                        }}
-                                    />
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                                        <thead>
+                                            <tr style={{ background: 'rgba(0,0,0,0.2)', borderBottom: '1px solid var(--border-color, #2a2d3e)', color: '#9ca3af' }}>
+                                                <th style={{ padding: '12px 16px' }}>Estado Cobertura</th>
+                                                <th style={{ padding: '12px 16px' }}>Código Hilado</th>
+                                                <th style={{ padding: '12px 16px' }}>Descripción / Tono</th>
+                                                <th style={{ padding: '12px 16px', textAlign: 'right' }}>Consumo Día</th>
+                                                <th style={{ padding: '12px 16px', textAlign: 'right' }}>Stock en Picking</th>
+                                                <th style={{ padding: '12px 16px', textAlign: 'right' }}>Stock Reserva</th>
+                                                <th style={{ padding: '12px 16px', textAlign: 'right', color: '#f59e0b' }}>A Bajar a Picking</th>
+                                                <th style={{ padding: '12px 16px' }}>Posición Rack</th>
+                                                <th style={{ padding: '12px 16px', textAlign: 'center' }}>Máquinas</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {filteredPicking.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={9} style={{ padding: '36px', textAlign: 'center', color: '#9ca3af' }}>
+                                                        No se encontraron hilados con los filtros seleccionados.
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                filteredPicking.map((item: any, idx: number) => {
+                                                    const esCritico = item.estadoAbastecimiento === 'CRITICO_COMPRAR' || (item.aComprarKg || 0) > 0;
+                                                    const esBajar = item.estadoAbastecimiento === 'BAJAR_A_PICKING' || (item.aPasarAPickingKg || 0) > 0;
 
-                                    <div style={{ display: 'flex', border: '1px solid var(--border-color, #2a2d3e)', borderRadius: '8px', overflow: 'hidden' }}>
-                                        <button
-                                            type="button"
-                                            onClick={() => setFiltroTipoMaterial('TODOS')}
-                                            style={{
-                                                padding: '6px 12px',
-                                                background: filtroTipoMaterial === 'TODOS' ? 'var(--primary, #3b82f6)' : 'transparent',
-                                                color: '#f3f4f6',
-                                                border: 'none',
-                                                fontSize: '12px',
-                                                cursor: 'pointer',
-                                            }}
-                                        >
-                                            Todos
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setFiltroTipoMaterial('HILADO')}
-                                            style={{
-                                                padding: '6px 12px',
-                                                background: filtroTipoMaterial === 'HILADO' ? '#f59e0b' : 'transparent',
-                                                color: '#f3f4f6',
-                                                border: 'none',
-                                                fontSize: '12px',
-                                                cursor: 'pointer',
-                                            }}
-                                        >
-                                            🧶 Solo Hilados
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setFiltroTipoMaterial('INSUMO')}
-                                            style={{
-                                                padding: '6px 12px',
-                                                background: filtroTipoMaterial === 'INSUMO' ? '#ec4899' : 'transparent',
-                                                color: '#f3f4f6',
-                                                border: 'none',
-                                                fontSize: '12px',
-                                                cursor: 'pointer',
-                                            }}
-                                        >
-                                            📦 Solo Insumos
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {materialesFiltrados.length === 0 ? (
-                                <Card style={{ padding: '24px', textAlign: 'center', color: '#9ca3af' }}>
-                                    No se encontraron alertas de materiales con los filtros seleccionados.
-                                </Card>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    {materialesFiltrados.map((mat) => {
-                                        const isCritico = mat.nivelAlerta === 'CRITICO';
-                                        const isReponer = mat.nivelAlerta === 'REPONER';
-                                        const isMinimo = mat.nivelAlerta === 'MINIMO';
-
-                                        const borderColor = isCritico
-                                            ? '#ef4444'
-                                            : isReponer
-                                            ? '#f59e0b'
-                                            : isMinimo
-                                            ? '#fbbf24'
-                                            : 'var(--border-color, #2a2d3e)';
-
-                                        const bgCard = isCritico
-                                            ? 'rgba(239, 68, 68, 0.08)'
-                                            : isReponer
-                                            ? 'rgba(245, 158, 11, 0.08)'
-                                            : 'var(--bg-secondary, #1a1d2e)';
-
-                                        return (
-                                            <Card
-                                                key={mat.itemId || mat.codigoInterno}
-                                                style={{
-                                                    padding: '16px 20px',
-                                                    background: bgCard,
-                                                    border: `1px solid ${borderColor}`,
-                                                    borderRadius: '12px',
-                                                }}
-                                            >
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
-                                                    {/* Material Info */}
-                                                    <div style={{ flex: 1, minWidth: '280px' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                                            <span style={{ fontSize: '16px', fontWeight: 800, color: '#f3f4f6' }}>
-                                                                {mat.codigoInterno}
-                                                            </span>
-                                                            <Badge color={mat.tipoClasif === 'HILADO' ? '#f59e0b' : '#ec4899'}>
-                                                                {mat.tipoClasif === 'HILADO' ? '🧶 Hilado' : '📦 Insumo'}
-                                                            </Badge>
-                                                            {mat.rol && (
-                                                                <Badge color="#6366f1">
-                                                                    {mat.rol}
-                                                                </Badge>
-                                                            )}
-                                                            {mat.proveedor && (
-                                                                <Badge color="#3b82f6">
-                                                                    🏢 {mat.proveedor}
-                                                                </Badge>
-                                                            )}
-                                                            {isCritico && (
-                                                                <Badge color="#ef4444">
-                                                                    🛑 CORTE INMINENTE
-                                                                </Badge>
-                                                            )}
-                                                            {isReponer && (
-                                                                <Badge color="#f59e0b">
-                                                                    ⚠️ CAMBIO LOTE / REPONER
-                                                                </Badge>
-                                                            )}
-                                                        </div>
-
-                                                        <div style={{ fontSize: '13px', color: '#d1d5db', marginTop: '4px' }}>
-                                                            {mat.descripcion} {mat.colorNombre ? `· Color: ${mat.colorNombre}` : ''}
-                                                        </div>
-
-                                                        {/* Alerta de Corte y Diagnóstico */}
-                                                        <div
+                                                    return (
+                                                        <tr
+                                                            key={item.codigoMaterial + idx}
                                                             style={{
-                                                                marginTop: '10px',
-                                                                padding: '8px 12px',
-                                                                borderRadius: '8px',
-                                                                background: isCritico ? 'rgba(239, 68, 68, 0.2)' : isReponer ? 'rgba(245, 158, 11, 0.2)' : 'rgba(0,0,0,0.2)',
-                                                                border: isCritico ? '1px solid rgba(239, 68, 68, 0.4)' : isReponer ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid rgba(255,255,255,0.05)',
-                                                                fontSize: '12px',
-                                                                color: isCritico ? '#fca5a5' : isReponer ? '#fde68a' : '#9ca3af',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: '10px',
-                                                                flexWrap: 'wrap',
+                                                                borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                                                background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)',
                                                             }}
                                                         >
-                                                            <span>{mat.mensajeCorte}</span>
-                                                            {mat.horaProyectadaCorte && (
-                                                                <strong style={{ color: isCritico ? '#ef4444' : '#f59e0b' }}>
-                                                                    ⏰ {mat.horaProyectadaCorte}
-                                                                </strong>
-                                                            )}
-                                                        </div>
-                                                    </div>
+                                                            {/* Estado */}
+                                                            <td style={{ padding: '12px 16px' }}>
+                                                                {esCritico ? (
+                                                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#ef4444', fontWeight: 700, fontSize: '11px', background: 'rgba(239, 68, 68, 0.15)', padding: '3px 8px', borderRadius: '6px' }}>
+                                                                        🚨 Faltante ({item.aComprarKg || 0} kg)
+                                                                    </span>
+                                                                ) : esBajar ? (
+                                                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#f59e0b', fontWeight: 700, fontSize: '11px', background: 'rgba(245, 158, 11, 0.15)', padding: '3px 8px', borderRadius: '6px' }}>
+                                                                        ⚡ Bajar a Picking
+                                                                    </span>
+                                                                ) : (
+                                                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#10b981', fontWeight: 700, fontSize: '11px', background: 'rgba(16, 185, 129, 0.15)', padding: '3px 8px', borderRadius: '6px' }}>
+                                                                        🟢 En Picking OK
+                                                                    </span>
+                                                                )}
+                                                            </td>
 
-                                                    {/* Disponibilidad de sustituto / otro proveedor */}
-                                                    <div style={{ minWidth: '220px', textAlign: 'right' }}>
-                                                        <div style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 600 }}>
-                                                            ¿Hay del otro material en Depósito?
-                                                        </div>
-                                                        <div style={{ marginTop: '4px' }}>
-                                                            {mat.hayOtroMaterialEnReserva ? (
-                                                                <span style={{ fontSize: '13px', fontWeight: 700, color: '#34d399', background: 'rgba(16, 185, 129, 0.15)', padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.4)' }}>
-                                                                    ✅ SÍ, {mat.stockReserva} {mat.unidadPrincipal || 'kg'} en Reserva
+                                                            {/* Código */}
+                                                            <td style={{ padding: '12px 16px', fontWeight: 700, color: '#f3f4f6' }}>
+                                                                {item.codigoMaterial}
+                                                            </td>
+
+                                                            {/* Descripción */}
+                                                            <td style={{ padding: '12px 16px' }}>
+                                                                <div style={{ color: '#d1d5db', fontWeight: 500 }}>
+                                                                    {item.descripcionMaterial}
+                                                                </div>
+                                                                {(item.tono || item.colorNombre) && (
+                                                                    <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
+                                                                        Tono: {item.tono || item.colorNombre}
+                                                                    </div>
+                                                                )}
+                                                            </td>
+
+                                                            {/* Consumo Día */}
+                                                            <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: '#f3f4f6' }}>
+                                                                {item.consumoDiaKg} kg
+                                                                <div style={{ fontSize: '11px', color: '#9ca3af' }}>~{item.conosNecesarios} conos</div>
+                                                            </td>
+
+                                                            {/* Stock en Picking */}
+                                                            <td style={{ padding: '12px 16px', textAlign: 'right', color: item.stockEnPickingKg >= item.consumoDiaKg ? '#10b981' : '#f59e0b', fontWeight: 600 }}>
+                                                                {item.stockEnPickingKg} kg
+                                                            </td>
+
+                                                            {/* Stock en Reserva */}
+                                                            <td style={{ padding: '12px 16px', textAlign: 'right', color: '#9ca3af' }}>
+                                                                {item.stockEnReservaKg} kg
+                                                            </td>
+
+                                                            {/* A Pasar a Picking */}
+                                                            <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                                                                {esBajar ? (
+                                                                    <span style={{ color: '#f59e0b', fontWeight: 800, fontSize: '14px' }}>
+                                                                        +{item.aPasarAPickingKg} kg
+                                                                    </span>
+                                                                ) : (
+                                                                    <span style={{ color: '#6b7280' }}>-</span>
+                                                                )}
+                                                            </td>
+
+                                                            {/* Posición Picking */}
+                                                            <td style={{ padding: '12px 16px' }}>
+                                                                {item.posicionesPickingSugeridas && item.posicionesPickingSugeridas.length > 0 ? (
+                                                                    <span style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '2px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>
+                                                                        {item.posicionesPickingSugeridas.join(', ')}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span style={{ color: '#6b7280', fontSize: '11px' }}>Zona Picking</span>
+                                                                )}
+                                                            </td>
+
+                                                            {/* Máquinas */}
+                                                            <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                                                                <span style={{ fontSize: '12px', color: '#9ca3af' }}>
+                                                                    {item.maquinasCount || (item.maquinas ? item.maquinas.length : 0)} máq.
                                                                 </span>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </Card>
+                        )}
+
+                        {/* =========================================================================
+                            TAB 2: MATRIZ DE CAMBIOS DE MÁQUINA & HILADOS ENTRANTES
+                        ========================================================================= */}
+                        {activeTab === 'CAMBIOS' && (
+                            <Card style={{ padding: '0px', overflow: 'hidden', border: '1px solid var(--border-color, #2a2d3e)' }}>
+                                <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color, #2a2d3e)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#f3f4f6' }}>
+                                            🔄 Cambios Programados ({filteredCambios.length})
+                                        </h3>
+                                        <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>
+                                            Qué artículo sale, qué artículo entra, qué hilado llevar a pie de máquina y tiempo promedio según historial de Marina
+                                        </div>
+                                    </div>
+                                    <div style={{ fontSize: '12px', color: '#a78bfa' }}>
+                                        ⏱️ Tiempo total de parada: <strong>{statsCambios.horasParada} horas</strong> ({statsCambios.minutosParada} min)
+                                    </div>
+                                </div>
+
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                                        <thead>
+                                            <tr style={{ background: 'rgba(0,0,0,0.2)', borderBottom: '1px solid var(--border-color, #2a2d3e)', color: '#9ca3af' }}>
+                                                <th style={{ padding: '12px 16px' }}>Máquina #</th>
+                                                <th style={{ padding: '12px 16px' }}>Área</th>
+                                                <th style={{ padding: '12px 16px' }}>Tipo de Cambio</th>
+                                                <th style={{ padding: '12px 16px' }}>Artículo Saliente</th>
+                                                <th style={{ padding: '12px 16px' }}>➔ Artículo Entrante</th>
+                                                <th style={{ padding: '12px 16px' }}>Hilados a Llevar a Pie de Máquina</th>
+                                                <th style={{ padding: '12px 16px', textAlign: 'right' }}>Tiempo Estimado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {filteredCambios.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={7} style={{ padding: '36px', textAlign: 'center', color: '#9ca3af' }}>
+                                                        No se registran cambios programados con los filtros seleccionados.
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                filteredCambios.map((c: any, idx: number) => (
+                                                    <tr
+                                                        key={`m-${c.maquina}-${idx}`}
+                                                        style={{
+                                                            borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                                            background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)',
+                                                        }}
+                                                    >
+                                                        {/* Máquina */}
+                                                        <td style={{ padding: '12px 16px' }}>
+                                                            <span style={{
+                                                                background: '#6366f1',
+                                                                color: '#ffffff',
+                                                                fontWeight: 800,
+                                                                padding: '4px 10px',
+                                                                borderRadius: '6px',
+                                                                fontSize: '13px',
+                                                                display: 'inline-block',
+                                                            }}>
+                                                                M{c.maquina}
+                                                            </span>
+                                                        </td>
+
+                                                        {/* Área */}
+                                                        <td style={{ padding: '12px 16px', color: '#9ca3af', fontSize: '12px' }}>
+                                                            {c.area}
+                                                        </td>
+
+                                                        {/* Tipo de Cambio */}
+                                                        <td style={{ padding: '12px 16px' }}>
+                                                            <span style={{
+                                                                background: 'rgba(167, 139, 250, 0.15)',
+                                                                color: '#a78bfa',
+                                                                fontWeight: 700,
+                                                                fontSize: '11px',
+                                                                padding: '3px 8px',
+                                                                borderRadius: '6px',
+                                                                textTransform: 'uppercase',
+                                                            }}>
+                                                                {c.tipoCambio}
+                                                            </span>
+                                                        </td>
+
+                                                        {/* Artículo Saliente */}
+                                                        <td style={{ padding: '12px 16px' }}>
+                                                            <div style={{ color: '#9ca3af', fontSize: '12px', textDecoration: 'line-through' }}>
+                                                                {c.saliente.codigo}
+                                                            </div>
+                                                            <div style={{ color: '#6b7280', fontSize: '11px' }}>
+                                                                {c.saliente.descripcion} ({c.saliente.talle})
+                                                            </div>
+                                                        </td>
+
+                                                        {/* Artículo Entrante */}
+                                                        <td style={{ padding: '12px 16px' }}>
+                                                            <div style={{ color: '#10b981', fontWeight: 800, fontSize: '13px' }}>
+                                                                ➔ {c.entrante.codigo}
+                                                            </div>
+                                                            <div style={{ color: '#d1d5db', fontSize: '11px', marginTop: '2px' }}>
+                                                                {c.entrante.descripcion} • Talle: <strong>{c.entrante.talle}</strong>
+                                                            </div>
+                                                        </td>
+
+                                                        {/* Hilados a Llevar a Pie de Máquina */}
+                                                        <td style={{ padding: '12px 16px' }}>
+                                                            {c.hiladosEntrantes && c.hiladosEntrantes.length > 0 ? (
+                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                                                    {c.hiladosEntrantes.map((h: any, hIdx: number) => (
+                                                                        <div key={hIdx} style={{ fontSize: '11px', color: '#d1d5db', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                            <span style={{ color: '#38bdf8' }}>🧶</span>
+                                                                            <span style={{ fontWeight: 600 }}>{h.codigo}</span>
+                                                                            <span style={{ color: '#9ca3af' }}>({h.descripcion})</span>
+                                                                            <span style={{ color: '#f59e0b', fontWeight: 700 }}>~{h.conosEstimados} conos</span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
                                                             ) : (
-                                                                <span style={{ fontSize: '13px', fontWeight: 700, color: '#ef4444', background: 'rgba(239, 68, 68, 0.15)', padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(239, 68, 68, 0.4)' }}>
-                                                                    ❌ NO HAY en Reserva (Corte total)
+                                                                <span style={{ color: '#6b7280', fontSize: '11px' }}>
+                                                                    Hilados estándar sin cambio especial
                                                                 </span>
                                                             )}
-                                                        </div>
-                                                        <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '6px' }}>
-                                                            {mat.maquinas.length} máquinas consumiendo ({mat.maquinas.map((m) => `M${m}`).slice(0, 8).join(', ')}{mat.maquinas.length > 8 ? '...' : ''})
-                                                        </div>
-                                                    </div>
+                                                        </td>
 
-                                                    {/* Stock vs Consumo Matrix */}
-                                                    <div style={{ display: 'flex', gap: '16px', background: 'rgba(0,0,0,0.25)', padding: '10px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                                        <div>
-                                                            <div style={{ fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase' }}>Consumo Día</div>
-                                                            <div style={{ fontSize: '15px', fontWeight: 800, color: '#f3f4f6' }}>
-                                                                {mat.consumoTotal.toLocaleString('es-AR')} {mat.unidadPrincipal || 'kg'}
+                                                        {/* Tiempo Estimado (Marina) */}
+                                                        <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                                                            <div style={{ fontWeight: 800, color: '#f3f4f6', fontSize: '14px' }}>
+                                                                ⏱️ {c.tiempoFormateado}
                                                             </div>
-                                                            <div style={{ fontSize: '10px', color: '#9ca3af' }}>
-                                                                (~{mat.tasaHora} {mat.unidadPrincipal || 'kg'}/h)
+                                                            <div style={{ fontSize: '10px', marginTop: '2px' }}>
+                                                                {c.fuenteTiempo === 'MARINA' ? (
+                                                                    <span style={{ color: '#a78bfa', background: 'rgba(167, 139, 250, 0.1)', padding: '1px 5px', borderRadius: '4px' }}>
+                                                                        Histórico Marina ({c.muestrasMarina} reg.)
+                                                                    </span>
+                                                                ) : (
+                                                                    <span style={{ color: '#9ca3af' }}>Estimado base</span>
+                                                                )}
                                                             </div>
-                                                        </div>
-
-                                                        <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '14px' }}>
-                                                            <div style={{ fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase' }}>En Picking</div>
-                                                            <div style={{ fontSize: '15px', fontWeight: 800, color: mat.stockPicking < mat.consumoTotal ? '#f59e0b' : '#34d399' }}>
-                                                                {mat.stockPicking.toLocaleString('es-AR')} {mat.unidadPrincipal || 'kg'}
-                                                            </div>
-                                                            <div style={{ fontSize: '10px', color: '#9ca3af' }}>
-                                                                {mat.horasAutonomiaPicking < 900 ? `${mat.horasAutonomiaPicking}h autonomía` : 'Sin consumo'}
-                                                            </div>
-                                                        </div>
-
-                                                        <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '14px' }}>
-                                                            <div style={{ fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase' }}>En Reserva</div>
-                                                            <div style={{ fontSize: '15px', fontWeight: 800, color: mat.stockReserva > 0 ? '#60a5fa' : '#9ca3af' }}>
-                                                                {mat.stockReserva.toLocaleString('es-AR')} {mat.unidadPrincipal || 'kg'}
-                                                            </div>
-                                                            <div style={{ fontSize: '10px', color: '#9ca3af' }}>
-                                                                Depósito gral.
-                                                            </div>
-                                                        </div>
-
-                                                        <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '14px' }}>
-                                                            <div style={{ fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase' }}>Total Fábrica</div>
-                                                            <div style={{ fontSize: '15px', fontWeight: 800, color: mat.stockTotal < mat.consumoTotal ? '#ef4444' : '#34d399' }}>
-                                                                {mat.stockTotal.toLocaleString('es-AR')} {mat.unidadPrincipal || 'kg'}
-                                                            </div>
-                                                            <div style={{ fontSize: '10px', color: '#9ca3af' }}>
-                                                                {mat.stockTotal < mat.consumoTotal ? `Faltan ${mat.faltanteNeto}` : 'Alcanza'}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </Card>
-                                        );
-                                    })}
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
                                 </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* ========================================================================= */}
-                    {/* BLOQUE 2: MÁQUINAS PARADAS POR MUCHO TIEMPO                                */}
-                    {/* ========================================================================= */}
-                    {(filtroSeccion === 'TODOS' || filtroSeccion === 'PARADAS') && (
-                        <div style={{ marginBottom: '36px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '12px' }}>
-                                <div>
-                                    <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#f3f4f6', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span>⏸️</span> Máquinas Paradas o con Pérdida Prolongada de Tiempo
-                                    </h2>
-                                    <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>
-                                        Ranking de máquinas que registraron mayor inactividad en el turno: horas perdidas, motivo y artículo que dejaron de producir.
-                                    </div>
-                                </div>
-
-                                <Btn
-                                    variant="secondary"
-                                    onClick={() => navigate('/mantenimiento/disponibilidad-v2')}
-                                    style={{ fontSize: '12px' }}
-                                >
-                                    📊 Ver Timeline Completo de Máquinas ↗️
-                                </Btn>
-                            </div>
-
-                            {loadingAvailability && (
-                                <div style={{ padding: '20px', textAlign: 'center', color: '#9ca3af' }}>
-                                    <Spinner /> <span style={{ marginLeft: '8px' }}>Calculando disponibilidad de máquinas...</span>
-                                </div>
-                            )}
-
-                            {!loadingAvailability && maquinasParadas.length === 0 ? (
-                                <Card style={{ padding: '24px', textAlign: 'center', color: '#34d399' }}>
-                                    🎉 Excelente: no se detectan máquinas con paradas prolongadas en las últimas horas.
-                                </Card>
-                            ) : (
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '14px' }}>
-                                    {maquinasParadas.slice(0, 12).map((maq) => {
-                                        const isCritica = maq.tiempoParadaHoras >= 3;
-                                        const colorStatus = maq.status === 'PARADA' ? '#ef4444' : maq.status === 'REVISAR' ? '#f59e0b' : '#3b82f6';
-
-                                        return (
-                                            <Card
-                                                key={maq.number}
-                                                style={{
-                                                    padding: '16px 18px',
-                                                    background: isCritica ? 'rgba(239, 68, 68, 0.08)' : 'var(--bg-secondary, #1a1d2e)',
-                                                    border: isCritica ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--border-color, #2a2d3e)',
-                                                    borderRadius: '12px',
-                                                }}
-                                            >
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                        <span style={{ fontSize: '18px', fontWeight: 900, color: '#f3f4f6' }}>
-                                                            M{maq.number}
-                                                        </span>
-                                                        <Badge color={colorStatus}>
-                                                            {maq.status}
-                                                        </Badge>
-                                                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>
-                                                            {maq.area}
-                                                        </span>
-                                                    </div>
-
-                                                    <div style={{ textAlign: 'right' }}>
-                                                        <span style={{ fontSize: '16px', fontWeight: 900, color: '#ef4444' }}>
-                                                            {maq.horasParadaFormateada || `${maq.tiempoParadaHoras}h parada`}
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Barra visual de disponibilidad */}
-                                                <div style={{ marginTop: '12px' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>
-                                                        <span>Disponibilidad en turno</span>
-                                                        <strong style={{ color: maq.disponibilidadPct < 70 ? '#ef4444' : maq.disponibilidadPct < 85 ? '#f59e0b' : '#34d399' }}>
-                                                            {maq.disponibilidadPct}%
-                                                        </strong>
-                                                    </div>
-                                                    <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
-                                                        <div
-                                                            style={{
-                                                                width: `${Math.min(100, Math.max(0, maq.disponibilidadPct))}%`,
-                                                                height: '100%',
-                                                                background: maq.disponibilidadPct < 70 ? '#ef4444' : maq.disponibilidadPct < 85 ? '#f59e0b' : '#10b981',
-                                                                borderRadius: '3px',
-                                                            }}
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                <div style={{ marginTop: '12px', fontSize: '12px', color: '#d1d5db' }}>
-                                                    <span style={{ color: '#9ca3af' }}>Motivo: </span>
-                                                    <strong>{maq.motivo}</strong>
-                                                </div>
-
-                                                <div style={{ marginTop: '4px', fontSize: '12px', color: '#d1d5db' }}>
-                                                    <span style={{ color: '#9ca3af' }}>Artículo afectado: </span>
-                                                    <span style={{ color: '#60a5fa', fontWeight: 600 }}>
-                                                        {maq.articulo} {maq.talle ? `[${maq.talle}]` : ''}
-                                                    </span>
-                                                </div>
-
-                                                <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
-                                                    <Btn
-                                                        variant="secondary"
-                                                        onClick={() => navigate(`/mantenimiento/maquinas?buscar=${maq.number}`)}
-                                                        style={{ fontSize: '11px', padding: '4px 10px' }}
-                                                    >
-                                                        Ver Máquina M{maq.number} ↗️
-                                                    </Btn>
-                                                </div>
-                                            </Card>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* ========================================================================= */}
-                    {/* BLOQUE 3: TIPOS DE CAMBIOS EJECUTÁNDOSE Y EN QUÉ MÁQUINAS                 */}
-                    {/* ========================================================================= */}
-                    {(filtroSeccion === 'TODOS' || filtroSeccion === 'CAMBIOS') && (
-                        <div style={{ marginBottom: '36px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '12px' }}>
-                                <div>
-                                    <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#f3f4f6', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span>🔄</span> Tipos de Cambios en Ejecución por Máquina
-                                    </h2>
-                                    <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>
-                                        Control exacto de cambios programados a las 08:00 AM y entre turnos: qué máquina cambia, qué tipo de cambio realiza (artículo, talle, color) y tiempo estimado.
-                                    </div>
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                    <select
-                                        value={filtroTipoCambio}
-                                        onChange={(e) => setFiltroTipoCambio(e.target.value)}
-                                        style={{
-                                            padding: '7px 12px',
-                                            background: 'var(--bg-secondary, #1a1d2e)',
-                                            border: '1px solid var(--border-color, #2a2d3e)',
-                                            borderRadius: '8px',
-                                            color: '#f3f4f6',
-                                            fontSize: '12px',
-                                        }}
-                                    >
-                                        <option value="TODOS">Todos los tipos de cambio ({cambiosEnEjecucion.length})</option>
-                                        {tiposDeCambioUnicos.map((tipo) => (
-                                            <option key={tipo} value={tipo}>
-                                                {tipo}
-                                            </option>
-                                        ))}
-                                    </select>
-
-                                    <Btn
-                                        variant="secondary"
-                                        onClick={() => navigate('/produccion/informe-cambios-dia')}
-                                        style={{ fontSize: '12px' }}
-                                    >
-                                        📄 Ver Informe de Cambios ↗️
-                                    </Btn>
-                                </div>
-                            </div>
-
-                            {cambiosEnEjecucion.length === 0 ? (
-                                <Card style={{ padding: '24px', textAlign: 'center', color: '#9ca3af' }}>
-                                    No hay cambios programados con los filtros seleccionados.
-                                </Card>
-                            ) : (
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '14px' }}>
-                                    {cambiosEnEjecucion.map((maq, idx) => {
-                                        const duracionMin = maq.changeoverDurationMinutes || 60;
-                                        const tipo = maq.changeoverType || 'CAMBIO_PROGRAMADO';
-
-                                        const colorTipo =
-                                            tipo.includes('ARTICULO')
-                                                ? '#8b5cf6'
-                                                : tipo.includes('TALLE')
-                                                ? '#3b82f6'
-                                                : tipo.includes('COLOR')
-                                                ? '#ec4899'
-                                                : '#f59e0b';
-
-                                        return (
-                                            <Card
-                                                key={`${maq.machine}-${maq.shift}-${idx}`}
-                                                style={{
-                                                    padding: '16px 18px',
-                                                    background: 'var(--bg-secondary, #1a1d2e)',
-                                                    border: '1px solid rgba(139, 92, 246, 0.3)',
-                                                    borderRadius: '12px',
-                                                }}
-                                            >
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                        <span style={{ fontSize: '18px', fontWeight: 900, color: '#f3f4f6' }}>
-                                                            M{maq.machine}
-                                                        </span>
-                                                        <Badge color="#6366f1">
-                                                            {maq.area || 'Planta'}
-                                                        </Badge>
-                                                        <Badge color={maq.shift === 'N' ? '#818cf8' : '#f59e0b'}>
-                                                            {maq.shift === 'N' ? '🌙 Noche' : '☀️ Mañana'}
-                                                        </Badge>
-                                                    </div>
-
-                                                    <Badge color={colorTipo}>
-                                                        {tipo}
-                                                    </Badge>
-                                                </div>
-
-                                                {/* Detalle del Cambio */}
-                                                <div
-                                                    style={{
-                                                        marginTop: '12px',
-                                                        padding: '10px 14px',
-                                                        background: 'rgba(0,0,0,0.25)',
-                                                        borderRadius: '8px',
-                                                        border: '1px solid rgba(255,255,255,0.05)',
-                                                    }}
-                                                >
-                                                    <div style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase' }}>
-                                                        Artículo Entrante (En Máquina)
-                                                    </div>
-                                                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#34d399', marginTop: '2px' }}>
-                                                        {maq.articleCode || maq.articleRaw}
-                                                    </div>
-                                                    <div style={{ fontSize: '12px', color: '#d1d5db', marginTop: '2px' }}>
-                                                        {maq.descRaw}
-                                                    </div>
-                                                    <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-                                                        <span style={{ fontSize: '11px', color: '#a78bfa', fontWeight: 700 }}>
-                                                            Talle: {maq.talle || 'Único'}
-                                                        </span>
-                                                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>•</span>
-                                                        <span style={{ fontSize: '11px', color: '#f59e0b' }}>
-                                                            Color: {maq.colorRaw || 'Sin color'}
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Horario y Duración */}
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', fontSize: '12px', color: '#9ca3af' }}>
-                                                    <div>
-                                                        <span>Horario: </span>
-                                                        <strong style={{ color: '#f3f4f6' }}>08:00 AM</strong>
-                                                    </div>
-                                                    <div>
-                                                        <span>Duración estimada: </span>
-                                                        <strong style={{ color: '#a78bfa' }}>{duracionMin} min</strong>
-                                                    </div>
-                                                    <div>
-                                                        <span>Horas netas: </span>
-                                                        <strong style={{ color: '#34d399' }}>{maq.netHours || 11}h</strong>
-                                                    </div>
-                                                </div>
-
-                                                <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                                                    <Btn
-                                                        variant="secondary"
-                                                        onClick={() => navigate(`/produccion/planificacion`)}
-                                                        style={{ fontSize: '11px', padding: '4px 10px' }}
-                                                    >
-                                                        Ver Planilla Tejeduría ↗️
-                                                    </Btn>
-                                                </div>
-                                            </Card>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
+                            </Card>
+                        )}
+                    </div>
+                </>
             )}
         </div>
     );

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
     Box, Typography, Button, TextField, Card as MuiCard,
     CardContent, Autocomplete, IconButton, List, ListItem,
@@ -35,6 +35,9 @@ interface PendingChange {
 
 export default function CambioArticuloPage() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const isProduccion = location.pathname.startsWith('/produccion');
+    const historialRoute = isProduccion ? '/produccion/historial-cambios' : '/mantenimiento/historial-cambios';
     const machineSearchRef = useRef<HTMLInputElement>(null);
 
     // Selectors
@@ -230,7 +233,7 @@ export default function CambioArticuloPage() {
                 <Button
                     variant="outlined"
                     startIcon={<HistoryIcon />}
-                    onClick={() => navigate('/mantenimiento/historial-cambios')}
+                    onClick={() => navigate(historialRoute)}
                     sx={{ color: '#60a5fa', borderColor: '#60a5fa44', '&:hover': { borderColor: '#60a5fa', bgcolor: '#60a5fa15' } }}
                 >
                     Ver Historial de Cambios
@@ -533,7 +536,7 @@ export default function CambioArticuloPage() {
                                 </Typography>
                                 <Button
                                     size="small"
-                                    onClick={() => navigate('/mantenimiento/historial-cambios')}
+                                    onClick={() => navigate(historialRoute)}
                                     sx={{ color: '#60a5fa', fontSize: '0.8rem', textTransform: 'none' }}
                                 >
                                     Ver todos →

@@ -204,6 +204,48 @@ export const getArribosProgramados = (itemIdentifier?: string): ArriboProgramado
     return arribos.sort((a, b) => a.fecha.localeCompare(b.fecha));
 };
 
+export const getArribosProgramadosPorCategoria = (
+    categoryName?: string,
+    itemIds: string[] = [],
+    itemCodes: string[] = []
+): ArriboProgramado[] => {
+    const list = getOrdenesCompra();
+    const arribos: ArriboProgramado[] = [];
+    const normCategory = categoryName ? categoryName.trim().toUpperCase() : null;
+    const itemIdsSet = new Set(itemIds);
+    const itemCodesSet = new Set(itemCodes.map(c => c.trim().toUpperCase()));
+
+    list.forEach(oc => {
+        if (oc.estado !== 'EN_CAMINO' && oc.estado !== 'PARCIAL') return;
+
+        oc.lineas.forEach(l => {
+            const pendiente = Math.max(0, l.cantidadPedidaKg - (l.cantidadRecibidaKg || 0));
+            if (pendiente <= 0) return;
+
+            const codeNorm = l.codigoInterno ? l.codigoInterno.trim().toUpperCase() : '';
+            const catNorm = l.categoriaNombre ? l.categoriaNombre.trim().toUpperCase() : '';
+
+            const match = (normCategory && (catNorm.includes(normCategory) || normCategory.includes(catNorm)))
+                || (l.itemId && itemIdsSet.has(l.itemId))
+                || (codeNorm && itemCodesSet.has(codeNorm));
+
+            if (match) {
+                arribos.push({
+                    fecha: l.fechaArriboEstimada || oc.fechaArriboEstimada,
+                    cantidadKg: pendiente,
+                    ordenNumero: oc.numero,
+                    partnerNombre: oc.partnerNombre,
+                    itemId: l.itemId,
+                    codigoInterno: l.codigoInterno,
+                    descripcion: l.descripcion
+                });
+            }
+        });
+    });
+
+    return arribos.sort((a, b) => a.fecha.localeCompare(b.fecha));
+};
+
 // 5. Cargar / Resetear datos desde el Registro de Compras (Excel)
 export const cargarDatosDesdeExcel = (): void => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(EXCEL_SEED_DATA));

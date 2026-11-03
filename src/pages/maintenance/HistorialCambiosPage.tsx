@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
     Box, Typography, Card as MuiCard, CardContent, Chip, TextField,
     IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Button,
@@ -54,6 +54,9 @@ interface EditChangeState {
 
 export default function HistorialCambiosPage() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const isProduccion = location.pathname.startsWith('/produccion');
+    const registroRoute = isProduccion ? '/produccion/cambios' : '/mantenimiento/cambios';
 
     // Default dates: last 30 days
     const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
@@ -514,7 +517,7 @@ export default function HistorialCambiosPage() {
                 <Button
                     variant="contained"
                     startIcon={<AddIcon />}
-                    onClick={() => navigate('/mantenimiento/cambios')}
+                    onClick={() => navigate(registroRoute)}
                     sx={{ bgcolor: '#1f6feb', '&:hover': { bgcolor: '#1a5cc7' } }}
                 >
                     Nuevo Cambio

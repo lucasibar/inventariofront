@@ -152,6 +152,9 @@ export const router = createBrowserRouter([
               { path: "produccion/pedidos", element: <LazyRoute element={StockPedidosArticulosPage} /> },
               { path: "produccion/informe-tejeduria", element: <LazyRoute element={InformeTejeduriaPage} /> },
               { path: "produccion/informe-cambios-dia", element: <LazyRoute element={InformeCambiosDiaPage} /> },
+              { path: "produccion/cambios", element: <LazyRoute element={CambioArticuloPage} /> },
+              { path: "produccion/historial-cambios", element: <LazyRoute element={HistorialCambiosPage} /> },
+              { path: "produccion/informe-cambios", element: <LazyRoute element={InformeCambiosPage} /> },
             ]
           },
           // SECTOR: DESARROLLO

@@ -56,12 +56,20 @@ const navGroups: NavGroup[] = [
         label: 'Producción',
         icon: '⚙️',
         items: [
-            { to: '/produccion/dashboard', label: '⚡ Dashboard de Producción' },
-            { to: '/produccion/programacion-gantt', label: '📊 Programación Gantt Máquinas' },
-            { to: '/produccion/planificacion', label: '📑 Carga de Producción (PDFs)' },
-            { to: '/produccion/informe-tejeduria', label: '⚙️ Plan de Tejeduría Diario' },
-            { to: '/produccion/informe-cambios-dia', label: '🔄 Informe de Cambios del Día' },
-            { to: '/produccion/pedidos', label: '📦 Pedidos y Stock Artículos' },
+            { to: '/produccion/dashboard', label: '📊 Dashboard' },
+            { to: '/produccion/programacion-gantt', label: '📅 Programación Gantt' },
+            { to: '/produccion/planificacion', label: '📥 Carga de Producción' },
+            {
+                id: 'produccion-cambios',
+                label: '🔄 Cambios',
+                isSubGroup: true,
+                items: [
+                    { to: '/produccion/cambios', label: '📝 Registrar Cambios' },
+                    { to: '/produccion/historial-cambios', label: '📜 Historial de Cambios' },
+                    { to: '/produccion/informe-cambios', label: '📊 Informe de Cambios' },
+                    { to: '/produccion/informe-cambios-dia', label: '📅 Cambios del Día (Planilla)' },
+                ]
+            },
         ]
     },
     {
@@ -143,6 +151,7 @@ const navGroups: NavGroup[] = [
         items: [
             { to: '/compras/materiales-criticos-dashboard', label: '⚡ Tablero de Compras' },
             { to: '/compras/ordenes-compra', label: '📋 Órdenes de Compra' },
+            { to: '/compras/diente-de-sierra', label: '📈 Gráfico Diente de Sierra' },
             { to: '/reporte-consumo-detallado', label: '📊 Consumo de Materiales' },
             {
                 id: 'compras-configuracion',
@@ -361,6 +370,9 @@ export default function Layout() {
                 '/produccion/pedidos',
                 '/produccion/informe-tejeduria',
                 '/produccion/informe-cambios-dia',
+                '/produccion/cambios',
+                '/produccion/historial-cambios',
+                '/produccion/informe-cambios',
             ],
         };
 
