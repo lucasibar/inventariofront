@@ -36,6 +36,8 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import LayersIcon from '@mui/icons-material/Layers';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 
 import { useSelector } from 'react-redux';
 import { selectAllowedDepots } from '../../entities/auth/model/authSlice';
@@ -43,7 +45,8 @@ import { useGetDepotsQuery } from '../../features/warehouse/deposito/api/deposit
 import { 
     useGetItemsQuery, 
     useGetItemCategoriesQuery,
-    useUpdateItemMutation 
+    useUpdateItemMutation,
+    useUpdateItemCategoryMutation 
 } from '../../features/warehouse/materiales/api/items.api';
 import { useGetStockQuery } from '../../features/warehouse/stock/api/stock.api';
 import { 
@@ -117,6 +120,7 @@ export default function MaterialesCriticosPage() {
 
     // Mutaciones
     const [updateItem] = useUpdateItemMutation();
+    const [updateItemCategory] = useUpdateItemCategoryMutation();
     const [createCombo] = useCreateComboMutation();
     const [deleteCombo] = useDeleteComboMutation();
     const [updateCombo] = useUpdateComboMutation();
@@ -129,16 +133,24 @@ export default function MaterialesCriticosPage() {
     const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
     const [categoryMenuAnchor, setCategoryMenuAnchor] = useState<null | HTMLElement>(null);
     const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
+    const [hideZeroStock, setHideZeroStock] = useState<boolean>(true);
+    const [expandedZeroCategories, setExpandedZeroCategories] = useState<Record<string, boolean>>({});
 
     // Diálogos y modales
     const [editLimitsItem, setEditLimitsItem] = useState<any | null>(null);
     const [minLimitInput, setMinLimitInput] = useState<string>('');
     const [maxLimitInput, setMaxLimitInput] = useState<string>('');
     const [porVenirInput, setPorVenirInput] = useState<string>('');
+
+    // Edición de Límites por Categoría
+    const [editCategoryLimitsTarget, setEditCategoryLimitsTarget] = useState<any | null>(null);
+    const [catMinInput, setCatMinInput] = useState<string>('');
+    const [catMaxInput, setCatMaxInput] = useState<string>('');
+
     const [editItemTarget, setEditItemTarget] = useState<any | null>(null);
     const [editComboTarget, setEditComboTarget] = useState<any | null>(null);
     const [newComboModalOpen, setNewComboModalOpen] = useState(false);
-    const [feedbackToast, setFeedbackToast] = useState<{ msg: string; severity: 'success' | 'info' | 'error' } | null>(null);
+    const [feedbackToast, setFeedbackToast] = useState<{ msg: string; severity: 'success' | 'info' | 'error' | 'warning' } | null>(null);
 
     // Form nuevo combo
     const [newComboTitle, setNewComboTitle] = useState('');
@@ -162,47 +174,59 @@ export default function MaterialesCriticosPage() {
         return map;
     }, [allStock]);
 
-    // Normalizar y enriquecer ítems con métricas de criticidad y abastecimiento
+    // Normalizar y enriquecer ítems con métricas de criticidad, sobrantes y abastecimiento
     const enrichedItems = useMemo(() => {
         return items.map((item: any) => {
             const stockActual = stockTotalsByItem.get(item.id) || 0;
             const stockMinimo = item.stockMinimo !== null && item.stockMinimo !== undefined ? Number(item.stockMinimo) : null;
             const stockMaximo = item.stockMaximo !== null && item.stockMaximo !== undefined ? Number(item.stockMaximo) : null;
             const porVenir = Number(item.meta?.porVenir || item.porVenir || 0);
-            const stockProyectado = stockActual + porVenir;
+
+            // Verificamos si este material es un remanente/sobrante histórico excluido del cálculo de compras
+            const esSobrante = Boolean(item.meta?.excluirDeCompras || item.meta?.esSobrante);
+
+            // El stock computable para compras es 0 si es sobrante (evita engañar al planificador de abastecimiento)
+            const stockComputable = esSobrante ? 0 : stockActual;
+            const stockProyectado = stockComputable + porVenir;
             const isIgnored = Boolean(item.meta?.ignorarStockMinimo);
 
             let status: 'CRITICAL' | 'WARNING' | 'OVERSTOCK' | 'OK' = 'OK';
             let deficitBruto = 0;
             let deficitNeto = 0;
 
-            if (stockMinimo !== null && stockMinimo > 0 && !isIgnored) {
-                if (stockActual < stockMinimo) {
-                    deficitBruto = stockMinimo - stockActual;
+            if (stockMinimo !== null && stockMinimo > 0 && !isIgnored && !esSobrante) {
+                if (stockComputable < stockMinimo) {
+                    deficitBruto = stockMinimo - stockComputable;
                     deficitNeto = Math.max(0, stockMinimo - stockProyectado);
 
                     if (deficitNeto > 0) {
                         status = 'CRITICAL';
                     } else {
-                        // El stock físico está bajo pero cubierto por lo que viene
+                        // El stock físico computable está bajo pero cubierto por lo que viene
                         status = 'WARNING';
                     }
-                } else if (stockActual <= stockMinimo * 1.25) {
+                } else if (stockComputable <= stockMinimo * 1.25) {
                     status = 'WARNING';
                 }
             }
 
-            if (stockMaximo !== null && stockMaximo > 0 && stockActual > stockMaximo) {
+            if (stockMaximo !== null && stockMaximo > 0 && stockComputable > stockMaximo) {
                 status = 'OVERSTOCK';
             }
+
+            // Material inactivo / histórico en cero (sin stock, sin pedidos por venir, sin mínimo configurado)
+            const isZeroActivity = stockActual === 0 && porVenir === 0 && (stockMinimo === null || stockMinimo === 0);
 
             return {
                 ...item,
                 stockActual,
+                stockComputable,
                 stockMinimo,
                 stockMaximo,
                 porVenir,
                 stockProyectado,
+                esSobrante,
+                isZeroActivity,
                 deficitBruto,
                 deficitNeto,
                 deficit: deficitNeto > 0 ? deficitNeto : deficitBruto,
@@ -213,99 +237,28 @@ export default function MaterialesCriticosPage() {
         });
     }, [items, stockTotalsByItem]);
 
-    // 4. Sistema Central de Alertas Cruzadas (Costadito)
-    const activeAlerts = useMemo(() => {
-        const list: Array<{
-            id: string;
-            type: 'MISSING_COLOR' | 'MISSING_STRUCTURE' | 'UNDER_MIN' | 'OVER_MAX' | 'NEAR_MIN';
-            severity: 'danger' | 'warning' | 'info' | 'purple';
-            title: string;
-            subtitle: string;
-            detail: string;
-            metric?: string;
-            itemRef?: any;
-        }> = [];
-
-        // A. Alertas de Pedidos con Colores Faltantes en Stock
-        const activePedidos = pedidosProduccion.filter((p: any) => p.color_descripcion && (p.estado !== 'COMPLETADO' && p.estado !== 'FINALIZADO'));
-        activePedidos.forEach((p: any) => {
-            const colorNorm = normalizeText(p.color_descripcion);
-            // Buscar si hay stock de hilado que coincida con este color
-            const matchingStock = allStock.filter((s: any) => {
-                const desc = normalizeText(s.batch?.item?.descripcion || '');
-                return desc.includes(colorNorm) && Number(s.qtyPrincipal) > 0;
-            });
-
-            if (matchingStock.length === 0) {
-                list.push({
-                    id: `pedido-color-${p.numero_pedido}-${p.color_descripcion}`,
-                    type: 'MISSING_COLOR',
-                    severity: 'danger',
-                    title: `Pedido #${p.numero_pedido} (${p.cliente_marca || 'Producción'})`,
-                    subtitle: `Falta hilado para color "${p.color_descripcion}"`,
-                    detail: `Artículo: ${p.articulo_codigo || 'S/D'} • ${p.docenas_pedidas || 0} docenas requeridas`,
-                    metric: 'Sin stock'
-                });
-            }
-        });
-
-        // B. Alertas de Artículos en Pedidos de Venta Sin Estructura
-        articulosSinEstructura.slice(0, 5).forEach((pv: any) => {
-            list.push({
-                id: `sin-estructura-${pv.id || pv.numeroPedido}`,
-                type: 'MISSING_STRUCTURE',
-                severity: 'purple',
-                title: `Pedido Venta #${pv.numeroPedido}`,
-                subtitle: `Artículo ${pv.articuloCodigo} sin receta técnica`,
-                detail: `Cliente: ${pv.cliente || 'General'} • No se puede estimar consumo de hilado`,
-                metric: 'Sin receta'
-            });
-        });
-
-        // C. Alertas de Quiebre de Stock Mínimo
-        enrichedItems.forEach((item: any) => {
-            if (item.status === 'CRITICAL' && !item.isIgnored) {
-                list.push({
-                    id: `under-min-${item.id}`,
-                    type: 'UNDER_MIN',
-                    severity: 'warning',
-                    title: `[${item.codigoInterno}] ${item.descripcion}`,
-                    subtitle: `Por debajo del stock mínimo (Hace falta: -${item.deficitNeto.toFixed(1)} ${item.unidadPrincipal || 'kg'})`,
-                    detail: `En Stock: ${item.stockActual.toFixed(1)} • Por Venir: ${item.porVenir.toFixed(1)} • Mínimo: ${item.stockMinimo}`,
-                    metric: `-${item.deficitNeto.toFixed(1)} ${item.unidadPrincipal || 'kg'}`,
-                    itemRef: item
-                });
-            } else if (item.status === 'OVERSTOCK') {
-                const excess = item.stockActual - item.stockMaximo;
-                list.push({
-                    id: `over-max-${item.id}`,
-                    type: 'OVER_MAX',
-                    severity: 'info',
-                    title: `[${item.codigoInterno}] ${item.descripcion}`,
-                    subtitle: `Exceso de stock máximo (+${excess.toFixed(1)} ${item.unidadPrincipal || 'kg'})`,
-                    detail: `En Stock: ${item.stockActual.toFixed(1)} • Máximo establecido: ${item.stockMaximo}`,
-                    metric: `+${excess.toFixed(1)}`,
-                    itemRef: item
-                });
-            }
-        });
-
-        return list;
-    }, [pedidosProduccion, allStock, articulosSinEstructura, enrichedItems]);
-
-    // 5. Agrupación de Ítems por Categoría (según filtro de categorías activas)
+    // 4. Agrupación de Ítems por Categoría (según filtro de categorías activas)
     const categoryGroups = useMemo(() => {
         const searchWords = normalizeText(search).split(' ').filter(w => w.length > 0);
         const groupsMap = new Map<string, {
             id: string;
             nombre: string;
+            minimo: number | null;
+            maximo: number | null;
             items: any[];
-            totalStock: number;
+            activeItems: any[];
+            zeroItems: any[];
+            totalStock: number;          // Stock computable
+            totalStockFisico: number;    // Stock físico total (incluyendo sobrantes)
+            totalSobrante: number;       // Kilos de sobrantes excluidos
             totalPorVenir: number;
             totalDeficit: number;
+            categoryDeficit: number;
+            categoryStatus: 'CRITICAL' | 'WARNING' | 'OVERSTOCK' | 'OK';
             criticalCount: number;
             warningCount: number;
             okCount: number;
+            activeSuppliers: string[];
         }>();
 
         // Inicializar categorías seleccionadas
@@ -314,13 +267,22 @@ export default function MaterialesCriticosPage() {
                 groupsMap.set(cat.id, {
                     id: cat.id,
                     nombre: cat.nombre,
+                    minimo: cat.minimo !== null && cat.minimo !== undefined ? Number(cat.minimo) : null,
+                    maximo: cat.maximo !== null && cat.maximo !== undefined ? Number(cat.maximo) : null,
                     items: [],
+                    activeItems: [],
+                    zeroItems: [],
                     totalStock: 0,
+                    totalStockFisico: 0,
+                    totalSobrante: 0,
                     totalPorVenir: 0,
                     totalDeficit: 0,
+                    categoryDeficit: 0,
+                    categoryStatus: 'OK',
                     criticalCount: 0,
                     warningCount: 0,
-                    okCount: 0
+                    okCount: 0,
+                    activeSuppliers: []
                 });
             }
         });
@@ -343,7 +305,20 @@ export default function MaterialesCriticosPage() {
 
             const group = groupsMap.get(catId)!;
             group.items.push(item);
-            group.totalStock += item.stockActual;
+
+            if (item.isZeroActivity) {
+                group.zeroItems.push(item);
+            } else {
+                group.activeItems.push(item);
+            }
+
+            group.totalStockFisico += item.stockActual;
+            if (item.esSobrante) {
+                group.totalSobrante += item.stockActual;
+            } else {
+                group.totalStock += item.stockComputable;
+            }
+
             group.totalPorVenir += item.porVenir;
             group.totalDeficit += item.deficitNeto;
             if (item.status === 'CRITICAL') group.criticalCount++;
@@ -351,28 +326,170 @@ export default function MaterialesCriticosPage() {
             else group.okCount++;
         });
 
-        // Ordenar categorías: primero aquellas con mayor déficit o materiales críticos
+        // Calcular estado macro de la categoría y proveedores activos
+        groupsMap.forEach(group => {
+            const suppliers = new Set<string>();
+            group.items.forEach(i => {
+                if ((i.stockActual > 0 || i.porVenir > 0) && i.supplier?.name) {
+                    suppliers.add(i.supplier.name);
+                }
+            });
+            group.activeSuppliers = Array.from(suppliers);
+
+            // Evaluación de Stock Mínimo / Máximo de Categoría
+            if (group.minimo !== null && group.minimo > 0) {
+                const proyectado = group.totalStock + group.totalPorVenir;
+                if (proyectado < group.minimo) {
+                    group.categoryDeficit = group.minimo - proyectado;
+                    group.categoryStatus = 'CRITICAL';
+                } else if (group.totalStock < group.minimo) {
+                    // Cubierto en tránsito
+                    group.categoryDeficit = 0;
+                    group.categoryStatus = 'WARNING';
+                }
+            }
+
+            if (group.maximo !== null && group.maximo > 0 && group.totalStock > group.maximo) {
+                group.categoryStatus = 'OVERSTOCK';
+            }
+        });
+
+        // Ordenar categorías: primero quiebre de categoría, luego déficit total
         return Array.from(groupsMap.values())
             .filter(g => g.items.length > 0 || searchWords.length === 0)
             .sort((a, b) => {
+                if (b.categoryDeficit !== a.categoryDeficit) return b.categoryDeficit - a.categoryDeficit;
                 if (b.criticalCount !== a.criticalCount) return b.criticalCount - a.criticalCount;
                 if (b.totalDeficit !== a.totalDeficit) return b.totalDeficit - a.totalDeficit;
                 return a.nombre.localeCompare(b.nombre);
             });
     }, [categories, selectedCategoryIds, enrichedItems, search, statusFilter]);
 
+    // 5. Sistema Central de Alertas Cruzadas (Costadito)
+    const activeAlerts = useMemo(() => {
+        const list: Array<{
+            id: string;
+            type: 'CATEGORY_UNDER_MIN' | 'CATEGORY_OVER_MAX' | 'MISSING_COLOR' | 'MISSING_STRUCTURE' | 'UNDER_MIN' | 'OVER_MAX' | 'NEAR_MIN';
+            severity: 'danger' | 'warning' | 'info' | 'purple';
+            title: string;
+            subtitle: string;
+            detail: string;
+            metric?: string;
+            itemRef?: any;
+            categoryRef?: any;
+        }> = [];
+
+        // A. Alertas de Quiebre por CATEGORÍA COMPLETA (Macro)
+        categoryGroups.forEach(group => {
+            if (group.minimo !== null && group.minimo > 0 && group.categoryDeficit > 0) {
+                list.push({
+                    id: `cat-under-min-${group.id}`,
+                    type: 'CATEGORY_UNDER_MIN',
+                    severity: 'danger',
+                    title: `CATEGORÍA ${group.nombre}`,
+                    subtitle: `Falta comprar para cubrir el stock mínimo global de la categoría`,
+                    detail: `Stock computable: ${group.totalStock.toFixed(1)} kg • Por venir: ${group.totalPorVenir.toFixed(1)} kg • Mínimo categoría: ${group.minimo} kg`,
+                    metric: `-${group.categoryDeficit.toFixed(1)} kg`,
+                    categoryRef: group
+                });
+            } else if (group.maximo !== null && group.maximo > 0 && group.totalStock > group.maximo) {
+                const excess = group.totalStock - group.maximo;
+                list.push({
+                    id: `cat-over-max-${group.id}`,
+                    type: 'CATEGORY_OVER_MAX',
+                    severity: 'info',
+                    title: `CATEGORÍA ${group.nombre}`,
+                    subtitle: `Exceso de stock máximo en categoría (+${excess.toFixed(1)} kg)`,
+                    detail: `Stock actual: ${group.totalStock.toFixed(1)} kg • Máximo categoría: ${group.maximo} kg`,
+                    metric: `+${excess.toFixed(1)} kg`,
+                    categoryRef: group
+                });
+            }
+        });
+
+        // B. Alertas de Pedidos con Colores Faltantes en Stock
+        const activePedidos = pedidosProduccion.filter((p: any) => p.color_descripcion && (p.estado !== 'COMPLETADO' && p.estado !== 'FINALIZADO'));
+        activePedidos.forEach((p: any) => {
+            const colorNorm = normalizeText(p.color_descripcion);
+            const matchingStock = allStock.filter((s: any) => {
+                const desc = normalizeText(s.batch?.item?.descripcion || '');
+                return desc.includes(colorNorm) && Number(s.qtyPrincipal) > 0;
+            });
+
+            if (matchingStock.length === 0) {
+                list.push({
+                    id: `pedido-color-${p.numero_pedido}-${p.color_descripcion}`,
+                    type: 'MISSING_COLOR',
+                    severity: 'danger',
+                    title: `Pedido #${p.numero_pedido} (${p.cliente_marca || 'Producción'})`,
+                    subtitle: `Falta hilado para color "${p.color_descripcion}"`,
+                    detail: `Artículo: ${p.articulo_codigo || 'S/D'} • ${p.docenas_pedidas || 0} docenas requeridas`,
+                    metric: 'Sin stock'
+                });
+            }
+        });
+
+        // C. Alertas de Artículos en Pedidos de Venta Sin Estructura
+        articulosSinEstructura.slice(0, 5).forEach((pv: any) => {
+            list.push({
+                id: `sin-estructura-${pv.id || pv.numeroPedido}`,
+                type: 'MISSING_STRUCTURE',
+                severity: 'purple',
+                title: `Pedido Venta #${pv.numeroPedido}`,
+                subtitle: `Artículo ${pv.articuloCodigo} sin receta técnica`,
+                detail: `Cliente: ${pv.cliente || 'General'} • No se puede estimar consumo de hilado`,
+                metric: 'Sin receta'
+            });
+        });
+
+        // D. Alertas de Ítem Puntual por debajo del Mínimo o por encima del Máximo
+        enrichedItems.forEach((item: any) => {
+            if (item.status === 'CRITICAL' && !item.isIgnored && !item.esSobrante) {
+                list.push({
+                    id: `under-min-${item.id}`,
+                    type: 'UNDER_MIN',
+                    severity: 'warning',
+                    title: `[${item.codigoInterno}] ${item.descripcion}`,
+                    subtitle: `Ítem individual bajo mínimo (Hace falta: -${item.deficitNeto.toFixed(1)} ${item.unidadPrincipal || 'kg'})`,
+                    detail: `En Stock: ${item.stockActual.toFixed(1)} • Por Venir: ${item.porVenir.toFixed(1)} • Mínimo: ${item.stockMinimo}`,
+                    metric: `-${item.deficitNeto.toFixed(1)} ${item.unidadPrincipal || 'kg'}`,
+                    itemRef: item
+                });
+            } else if (item.status === 'OVERSTOCK' && !item.esSobrante) {
+                const excess = item.stockActual - item.stockMaximo;
+                list.push({
+                    id: `over-max-${item.id}`,
+                    type: 'OVER_MAX',
+                    severity: 'info',
+                    title: `[${item.codigoInterno}] ${item.descripcion}`,
+                    subtitle: `Exceso de stock máximo individual (+${excess.toFixed(1)} ${item.unidadPrincipal || 'kg'})`,
+                    detail: `En Stock: ${item.stockActual.toFixed(1)} • Máximo: ${item.stockMaximo}`,
+                    metric: `+${excess.toFixed(1)}`,
+                    itemRef: item
+                });
+            }
+        });
+
+        return list;
+    }, [pedidosProduccion, allStock, articulosSinEstructura, enrichedItems, categoryGroups]);
+
     // Resumen Global de KPIs (Bosque)
     const kpiSummary = useMemo(() => {
         let totalItems = 0;
         let criticalItems = 0;
         let totalStock = 0;
+        let totalSobrantes = 0;
         let totalPorVenir = 0;
         let totalDeficit = 0;
 
         enrichedItems.forEach((item: any) => {
             if (selectedCategoryIds.includes(item.categoryId || item.category?.id)) {
                 totalItems++;
-                totalStock += item.stockActual;
+                if (item.esSobrante) {
+                    totalSobrantes += item.stockActual;
+                } else {
+                    totalStock += item.stockComputable;
+                }
                 totalPorVenir += item.porVenir;
                 if (item.deficitNeto > 0) {
                     criticalItems++;
@@ -381,15 +498,22 @@ export default function MaterialesCriticosPage() {
             }
         });
 
+        // Sumar también si hay categorías con déficit macro mayor al de ítems individuales
+        let categoryTotalDeficit = 0;
+        categoryGroups.forEach(g => {
+            if (g.categoryDeficit > 0) categoryTotalDeficit += g.categoryDeficit;
+        });
+
         return {
             totalItems,
             criticalItems,
             totalStock,
+            totalSobrantes,
             totalPorVenir,
-            totalDeficit,
+            totalDeficit: Math.max(totalDeficit, categoryTotalDeficit),
             alertsCount: activeAlerts.length
         };
-    }, [enrichedItems, selectedCategoryIds, activeAlerts]);
+    }, [enrichedItems, selectedCategoryIds, activeAlerts, categoryGroups]);
 
     // Manejador de selección de categorías
     const toggleCategorySelection = (catId: string) => {
@@ -410,7 +534,7 @@ export default function MaterialesCriticosPage() {
         setCollapsedCategories(prev => ({ ...prev, [catId]: !prev[catId] }));
     };
 
-    // Guardado de límites mínimos, máximos y stock por venir en-línea
+    // Guardado de límites mínimos, máximos y stock por venir de un material en-línea
     const handleSaveLimits = async () => {
         if (!editLimitsItem) return;
         const minVal = minLimitInput.trim() === '' ? null : Number(minLimitInput);
@@ -433,6 +557,51 @@ export default function MaterialesCriticosPage() {
             setEditLimitsItem(null);
         } catch (e: any) {
             alert(e?.data?.message || 'Error al actualizar abastecimiento');
+        }
+    };
+
+    // Guardado de límites de Categoría (Mínimo y Máximo de compras para todo el grupo)
+    const handleSaveCategoryLimits = async () => {
+        if (!editCategoryLimitsTarget) return;
+        const minVal = catMinInput.trim() === '' ? null : Number(catMinInput);
+        const maxVal = catMaxInput.trim() === '' ? null : Number(catMaxInput);
+
+        try {
+            await updateItemCategory({
+                id: editCategoryLimitsTarget.id,
+                data: {
+                    minimo: minVal,
+                    maximo: maxVal
+                }
+            }).unwrap();
+            setFeedbackToast({ msg: `✅ Límites guardados para categoría ${editCategoryLimitsTarget.nombre}`, severity: 'success' });
+            setEditCategoryLimitsTarget(null);
+        } catch (e: any) {
+            alert(e?.data?.message || 'Error al actualizar límites de la categoría');
+        }
+    };
+
+    // Alternar exclusión de sobrante para que no contamine el stock de compras
+    const handleToggleExcluirCompras = async (item: any) => {
+        const nextVal = !item.esSobrante;
+        try {
+            await updateItem({
+                id: item.id,
+                data: {
+                    meta: {
+                        ...(item.meta || {}),
+                        excluirDeCompras: nextVal
+                    }
+                }
+            }).unwrap();
+            setFeedbackToast({ 
+                msg: nextVal 
+                    ? `⚠️ [${item.codigoInterno}] marcado como sobrante (excluido del cálculo de compras)` 
+                    : `✅ [${item.codigoInterno}] reintegrado al stock computable de compras`, 
+                severity: nextVal ? 'warning' : 'success' 
+            });
+        } catch (e: any) {
+            alert(e?.data?.message || 'Error al cambiar exclusión de sobrante');
         }
     };
 
@@ -733,7 +902,7 @@ export default function MaterialesCriticosPage() {
                         />
 
                         {/* Filtros Rápidos de Criticidad */}
-                        <Box sx={{ display: 'flex', gap: 0.6 }}>
+                        <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'center' }}>
                             <Chip 
                                 size="small" 
                                 label="Todos" 
@@ -758,6 +927,24 @@ export default function MaterialesCriticosPage() {
                                 onClick={() => setStatusFilter('OK')}
                                 sx={{ fontWeight: 800, fontSize: '0.7rem', cursor: 'pointer', bgcolor: statusFilter === 'OK' ? colors.success : 'rgba(255,255,255,0.06)', color: statusFilter === 'OK' ? '#000' : colors.textDim }}
                             />
+
+                            {/* Filtro Anti-Ruido: Ocultar proveedores históricos con 0 stock */}
+                            <Tooltip title={hideZeroStock ? "Ocultando proveedores históricos con 0 stock y 0 pedidos" : "Mostrando todos los proveedores históricos (incluso en 0 kg)"}>
+                                <Chip 
+                                    size="small" 
+                                    icon={hideZeroStock ? <VisibilityOffIcon sx={{ fontSize: '13px !important', color: `${colors.info} !important` }} /> : <VisibilityIcon sx={{ fontSize: '13px !important' }} />}
+                                    label={hideZeroStock ? "Sin 0 kg" : "Ver 0 kg"} 
+                                    onClick={() => setHideZeroStock(!hideZeroStock)}
+                                    sx={{ 
+                                        fontWeight: 800, 
+                                        fontSize: '0.7rem', 
+                                        cursor: 'pointer', 
+                                        bgcolor: hideZeroStock ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255,255,255,0.06)', 
+                                        color: hideZeroStock ? colors.info : colors.textDim,
+                                        border: hideZeroStock ? `1px solid rgba(56, 189, 248, 0.35)` : `1px solid ${colors.border}`
+                                    }}
+                                />
+                            </Tooltip>
                         </Box>
                     </Box>
                 )}
@@ -811,25 +998,76 @@ export default function MaterialesCriticosPage() {
                                             justifyContent: 'space-between', 
                                             alignItems: 'center', 
                                             cursor: 'pointer',
-                                            bgcolor: 'rgba(0,0,0,0.2)',
+                                            bgcolor: 'rgba(0,0,0,0.25)',
                                             borderBottom: isCollapsed ? 'none' : `1px solid ${colors.border}`,
                                             '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' }
                                         }}
                                     >
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap' }}>
                                             <Typography variant="subtitle1" sx={{ fontWeight: 900, color: '#fff' }}>
                                                 {group.nombre}
                                             </Typography>
-                                            <Chip 
-                                                size="small" 
-                                                label={`${group.items.length} materiales`} 
-                                                sx={{ height: 20, fontSize: '0.68rem', fontWeight: 800, bgcolor: 'rgba(255,255,255,0.06)', color: colors.textDim }} 
-                                            />
-                                            {group.criticalCount > 0 && (
+                                            
+                                            {/* Límites de la Categoría completos y editables en un clic */}
+                                            <Tooltip title="Toca para definir o ajustar el Stock Mínimo y Máximo de la categoría completa">
                                                 <Chip 
                                                     size="small" 
-                                                    label={`${group.criticalCount} en quiebre`} 
-                                                    sx={{ height: 20, fontSize: '0.68rem', fontWeight: 900, bgcolor: 'rgba(239, 68, 68, 0.15)', color: colors.danger, border: '1px solid rgba(239, 68, 68, 0.3)' }} 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setEditCategoryLimitsTarget(group);
+                                                        setCatMinInput(group.minimo !== null ? String(group.minimo) : '');
+                                                        setCatMaxInput(group.maximo !== null ? String(group.maximo) : '');
+                                                    }}
+                                                    label={`Mín Cat: ${group.minimo !== null ? `${group.minimo} kg` : '—'} ✎ | Máx: ${group.maximo !== null ? `${group.maximo} kg` : '—'} ✎`} 
+                                                    sx={{ 
+                                                        height: 22, 
+                                                        fontSize: '0.68rem', 
+                                                        fontWeight: 900, 
+                                                        cursor: 'pointer',
+                                                        bgcolor: group.categoryStatus === 'CRITICAL' ? 'rgba(239, 68, 68, 0.18)' : 'rgba(255,255,255,0.06)', 
+                                                        color: group.categoryStatus === 'CRITICAL' ? colors.danger : colors.textDim,
+                                                        border: `1px solid ${group.categoryStatus === 'CRITICAL' ? 'rgba(239, 68, 68, 0.4)' : colors.border}`,
+                                                        '&:hover': { bgcolor: 'rgba(245, 158, 11, 0.2)' }
+                                                    }} 
+                                                />
+                                            </Tooltip>
+
+                                            {/* Proveedores Activos */}
+                                            {group.activeSuppliers.length > 0 && (
+                                                <Tooltip title={`Proveedores con stock o pedidos: ${group.activeSuppliers.join(', ')}`}>
+                                                    <Chip 
+                                                        size="small" 
+                                                        label={`${group.activeSuppliers.length} prov. activos`} 
+                                                        sx={{ height: 20, fontSize: '0.66rem', fontWeight: 800, bgcolor: 'rgba(56, 189, 248, 0.12)', color: colors.info }} 
+                                                    />
+                                                </Tooltip>
+                                            )}
+
+                                            {/* Históricos en cero */}
+                                            {group.zeroItems.length > 0 && (
+                                                <Chip 
+                                                    size="small" 
+                                                    label={`${group.zeroItems.length} hist. en cero`} 
+                                                    sx={{ height: 20, fontSize: '0.66rem', fontWeight: 600, bgcolor: 'rgba(255, 255, 255, 0.04)', color: colors.textDim }} 
+                                                />
+                                            )}
+
+                                            {/* Kilos de remanentes / sobrantes excluidos del cálculo */}
+                                            {group.totalSobrante > 0 && (
+                                                <Tooltip title="Remanentes/sobrantes de proveedores excluidos del stock de compras para no contaminar el cálculo">
+                                                    <Chip 
+                                                        size="small" 
+                                                        label={`+${group.totalSobrante.toFixed(1)} kg sobrantes`} 
+                                                        sx={{ height: 20, fontSize: '0.66rem', fontWeight: 800, bgcolor: 'rgba(249, 115, 22, 0.15)', color: colors.warning }} 
+                                                    />
+                                                </Tooltip>
+                                            )}
+
+                                            {group.categoryStatus === 'CRITICAL' && (
+                                                <Chip 
+                                                    size="small" 
+                                                    label={`Quiebre Categoría (-${group.categoryDeficit.toFixed(1)} kg)`} 
+                                                    sx={{ height: 20, fontSize: '0.68rem', fontWeight: 900, bgcolor: 'rgba(239, 68, 68, 0.18)', color: colors.danger, border: '1px solid rgba(239, 68, 68, 0.35)' }} 
                                                 />
                                             )}
                                         </Box>
@@ -837,16 +1075,20 @@ export default function MaterialesCriticosPage() {
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                             <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
                                                 <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.72rem' }}>
-                                                    Stock: <strong style={{ color: '#fff' }}>{group.totalStock.toFixed(1)}</strong>
+                                                    Stock: <strong style={{ color: '#fff' }}>{group.totalStock.toFixed(1)} kg</strong>
                                                 </Typography>
                                                 {group.totalPorVenir > 0 && (
                                                     <Typography variant="caption" sx={{ color: colors.info, fontSize: '0.72rem' }}>
                                                         Por venir: <strong style={{ color: colors.info }}>+{group.totalPorVenir.toFixed(1)}</strong>
                                                     </Typography>
                                                 )}
-                                                {group.totalDeficit > 0 ? (
+                                                {group.categoryDeficit > 0 ? (
                                                     <Typography variant="caption" sx={{ color: colors.danger, fontSize: '0.75rem', fontWeight: 900 }}>
-                                                        Faltan: <strong>{group.totalDeficit.toFixed(1)} kg</strong>
+                                                        Faltan Cat: <strong>-{group.categoryDeficit.toFixed(1)} kg</strong>
+                                                    </Typography>
+                                                ) : group.totalDeficit > 0 ? (
+                                                    <Typography variant="caption" sx={{ color: colors.danger, fontSize: '0.75rem', fontWeight: 900 }}>
+                                                        Faltan SKUs: <strong>-{group.totalDeficit.toFixed(1)} kg</strong>
                                                     </Typography>
                                                 ) : (
                                                     <Typography variant="caption" sx={{ color: colors.success, fontSize: '0.72rem', fontWeight: 800 }}>
@@ -860,28 +1102,82 @@ export default function MaterialesCriticosPage() {
                                         </Box>
                                     </Box>
 
-                                    {/* Lista de Materiales dentro de la Categoría */}
-                                    {!isCollapsed && (
-                                        <Box sx={{ p: 2, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 1.5 }}>
-                                            {group.items.map((item: any) => {
-                                                const hasMin = item.stockMinimo !== null;
+                                    {/* Barra de Progreso Global de Categoría */}
+                                    {!isCollapsed && group.minimo !== null && group.minimo > 0 && (
+                                        <Box sx={{ width: '100%', bgcolor: 'rgba(0,0,0,0.25)', px: 2, pb: 1 }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                                                <Typography variant="caption" sx={{ fontSize: '0.65rem', color: colors.textDim }}>
+                                                    Buffer Categoría: {(group.totalStock + group.totalPorVenir).toFixed(1)} / {group.minimo} kg
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 800, color: group.categoryStatus === 'CRITICAL' ? colors.danger : colors.success }}>
+                                                    {Math.min(100, Math.round(((group.totalStock + group.totalPorVenir) / group.minimo) * 100))}%
+                                                </Typography>
+                                            </Box>
+                                            <LinearProgress 
+                                                variant="determinate" 
+                                                value={Math.min(100, Math.round(((group.totalStock + group.totalPorVenir) / group.minimo) * 100))} 
+                                                sx={{ 
+                                                    height: 4, 
+                                                    borderRadius: 2, 
+                                                    bgcolor: 'rgba(255,255,255,0.06)',
+                                                    '& .MuiLinearProgress-bar': {
+                                                        bgcolor: group.categoryStatus === 'CRITICAL' ? colors.danger : (group.categoryStatus === 'WARNING' ? colors.warning : colors.success)
+                                                    }
+                                                }} 
+                                            />
+                                        </Box>
+                                    )}
 
-                                                return (
-                                                    <Paper 
-                                                        key={item.id} 
-                                                        sx={{ 
-                                                            p: 2, 
-                                                            bgcolor: 'rgba(0,0,0,0.25)', 
-                                                            borderRadius: 2.5, 
-                                                            border: `1px solid ${item.status === 'CRITICAL' ? 'rgba(239, 68, 68, 0.35)' : colors.border}`,
-                                                            display: 'flex',
-                                                            flexDirection: 'column',
-                                                            justifyContent: 'space-between',
-                                                            gap: 1.2,
-                                                            transition: 'all 0.15s ease'
-                                                        }}
-                                                    >
-                                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
+                                    {/* Lista de Materiales dentro de la Categoría */}
+                                    {!isCollapsed && (() => {
+                                        const isExpandedZero = Boolean(expandedZeroCategories[group.id]);
+                                        const itemsToRender = (hideZeroStock && !isExpandedZero) ? group.activeItems : group.items;
+
+                                        return (
+                                            <Box sx={{ p: 2 }}>
+                                                {itemsToRender.length === 0 ? (
+                                                    <Box sx={{ p: 3, textAlign: 'center', bgcolor: 'rgba(0,0,0,0.15)', borderRadius: 2 }}>
+                                                        <Typography variant="body2" sx={{ color: colors.textDim }}>
+                                                            No hay proveedores activos con stock o pedidos en tránsito. ({group.zeroItems.length} proveedores históricos en 0 kg)
+                                                        </Typography>
+                                                    </Box>
+                                                ) : (
+                                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 1.5 }}>
+                                                        {itemsToRender.map((item: any) => {
+                                                            const hasMin = item.stockMinimo !== null;
+
+                                                            return (
+                                                                <Paper 
+                                                                    key={item.id} 
+                                                                    sx={{ 
+                                                                        p: 2, 
+                                                                        bgcolor: item.esSobrante ? 'rgba(249, 115, 22, 0.05)' : 'rgba(0,0,0,0.25)', 
+                                                                        borderRadius: 2.5, 
+                                                                        border: `1px solid ${item.esSobrante ? 'rgba(249, 115, 22, 0.3)' : (item.status === 'CRITICAL' ? 'rgba(239, 68, 68, 0.35)' : colors.border)}`,
+                                                                        display: 'flex',
+                                                                        flexDirection: 'column',
+                                                                        justifyContent: 'space-between',
+                                                                        gap: 1.2,
+                                                                        opacity: item.isZeroActivity ? 0.6 : 1,
+                                                                        transition: 'all 0.15s ease'
+                                                                    }}
+                                                                >
+                                                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
+                                                                        {/* Alerta de Sobrante / Remanente Excluido */}
+                                                                        {item.esSobrante && (
+                                                                            <Box sx={{ bgcolor: 'rgba(249, 115, 22, 0.15)', border: '1px solid rgba(249, 115, 22, 0.35)', px: 1, py: 0.5, borderRadius: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                                <Typography variant="caption" sx={{ color: colors.warning, fontWeight: 900, fontSize: '0.65rem' }}>
+                                                                                    ⚠️ Remanente excluido de compras
+                                                                                </Typography>
+                                                                                <Button 
+                                                                                    size="small" 
+                                                                                    onClick={() => handleToggleExcluirCompras(item)}
+                                                                                    sx={{ fontSize: '0.62rem', fontWeight: 800, color: '#fff', p: 0, minWidth: 'auto', textTransform: 'none' }}
+                                                                                >
+                                                                                    Reintegrar
+                                                                                </Button>
+                                                                            </Box>
+                                                                        )}
                                                             {/* Código y Ficha */}
                                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                                 <Tooltip title="Toca para editar ficha técnica del material">
@@ -982,7 +1278,7 @@ export default function MaterialesCriticosPage() {
                                                             {/* 3. Hace Falta */}
                                                             <Box sx={{ pl: 0.5 }}>
                                                                 <Typography variant="caption" sx={{ 
-                                                                    color: item.deficitNeto > 0 ? colors.danger : (item.deficitBruto > 0 ? colors.info : colors.success), 
+                                                                    color: item.esSobrante ? colors.warning : (item.deficitNeto > 0 ? colors.danger : (item.deficitBruto > 0 ? colors.info : colors.success)), 
                                                                     fontSize: '0.62rem', 
                                                                     fontWeight: 800, 
                                                                     textTransform: 'uppercase', 
@@ -994,12 +1290,14 @@ export default function MaterialesCriticosPage() {
                                                                     variant="subtitle2" 
                                                                     sx={{ 
                                                                         fontWeight: 900, 
-                                                                        color: item.deficitNeto > 0 ? colors.danger : (item.deficitBruto > 0 ? colors.info : colors.success),
+                                                                        color: item.esSobrante ? colors.warning : (item.deficitNeto > 0 ? colors.danger : (item.deficitBruto > 0 ? colors.info : colors.success)),
                                                                         lineHeight: 1.2,
                                                                         mt: 0.2
                                                                     }}
                                                                 >
-                                                                    {item.deficitNeto > 0 ? (
+                                                                    {item.esSobrante ? (
+                                                                        'Excluido'
+                                                                    ) : item.deficitNeto > 0 ? (
                                                                         `-${item.deficitNeto.toLocaleString('es-AR', { maximumFractionDigits: 1 })}`
                                                                     ) : item.deficitBruto > 0 ? (
                                                                         'Cubierto'
@@ -1010,7 +1308,7 @@ export default function MaterialesCriticosPage() {
                                                                     )}
                                                                 </Typography>
                                                                 <Typography variant="caption" sx={{ color: colors.textDim, fontSize: '0.62rem' }}>
-                                                                    {item.deficitNeto > 0 ? (item.unidadPrincipal || 'kg') : (item.deficitBruto > 0 ? 'en camino' : 'en regla')}
+                                                                    {item.esSobrante ? 'no computa' : (item.deficitNeto > 0 ? (item.unidadPrincipal || 'kg') : (item.deficitBruto > 0 ? 'en camino' : 'en regla'))}
                                                                 </Typography>
                                                             </Box>
                                                         </Box>
@@ -1070,11 +1368,51 @@ export default function MaterialesCriticosPage() {
                                                                 />
                                                             </Box>
                                                         )}
+
+                                                        {/* Acción rápida para marcar o desmarcar sobrante */}
+                                                        {!item.esSobrante && item.stockActual > 0 && (
+                                                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 0.3 }}>
+                                                                <Tooltip title="Excluir este saldo/sobrante para que no contamine el stock de compras (se usa para muestras u otros fines)">
+                                                                    <Button 
+                                                                        size="small" 
+                                                                        onClick={() => handleToggleExcluirCompras(item)}
+                                                                        sx={{ fontSize: '0.62rem', color: colors.textDim, textTransform: 'none', p: 0, minWidth: 'auto', '&:hover': { color: colors.warning } }}
+                                                                    >
+                                                                        Excluir remanente
+                                                                    </Button>
+                                                                </Tooltip>
+                                                            </Box>
+                                                        )}
                                                     </Paper>
                                                 );
                                             })}
                                         </Box>
                                     )}
+
+                                    {/* Botón para expandir proveedores históricos en cero si están ocultos */}
+                                    {hideZeroStock && group.zeroItems.length > 0 && (
+                                        <Box sx={{ display: 'flex', justifyContent: 'center', pt: 1.5 }}>
+                                            <Button 
+                                                size="small" 
+                                                onClick={() => setExpandedZeroCategories(prev => ({ ...prev, [group.id]: !prev[group.id] }))}
+                                                sx={{ 
+                                                    color: colors.textDim, 
+                                                    fontSize: '0.72rem', 
+                                                    textTransform: 'none', 
+                                                    fontWeight: 700,
+                                                    bgcolor: 'rgba(255,255,255,0.03)',
+                                                    borderRadius: 2,
+                                                    px: 2,
+                                                    '&:hover': { bgcolor: 'rgba(255,255,255,0.08)', color: '#fff' }
+                                                }}
+                                            >
+                                                {isExpandedZero ? '▲ Ocultar proveedores históricos en cero' : `👁️ Ver ${group.zeroItems.length} proveedores históricos sin stock (0 kg)`}
+                                            </Button>
+                                        </Box>
+                                    )}
+                                </Box>
+                            );
+                        })()}
                                 </Paper>
                             );
                         })
@@ -1307,6 +1645,23 @@ export default function MaterialesCriticosPage() {
                                             </Button>
                                         </Box>
                                     )}
+
+                                    {/* Acción directa si la alerta referencia a una categoría completa */}
+                                    {al.categoryRef && (
+                                        <Box sx={{ display: 'flex', gap: 1, mt: 0.5, pt: 0.8, borderTop: `1px dashed ${colors.border}` }}>
+                                            <Button
+                                                size="small"
+                                                onClick={() => {
+                                                    setEditCategoryLimitsTarget(al.categoryRef);
+                                                    setCatMinInput(al.categoryRef.minimo !== null ? String(al.categoryRef.minimo) : '');
+                                                    setCatMaxInput(al.categoryRef.maximo !== null ? String(al.categoryRef.maximo) : '');
+                                                }}
+                                                sx={{ fontSize: '0.68rem', fontWeight: 800, color: colors.primary, textTransform: 'none', p: 0.2 }}
+                                            >
+                                                Ajustar Mín/Máx de Categoría
+                                            </Button>
+                                        </Box>
+                                    )}
                                 </Paper>
                             );
                         })}
@@ -1370,6 +1725,63 @@ export default function MaterialesCriticosPage() {
                         <Button 
                             variant="contained" 
                             onClick={handleSaveLimits}
+                            sx={{ bgcolor: colors.primary, color: '#000', fontWeight: 800, borderRadius: 2 }}
+                        >
+                            Guardar Límites
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            )}
+
+            {/* DIÁLOGO PARA EDITAR LÍMITES DE CATEGORÍA COMPLETA */}
+            {editCategoryLimitsTarget && (
+                <Dialog
+                    open={Boolean(editCategoryLimitsTarget)}
+                    onClose={() => setEditCategoryLimitsTarget(null)}
+                    maxWidth="xs"
+                    fullWidth
+                    PaperProps={{
+                        sx: { bgcolor: '#161922', color: '#fff', border: `1px solid ${colors.border}`, borderRadius: 3, p: 1 }
+                    }}
+                >
+                    <DialogTitle sx={{ fontWeight: 900, pb: 1 }}>
+                        Buffer de Seguridad de Categoría
+                    </DialogTitle>
+                    <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+                        <Typography variant="body2" sx={{ color: colors.textDim }}>
+                            Categoría: <strong style={{ color: '#fff' }}>{editCategoryLimitsTarget.nombre}</strong>
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: colors.textDim, lineHeight: 1.4 }}>
+                            Este umbral rige sobre la sumatoria de todos los proveedores activos de esta materia prima.
+                        </Typography>
+
+                        <TextField
+                            label="Stock Mínimo de Categoría (kg)"
+                            type="number"
+                            size="small"
+                            value={catMinInput}
+                            onChange={(e) => setCatMinInput(e.target.value)}
+                            helperText="Punto de reposición global para toda la categoría."
+                            sx={{ '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }}
+                        />
+
+                        <TextField
+                            label="Stock Máximo de Categoría (kg)"
+                            type="number"
+                            size="small"
+                            value={catMaxInput}
+                            onChange={(e) => setCatMaxInput(e.target.value)}
+                            helperText="Límite máximo para evitar sobrestock acumulado de varios proveedores."
+                            sx={{ '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }}
+                        />
+                    </DialogContent>
+                    <DialogActions sx={{ p: 2 }}>
+                        <Button onClick={() => setEditCategoryLimitsTarget(null)} sx={{ color: colors.textDim }}>
+                            Cancelar
+                        </Button>
+                        <Button 
+                            variant="contained" 
+                            onClick={handleSaveCategoryLimits}
                             sx={{ bgcolor: colors.primary, color: '#000', fontWeight: 800, borderRadius: 2 }}
                         >
                             Guardar Límites
