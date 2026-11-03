@@ -252,6 +252,27 @@ export const cargarDatosDesdeExcel = (): void => {
     emitChangeEvent();
 };
 
+export const importarOrdenesDesdeArray = (nuevas: OrdenCompra[], reemplazar: boolean = true): void => {
+    if (reemplazar) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(nuevas));
+    } else {
+        const actuales = getOrdenesCompra();
+        const numerosExistentes = new Set(actuales.map(o => o.numero.trim().toUpperCase()));
+        const combinadas = [...actuales];
+
+        nuevas.forEach(n => {
+            const numNorm = n.numero.trim().toUpperCase();
+            if (!numerosExistentes.has(numNorm)) {
+                combinadas.push(n);
+                numerosExistentes.add(numNorm);
+            }
+        });
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(combinadas));
+    }
+    emitChangeEvent();
+};
+
 if (typeof window !== 'undefined') {
     (window as any).cargarOrdenesExcel = cargarDatosDesdeExcel;
 }
@@ -278,6 +299,7 @@ export const useOrdenesCompra = () => {
         asociarRemito: asociarRemitoEntradaALinea,
         declararEntrega: declararEntregaManualALinea,
         cargarDesdeExcel: cargarDatosDesdeExcel,
+        importarOrdenes: importarOrdenesDesdeArray,
         kilosPendientesMap: getKilosPendientesByItem()
     };
 };
