@@ -128,7 +128,9 @@ export default function MaterialesCriticosPage() {
 
     const { data: recentMovements = [] } = useGetRecentMovementsQuery({
         desde: ninetyDaysAgo,
-        hasta: today
+        hasta: today,
+        depositoId: depotId || undefined,
+        tipo: 'REMITO_SALIDA'
     });
     const { data: planillaProduccion } = useGetUltimaPlanillaProduccionQuery();
     const { data: pedidosProduccion = [] } = useListarPedidosProduccionQuery();
@@ -206,13 +208,13 @@ export default function MaterialesCriticosPage() {
         return map;
     }, [planillaProduccion]);
 
-    // Mapeo Consumo Histórico (3 meses / 90 días)
+    // Mapeo Consumo Histórico (3 meses / 90 días - solo Remitos de Salida reales)
     const consumptionByItem = useMemo(() => {
         const map = new Map<string, number>();
         recentMovements.forEach((m: any) => {
             if (m.status === 'ANULADO') return;
             const tipo = String(m.tipo || '').toUpperCase();
-            if (tipo === 'REMITO_SALIDA' || tipo === 'ENTREGA_PRODUCCION' || tipo === 'AJUSTE_RESTA' || tipo === 'SALIDA') {
+            if (tipo === 'REMITO_SALIDA') {
                 const itemId = m.itemId || m.item?.id;
                 const itemCode = m.item?.codigoInterno ? String(m.item.codigoInterno).trim().toUpperCase() : null;
                 const qty = Math.abs(Number(m.qtyPrincipal || m.cantidadPrincipal || m.cantidad || 0));

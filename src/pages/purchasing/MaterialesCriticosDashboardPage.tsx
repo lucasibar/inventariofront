@@ -137,10 +137,12 @@ export default function MaterialesCriticosDashboardPage() {
     const { data: items = [] } = useGetItemsQuery({ depositoId: depotId || undefined });
     const { data: allStock = [], isLoading: loadingStock } = useGetStockQuery({ depotId: depotId || undefined });
 
-    // A. Consumo Histórico (Movimientos de los últimos 3 meses)
+    // A. Consumo Histórico (Movimientos de los últimos 3 meses - estrictamente Remitos de Salida)
     const { data: recentMovements = [], isLoading: loadingMovements } = useGetRecentMovementsQuery({
         desde: ninetyDaysAgo,
-        hasta: today
+        hasta: today,
+        depositoId: depotId || undefined,
+        tipo: 'REMITO_SALIDA'
     });
 
     // B. Consumo Proyectado de Pedidos (Planilla de Producción y Órdenes en Curso)
@@ -206,13 +208,13 @@ export default function MaterialesCriticosDashboardPage() {
         return map;
     }, [planillaProduccion]);
 
-    // Mapeo 2: CONSUMO HISTÓRICO (Últimos 3 meses / 90 días)
+    // Mapeo 2: CONSUMO HISTÓRICO (Últimos 3 meses / 90 días - solo Remitos de Salida reales)
     const consumptionByItem = useMemo(() => {
         const map = new Map<string, number>();
         recentMovements.forEach((m: any) => {
             if (m.status === 'ANULADO') return;
             const tipo = String(m.tipo || '').toUpperCase();
-            if (tipo === 'REMITO_SALIDA' || tipo === 'ENTREGA_PRODUCCION' || tipo === 'AJUSTE_RESTA' || tipo === 'SALIDA') {
+            if (tipo === 'REMITO_SALIDA') {
                 const itemId = m.itemId || m.item?.id;
                 const itemCode = m.item?.codigoInterno ? String(m.item.codigoInterno).trim().toUpperCase() : null;
                 const qty = Math.abs(Number(m.qtyPrincipal || m.cantidadPrincipal || m.cantidad || 0));

@@ -63,7 +63,7 @@ export default function DienteSierraCategoriaPage() {
         };
     }, []);
 
-    const { data: recentMovements = [] } = useGetRecentMovementsQuery({ desde: desde90d, hasta: hastaHoy });
+    const { data: recentMovements = [] } = useGetRecentMovementsQuery({ desde: desde90d, hasta: hastaHoy, tipo: 'REMITO_SALIDA' });
 
     // Mapeo de Stock Físico por ItemId
     const stockTotalsByItem = useMemo(() => {
@@ -75,13 +75,13 @@ export default function DienteSierraCategoriaPage() {
         return map;
     }, [allStock]);
 
-    // Mapeo de Consumo por ItemId y Código
+    // Mapeo de Consumo por ItemId y Código (solo Remitos de Salida reales)
     const consumptionByItem = useMemo(() => {
         const map = new Map<string, number>();
         recentMovements.forEach((m: any) => {
             if (m.status === 'ANULADO') return;
             const tipo = String(m.tipo || '').toUpperCase();
-            if (tipo === 'REMITO_SALIDA' || tipo === 'ENTREGA_PRODUCCION' || tipo === 'AJUSTE_RESTA' || tipo === 'SALIDA') {
+            if (tipo === 'REMITO_SALIDA') {
                 const itemId = m.itemId || m.item?.id;
                 const itemCode = m.item?.codigoInterno ? String(m.item.codigoInterno).trim().toUpperCase() : null;
                 const qty = Math.abs(Number(m.qtyPrincipal || m.cantidadPrincipal || m.cantidad || 0));
