@@ -1,4 +1,4 @@
-import { useState, useEffect, Suspense } from 'react';
+﻿import { useState, useEffect, Suspense } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation, useNavigation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useGetAlertsQuery } from '../features/warehouse/stock/api/stock.api';
@@ -144,9 +144,7 @@ const navGroups: NavGroup[] = [
             { to: '/compras/dashboard', label: '📊 Dashboard Compras' },
             { to: '/reporte-consumo-detallado', label: '📊 Consumo de Materiales' },
             { to: '/compras/faltantes-produccion', label: '🧶 Faltantes Hilado Producción' },
-            { to: '/compras/alertas-stock', label: '🚦 Alertas de Stock' },
-            { to: '/compras/materiales-criticos-v2', label: '🔥 Materiales Críticos 2.0' },
-            { to: '/compras/materiales-criticos', label: '⚠️ Combos de Compra' },
+            { to: '/compras/materiales-criticos', label: '🔥 Materiales Críticos' },
         ]
     },
     {
@@ -324,9 +322,7 @@ export default function Layout() {
                 '/compras/dashboard',
                 '/reporte-consumo-detallado',
                 '/compras/faltantes-produccion',
-                '/compras/alertas-stock',
                 '/compras/materiales-criticos',
-                '/compras/materiales-criticos-v2',
                 '/stock',
                 '/items', '/items/box-types', '/deposito', '/socios',
             ],

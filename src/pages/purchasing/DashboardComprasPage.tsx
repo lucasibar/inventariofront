@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+﻿import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGetAlertsQuery } from '../../features/warehouse/stock/api/stock.api';
 import { useGetCombosQuery } from '../../features/purchasing/combos/api/combos.api';
@@ -71,23 +71,10 @@ export default function DashboardComprasPage() {
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                     <Btn
                         variant="primary"
-                        onClick={() => navigate('/compras/alertas-stock')}
-                        style={{ background: '#ef4444', borderColor: '#ef4444' }}
-                    >
-                        🚦 Ver Alertas de Stock ({stats.criticalAlerts})
-                    </Btn>
-                <Btn
-                    variant="primary"
-                    onClick={() => navigate('/compras/materiales-criticos-v2')}
-                    style={{ background: '#6366f1', borderColor: '#6366f1' }}
-                >
-                    🔥 Materiales Críticos 2.0 (por Categoría)
-                </Btn>
-                    <Btn
-                        variant="secondary"
                         onClick={() => navigate('/compras/materiales-criticos')}
+                        style={{ background: '#f59e0b', borderColor: '#f59e0b', fontWeight: 700 }}
                     >
-                        ⚠️ Combos de Compra ({stats.combosTotal})
+                        🔥 Ver Materiales Críticos ({stats.criticalAlerts} alertas)
                     </Btn>
                 </div>
 
@@ -112,7 +99,7 @@ export default function DashboardComprasPage() {
                         border: stats.criticalAlerts > 0 ? '1.5px solid rgba(239, 68, 68, 0.35)' : undefined,
                         cursor: 'pointer',
                     }}
-                    onClick={() => navigate('/compras/alertas-stock')}
+                    onClick={() => navigate('/compras/materiales-criticos')}
                 >
                     <div style={{ fontSize: '11px', color: '#ef4444', fontWeight: 700, textTransform: 'uppercase' }}>
                         🔴 Materiales en Quiebre
@@ -130,7 +117,7 @@ export default function DashboardComprasPage() {
                         padding: '18px',
                         cursor: 'pointer',
                     }}
-                    onClick={() => navigate('/compras/alertas-stock')}
+                    onClick={() => navigate('/compras/materiales-criticos')}
                 >
                     <div style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 700, textTransform: 'uppercase' }}>
                         🟡 Cerca del Mínimo
@@ -189,7 +176,7 @@ export default function DashboardComprasPage() {
                         <Btn
                             small
                             variant="secondary"
-                            onClick={() => navigate('/compras/alertas-stock')}
+                            onClick={() => navigate('/compras/materiales-criticos')}
                         >
                             Ver todos ↗
                         </Btn>
