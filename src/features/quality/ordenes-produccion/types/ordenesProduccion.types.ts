@@ -40,6 +40,13 @@ export interface ParsedMachineEntry {
         consumoKg: number;
         conosEstimados: number;
     }[];
+    salienteArticuloAnterior?: {
+        articleCode: string;
+        articleRaw?: string;
+        descRaw?: string;
+        talle?: string;
+        colorRaw?: string;
+    } | null;
 }
 
 export interface ArticuloProduccionSummary {
@@ -111,6 +118,11 @@ export interface MaterialAsignadoSummary {
     aComprarKg?: number;
     posicionesPickingSugeridas?: string[];
     posicionesStockReserva?: string[];
+    partidaSugerida?: string | null;
+    posicionOrigenSugerida?: string | null;
+    esSustituto?: boolean;
+    prioridad?: number;
+    sustitutoMotivo?: string | null;
     estadoAbastecimiento?: 'CRITICO_COMPRAR' | 'ALERTA_MINIMO' | 'REPONER_PICKING' | 'OK';
     articulosAsignados: {
         codigoArticulo: string;
@@ -178,6 +190,11 @@ export interface HojaPickingItem {
     aComprarKg?: number;
     posicionesPickingSugeridas?: string[];
     posicionesStockReserva?: string[];
+    partidaSugerida?: string | null;
+    posicionOrigenSugerida?: string | null;
+    esSustituto?: boolean;
+    prioridad?: number;
+    sustitutoMotivo?: string | null;
     estadoAbastecimiento?: 'CRITICO_COMPRAR' | 'ALERTA_MINIMO' | 'REPONER_PICKING' | 'OK';
     hasUnreviewedArticles: boolean;
 }

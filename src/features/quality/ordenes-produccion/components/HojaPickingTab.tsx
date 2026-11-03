@@ -173,6 +173,11 @@ export const HojaPickingTab: React.FC<HojaPickingTabProps> = ({
 
                                                 <td style={{ padding: '10px 12px', fontWeight: 800, fontSize: '13px', color: '#818cf8' }}>
                                                     <div>{item.codigoMaterial}</div>
+                                                    {item.esSustituto && (
+                                                        <span style={{ background: 'rgba(168, 85, 247, 0.2)', color: '#c084fc', padding: '1px 5px', borderRadius: '4px', fontSize: '9px', fontWeight: 800, display: 'inline-block', marginBottom: '2px' }}>
+                                                            🔄 Sustituto Op. {item.prioridad}
+                                                        </span>
+                                                    )}
                                                     <div style={{ fontSize: '10px', color: 'var(--text-muted, #9ca3af)', fontWeight: 600 }}>
                                                         {item.categoriaNombre || 'HILADO'} · {item.maquinasCount} máq.
                                                     </div>
@@ -233,7 +238,16 @@ export const HojaPickingTab: React.FC<HojaPickingTabProps> = ({
                                                 </td>
 
                                                 <td style={{ padding: '10px 12px' }}>
-                                                    {item.posicionesPickingSugeridas && item.posicionesPickingSugeridas.length > 0 ? (
+                                                    {item.partidaSugerida ? (
+                                                        <div>
+                                                            <div style={{ color: '#34d399', fontWeight: 800, fontSize: '12px' }}>
+                                                                Partida #{item.partidaSugerida}
+                                                            </div>
+                                                            <div style={{ color: '#38bdf8', fontSize: '11px', fontWeight: 700 }}>
+                                                                Pos: {item.posicionOrigenSugerida || 'RESERVA'}
+                                                            </div>
+                                                        </div>
+                                                    ) : item.posicionesPickingSugeridas && item.posicionesPickingSugeridas.length > 0 ? (
                                                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                                                             {item.posicionesPickingSugeridas.map((pos) => (
                                                                 <span

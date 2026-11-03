@@ -47,8 +47,8 @@ export default function DienteSierraCategoriaPage() {
     const navigate = useNavigate();
 
     // 1. Consultas Maestras
-    const { data: categories = [] } = useGetItemCategoriesQuery(undefined);
-    const { data: items = [] } = useGetItemsQuery({});
+    const { data: categories = [], isLoading: loadingCategories } = useGetItemCategoriesQuery(undefined);
+    const { data: items = [], isLoading: loadingItems } = useGetItemsQuery({});
     const { data: allStock = [] } = useGetStockQuery({});
     const { ordenes } = useOrdenesCompra();
 
@@ -220,27 +220,31 @@ export default function DienteSierraCategoriaPage() {
         }
 
         const points: any[] = [];
-        let currentStock = activeCategory.stockFisico;
-        const consumoAjustado = Math.max(1, activeCategory.consumoDiarioBase * (1 + demandaVariacionPercent / 100));
-        const stockMinimo = activeCategory.stockMinimo;
-        const stockMaximo = activeCategory.stockMaximo;
+        let currentStock = Number(activeCategory.stockFisico) || 0;
+        const consumoAjustado = Math.max(1, (Number(activeCategory.consumoDiarioBase) || 10) * (1 + (demandaVariacionPercent || 0) / 100));
+        const stockMinimo = Number(activeCategory.stockMinimo) || 0;
+        const stockMaximo = activeCategory.stockMaximo ? Number(activeCategory.stockMaximo) : null;
 
         // Mapeo de Arribos aplicando el retraso del proveedor simulado
         const arribosMap = new Map<string, { qty: number; ordenes: string[]; provs: string[] }>();
         activeCategory.arribos.forEach(a => {
+            if (!a || !a.fecha) return;
             let fechaEfectiva = a.fecha;
             if (retrasoProveedorDias !== 0) {
                 try {
                     const d = new Date(a.fecha);
-                    d.setDate(d.getDate() + retrasoProveedorDias);
-                    fechaEfectiva = d.toISOString().split('T')[0];
+                    if (!isNaN(d.getTime())) {
+                        d.setDate(d.getDate() + retrasoProveedorDias);
+                        fechaEfectiva = d.toISOString().split('T')[0];
+                    }
                 } catch (_) {}
             }
 
             const cur = arribosMap.get(fechaEfectiva) || { qty: 0, ordenes: [], provs: [] };
-            cur.qty += a.cantidadKg;
-            cur.ordenes.push(`${a.ordenNumero} (${a.cantidadKg.toLocaleString()} kg)`);
-            if (!cur.provs.includes(a.partnerNombre)) cur.provs.push(a.partnerNombre);
+            const kg = Number(a.cantidadKg) || 0;
+            cur.qty += kg;
+            cur.ordenes.push(`${a.ordenNumero || 'OC'} (${kg.toLocaleString()} kg)`);
+            if (a.partnerNombre && !cur.provs.includes(a.partnerNombre)) cur.provs.push(a.partnerNombre);
             arribosMap.set(fechaEfectiva, cur);
         });
 
@@ -329,6 +333,26 @@ export default function DienteSierraCategoriaPage() {
         textSecondary: '#94a3b8',
         textMuted: '#64748b',
     };
+
+    const isInitialLoading = loadingCategories && loadingItems;
+
+    if (isInitialLoading) {
+        return (
+            <Box sx={{ p: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', bgcolor: colors.bg, color: colors.textSecondary }}>
+                <Typography variant="body1">Cargando datos y proyecciones de compras...</Typography>
+            </Box>
+        );
+    }
+
+    if (consolidatedCategories.length === 0 && !loadingCategories) {
+        return (
+            <Box sx={{ p: 4, textAlign: 'center', bgcolor: colors.bg, minHeight: '60vh', color: colors.textSecondary }}>
+                <Typography variant="h6" sx={{ color: colors.text, mb: 1 }}>No se encontraron categorías de materiales</Typography>
+                <Typography variant="body2">No hay categorías ni artículos registrados para simular la curva de reposición.</Typography>
+                <Button onClick={() => navigate('/items')} sx={{ mt: 2, color: colors.primary, fontWeight: 700 }}>Ir a Materiales ↗️</Button>
+            </Box>
+        );
+    }
 
     return (
         <Box sx={{ p: { xs: 1.5, sm: 3 }, bgcolor: colors.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 2.5 }}>
@@ -494,7 +518,7 @@ export default function DienteSierraCategoriaPage() {
                         return (
                             <Chip
                                 key={cat.key}
-                                label={`${cat.nombre} (${cat.stockFisico.toLocaleString()} kg)`}
+                                label={`${cat.nombre} (${(cat.stockFisico || 0).toLocaleString()} kg)`}
                                 onClick={() => setSelectedCategoryKey(cat.key)}
                                 sx={{
                                     bgcolor: isSelected ? colors.primary : colors.surface,
@@ -547,7 +571,7 @@ export default function DienteSierraCategoriaPage() {
                             📦 Stock Físico Actual
                         </Typography>
                         <Typography variant="h5" sx={{ fontWeight: 900, color: colors.text, mt: 0.3 }}>
-                            {activeCategory.stockFisico.toLocaleString()} kg
+                            {(activeCategory.stockFisico || 0).toLocaleString()} kg
                         </Typography>
                         <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '10px' }}>
                             En {activeCategory.items.length} materiales activos
@@ -559,7 +583,7 @@ export default function DienteSierraCategoriaPage() {
                             🔥 Consumo Promedio
                         </Typography>
                         <Typography variant="h5" sx={{ fontWeight: 900, color: colors.warning, mt: 0.3 }}>
-                            {sawtoothData.consumoAjustado.toLocaleString()} kg/día
+                            {(sawtoothData.consumoAjustado || 0).toLocaleString()} kg/día
                         </Typography>
                         <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '10px' }}>
                             ~{Math.round(sawtoothData.consumoAjustado * 30).toLocaleString()} kg/mes
@@ -571,7 +595,7 @@ export default function DienteSierraCategoriaPage() {
                             ⏳ Cobertura sin Compras
                         </Typography>
                         <Typography variant="h5" sx={{ fontWeight: 900, color: colors.info, mt: 0.3 }}>
-                            {sawtoothData.coberturaDias} días
+                            {(sawtoothData.coberturaDias || 0)} días
                         </Typography>
                         <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '10px' }}>
                             Hasta agotar stock físico existente
@@ -644,7 +668,7 @@ export default function DienteSierraCategoriaPage() {
                                 ? `El stock físico de ${activeCategory.nombre} llegará a 0 el ${sawtoothData.fechaQuiebre?.split(' ')[0]}, pero el próximo embarque programado arriba recién el ${sawtoothData.primerArriboDespuesQuiebre}. Habrá un bache sin material de ${sawtoothData.diasEnQuiebre} días. Se aconseja adelantar la orden o coordinar un lote local urgente.`
                                 : (sawtoothData.fechaQuiebre
                                     ? `La tasa de consumo consumirá las existencias en ${sawtoothData.coberturaDias} días. No se registran órdenes de compra posteriores. Emitir pedido antes del ${sawtoothData.fechaMinimo?.split(' ')[0]} para respetar el lead time.`
-                                    : `Los ${activeCategory.totalPorVenir.toLocaleString()} kg en camino cubren la demanda proyectada manteniéndose por encima del stock de seguridad (${activeCategory.stockMinimo.toLocaleString()} kg).`)}
+                                    : `Los ${(activeCategory.totalPorVenir || 0).toLocaleString()} kg en camino cubren la demanda proyectada manteniéndose por encima del stock de seguridad (${(activeCategory.stockMinimo || 0).toLocaleString()} kg).`)}
                         </Typography>
                     </Box>
 
@@ -685,7 +709,7 @@ export default function DienteSierraCategoriaPage() {
                         </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                             <Box sx={{ width: 12, height: 2, bgcolor: colors.warning, borderStyle: 'dashed' }} />
-                            <Typography variant="caption" sx={{ color: colors.warning, fontSize: '11px' }}>Stock Mínimo ({activeCategory?.stockMinimo.toLocaleString()} kg)</Typography>
+                            <Typography variant="caption" sx={{ color: colors.warning, fontSize: '11px' }}>Stock Mínimo ({(activeCategory?.stockMinimo || 0).toLocaleString()} kg)</Typography>
                         </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                             <Box sx={{ width: 12, height: 2, bgcolor: colors.danger }} />
@@ -733,14 +757,14 @@ export default function DienteSierraCategoriaPage() {
                                                 color: d.isDanger ? colors.danger : (d.isWarning ? colors.warning : colors.info),
                                                 mt: 0.3
                                             }}>
-                                                {d.stockRealSinTope.toLocaleString()} kg
+                                                {(d.stockRealSinTope || 0).toLocaleString()} kg
                                             </Typography>
 
                                             {d.llegadaKg > 0 && (
                                                 <Box sx={{ mt: 1, p: 1, bgcolor: 'rgba(56, 189, 248, 0.15)', borderRadius: 1 }}>
                                                     <Typography variant="caption" sx={{ color: colors.info, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                                         <LocalShippingIcon sx={{ fontSize: 12 }} />
-                                                        + {d.llegadaKg.toLocaleString()} kg recibidos
+                                                        + {(d.llegadaKg || 0).toLocaleString()} kg recibidos
                                                     </Typography>
                                                     <Typography variant="caption" sx={{ color: colors.text, display: 'block', fontSize: '10px' }}>
                                                         {d.detalleArribo}
@@ -754,7 +778,7 @@ export default function DienteSierraCategoriaPage() {
                                                 </Typography>
                                                 {d.maximo && (
                                                     <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '10px' }}>
-                                                        Máximo: {d.maximo.toLocaleString()} kg
+                                                        Máximo: {(d.maximo || 0).toLocaleString()} kg
                                                     </Typography>
                                                 )}
                                             </Box>
@@ -853,7 +877,7 @@ export default function DienteSierraCategoriaPage() {
                                                     {a.descripcion || a.codigoInterno}
                                                 </TableCell>
                                                 <TableCell align="right" sx={{ fontWeight: 800, color: colors.info }}>
-                                                    +{a.cantidadKg.toLocaleString()} kg
+                                                    +{(a.cantidadKg || 0).toLocaleString()} kg
                                                 </TableCell>
                                             </TableRow>
                                         ))}
@@ -905,10 +929,10 @@ export default function DienteSierraCategoriaPage() {
                                                         {it.descripcion}
                                                     </TableCell>
                                                     <TableCell align="right" sx={{ fontWeight: 800, color: s > 0 ? colors.text : colors.danger }}>
-                                                        {s.toLocaleString()} kg
+                                                        {(s || 0).toLocaleString()} kg
                                                     </TableCell>
                                                     <TableCell align="right" sx={{ color: colors.textMuted }}>
-                                                        {c.toLocaleString()} kg
+                                                        {(c || 0).toLocaleString()} kg
                                                     </TableCell>
                                                 </TableRow>
                                             );

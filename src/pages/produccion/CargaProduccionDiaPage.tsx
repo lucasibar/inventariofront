@@ -208,6 +208,11 @@ export default function CargaProduccionDiaPage() {
                         maquinas: m.maquinas || [],
                         areas: [],
                         articulos: (m.articulosAsignados || []).map((a) => a.codigoArticulo),
+                        partidaSugerida: m.partidaSugerida,
+                        posicionOrigenSugerida: m.posicionOrigenSugerida,
+                        esSustituto: m.esSustituto,
+                        prioridad: m.prioridad,
+                        sustitutoMotivo: m.sustitutoMotivo,
                     };
                 });
         }
@@ -289,10 +294,27 @@ export default function CargaProduccionDiaPage() {
             const machineNum = parseInt(mStr, 10);
             const conCambio = entries.find((e) => e.hasChangeover);
 
-            if (!conCambio && entries.length <= 1) return;
+            // Si no está explícitamente marcado con hasChangeover:
+            if (!conCambio) {
+                if (entries.length >= 2) {
+                    const e0 = entries[0];
+                    const e1 = entries[1];
+                    const art0 = (e0.articleCode || e0.articleRaw || '').trim().toUpperCase();
+                    const art1 = (e1.articleCode || e1.articleRaw || '').trim().toUpperCase();
+                    const col0 = (e0.colorRaw || '').trim().toUpperCase();
+                    const col1 = (e1.colorRaw || '').trim().toUpperCase();
+                    const tal0 = (e0.talle || '').trim().toUpperCase();
+                    const tal1 = (e1.talle || '').trim().toUpperCase();
+                    if (art0 === art1 && col0 === col1 && tal0 === tal1) {
+                        return; // Mismo artículo entre turnos, sin cambio
+                    }
+                } else {
+                    return; // 1 sola entrada y sin cambio, descartar
+                }
+            }
 
-            let saliente = entries.find((e) => e.changeoverRole === 'SALIENTE_08AM');
-            let entrante = entries.find((e) => e.changeoverRole === 'ENTRANTE_08AM');
+            let saliente = entries.find((e) => e.changeoverRole === 'SALIENTE_08AM') || conCambio?.salienteArticuloAnterior;
+            let entrante = entries.find((e) => e.changeoverRole === 'ENTRANTE_08AM') || conCambio;
 
             if (!saliente && !entrante) {
                 const sorted = [...entries].sort((a, b) => (a.orderInShift || 1) - (b.orderInShift || 2));
@@ -302,6 +324,17 @@ export default function CargaProduccionDiaPage() {
                 } else if (conCambio) {
                     entrante = conCambio;
                 }
+            }
+
+            // Si saliente y entrante son el mismo artículo idéntico, no reportar cambio
+            const salCode = (saliente?.articleCode || saliente?.articleRaw || '').trim().toUpperCase();
+            const entCode = (entrante?.articleCode || entrante?.articleRaw || '').trim().toUpperCase();
+            const salTalle = (saliente?.talle || '').trim().toUpperCase();
+            const entTalle = (entrante?.talle || '').trim().toUpperCase();
+            const salColor = (saliente?.colorRaw || '').trim().toUpperCase();
+            const entColor = (entrante?.colorRaw || '').trim().toUpperCase();
+            if (salCode && entCode && salCode === entCode && salTalle === entTalle && salColor === entColor && !conCambio?.salienteArticuloAnterior) {
+                return;
             }
 
             const activeEntry = entrante || conCambio || entries[0];
@@ -935,7 +968,26 @@ export default function CargaProduccionDiaPage() {
                                                                 )}
                                                             </td>
                                                             <td style={{ padding: '12px 16px', fontWeight: 700, color: '#f3f4f6' }}>
-                                                                {item.codigoMaterial}
+                                                                <div>{item.codigoMaterial}</div>
+                                                                {item.proveedor && (
+                                                                    <div style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 600 }}>
+                                                                        {item.proveedor}
+                                                                    </div>
+                                                                )}
+                                                                {item.esSustituto && (
+                                                                    <span style={{
+                                                                        background: 'rgba(168, 85, 247, 0.15)',
+                                                                        color: '#c084fc',
+                                                                        padding: '2px 6px',
+                                                                        borderRadius: '4px',
+                                                                        fontSize: '10px',
+                                                                        fontWeight: 700,
+                                                                        display: 'inline-block',
+                                                                        marginTop: '3px'
+                                                                    }}>
+                                                                        🔄 Sustituto (Opción {item.prioridad})
+                                                                    </span>
+                                                                )}
                                                             </td>
                                                             <td style={{ padding: '12px 16px' }}>
                                                                 <div style={{ color: '#d1d5db', fontWeight: 500 }}>
@@ -967,7 +1019,16 @@ export default function CargaProduccionDiaPage() {
                                                                 )}
                                                             </td>
                                                             <td style={{ padding: '12px 16px' }}>
-                                                                {item.posicionesPickingSugeridas && item.posicionesPickingSugeridas.length > 0 ? (
+                                                                {item.partidaSugerida ? (
+                                                                    <div>
+                                                                        <div style={{ color: '#10b981', fontWeight: 700, fontSize: '12px' }}>
+                                                                            Partida #{item.partidaSugerida}
+                                                                        </div>
+                                                                        <div style={{ color: '#38bdf8', fontSize: '11px', fontWeight: 600 }}>
+                                                                            Pos: {item.posicionOrigenSugerida || 'RESERVA'}
+                                                                        </div>
+                                                                    </div>
+                                                                ) : item.posicionesPickingSugeridas && item.posicionesPickingSugeridas.length > 0 ? (
                                                                     <span style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '2px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>
                                                                         {item.posicionesPickingSugeridas.join(', ')}
                                                                     </span>
