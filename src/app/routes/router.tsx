@@ -53,12 +53,12 @@ const DisponibilidadMaquinaV2Page = lazy(() => import('../../pages/maintenance/D
 
 // Sector: Quality (Calidad) & Producción
 const DashboardProduccionPage = lazy(() => import('../../pages/produccion/DashboardProduccionPage'));
+const CargaProduccionDiaPage = lazy(() => import('../../pages/produccion/CargaProduccionDiaPage'));
 const CuarentenaCalidadPage = lazy(() => import('../../pages/quality/CuarentenaCalidadPage'));
 const OrdenesProduccionPage = lazy(() => import('../../pages/quality/OrdenesProduccionPage'));
 const StockPedidosArticulosPage = lazy(() => import('../../pages/produccion/StockPedidosArticulosPage'));
 const ProgramacionGanttPage = lazy(() => import('../../pages/produccion/ProgramacionGanttPage'));
 const InformeTejeduriaPage = lazy(() => import('../../pages/produccion/InformeTejeduriaPage'));
-const InformeCambiosDiaPage = lazy(() => import('../../pages/produccion/InformeCambiosDiaPage'));
 const InformeProduccionDepositoPage = lazy(() => import('../../pages/warehouse/InformeProduccionDepositoPage'));
 
 // Sector: Desarrollo
@@ -148,10 +148,10 @@ export const router = createBrowserRouter([
             children: [
               { path: "produccion/dashboard", element: <LazyRoute element={DashboardProduccionPage} /> },
               { path: "produccion/programacion-gantt", element: <LazyRoute element={ProgramacionGanttPage} /> },
-              { path: "produccion/planificacion", element: <LazyRoute element={OrdenesProduccionPage} props={{ sectorMode: 'PRODUCCION' }} /> },
+              { path: "produccion/planificacion", element: <LazyRoute element={CargaProduccionDiaPage} /> },
               { path: "produccion/pedidos", element: <LazyRoute element={StockPedidosArticulosPage} /> },
               { path: "produccion/informe-tejeduria", element: <LazyRoute element={InformeTejeduriaPage} /> },
-              { path: "produccion/informe-cambios-dia", element: <LazyRoute element={InformeCambiosDiaPage} /> },
+              { path: "produccion/informe-cambios-dia", element: <LazyRoute element={CargaProduccionDiaPage} /> },
               { path: "produccion/cambios", element: <LazyRoute element={CambioArticuloPage} /> },
               { path: "produccion/historial-cambios", element: <LazyRoute element={HistorialCambiosPage} /> },
               { path: "produccion/informe-cambios", element: <LazyRoute element={InformeCambiosPage} /> },

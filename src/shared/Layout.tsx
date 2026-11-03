@@ -58,20 +58,20 @@ const navGroups: NavGroup[] = [
         items: [
             { to: '/produccion/dashboard', label: '📊 Dashboard' },
             { to: '/produccion/programacion-gantt', label: '📅 Programación Gantt' },
-            { to: '/produccion/planificacion', label: '📥 Carga de Producción' },
+            { to: '/produccion/planificacion', label: '📥 Carga de Producción del Día' },
             {
                 id: 'produccion-cambios',
                 label: '🔄 Cambios',
                 isSubGroup: true,
                 items: [
-                    { to: '/produccion/cambios', label: '📝 Registrar Cambios' },
+                    { to: '/produccion/cambios', label: '📝 Registro de Cambios' },
                     { to: '/produccion/historial-cambios', label: '📜 Historial de Cambios' },
                     { to: '/produccion/informe-cambios', label: '📊 Informe de Cambios' },
-                    { to: '/produccion/informe-cambios-dia', label: '📅 Cambios del Día (Planilla)' },
                 ]
             },
         ]
     },
+    
     {
         id: 'desarrollo',
         label: 'Desarrollo',
