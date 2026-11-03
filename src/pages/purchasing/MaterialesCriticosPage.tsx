@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
     Box, 
@@ -49,14 +49,14 @@ import {
     useUpdateItemMutation,
     useUpdateItemCategoryMutation 
 } from '../../features/warehouse/materiales/api/items.api';
-import { useGetStockQuery } from '../../features/warehouse/stock/api/stock.api';
+import { useGetStockQuery, useGetRecentMovementsQuery } from '../../features/warehouse/stock/api/stock.api';
 import { 
     useGetCombosQuery, 
     useCreateComboMutation, 
     useDeleteComboMutation,
     useUpdateComboMutation 
 } from '../../features/purchasing/combos/api/combos.api';
-import { useListarPedidosProduccionQuery } from '../../features/quality/ordenes-produccion/api/ordenesProduccion.api';
+import { useListarPedidosProduccionQuery, useGetUltimaPlanillaProduccionQuery } from '../../features/quality/ordenes-produccion/api/ordenesProduccion.api';
 import { useGetArticulosSinEstructuraQuery } from '../../features/ventas/api/ventas.api';
 import { useGetPartnersQuery } from '../../features/config/partners/api/partners.api';
 import { EditComboModal } from '../../features/warehouse/stock/ui/EditComboModal';
@@ -115,6 +115,22 @@ export default function MaterialesCriticosPage() {
     const { data: categories = [] } = useGetItemCategoriesQuery(depotId || undefined);
     const { data: items = [] } = useGetItemsQuery({ depositoId: depotId || undefined });
     const { data: allStock = [] } = useGetStockQuery({ depotId: depotId || undefined });
+
+    const { ninetyDaysAgo, today } = useMemo(() => {
+        const end = new Date();
+        const start = new Date();
+        start.setDate(start.getDate() - 90);
+        return {
+            ninetyDaysAgo: start.toISOString().split('T')[0],
+            today: end.toISOString().split('T')[0]
+        };
+    }, []);
+
+    const { data: recentMovements = [] } = useGetRecentMovementsQuery({
+        desde: ninetyDaysAgo,
+        hasta: today
+    });
+    const { data: planillaProduccion } = useGetUltimaPlanillaProduccionQuery();
     const { data: pedidosProduccion = [] } = useListarPedidosProduccionQuery();
     const { data: articulosSinEstructura = [] } = useGetArticulosSinEstructuraQuery();
     const { data: combos = [] } = useGetCombosQuery(depotId || undefined);
@@ -176,6 +192,37 @@ export default function MaterialesCriticosPage() {
         return map;
     }, [allStock]);
 
+    // Mapeo Consumo Proyectado (Pedidos de Producción)
+    const projectedConsumptionByItem = useMemo(() => {
+        const map = new Map<string, number>();
+        const materialesPlanilla = planillaProduccion?.materiales || [];
+        materialesPlanilla.forEach((m: any) => {
+            const qty = Number(m.consumoTotalKg || m.consumoKg || 0);
+            if (qty > 0) {
+                if (m.itemId) map.set(m.itemId, (map.get(m.itemId) || 0) + qty);
+                if (m.codigoInterno) map.set(String(m.codigoInterno).trim().toUpperCase(), (map.get(String(m.codigoInterno).trim().toUpperCase()) || 0) + qty);
+            }
+        });
+        return map;
+    }, [planillaProduccion]);
+
+    // Mapeo Consumo Histórico (3 meses / 90 días)
+    const consumptionByItem = useMemo(() => {
+        const map = new Map<string, number>();
+        recentMovements.forEach((m: any) => {
+            if (m.status === 'ANULADO') return;
+            const tipo = String(m.tipo || '').toUpperCase();
+            if (tipo === 'REMITO_SALIDA' || tipo === 'ENTREGA_PRODUCCION' || tipo === 'AJUSTE_RESTA' || tipo === 'SALIDA') {
+                const itemId = m.itemId || m.item?.id;
+                const itemCode = m.item?.codigoInterno ? String(m.item.codigoInterno).trim().toUpperCase() : null;
+                const qty = Math.abs(Number(m.qtyPrincipal || m.cantidadPrincipal || m.cantidad || 0));
+                if (itemId) map.set(itemId, (map.get(itemId) || 0) + qty);
+                if (itemCode) map.set(itemCode, (map.get(itemCode) || 0) + qty);
+            }
+        });
+        return map;
+    }, [recentMovements]);
+
     // Normalizar y enriquecer ítems con métricas de criticidad, sobrantes y abastecimiento
     const enrichedItems = useMemo(() => {
         return items.map((item: any) => {
@@ -217,7 +264,11 @@ export default function MaterialesCriticosPage() {
             }
 
             // Material inactivo / histórico en cero (sin stock, sin pedidos por venir, sin mínimo configurado)
-            const isZeroActivity = stockActual === 0 && porVenir === 0 && (stockMinimo === null || stockMinimo === 0);
+                        const normCode = item.codigoInterno ? String(item.codigoInterno).trim().toUpperCase() : '';
+            const consumoProyectado = projectedConsumptionByItem.get(item.id) || (normCode ? projectedConsumptionByItem.get(normCode) : 0) || 0;
+            const consumo90d = consumptionByItem.get(item.id) || (normCode ? consumptionByItem.get(normCode) : 0) || 0;
+            const consumoMensual = Math.round(consumo90d / 3);
+            const isZeroActivity = stockActual === 0 && porVenir === 0 && consumoProyectado === 0 && consumo90d === 0 && (stockMinimo === null || stockMinimo === 0);
 
             return {
                 ...item,
@@ -229,6 +280,9 @@ export default function MaterialesCriticosPage() {
                 stockProyectado,
                 esSobrante,
                 isZeroActivity,
+                consumoProyectado,
+                consumo90d,
+                consumoMensual,
                 deficitBruto,
                 deficitNeto,
                 deficit: deficitNeto > 0 ? deficitNeto : deficitBruto,
@@ -254,6 +308,9 @@ export default function MaterialesCriticosPage() {
             totalStockFisico: number;    // Stock físico total (incluyendo sobrantes)
             totalSobrante: number;       // Kilos de sobrantes excluidos
             totalPorVenir: number;
+            totalConsumoProyectado: number;
+            totalConsumo90d: number;
+            totalConsumoMensual: number;
             totalDeficit: number;
             categoryDeficit: number;
             categoryStatus: 'CRITICAL' | 'WARNING' | 'OVERSTOCK' | 'OK';
@@ -278,6 +335,9 @@ export default function MaterialesCriticosPage() {
                     totalStockFisico: 0,
                     totalSobrante: 0,
                     totalPorVenir: 0,
+                    totalConsumoProyectado: 0,
+                    totalConsumo90d: 0,
+                    totalConsumoMensual: 0,
                     totalDeficit: 0,
                     categoryDeficit: 0,
                     categoryStatus: 'OK',
@@ -322,6 +382,9 @@ export default function MaterialesCriticosPage() {
             }
 
             group.totalPorVenir += item.porVenir;
+            group.totalConsumoProyectado += (item.consumoProyectado || 0);
+            group.totalConsumo90d += (item.consumo90d || 0);
+            group.totalConsumoMensual += (item.consumoMensual || 0);
             group.totalDeficit += item.deficitNeto;
             if (item.status === 'CRITICAL') group.criticalCount++;
             else if (item.status === 'WARNING') group.warningCount++;
@@ -1050,6 +1113,26 @@ export default function MaterialesCriticosPage() {
                                                     }} 
                                                 />
                                             </Tooltip>
+
+                                            {/* Consumo Proyectado y Consumo Histórico */}
+                                            {group.totalConsumoProyectado > 0 && (
+                                                <Tooltip title="Demanda de hilado requerida por los pedidos de producción en cola">
+                                                    <Chip 
+                                                        size="small" 
+                                                        label={`🧵 Pedidos: ${group.totalConsumoProyectado.toLocaleString()} kg`} 
+                                                        sx={{ height: 22, fontSize: '0.68rem', fontWeight: 800, bgcolor: 'rgba(56, 189, 248, 0.15)', color: colors.info, border: '1px solid rgba(56, 189, 248, 0.3)' }} 
+                                                    />
+                                                </Tooltip>
+                                            )}
+                                            {group.totalConsumo90d > 0 && (
+                                                <Tooltip title={`Consumo real de los últimos 3 meses: ${group.totalConsumo90d.toLocaleString()} kg (promedio mensual: ~${group.totalConsumoMensual.toLocaleString()} kg/mes)`}>
+                                                    <Chip 
+                                                        size="small" 
+                                                        label={`📊 Consumo 3m: ${group.totalConsumo90d.toLocaleString()} kg (~${group.totalConsumoMensual.toLocaleString()} kg/m)`} 
+                                                        sx={{ height: 22, fontSize: '0.68rem', fontWeight: 800, bgcolor: 'rgba(245, 158, 11, 0.15)', color: colors.primary, border: '1px solid rgba(245, 158, 11, 0.3)' }} 
+                                                    />
+                                                </Tooltip>
+                                            )}
 
                                             {/* Proveedores Activos */}
                                             {group.activeSuppliers.length > 0 && (

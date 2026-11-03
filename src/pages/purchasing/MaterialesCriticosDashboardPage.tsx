@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Box,
@@ -43,6 +43,8 @@ import TuneIcon from '@mui/icons-material/Tune';
 import BlockIcon from '@mui/icons-material/Block';
 import CheckIcon from '@mui/icons-material/Check';
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
 
 import { useSelector } from 'react-redux';
 import { selectAllowedDepots } from '../../entities/auth/model/authSlice';
@@ -53,8 +55,11 @@ import {
     useUpdateItemMutation,
     useUpdateItemCategoryMutation
 } from '../../features/warehouse/materiales/api/items.api';
-import { useGetStockQuery } from '../../features/warehouse/stock/api/stock.api';
-import { useListarPedidosProduccionQuery } from '../../features/quality/ordenes-produccion/api/ordenesProduccion.api';
+import { useGetStockQuery, useGetRecentMovementsQuery } from '../../features/warehouse/stock/api/stock.api';
+import {
+    useListarPedidosProduccionQuery,
+    useGetUltimaPlanillaProduccionQuery
+} from '../../features/quality/ordenes-produccion/api/ordenesProduccion.api';
 import { useGetArticulosSinEstructuraQuery } from '../../features/ventas/api/ventas.api';
 import { useIsMobile } from '../../shared/ui';
 
@@ -77,7 +82,7 @@ const colors = {
     warningBg: 'rgba(245, 158, 11, 0.12)',
     success: '#10b981',
     successBg: 'rgba(16, 185, 129, 0.12)',
-    info: '#38bdf8',
+    info: '#38bdf8',          // Cyan para Consumo Proyectado de Pedidos
     infoBg: 'rgba(56, 189, 248, 0.12)',
     purple: '#a855f7'
 };
@@ -114,10 +119,30 @@ export default function MaterialesCriticosDashboardPage() {
         }
     }, [depots, depotId]);
 
+    // Rango de fechas para consumo histórico: últimos 90 días (3 meses)
+    const { ninetyDaysAgo, today } = useMemo(() => {
+        const end = new Date();
+        const start = new Date();
+        start.setDate(start.getDate() - 90);
+        return {
+            ninetyDaysAgo: start.toISOString().split('T')[0],
+            today: end.toISOString().split('T')[0]
+        };
+    }, []);
+
     // 2. Consultas API
     const { data: categories = [], isLoading: loadingCategories } = useGetItemCategoriesQuery(depotId || undefined);
     const { data: items = [] } = useGetItemsQuery({ depositoId: depotId || undefined });
     const { data: allStock = [], isLoading: loadingStock } = useGetStockQuery({ depotId: depotId || undefined });
+
+    // A. Consumo Histórico (Movimientos de los últimos 3 meses)
+    const { data: recentMovements = [], isLoading: loadingMovements } = useGetRecentMovementsQuery({
+        desde: ninetyDaysAgo,
+        hasta: today
+    });
+
+    // B. Consumo Proyectado de Pedidos (Planilla de Producción y Órdenes en Curso)
+    const { data: planillaProduccion, isLoading: loadingPlanilla } = useGetUltimaPlanillaProduccionQuery();
     const { data: pedidosProduccion = [] } = useListarPedidosProduccionQuery();
     const { data: articulosSinEstructura = [] } = useGetArticulosSinEstructuraQuery();
 
@@ -157,7 +182,48 @@ export default function MaterialesCriticosDashboardPage() {
         return map;
     }, [allStock]);
 
-    // Ítems enriquecidos con métricas de stock computable vs sobrantes
+    // Mapeo 1: CONSUMO PROYECTADO DE PEDIDOS (Requerimientos de Producción)
+    const projectedConsumptionByItem = useMemo(() => {
+        const map = new Map<string, number>();
+        const materialesPlanilla = planillaProduccion?.materiales || [];
+
+        materialesPlanilla.forEach((m: any) => {
+            const qty = Number(m.consumoTotalKg || m.consumoKg || 0);
+            if (qty > 0) {
+                if (m.itemId) map.set(m.itemId, (map.get(m.itemId) || 0) + qty);
+                if (m.codigoInterno) {
+                    const normCode = String(m.codigoInterno).trim().toUpperCase();
+                    map.set(normCode, (map.get(normCode) || 0) + qty);
+                }
+            }
+        });
+
+        return map;
+    }, [planillaProduccion]);
+
+    // Mapeo 2: CONSUMO HISTÓRICO (Últimos 3 meses / 90 días)
+    const consumptionByItem = useMemo(() => {
+        const map = new Map<string, number>();
+        recentMovements.forEach((m: any) => {
+            if (m.status === 'ANULADO') return;
+            const tipo = String(m.tipo || '').toUpperCase();
+            if (tipo === 'REMITO_SALIDA' || tipo === 'ENTREGA_PRODUCCION' || tipo === 'AJUSTE_RESTA' || tipo === 'SALIDA') {
+                const itemId = m.itemId || m.item?.id;
+                const itemCode = m.item?.codigoInterno ? String(m.item.codigoInterno).trim().toUpperCase() : null;
+                const qty = Math.abs(Number(m.qtyPrincipal || m.cantidadPrincipal || m.cantidad || 0));
+
+                if (itemId) {
+                    map.set(itemId, (map.get(itemId) || 0) + qty);
+                }
+                if (itemCode) {
+                    map.set(itemCode, (map.get(itemCode) || 0) + qty);
+                }
+            }
+        });
+        return map;
+    }, [recentMovements]);
+
+    // Ítems enriquecidos con métricas de stock computable, sobrantes, consumo proyectado y consumo histórico
     const enrichedItems = useMemo(() => {
         return items.map((item: any) => {
             const stockActual = stockTotalsByItem.get(item.id) || 0;
@@ -168,6 +234,21 @@ export default function MaterialesCriticosDashboardPage() {
             const stockComputable = esSobrante ? 0 : stockActual;
             const stockProyectado = stockComputable + porVenir;
             const isIgnored = Boolean(item.meta?.ignorarStockMinimo);
+
+            const normCode = item.codigoInterno ? String(item.codigoInterno).trim().toUpperCase() : '';
+
+            // A. Consumo Proyectado (demanda requerida por pedidos de producción)
+            const consumoProyectado = projectedConsumptionByItem.get(item.id)
+                || (normCode ? projectedConsumptionByItem.get(normCode) : 0)
+                || 0;
+
+            // B. Consumo Histórico (últimos 3 meses / 90 días)
+            const consumo90d = consumptionByItem.get(item.id)
+                || (normCode ? consumptionByItem.get(normCode) : 0)
+                || 0;
+            const consumoMensual = Math.round(consumo90d / 3);
+            const consumoDiario = consumo90d / 90;
+            const diasAutonomia = consumoDiario > 0 ? Math.round(stockComputable / consumoDiario) : null;
 
             let status: 'CRITICAL' | 'WARNING' | 'OVERSTOCK' | 'OK' = 'OK';
             let deficitBruto = 0;
@@ -183,11 +264,16 @@ export default function MaterialesCriticosDashboardPage() {
                 }
             }
 
+            // Si los pedidos superan el stock + lo que viene, también es alerta crítica de compras
+            if (consumoProyectado > stockProyectado && !esSobrante) {
+                status = 'CRITICAL';
+            }
+
             if (stockMaximo !== null && stockMaximo > 0 && stockComputable > stockMaximo) {
                 status = 'OVERSTOCK';
             }
 
-            const isZeroActivity = stockActual === 0 && porVenir === 0 && (stockMinimo === null || stockMinimo === 0);
+            const isZeroActivity = stockActual === 0 && porVenir === 0 && consumoProyectado === 0 && consumo90d === 0 && (stockMinimo === null || stockMinimo === 0);
 
             return {
                 ...item,
@@ -199,6 +285,10 @@ export default function MaterialesCriticosDashboardPage() {
                 stockProyectado,
                 esSobrante,
                 isZeroActivity,
+                consumoProyectado,
+                consumo90d,
+                consumoMensual,
+                diasAutonomia,
                 deficitBruto,
                 deficitNeto,
                 deficit: deficitNeto > 0 ? deficitNeto : deficitBruto,
@@ -207,7 +297,7 @@ export default function MaterialesCriticosDashboardPage() {
                 searchStr: normalizeText(`${item.codigoInterno} ${item.descripcion} ${item.category?.nombre || item.categoria || ''} ${item.supplier?.name || ''}`)
             };
         });
-    }, [items, stockTotalsByItem]);
+    }, [items, stockTotalsByItem, projectedConsumptionByItem, consumptionByItem]);
 
     // Agrupación ejecutiva por categoría
     const categoryGroups = useMemo(() => {
@@ -224,9 +314,22 @@ export default function MaterialesCriticosDashboardPage() {
             totalStockFisico: number;    // Físico real
             totalSobrante: number;       // Remanentes aislados
             totalPorVenir: number;       // En camino
+            totalConsumoProyectado: number; // Kilos requeridos por pedidos de producción
+            totalConsumo90d: number;     // Consumo histórico 3 meses
+            totalConsumoMensual: number; // Consumo promedio mensual
+            diasAutonomia: number | null;// Días de stock según consumo real
+            mesesAutonomia: string | null;// Meses de cobertura
             categoryDeficit: number;     // Déficit a comprar
             categoryStatus: 'CRITICAL' | 'WARNING' | 'OVERSTOCK' | 'OK';
-            activeSuppliers: { name: string; stock: number; porVenir: number; isSobrante: boolean }[];
+            activeSuppliers: {
+                name: string;
+                stock: number;
+                porVenir: number;
+                isSobrante: boolean;
+                consumoProyectado: number;
+                consumo90d: number;
+                consumoMensual: number;
+            }[];
         }>();
 
         // 1. Categorías del catálogo
@@ -243,6 +346,11 @@ export default function MaterialesCriticosDashboardPage() {
                 totalStockFisico: 0,
                 totalSobrante: 0,
                 totalPorVenir: 0,
+                totalConsumoProyectado: 0,
+                totalConsumo90d: 0,
+                totalConsumoMensual: 0,
+                diasAutonomia: null,
+                mesesAutonomia: null,
                 categoryDeficit: 0,
                 categoryStatus: 'OK',
                 activeSuppliers: []
@@ -270,32 +378,69 @@ export default function MaterialesCriticosDashboardPage() {
                 group.totalStock += item.stockComputable;
             }
             group.totalPorVenir += item.porVenir;
+            group.totalConsumoProyectado += item.consumoProyectado;
+            group.totalConsumo90d += item.consumo90d;
+            group.totalConsumoMensual += item.consumoMensual;
         });
 
-        // 3. Métricas de cada categoría
+        // 3. Métricas y autonomía de cada categoría
         groupsMap.forEach(group => {
             // Proveedores activos
-            const supMap = new Map<string, { name: string; stock: number; porVenir: number; isSobrante: boolean }>();
+            const supMap = new Map<string, {
+                name: string;
+                stock: number;
+                porVenir: number;
+                isSobrante: boolean;
+                consumoProyectado: number;
+                consumo90d: number;
+                consumoMensual: number;
+            }>();
+
             group.items.forEach(i => {
                 const sName = i.supplier?.name || 'Proveedor no asignado';
-                const cur = supMap.get(sName) || { name: sName, stock: 0, porVenir: 0, isSobrante: false };
+                const cur = supMap.get(sName) || {
+                    name: sName,
+                    stock: 0,
+                    porVenir: 0,
+                    isSobrante: false,
+                    consumoProyectado: 0,
+                    consumo90d: 0,
+                    consumoMensual: 0
+                };
                 cur.stock += i.stockActual;
                 cur.porVenir += i.porVenir;
+                cur.consumoProyectado += i.consumoProyectado;
+                cur.consumo90d += i.consumo90d;
+                cur.consumoMensual += i.consumoMensual;
                 if (i.esSobrante) cur.isSobrante = true;
                 supMap.set(sName, cur);
             });
-            group.activeSuppliers = Array.from(supMap.values()).filter(s => s.stock > 0 || s.porVenir > 0);
 
-            // Cálculo de Déficit de Categoría
-            if (group.minimo !== null && group.minimo > 0) {
-                const proyectado = group.totalStock + group.totalPorVenir;
-                if (proyectado < group.minimo) {
-                    group.categoryDeficit = group.minimo - proyectado;
-                    group.categoryStatus = 'CRITICAL';
-                } else if (group.totalStock < group.minimo) {
-                    group.categoryDeficit = 0;
-                    group.categoryStatus = 'WARNING';
-                }
+            group.activeSuppliers = Array.from(supMap.values()).filter(
+                s => s.stock > 0 || s.porVenir > 0 || s.consumoProyectado > 0 || s.consumo90d > 0
+            );
+
+            // Autonomía estimada (Días y Meses de stock según consumo diario histórico)
+            const diario = group.totalConsumo90d / 90;
+            if (diario > 0) {
+                group.diasAutonomia = Math.round((group.totalStock + group.totalPorVenir) / diario);
+                group.mesesAutonomia = (group.diasAutonomia / 30).toFixed(1);
+            }
+
+            // Cálculo de Déficit de Categoría (considerando Mínimo y Demanda Proyectada de Pedidos)
+            const proyectadoStock = group.totalStock + group.totalPorVenir;
+            const targetMinimo = group.minimo || 0;
+
+            // Si los pedidos en cola superan el stock proyectado, el déficit se amplía
+            const deficitPorPedidos = Math.max(0, group.totalConsumoProyectado - proyectadoStock);
+            const deficitPorMinimo = targetMinimo > 0 ? Math.max(0, targetMinimo - proyectadoStock) : 0;
+
+            group.categoryDeficit = Math.max(deficitPorPedidos, deficitPorMinimo);
+
+            if (group.categoryDeficit > 0) {
+                group.categoryStatus = 'CRITICAL';
+            } else if (targetMinimo > 0 && group.totalStock < targetMinimo) {
+                group.categoryStatus = 'WARNING';
             }
 
             if (group.maximo !== null && group.maximo > 0 && group.totalStock > group.maximo) {
@@ -306,14 +451,12 @@ export default function MaterialesCriticosDashboardPage() {
         // 4. Filtrar por búsqueda y estado
         return Array.from(groupsMap.values())
             .filter(group => {
-                // Filtro búsqueda
                 if (searchWords.length > 0) {
                     const matchCat = searchWords.every(w => normalizeText(group.nombre).includes(w));
                     const matchItem = group.items.some(i => searchWords.every(w => i.searchStr.includes(w)));
                     if (!matchCat && !matchItem) return false;
                 }
 
-                // Filtro estado
                 if (statusFilter === 'CRITICAL') return group.categoryStatus === 'CRITICAL';
                 if (statusFilter === 'WARNING') return group.categoryStatus === 'WARNING';
                 if (statusFilter === 'OK') return group.categoryStatus === 'OK' && group.categoryDeficit === 0;
@@ -322,7 +465,7 @@ export default function MaterialesCriticosDashboardPage() {
                 return true;
             })
             .sort((a, b) => {
-                // Prioridad: 1° con déficit de categoría (descendente), 2° en warning, 3° alfabético
+                // 1° Quiebres críticos con déficit (descendente), 2° Warning, 3° Alfabético
                 if (b.categoryDeficit !== a.categoryDeficit) return b.categoryDeficit - a.categoryDeficit;
                 if (a.categoryStatus === 'CRITICAL' && b.categoryStatus !== 'CRITICAL') return -1;
                 if (b.categoryStatus === 'CRITICAL' && a.categoryStatus !== 'CRITICAL') return 1;
@@ -336,6 +479,8 @@ export default function MaterialesCriticosDashboardPage() {
         let totalPorVenir = 0;
         let totalStockComputable = 0;
         let totalSobrantes = 0;
+        let totalConsumoProyectado = 0;
+        let totalConsumo90d = 0;
         let criticalCategoriesCount = 0;
         let warningCategoriesCount = 0;
 
@@ -344,6 +489,8 @@ export default function MaterialesCriticosDashboardPage() {
             totalPorVenir += g.totalPorVenir;
             totalStockComputable += g.totalStock;
             totalSobrantes += g.totalSobrante;
+            totalConsumoProyectado += g.totalConsumoProyectado;
+            totalConsumo90d += g.totalConsumo90d;
             if (g.categoryStatus === 'CRITICAL') criticalCategoriesCount++;
             if (g.categoryStatus === 'WARNING') warningCategoriesCount++;
         });
@@ -353,6 +500,9 @@ export default function MaterialesCriticosDashboardPage() {
             totalPorVenir,
             totalStockComputable,
             totalSobrantes,
+            totalConsumoProyectado,
+            totalConsumo90d,
+            totalConsumoMensual: Math.round(totalConsumo90d / 3),
             criticalCategoriesCount,
             warningCategoriesCount,
             totalCategories: categoryGroups.length
@@ -378,7 +528,7 @@ export default function MaterialesCriticosDashboardPage() {
         const list: { id: string; tipo: 'PEDIDO_SIN_STOCK' | 'SIN_ESTRUCTURA'; titulo: string; detalle: string }[] = [];
 
         pedidosProduccion.forEach((p: any) => {
-            if (p.estado === 'PENDIENTE_MATERIAL' || p.faltantesHilado?.length > 0) {
+            if (p.estado === 'PENDIENTE_MATERIAL' || (p.faltantesHilado && p.faltantesHilado.length > 0)) {
                 list.push({
                     id: `ped-${p.id}`,
                     tipo: 'PEDIDO_SIN_STOCK',
@@ -483,7 +633,6 @@ export default function MaterialesCriticosDashboardPage() {
             return;
         }
 
-        // Buscamos o creamos el porVenir en el ítem principal seleccionado
         const targetItem = quickOrderTarget.items.find((i: any) => i.supplierId === quickOrderSupplierId) || quickOrderTarget.items[0];
         if (targetItem) {
             try {
@@ -550,7 +699,7 @@ export default function MaterialesCriticosDashboardPage() {
                             Centro de Compras & Abastecimiento
                         </Typography>
                         <Typography variant="caption" sx={{ color: colors.textSecondary }}>
-                            Decisiones directas en 2 clics • Control de quiebres y remanentes
+                            Consumo Proyectado (Pedidos) • Consumo Histórico (3 meses) • Mínimos editables en 2 clics
                         </Typography>
                     </Box>
 
@@ -629,10 +778,10 @@ export default function MaterialesCriticosDashboardPage() {
                 </Box>
             </Box>
 
-            {/* 2. STATS STRIP (Indicadores Clave en 1 Sola Línea) */}
+            {/* 2. STATS STRIP (Indicadores Clave con Consumo Proyectado y Consumo Histórico) */}
             <Box sx={{
                 display: 'grid',
-                gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' },
+                gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(5, 1fr)' },
                 gap: 1.5,
                 mb: 1.5
             }}>
@@ -651,27 +800,44 @@ export default function MaterialesCriticosDashboardPage() {
                             {globalStats.totalDeficit.toLocaleString()} kg
                         </Typography>
                         <Typography variant="caption" sx={{ color: colors.textMuted }}>
-                            ({globalStats.criticalCategoriesCount} cat. en quiebre)
+                            ({globalStats.criticalCategoriesCount} en quiebre)
                         </Typography>
                     </Box>
                 </Card>
 
-                {/* 2. Por Venir */}
-                <Card sx={{ bgcolor: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 2, p: 1.2 }}>
-                    <Typography variant="caption" sx={{ color: colors.info, fontWeight: 700, textTransform: 'uppercase', fontSize: '10px' }}>
-                        🚚 En Tránsito / Pedido
+                {/* 2. Consumo Proyectado (Pedidos de Producción en Cola) */}
+                <Card sx={{ bgcolor: colors.surface, border: `1px solid ${colors.info}`, borderRadius: 2, p: 1.2 }}>
+                    <Typography variant="caption" sx={{ color: colors.info, fontWeight: 700, textTransform: 'uppercase', fontSize: '10px', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <PrecisionManufacturingIcon sx={{ fontSize: 13 }} />
+                        🧵 Proyectado Pedidos
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mt: 0.2 }}>
                         <Typography variant="h5" sx={{ fontWeight: 900, color: colors.info }}>
-                            {globalStats.totalPorVenir.toLocaleString()} kg
+                            {globalStats.totalConsumoProyectado.toLocaleString()} kg
                         </Typography>
                         <Typography variant="caption" sx={{ color: colors.textMuted }}>
-                            por recibir
+                            demanda en cola
                         </Typography>
                     </Box>
                 </Card>
 
-                {/* 3. Stock Computable */}
+                {/* 3. Consumo Histórico Mensual (Últimos 3 meses) */}
+                <Card sx={{ bgcolor: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 2, p: 1.2 }}>
+                    <Typography variant="caption" sx={{ color: colors.warning, fontWeight: 700, textTransform: 'uppercase', fontSize: '10px', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <TrendingDownIcon sx={{ fontSize: 13 }} />
+                        📊 Histórico (3 meses)
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mt: 0.2 }}>
+                        <Typography variant="h5" sx={{ fontWeight: 900, color: colors.warning }}>
+                            ~{globalStats.totalConsumoMensual.toLocaleString()} kg
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: colors.textMuted }}>
+                            /mes
+                        </Typography>
+                    </Box>
+                </Card>
+
+                {/* 4. Stock Computable */}
                 <Card sx={{ bgcolor: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 2, p: 1.2 }}>
                     <Typography variant="caption" sx={{ color: colors.success, fontWeight: 700, textTransform: 'uppercase', fontSize: '10px' }}>
                         📦 Stock Computable
@@ -681,22 +847,22 @@ export default function MaterialesCriticosDashboardPage() {
                             {globalStats.totalStockComputable.toLocaleString()} kg
                         </Typography>
                         <Typography variant="caption" sx={{ color: colors.textMuted }}>
-                            disponibles
+                            disponible
                         </Typography>
                     </Box>
                 </Card>
 
-                {/* 4. Remanentes / Sobrantes Aislados */}
+                {/* 5. Por Venir (En Tránsito) */}
                 <Card sx={{ bgcolor: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 2, p: 1.2 }}>
-                    <Typography variant="caption" sx={{ color: colors.purple, fontWeight: 700, textTransform: 'uppercase', fontSize: '10px' }}>
-                        🧊 Sobrantes Aislados
+                    <Typography variant="caption" sx={{ color: colors.textSecondary, fontWeight: 700, textTransform: 'uppercase', fontSize: '10px' }}>
+                        🚚 En Tránsito / Pedido
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mt: 0.2 }}>
-                        <Typography variant="h5" sx={{ fontWeight: 900, color: colors.purple }}>
-                            {globalStats.totalSobrantes.toLocaleString()} kg
+                        <Typography variant="h5" sx={{ fontWeight: 900, color: colors.text }}>
+                            +{globalStats.totalPorVenir.toLocaleString()} kg
                         </Typography>
                         <Typography variant="caption" sx={{ color: colors.textMuted }}>
-                            sin contaminar
+                            por recibir
                         </Typography>
                     </Box>
                 </Card>
@@ -820,7 +986,7 @@ export default function MaterialesCriticosDashboardPage() {
             <Box sx={{
                 flex: 1,
                 display: 'grid',
-                gridTemplateColumns: { xs: '1fr', lg: '58% 42%' },
+                gridTemplateColumns: { xs: '1fr', lg: '56% 44%' },
                 gap: 2,
                 minHeight: 0,
                 overflow: 'hidden'
@@ -848,16 +1014,16 @@ export default function MaterialesCriticosDashboardPage() {
                             <Chip label={categoryGroups.length} size="small" sx={{ height: 20, fontSize: '11px', fontWeight: 700 }} />
                         </Typography>
                         <Typography variant="caption" sx={{ color: colors.textMuted }}>
-                            Click para abrir detalle operativo ➔
+                            Click para abrir ficha operativa ➔
                         </Typography>
                     </Box>
 
                     {/* Contenedor con Scroll de Categorías */}
                     <Box sx={{ flex: 1, overflowY: 'auto', p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        {loadingCategories || loadingStock ? (
+                        {loadingCategories || loadingStock || loadingMovements || loadingPlanilla ? (
                             <Box sx={{ p: 4, textAlign: 'center', color: colors.textMuted }}>
                                 <LinearProgress sx={{ mb: 2, bgcolor: colors.surfaceHover, '& .MuiLinearProgress-bar': { bgcolor: colors.primary } }} />
-                                Sincronizando stock computable y categorías...
+                                Sincronizando pedidos, stock computable y consumos históricos...
                             </Box>
                         ) : categoryGroups.length === 0 ? (
                             <Box sx={{ p: 6, textAlign: 'center', color: colors.textMuted }}>
@@ -909,7 +1075,7 @@ export default function MaterialesCriticosDashboardPage() {
                                                     {group.nombre}
                                                 </Typography>
                                                 {group.totalSobrante > 0 && (
-                                                    <Tooltip title={`${group.totalSobrante} kg en remanentes aislados que no contaminan compras`}>
+                                                    <Tooltip title={`${group.totalSobrante.toLocaleString()} kg en remanentes aislados que no contaminan compras`}>
                                                         <Chip
                                                             label={`🧊 +${group.totalSobrante.toLocaleString()} kg excl.`}
                                                             size="small"
@@ -945,7 +1111,7 @@ export default function MaterialesCriticosDashboardPage() {
                                         <Box sx={{ mb: 1 }}>
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: colors.textSecondary, mb: 0.4 }}>
                                                 <span>
-                                                    Stock: <strong>{group.totalStock.toLocaleString()} kg</strong>
+                                                    Stock Computable: <strong>{group.totalStock.toLocaleString()} kg</strong>
                                                     {group.totalPorVenir > 0 && (
                                                         <span style={{ color: colors.info, marginLeft: '6px' }}>
                                                             (+{group.totalPorVenir.toLocaleString()} kg ped.)
@@ -970,7 +1136,44 @@ export default function MaterialesCriticosDashboardPage() {
                                             />
                                         </Box>
 
-                                        {/* Fila 3: Proveedores con Stock */}
+                                        {/* Fila 3: Consumo Proyectado (Pedidos) vs Consumo Histórico (3 meses) */}
+                                        <Box sx={{
+                                            display: 'grid',
+                                            gridTemplateColumns: '1fr 1fr',
+                                            gap: 1,
+                                            p: 0.8,
+                                            borderRadius: 1.5,
+                                            bgcolor: 'rgba(0,0,0,0.25)',
+                                            border: '1px solid rgba(255,255,255,0.04)',
+                                            mb: 1
+                                        }}>
+                                            {/* Consumo Proyectado de Pedidos */}
+                                            <Box>
+                                                <Typography variant="caption" sx={{ color: colors.info, fontSize: '10px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                    <PrecisionManufacturingIcon sx={{ fontSize: 12 }} />
+                                                    🧵 Proyectado (Pedidos):
+                                                </Typography>
+                                                <Typography sx={{ fontWeight: 800, fontSize: '12px', color: colors.info }}>
+                                                    {group.totalConsumoProyectado > 0 ? `${group.totalConsumoProyectado.toLocaleString()} kg` : '0 kg'}
+                                                </Typography>
+                                            </Box>
+
+                                            {/* Consumo Histórico (3 meses) */}
+                                            <Box>
+                                                <Typography variant="caption" sx={{ color: colors.warning, fontSize: '10px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                    <TrendingDownIcon sx={{ fontSize: 12 }} />
+                                                    📊 Histórico (3m):
+                                                </Typography>
+                                                <Typography sx={{ fontWeight: 800, fontSize: '12px', color: colors.warning }}>
+                                                    {group.totalConsumo90d > 0 ? `${group.totalConsumo90d.toLocaleString()} kg` : '0 kg'}
+                                                    <span style={{ fontSize: '10px', color: colors.textMuted, marginLeft: '4px' }}>
+                                                        (~{group.totalConsumoMensual.toLocaleString()} kg/m)
+                                                    </span>
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+
+                                        {/* Fila 4: Proveedores con Stock */}
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap' }}>
                                             <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '10px' }}>
                                                 Proveedores:
@@ -1035,7 +1238,7 @@ export default function MaterialesCriticosDashboardPage() {
                                         </Typography>
                                     </Box>
 
-                                    {/* Botón Acción 1: Ajustar Mín/Máx de Categoría */}
+                                    {/* Botón Acción 1: Ajustar Mín/Máx con Benchmarking de Consumos */}
                                     <Button
                                         size="small"
                                         variant="outlined"
@@ -1050,24 +1253,26 @@ export default function MaterialesCriticosDashboardPage() {
                                             borderColor: colors.border,
                                             color: colors.primary,
                                             textTransform: 'none',
-                                            '&:hover': { borderColor: colors.primary }
+                                            fontWeight: 700,
+                                            '&:hover': { borderColor: colors.primary, bgcolor: 'rgba(245,158,11,0.08)' }
                                         }}
                                     >
                                         Editar Mín/Máx
                                     </Button>
                                 </Box>
 
-                                {/* Indicadores Rápidos de la Categoría */}
+                                {/* Indicadores Clave de la Categoría: Stock, Proyectado (Pedidos) e Histórico (3m) */}
                                 <Box sx={{
                                     display: 'grid',
-                                    gridTemplateColumns: 'repeat(3, 1fr)',
+                                    gridTemplateColumns: 'repeat(4, 1fr)',
                                     gap: 1,
                                     mt: 1.5,
                                     p: 1.2,
-                                    bgcolor: 'rgba(0,0,0,0.2)',
+                                    bgcolor: 'rgba(0,0,0,0.25)',
                                     borderRadius: 1.5,
                                     border: `1px solid ${colors.border}`
                                 }}>
+                                    {/* 1. Stock Computable */}
                                     <Box>
                                         <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '10px' }}>
                                             Stock Computable
@@ -1075,25 +1280,58 @@ export default function MaterialesCriticosDashboardPage() {
                                         <Typography variant="subtitle1" sx={{ fontWeight: 800, color: colors.text }}>
                                             {selectedGroup.totalStock.toLocaleString()} kg
                                         </Typography>
+                                        <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '9px', display: 'block' }}>
+                                            (+{selectedGroup.totalPorVenir.toLocaleString()} kg ped.)
+                                        </Typography>
                                     </Box>
 
+                                    {/* 2. Consumo Proyectado (Pedidos) */}
                                     <Box>
-                                        <Typography variant="caption" sx={{ color: colors.info, fontSize: '10px' }}>
-                                            Por Venir
+                                        <Typography variant="caption" sx={{ color: colors.info, fontSize: '10px', fontWeight: 700 }}>
+                                            🧵 Proyectado Pedidos
                                         </Typography>
                                         <Typography variant="subtitle1" sx={{ fontWeight: 800, color: colors.info }}>
-                                            +{selectedGroup.totalPorVenir.toLocaleString()} kg
+                                            {selectedGroup.totalConsumoProyectado.toLocaleString()} kg
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '9px', display: 'block' }}>
+                                            demanda en cola
                                         </Typography>
                                     </Box>
 
+                                    {/* 3. Consumo Histórico (3 meses) */}
                                     <Box>
-                                        <Typography variant="caption" sx={{ color: selectedGroup.categoryDeficit > 0 ? colors.danger : colors.success, fontSize: '10px' }}>
-                                            {selectedGroup.categoryDeficit > 0 ? 'Déficit a Comprar' : 'Estado'}
+                                        <Typography variant="caption" sx={{ color: colors.warning, fontSize: '10px', fontWeight: 700 }}>
+                                            📊 Histórico (3m)
                                         </Typography>
-                                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: selectedGroup.categoryDeficit > 0 ? colors.danger : colors.success }}>
-                                            {selectedGroup.categoryDeficit > 0 ? `-${selectedGroup.categoryDeficit.toLocaleString()} kg` : '✓ Óptimo'}
+                                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: colors.warning }}>
+                                            ~{selectedGroup.totalConsumoMensual.toLocaleString()} kg
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '9px', display: 'block' }}>
+                                            {selectedGroup.totalConsumo90d.toLocaleString()} kg total
                                         </Typography>
                                     </Box>
+
+                                    {/* 4. Déficit a Comprar */}
+                                    <Box>
+                                        <Typography variant="caption" sx={{ color: selectedGroup.categoryDeficit > 0 ? colors.danger : colors.success, fontSize: '10px', fontWeight: 700 }}>
+                                            {selectedGroup.categoryDeficit > 0 ? 'Déficit a Comprar' : 'Autonomía'}
+                                        </Typography>
+                                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: selectedGroup.categoryDeficit > 0 ? colors.danger : colors.success }}>
+                                            {selectedGroup.categoryDeficit > 0
+                                                ? `-${selectedGroup.categoryDeficit.toLocaleString()} kg`
+                                                : selectedGroup.mesesAutonomia ? `${selectedGroup.mesesAutonomia} meses` : '✓ Óptimo'}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+
+                                {/* Mini Fila de Límites Activos de la Categoría */}
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1, px: 0.5, fontSize: '11px', color: colors.textSecondary }}>
+                                    <span>
+                                        Mínimo Categoría: <strong style={{ color: colors.text }}>{selectedGroup.minimo ? `${selectedGroup.minimo.toLocaleString()} kg` : 'Sin configurar'}</strong>
+                                    </span>
+                                    <span>
+                                        Máximo Categoría: <strong style={{ color: colors.text }}>{selectedGroup.maximo ? `${selectedGroup.maximo.toLocaleString()} kg` : 'Sin configurar'}</strong>
+                                    </span>
                                 </Box>
 
                                 {/* Banner de Decisión Inmediata de Compra (si hay quiebre) */}
@@ -1114,7 +1352,7 @@ export default function MaterialesCriticosDashboardPage() {
                                                 🚨 Quiebre Detectado: Comprar {selectedGroup.categoryDeficit.toLocaleString()} kg
                                             </Typography>
                                             <Typography variant="caption" sx={{ color: colors.textSecondary }}>
-                                                Llegarás al mínimo sugerido de {selectedGroup.minimo?.toLocaleString()} kg.
+                                                Cubre la demanda de pedidos y alcanza el mínimo sugerido de {selectedGroup.minimo?.toLocaleString()} kg.
                                             </Typography>
                                         </Box>
                                         <Button
@@ -1142,10 +1380,10 @@ export default function MaterialesCriticosDashboardPage() {
                                 )}
                             </Box>
 
-                            {/* Tabla Operativa de Proveedores & SKUs */}
+                            {/* Tabla Operativa de Proveedores & SKUs con Consumo Proyectado y Consumo Histórico */}
                             <Box sx={{ flex: 1, overflowY: 'auto', p: 1.5 }}>
                                 <Typography variant="caption" sx={{ color: colors.textMuted, fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
-                                    Proveedores de la Categoría ({selectedGroup.items.length})
+                                    Detalle Operativo por Proveedor ({selectedGroup.items.length} ítems)
                                 </Typography>
 
                                 <TableContainer sx={{ border: `1px solid ${colors.border}`, borderRadius: 1.5 }}>
@@ -1153,15 +1391,17 @@ export default function MaterialesCriticosDashboardPage() {
                                         <TableHead sx={{ bgcolor: 'rgba(255,255,255,0.03)' }}>
                                             <TableRow>
                                                 <TableCell sx={{ color: colors.textMuted, fontSize: '11px', fontWeight: 700 }}>Proveedor / SKU</TableCell>
-                                                <TableCell align="right" sx={{ color: colors.textMuted, fontSize: '11px', fontWeight: 700 }}>Stock</TableCell>
+                                                <TableCell align="right" sx={{ color: colors.textMuted, fontSize: '11px', fontWeight: 700 }}>Stock Físico</TableCell>
                                                 <TableCell align="right" sx={{ color: colors.textMuted, fontSize: '11px', fontWeight: 700 }}>Por Venir</TableCell>
+                                                <TableCell align="right" sx={{ color: colors.info, fontSize: '11px', fontWeight: 700 }}>🧵 Proyectado</TableCell>
+                                                <TableCell align="right" sx={{ color: colors.warning, fontSize: '11px', fontWeight: 700 }}>📊 Histórico (90d)</TableCell>
                                                 <TableCell align="center" sx={{ color: colors.textMuted, fontSize: '11px', fontWeight: 700 }}>Tratamiento</TableCell>
                                                 <TableCell align="center" sx={{ color: colors.textMuted, fontSize: '11px', fontWeight: 700 }}>Acciones</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
                                             {selectedGroup.items
-                                                .filter(item => !hideZeroStockSuppliers || !item.isZeroActivity)
+                                                .filter(item => !hideZeroStockSuppliers || !item.isZeroActivity || item.consumoProyectado > 0 || item.consumo90d > 0)
                                                 .map(item => {
                                                     const isExcluded = item.esSobrante;
 
@@ -1208,6 +1448,33 @@ export default function MaterialesCriticosDashboardPage() {
                                                                 }}>
                                                                     {item.porVenir > 0 ? `+${item.porVenir.toLocaleString()} kg` : '0'}
                                                                 </Typography>
+                                                            </TableCell>
+
+                                                            {/* Consumo Proyectado (Pedidos de Producción) */}
+                                                            <TableCell align="right">
+                                                                <Typography sx={{
+                                                                    fontWeight: 800,
+                                                                    fontSize: '12px',
+                                                                    color: item.consumoProyectado > 0 ? colors.info : colors.textMuted
+                                                                }}>
+                                                                    {item.consumoProyectado > 0 ? `${item.consumoProyectado.toLocaleString()} kg` : '0'}
+                                                                </Typography>
+                                                            </TableCell>
+
+                                                            {/* Consumo Histórico Individual */}
+                                                            <TableCell align="right">
+                                                                <Typography sx={{
+                                                                    fontWeight: 700,
+                                                                    fontSize: '12px',
+                                                                    color: item.consumo90d > 0 ? colors.warning : colors.textMuted
+                                                                }}>
+                                                                    {item.consumo90d.toLocaleString()} kg
+                                                                </Typography>
+                                                                {item.consumo90d > 0 && (
+                                                                    <Typography variant="caption" sx={{ color: colors.textMuted, fontSize: '9px', display: 'block' }}>
+                                                                        ~{item.consumoMensual.toLocaleString()} kg/m
+                                                                    </Typography>
+                                                                )}
                                                             </TableCell>
 
                                                             {/* Toggle Remanente / Sobrante */}
@@ -1275,12 +1542,12 @@ export default function MaterialesCriticosDashboardPage() {
                 </Paper>
             </Box>
 
-            {/* MODAL 1: EDITAR LÍMITES DE CATEGORÍA (MÍN / MÁX) */}
+            {/* MODAL 1: EDITAR LÍMITES DE CATEGORÍA CON GUÍA DE CONSUMO PROYECTADO E HISTÓRICO */}
             <Dialog
                 open={editCategoryLimitsOpen}
                 onClose={() => setEditCategoryLimitsOpen(false)}
                 PaperProps={{
-                    sx: { bgcolor: colors.surface, color: colors.text, border: `1px solid ${colors.border}`, minWidth: 360, borderRadius: 2 }
+                    sx: { bgcolor: colors.surface, color: colors.text, border: `1px solid ${colors.border}`, minWidth: 440, borderRadius: 2 }
                 }}
             >
                 <DialogTitle sx={{ fontWeight: 800, fontSize: '16px' }}>
@@ -1289,18 +1556,71 @@ export default function MaterialesCriticosDashboardPage() {
                 <DialogContent>
                     <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 2 }}>
                         Categoría: <strong>{selectedGroup?.nombre}</strong>
-                        <br />
-                        Este límite engloba a todos los proveedores activos de la categoría.
                     </Typography>
+
+                    {/* Benchmarking Doble: Consumo Proyectado (Pedidos) y Consumo Histórico (3 meses) */}
+                    <Box sx={{
+                        p: 1.5,
+                        mb: 2.5,
+                        bgcolor: 'rgba(56, 189, 248, 0.08)',
+                        border: `1px solid ${colors.info}`,
+                        borderRadius: 1.5
+                    }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                            <Typography sx={{ fontWeight: 800, fontSize: '13px', color: colors.info, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <PrecisionManufacturingIcon sx={{ fontSize: 16 }} />
+                                🧵 Demanda Proyectada (Pedidos): {selectedGroup?.totalConsumoProyectado.toLocaleString()} kg
+                            </Typography>
+                        </Box>
+
+                        <Typography sx={{ fontWeight: 800, fontSize: '13px', color: colors.warning, display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
+                            <TrendingDownIcon sx={{ fontSize: 16 }} />
+                            📊 Histórico (3 meses): {selectedGroup?.totalConsumo90d.toLocaleString()} kg (~{selectedGroup?.totalConsumoMensual.toLocaleString()} kg/mes)
+                        </Typography>
+
+                        {/* Botones de Sugerencia Inteligente para el Comprador */}
+                        <Box sx={{ display: 'flex', gap: 0.8, mt: 1.5, flexWrap: 'wrap' }}>
+                            {(selectedGroup?.totalConsumoProyectado || 0) > 0 && (
+                                <Button
+                                    size="small"
+                                    variant="outlined"
+                                    onClick={() => setCatMinInput(String(selectedGroup?.totalConsumoProyectado || ''))}
+                                    sx={{ fontSize: '10px', p: '2px 8px', textTransform: 'none', color: colors.info, borderColor: colors.info }}
+                                >
+                                    💡 Mín = Cubrir Pedidos ({selectedGroup?.totalConsumoProyectado.toLocaleString()} kg)
+                                </Button>
+                            )}
+                            {(selectedGroup?.totalConsumoMensual || 0) > 0 && (
+                                <>
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        onClick={() => setCatMinInput(String(selectedGroup?.totalConsumoMensual || ''))}
+                                        sx={{ fontSize: '10px', p: '2px 8px', textTransform: 'none', color: colors.warning, borderColor: colors.warning }}
+                                    >
+                                        💡 Mín = 1 Mes Histórico ({selectedGroup?.totalConsumoMensual.toLocaleString()} kg)
+                                    </Button>
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        onClick={() => setCatMaxInput(String(Math.round((selectedGroup?.totalConsumoMensual || 0) * 3)))}
+                                        sx={{ fontSize: '10px', p: '2px 8px', textTransform: 'none', color: colors.primary, borderColor: colors.primary }}
+                                    >
+                                        💡 Máx = 3 Meses ({Math.round((selectedGroup?.totalConsumoMensual || 0) * 3).toLocaleString()} kg)
+                                    </Button>
+                                </>
+                            )}
+                        </Box>
+                    </Box>
 
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         <TextField
-                            label="Stock Mínimo Objetivo (kg)"
+                            label="Stock Mínimo Objetivo de la Categoría (kg)"
                             type="number"
                             size="small"
                             value={catMinInput}
                             onChange={(e) => setCatMinInput(e.target.value)}
-                            helperText="Si el stock computable cae por debajo, se disparará la alerta de quiebre."
+                            helperText="Si el stock computable de todos los proveedores cae por debajo, se dispara el quiebre."
                             InputProps={{
                                 endAdornment: <InputAdornment position="end">kg</InputAdornment>
                             }}
@@ -1311,12 +1631,12 @@ export default function MaterialesCriticosDashboardPage() {
                         />
 
                         <TextField
-                            label="Stock Máximo de Seguridad (kg)"
+                            label="Stock Máximo de Seguridad de la Categoría (kg)"
                             type="number"
                             size="small"
                             value={catMaxInput}
                             onChange={(e) => setCatMaxInput(e.target.value)}
-                            helperText="Opcional. Para evitar sobre-stock y capital inmovilizado."
+                            helperText="Límite superior recomendado para no sobre-comprar ni inmovilizar capital."
                             InputProps={{
                                 endAdornment: <InputAdornment position="end">kg</InputAdornment>
                             }}
@@ -1346,16 +1666,31 @@ export default function MaterialesCriticosDashboardPage() {
                 open={Boolean(editItemLimitsTarget)}
                 onClose={() => setEditItemLimitsTarget(null)}
                 PaperProps={{
-                    sx: { bgcolor: colors.surface, color: colors.text, border: `1px solid ${colors.border}`, minWidth: 360, borderRadius: 2 }
+                    sx: { bgcolor: colors.surface, color: colors.text, border: `1px solid ${colors.border}`, minWidth: 380, borderRadius: 2 }
                 }}
             >
                 <DialogTitle sx={{ fontWeight: 800, fontSize: '16px' }}>
                     ✏️ Ajustar Material: {editItemLimitsTarget?.supplier?.name || editItemLimitsTarget?.descripcion}
                 </DialogTitle>
                 <DialogContent>
-                    <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 2 }}>
+                    <Typography variant="body2" sx={{ color: colors.textSecondary, mb: 1 }}>
                         Código: <code>{editItemLimitsTarget?.codigoInterno}</code>
                     </Typography>
+
+                    {(editItemLimitsTarget?.consumoProyectado > 0 || editItemLimitsTarget?.consumo90d > 0) && (
+                        <Box sx={{ p: 1, mb: 2, bgcolor: 'rgba(245, 158, 11, 0.08)', border: `1px solid ${colors.warning}`, borderRadius: 1.5 }}>
+                            {editItemLimitsTarget.consumoProyectado > 0 && (
+                                <Typography variant="caption" sx={{ color: colors.info, fontWeight: 700, display: 'block' }}>
+                                    🧵 Demanda en Pedidos: {editItemLimitsTarget.consumoProyectado.toLocaleString()} kg
+                                </Typography>
+                            )}
+                            {editItemLimitsTarget.consumo90d > 0 && (
+                                <Typography variant="caption" sx={{ color: colors.warning, fontWeight: 700, display: 'block', mt: 0.3 }}>
+                                    📊 Consumo histórico (90d): {editItemLimitsTarget.consumo90d.toLocaleString()} kg (~{editItemLimitsTarget.consumoMensual.toLocaleString()} kg/m)
+                                </Typography>
+                            )}
+                        </Box>
+                    )}
 
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         <TextField
@@ -1464,7 +1799,7 @@ export default function MaterialesCriticosDashboardPage() {
                             size="small"
                             value={quickOrderQty}
                             onChange={(e) => setQuickOrderQty(e.target.value)}
-                            helperText="Cantidad calculada automáticamente para alcanzar el mínimo."
+                            helperText="Cantidad calculada automáticamente para alcanzar el mínimo y cubrir pedidos."
                             InputProps={{
                                 endAdornment: <InputAdornment position="end">kg</InputAdornment>
                             }}
