@@ -34,6 +34,7 @@ const CapacityDashboardPage = lazy(() => import('../../pages/warehouse/CapacityD
 // Sector: Purchasing (Compras)
 const DashboardComprasPage = lazy(() => import('../../pages/purchasing/DashboardComprasPage'));
 const MaterialesCriticosPage = lazy(() => import('../../pages/purchasing/MaterialesCriticosPage'));
+const MaterialesCriticosDashboardPage = lazy(() => import('../../pages/purchasing/MaterialesCriticosDashboardPage'));
 
 // Sector: Maintenance
 const DashboardMantenimientoPage = lazy(() => import('../../pages/maintenance/DashboardMantenimientoPage'));
@@ -191,6 +192,7 @@ export const router = createBrowserRouter([
               { path: "compras/dashboard", element: <LazyRoute element={DashboardComprasPage} /> },
               { path: "compras/faltantes-produccion", element: <LazyRoute element={OrdenesProduccionPage} props={{ sectorMode: 'COMPRAS' }} /> },
               { path: "compras/materiales-criticos", element: <LazyRoute element={MaterialesCriticosPage} /> },
+              { path: "compras/materiales-criticos-dashboard", element: <LazyRoute element={MaterialesCriticosDashboardPage} /> },
             ]
           },
           // SECTOR: MANTENIMIENTO

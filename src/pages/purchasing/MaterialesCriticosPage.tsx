@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
+﻿import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
     Box, 
     Typography, 
@@ -87,6 +88,7 @@ const normalizeText = (text: string) =>
 
 export default function MaterialesCriticosPage() {
     const isMobile = useIsMobile();
+    const navigate = useNavigate();
     const allowedDepots = useSelector(selectAllowedDepots);
 
     // 1. Depósitos disponibles
@@ -671,6 +673,23 @@ export default function MaterialesCriticosPage() {
                 </Box>
 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+                    <Button
+                        variant="contained"
+                        onClick={() => navigate('/compras/materiales-criticos-dashboard')}
+                        sx={{
+                            bgcolor: colors.primary,
+                            color: '#000',
+                            fontWeight: 800,
+                            fontSize: '0.78rem',
+                            borderRadius: 2.5,
+                            textTransform: 'none',
+                            px: 2,
+                            py: 0.8,
+                            '&:hover': { bgcolor: '#d97706' }
+                        }}
+                    >
+                        ⚡ Probar Nuevo Tablero (1 Pantalla)
+                    </Button>
                     {depots.length > 1 && (
                         <TextField
                             select
