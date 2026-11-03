@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { PageHeader, Card, Btn, Badge } from '../../shared/ui';
 import {
     useParseOrdenesProduccionMutation,
+    useRecalcularPlanillaMutation,
     useGetUltimaPlanillaProduccionQuery,
     useListarPlanillasProduccionQuery,
     useLazyGetPlanillaProduccionByIdQuery,
@@ -18,8 +19,9 @@ import { ColoresTab } from '../../features/quality/ordenes-produccion/components
 import { MaterialesAsignadosTab } from '../../features/quality/ordenes-produccion/components/MaterialesAsignadosTab';
 import { HojaRepartidorTab } from '../../features/quality/ordenes-produccion/components/HojaRepartidorTab';
 import { HojaPickingTab } from '../../features/quality/ordenes-produccion/components/HojaPickingTab';
+import { ArticulosSinEstructuraTab } from '../../features/quality/ordenes-produccion/components/ArticulosSinEstructuraTab';
 
-type TabType = 'articulos' | 'maquinas' | 'colores' | 'materiales' | 'repartidor' | 'picking';
+type TabType = 'articulos' | 'sin_estructura' | 'maquinas' | 'colores' | 'materiales' | 'repartidor' | 'picking';
 
 export interface OrdenesProduccionPageProps {
     sectorMode?: 'PRODUCCION' | 'DEPOSITO' | 'COMPRAS';
@@ -42,6 +44,19 @@ export default function OrdenesProduccionPage({ sectorMode }: OrdenesProduccionP
     const [fetchPlanillaById] = useLazyGetPlanillaProduccionByIdQuery();
     const [sincronizarPedidos, { isLoading: isSyncing }] = useSincronizarPlanillaConPedidosMutation();
     const [limpiarPlanillas, { isLoading: isCleaning }] = useLimpiarPlanillasProduccionMutation();
+    const [recalcular, { isLoading: isRecalculating }] = useRecalcularPlanillaMutation();
+
+    const handleRecalcular = async () => {
+        try {
+            const res = await recalcular(result?.planillaId).unwrap();
+            if (res) {
+                setResult(res);
+                alert('Planilla recalculada con exito con las estructuras, equivalencias de hilado y stock actuales');
+            }
+        } catch (err: any) {
+            alert('Error al recalcular: ' + (err?.data?.message || err?.message || 'Error desconocido'));
+        }
+    };
 
     const handleLimpiarCargas = async () => {
         if (!window.confirm('¿Seguro que deseas borrar todas las cargas viejas de planillas de producción?')) return;
@@ -143,6 +158,11 @@ export default function OrdenesProduccionPage({ sectorMode }: OrdenesProduccionP
             return true;
         });
     }, [result, selectedFecha, selectedTurno, selectedArea]);
+
+    const articulosSinEstructura = useMemo(() => {
+        if (!result) return [];
+        return result.articulos.filter((a) => !a.itemRefs || a.itemRefs.length === 0 || a.advertencia?.includes('sin estructura') || a.advertencia?.includes('no encontrado'));
+    }, [result]);
 
     const filteredArticulos = useMemo(() => {
         if (!result) return [];
@@ -275,6 +295,16 @@ export default function OrdenesProduccionPage({ sectorMode }: OrdenesProduccionP
                                     </option>
                                 ))}
                             </select>
+                        )}
+
+                        {result && (
+                            <Btn
+                                onClick={handleRecalcular}
+                                disabled={isRecalculating}
+                                style={{ fontSize: '12px', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}
+                            >
+                                {isRecalculating ? 'Recalculando...' : '🔄 Recalcular con Recetas / Stock Actuales'}
+                            </Btn>
                         )}
 
                         {effectiveSector === 'PRODUCCION' && result && (
@@ -781,6 +811,37 @@ export default function OrdenesProduccionPage({ sectorMode }: OrdenesProduccionP
 
                         <button
                             type="button"
+                            onClick={() => setActiveTab('sin_estructura')}
+                            style={{
+                                padding: '10px 18px',
+                                background: 'transparent',
+                                border: 'none',
+                                borderBottom: activeTab === 'sin_estructura' ? '2px solid #ef4444' : '2px solid transparent',
+                                color: activeTab === 'sin_estructura' ? '#f87171' : 'var(--text-muted, #9ca3af)',
+                                fontWeight: activeTab === 'sin_estructura' ? 700 : 500,
+                                fontSize: '13px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                whiteSpace: 'nowrap',
+                            }}
+                        >
+                            <span>⚠️ Sin Estructura BOM</span>
+                            <span style={{
+                                fontSize: '11px',
+                                padding: '1px 6px',
+                                borderRadius: '10px',
+                                background: articulosSinEstructura.length > 0 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255,255,255,0.08)',
+                                color: articulosSinEstructura.length > 0 ? '#ef4444' : '#9ca3af',
+                                fontWeight: 700,
+                            }}>
+                                {articulosSinEstructura.length}
+                            </span>
+                        </button>
+
+                        <button
+                            type="button"
                             onClick={() => setActiveTab('articulos')}
                             style={{
                                 padding: '10px 18px',
@@ -857,6 +918,15 @@ export default function OrdenesProduccionPage({ sectorMode }: OrdenesProduccionP
                     </div>
 
                     {/* Tab Views */}
+                    {activeTab === 'sin_estructura' && (
+                        <ArticulosSinEstructuraTab
+                            articulos={articulosSinEstructura}
+                            onSelectMachine={handleSelectMachineFromTab}
+                            onConciliarSusi={(a) => setArticuloConciliar(a)}
+                            onRecalcular={handleRecalcular}
+                        />
+                    )}
+
                     {activeTab === 'articulos' && (
                         <ArticulosTejidoTab
                             articulos={filteredArticulos}

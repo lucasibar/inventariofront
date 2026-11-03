@@ -9,21 +9,33 @@ export const ordenesProduccionApi = api.injectEndpoints({
                 method: 'POST',
                 body: formData,
             }),
+            invalidatesTags: ['PlanillaProduccion'],
+        }),
+        recalcularPlanilla: builder.mutation<ProduccionParseResult, string | void>({
+            query: (id) => ({
+                url: id ? `articulos/ordenes-produccion/planillas/${id}/recalcular` : 'articulos/ordenes-produccion/recalcular',
+                method: 'POST',
+            }),
+            invalidatesTags: ['PlanillaProduccion'],
         }),
         getUltimaPlanillaProduccion: builder.query<ProduccionParseResult | null, void>({
             query: () => 'articulos/ordenes-produccion/ultima',
+            providesTags: ['PlanillaProduccion'],
         }),
         listarPlanillasProduccion: builder.query<any[], void>({
             query: () => 'articulos/ordenes-produccion/planillas',
+            providesTags: ['PlanillaProduccion'],
         }),
         getPlanillaProduccionById: builder.query<ProduccionParseResult | null, string>({
             query: (id) => `articulos/ordenes-produccion/planillas/${id}`,
+            providesTags: (_res, _err, id) => [{ type: 'PlanillaProduccion', id }],
         }),
         limpiarPlanillasProduccion: builder.mutation<{ deleted: boolean; message: string }, void>({
             query: () => ({
                 url: 'articulos/ordenes-produccion/planillas',
                 method: 'DELETE',
             }),
+            invalidatesTags: ['PlanillaProduccion'],
         }),
         getDepositosArticulos: builder.query<{ depositos: any[]; resumenStockPorArticulo: any[] }, void>({
             query: () => 'articulos/ordenes-produccion/depositos-articulos',
@@ -82,6 +94,7 @@ export const ordenesProduccionApi = api.injectEndpoints({
 
 export const {
     useParseOrdenesProduccionMutation,
+    useRecalcularPlanillaMutation,
     useGetUltimaPlanillaProduccionQuery,
     useListarPlanillasProduccionQuery,
     useLazyGetPlanillaProduccionByIdQuery,

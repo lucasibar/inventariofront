@@ -5,6 +5,7 @@ import {
     useGetUltimaPlanillaProduccionQuery,
     useListarPlanillasProduccionQuery,
     useLazyGetPlanillaProduccionByIdQuery,
+    useRecalcularPlanillaMutation,
     useGetCorteProveedorQuery,
 } from '../../features/quality/ordenes-produccion/api/ordenesProduccion.api';
 import type { ProduccionParseResult } from '../../features/quality/ordenes-produccion/types/ordenesProduccion.types';
@@ -24,6 +25,19 @@ export default function InformeProduccionDepositoPage() {
     const { data: ultimaPlanilla, isLoading: loadingUltima } = useGetUltimaPlanillaProduccionQuery();
     const { data: historialPlanillas = [] } = useListarPlanillasProduccionQuery();
     const [fetchPlanillaById] = useLazyGetPlanillaProduccionByIdQuery();
+    const [recalcular, { isLoading: isRecalculating }] = useRecalcularPlanillaMutation();
+
+    const handleRecalcular = async () => {
+        try {
+            const res = await recalcular(activePlanilla?.planillaId).unwrap();
+            if (res) {
+                setSelectedPlanilla(res);
+                alert('Informe de necesidad recalculado con exito con las recetas, prioridades y stock actuales');
+            }
+        } catch (err: any) {
+            alert('Error al recalcular: ' + (err?.data?.message || err?.message || 'Error desconocido'));
+        }
+    };
 
     const [selectedPlanilla, setSelectedPlanilla] = useState<ProduccionParseResult | null>(null);
     const activePlanilla = selectedPlanilla || ultimaPlanilla;
@@ -180,6 +194,15 @@ export default function InformeProduccionDepositoPage() {
                             ))}
                         </select>
                     </div>
+
+                    <Btn
+                        variant="primary"
+                        onClick={handleRecalcular}
+                        disabled={isRecalculating}
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#2563eb', color: '#fff' }}
+                    >
+                        {isRecalculating ? 'Recalculando...' : '🔄 Recalcular Necesidades'}
+                    </Btn>
 
                     <Btn variant="secondary" onClick={() => navigate('/produccion/planificacion')}>
                         ← Carga de Producción
