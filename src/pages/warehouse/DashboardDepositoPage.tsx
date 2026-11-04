@@ -393,6 +393,27 @@ export default function DashboardDepositoPage() {
         setDespachoModal(true);
     };
 
+    const handleDespachoQtySecChange = (valStr: string) => {
+        setDespachoQtySec(valStr);
+        if (!despachoEntry) return;
+
+        const secNum = parseFloat(valStr.replace(',', '.'));
+        const maxSec = Number(despachoEntry.qtySecundaria || 0);
+        const maxPrinc = Number(despachoEntry.qtyPrincipal || 0);
+        const ratio = getKilosPorCajaRatio(despachoEntry);
+
+        if (!isNaN(secNum) && secNum > 0) {
+            if (maxSec > 0 && Math.abs(secNum - maxSec) < 0.001 && maxPrinc > 0) {
+                setDespachoQty(String(maxPrinc));
+            } else if (ratio != null) {
+                const calculated = Math.round(secNum * ratio * 100) / 100;
+                setDespachoQty(String(calculated));
+            }
+        } else if (!valStr.trim()) {
+            setDespachoQty('');
+        }
+    };
+
     const handleDespachoSubmit = async () => {
         if (!despachoEntry || !despachoQty) return;
         if (!despachoClient && !despachoClientName) { alert('Seleccioná un cliente'); return; }
@@ -2031,88 +2052,128 @@ export default function DashboardDepositoPage() {
             )}
 
             {/* Despacho Directo Modal */}
-            {despachoModal && despachoEntry && (
-                <Modal 
-                    open={despachoModal} 
-                    onClose={() => setDespachoModal(false)}
-                    sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >
-                    <Paper sx={{ width: '90%', maxWidth: 480, bgcolor: colors.bg, border: `1px solid ${colors.primary}`, borderRadius: 3, p: 2.5, outline: 'none' }}>
-                        <Typography variant="h6" sx={{ fontWeight: 900, mb: 2, color: colors.primary }}>Despacho Directo</Typography>
-                        
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.8 }}>
-                            <Autocomplete 
-                                options={clientOptions} 
-                                getOptionLabel={(option: any) => option.label}
-                                value={clientOptions.find(o => o.value === despachoClient) || null}
-                                onChange={(_e, val: any) => {
-                                    if (val?.value === '__new__') {
-                                        setDespachoNewClient(true);
-                                        setDespachoClient('');
-                                    } else {
-                                        setDespachoNewClient(false);
-                                        setDespachoClient(val?.value || '');
-                                    }
-                                }}
-                                renderInput={(params) => <TextField {...params} label="Cliente" InputProps={{ ...params.InputProps, sx: { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }} />}
-                            />
+            {despachoModal && despachoEntry && (() => {
+                const item = despachoEntry.batch?.item;
+                const uSec = item?.unidadSecundaria;
+                const uPrinc = item?.unidadPrincipal || 'kg';
+                const ratio = getKilosPorCajaRatio(despachoEntry);
+                const formatLabel = (unit?: string | null, fallback = '') => {
+                    if (!unit) return fallback;
+                    const clean = unit.trim();
+                    if (clean.toLowerCase() === 'kg') return 'Kilos (kg)';
+                    return clean.charAt(0).toUpperCase() + clean.slice(1);
+                };
 
-                            {despachoNewClient && isAdmin && (
-                                <TextField 
-                                    label="Nombre del nuevo cliente" 
-                                    fullWidth 
-                                    value={despachoClientName} 
-                                    onChange={(e) => setDespachoClientName(e.target.value)} 
-                                    InputProps={{ sx: { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }} 
+                return (
+                    <Modal 
+                        open={despachoModal} 
+                        onClose={() => setDespachoModal(false)}
+                        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                        <Paper sx={{ width: '90%', maxWidth: 480, bgcolor: colors.bg, border: `1px solid ${colors.primary}`, borderRadius: 3, p: 2.5, outline: 'none' }}>
+                            <Typography variant="h6" sx={{ fontWeight: 900, mb: 1.5, color: colors.primary }}>Despacho Directo</Typography>
+                            
+                            {/* Card de Material Seleccionado */}
+                            <Box sx={{ p: 1.5, bgcolor: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.25)', borderRadius: 2, mb: 2 }}>
+                                <Typography variant="caption" sx={{ color: colors.textDim, textTransform: 'uppercase', fontWeight: 700, display: 'block', fontSize: '10px' }}>
+                                    Material seleccionado
+                                </Typography>
+                                <Typography variant="body1" sx={{ color: '#fff', fontWeight: 800, lineHeight: 1.2 }}>
+                                    {item?.descripcion || '—'}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: '#93c5fd', mt: 0.5, display: 'block', fontSize: '11px' }}>
+                                    📍 Posición: {despachoEntry.posicion?.codigo || 'S/P'} &bull; Lote: {despachoEntry.batch?.lotNumber || '—'} &bull; Disp: {Number(despachoEntry.qtyPrincipal).toFixed(1)} {uPrinc}
+                                    {uSec && Number(despachoEntry.qtySecundaria) > 0 ? ` (${despachoEntry.qtySecundaria} ${uSec})` : ''}
+                                </Typography>
+                            </Box>
+
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.8 }}>
+                                <Autocomplete 
+                                    options={clientOptions} 
+                                    getOptionLabel={(option: any) => option.label}
+                                    value={clientOptions.find(o => o.value === despachoClient) || null}
+                                    onChange={(_e, val: any) => {
+                                        if (val?.value === '__new__') {
+                                            setDespachoNewClient(true);
+                                            setDespachoClient('');
+                                        } else {
+                                            setDespachoNewClient(false);
+                                            setDespachoClient(val?.value || '');
+                                        }
+                                    }}
+                                    renderInput={(params) => <TextField {...params} label="Cliente" InputProps={{ ...params.InputProps, sx: { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }} />}
                                 />
-                            )}
 
-                            <TextField 
-                                label="Fecha" 
-                                type="date" 
-                                fullWidth 
-                                value={despachoFecha} 
-                                onChange={(e) => setDespachoFecha(e.target.value)} 
-                                InputLabelProps={{ shrink: true }} 
-                                InputProps={{ sx: { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }} 
-                            />
-
-                            <Box sx={{ display: 'flex', gap: 1.5 }}>
-                                <TextField 
-                                    label={`Cantidad (${despachoEntry.batch.item.unidadPrincipal})`} 
-                                    type="number" 
-                                    fullWidth 
-                                    value={despachoQty} 
-                                    onChange={(e) => setDespachoQty(e.target.value)} 
-                                    InputProps={{ sx: { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }} 
-                                />
-                                {despachoEntry.batch.item.unidadSecundaria && (
+                                {despachoNewClient && isAdmin && (
                                     <TextField 
-                                        label={`Secundaria (${despachoEntry.batch.item.unidadSecundaria})`} 
-                                        type="number" 
+                                        label="Nombre del nuevo cliente" 
                                         fullWidth 
-                                        value={despachoQtySec} 
-                                        onChange={(e) => setDespachoQtySec(e.target.value)} 
+                                        value={despachoClientName} 
+                                        onChange={(e) => setDespachoClientName(e.target.value)} 
                                         InputProps={{ sx: { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }} 
                                     />
                                 )}
-                            </Box>
-                        </Box>
 
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 2.5, borderTop: `1px solid ${colors.border}`, pt: 1.5 }}>
-                            <Button variant="text" onClick={() => setDespachoModal(false)} sx={{ color: colors.textDim }}>Cancelar</Button>
-                            <Button 
-                                variant="contained" 
-                                disabled={despachoSaving || !despachoQty} 
-                                onClick={handleDespachoSubmit}
-                                sx={{ bgcolor: colors.primary, color: '#000', fontWeight: 800, borderRadius: 2 }}
-                            >
-                                {despachoSaving ? 'Despachando...' : 'Confirmar'}
-                            </Button>
-                        </Box>
-                    </Paper>
-                </Modal>
-            )}
+                                <TextField 
+                                    label="Fecha" 
+                                    type="date" 
+                                    fullWidth 
+                                    value={despachoFecha} 
+                                    onChange={(e) => setDespachoFecha(e.target.value)} 
+                                    InputLabelProps={{ shrink: true }} 
+                                    InputProps={{ sx: { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }} 
+                                />
+
+                                <Box sx={{ display: 'flex', gap: 1.5 }}>
+                                    {/* 1°: Unidad Secundaria (Cajas, etc.) si aplica */}
+                                    {uSec && (
+                                        <TextField 
+                                            label={formatLabel(uSec, 'Secundaria')} 
+                                            type="number" 
+                                            fullWidth 
+                                            value={despachoQtySec} 
+                                            onChange={(e) => handleDespachoQtySecChange(e.target.value)} 
+                                            inputProps={{ step: 'any', min: 0 }}
+                                            InputProps={{ sx: { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }} 
+                                            helperText={despachoEntry.qtySecundaria != null ? `Disp: ${despachoEntry.qtySecundaria} ${uSec}` : undefined}
+                                            FormHelperTextProps={{ sx: { color: colors.textDim, fontSize: '10px' } }}
+                                        />
+                                    )}
+
+                                    {/* 2°: Unidad Principal (Kilos, etc.) autocompletada por cajas pero modificable */}
+                                    <TextField 
+                                        label={formatLabel(uPrinc, 'Cantidad')} 
+                                        type="number" 
+                                        fullWidth 
+                                        value={despachoQty} 
+                                        onChange={(e) => setDespachoQty(e.target.value)} 
+                                        inputProps={{ step: 'any', min: 0 }}
+                                        InputProps={{ sx: { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }} 
+                                        helperText={
+                                            ratio && uSec && despachoQtySec
+                                                ? `Ref: ~${ratio.toFixed(2)} ${uPrinc}/${uSec} (editable)`
+                                                : (despachoEntry.qtyPrincipal != null ? `Disp: ${Number(despachoEntry.qtyPrincipal).toFixed(1)} ${uPrinc}` : undefined)
+                                        }
+                                        FormHelperTextProps={{ sx: { color: colors.textDim, fontSize: '10px' } }}
+                                    />
+                                </Box>
+                            </Box>
+
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 2.5, borderTop: `1px solid ${colors.border}`, pt: 1.5 }}>
+                                <Button variant="text" onClick={() => setDespachoModal(false)} sx={{ color: colors.textDim }}>Cancelar</Button>
+                                <Button 
+                                    variant="contained" 
+                                    disabled={despachoSaving || !despachoQty} 
+                                    onClick={handleDespachoSubmit}
+                                    sx={{ bgcolor: colors.primary, color: '#000', fontWeight: 800, borderRadius: 2 }}
+                                >
+                                    {despachoSaving ? 'Despachando...' : 'Confirmar'}
+                                </Button>
+                            </Box>
+                        </Paper>
+                    </Modal>
+                );
+            })()}
 
             {/* Listado de Posiciones Libres (Emerge desde abajo como Bottom Sheet) */}
             <Drawer 

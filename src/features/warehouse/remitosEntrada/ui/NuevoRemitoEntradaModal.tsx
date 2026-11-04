@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -89,6 +89,19 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
         return (depot?.positions || []).filter((p: any) => p.activo !== false);
     }, [depots, depositoId]);
 
+    const defaultPosId = useMemo(() => {
+        const found = availablePositions.find((p: any) => p.codigo?.trim().toUpperCase() === 'ENTRADA');
+        return found ? found.id : (availablePositions.length > 0 ? availablePositions[0].id : 'ENTRADA');
+    }, [availablePositions]);
+
+    const positionOptions = useMemo(() => {
+        const hasEntrada = availablePositions.some((p: any) => p.codigo?.trim().toUpperCase() === 'ENTRADA');
+        if (!hasEntrada && depositoId) {
+            return [{ id: 'ENTRADA', codigo: 'ENTRADA' }, ...availablePositions];
+        }
+        return availablePositions;
+    }, [availablePositions, depositoId]);
+
     // Modal de nuevo material y nuevo proveedor
     const [isCreateItemOpen, setIsCreateItemOpen] = useState(false);
     const [isCreatePartnerOpen, setIsCreatePartnerOpen] = useState(false);
@@ -99,11 +112,55 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
         { itemId: '', itemDesc: '', itemCode: '', lotNumber: '', posicionId: '', qtyPrincipal: '', qtySecundaria: '', observaciones: '', kilosPorCaja: null }
     ]);
 
+    // Asignar posición ENTRADA por defecto a las líneas que no tengan posición asignada
+    useEffect(() => {
+        if (defaultPosId) {
+            setLines(prev => prev.map(l => (l.posicionId ? l : { ...l, posicionId: defaultPosId })));
+        }
+    }, [defaultPosId]);
+
+    const linesContainerRef = useRef<HTMLDivElement | null>(null);
+
+    // Enfocar celda por índice y campo (y desplazar para mantener visible la fila actual)
+    const focusCell = (lineIndex: number, field: 'material' | 'lotNumber' | 'posicionId' | 'qtySecundaria' | 'qtyPrincipal') => {
+        const elId = `input-remito-line-${lineIndex}-${field}`;
+        const el = document.getElementById(elId) as HTMLElement | null;
+        if (el) {
+            el.focus();
+            if (typeof (el as HTMLInputElement).select === 'function') {
+                (el as HTMLInputElement).select();
+            }
+        }
+        // Desplazar suavemente el contenedor para que la fila activa esté siempre a la vista
+        const rowEl = document.getElementById(`remito-line-card-${lineIndex}`);
+        if (rowEl) {
+            rowEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    };
+
+    // Auto-foco en el primer material al abrir el modal
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            focusCell(0, 'material');
+        }, 150);
+        return () => clearTimeout(timer);
+    }, []);
+
     const addLine = () => {
+        const nextIdx = lines.length;
         setLines(prev => [
             ...prev,
-            { itemId: '', itemDesc: '', itemCode: '', lotNumber: '', posicionId: '', qtyPrincipal: '', qtySecundaria: '', observaciones: '', kilosPorCaja: null }
+            { itemId: '', itemDesc: '', itemCode: '', lotNumber: '', posicionId: defaultPosId, qtyPrincipal: '', qtySecundaria: '', observaciones: '', kilosPorCaja: null }
         ]);
+        setTimeout(() => {
+            focusCell(nextIdx, 'material');
+            if (linesContainerRef.current) {
+                linesContainerRef.current.scrollTo({
+                    top: linesContainerRef.current.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }
+        }, 60);
     };
 
     const removeLine = (index: number) => {
@@ -311,9 +368,16 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
                 {/* Líneas de Remito */}
                 <Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: colors.text, textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>
-                            Materiales a Ingresar ({lines.length})
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: colors.text, textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>
+                                Materiales a Ingresar ({lines.length})
+                            </Typography>
+                            {supplierId && (
+                                <Typography variant="caption" sx={{ color: colors.primary, fontSize: '0.7rem', bgcolor: 'rgba(245, 158, 11, 0.1)', px: 1, py: 0.3, borderRadius: 1, border: '1px solid rgba(245, 158, 11, 0.25)' }}>
+                                    Filtrado por proveedor
+                                </Typography>
+                            )}
+                        </Box>
                         <Box sx={{ display: 'flex', gap: 1 }}>
                             <Button
                                 size="small"
@@ -335,106 +399,228 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
                         </Box>
                     </Box>
 
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, maxHeight: '380px', overflowY: 'auto', pr: 0.5 }}>
-                        {lines.map((line, idx) => (
-                            <Paper
-                                key={idx}
-                                sx={{
-                                    p: 1.5,
-                                    bgcolor: 'rgba(255,255,255,0.02)',
-                                    border: `1px solid ${colors.border}`,
-                                    borderRadius: 2.5,
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: 1.5
-                                }}
-                            >
-                                <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
-                                    {/* Selector de Material */}
-                                    <Autocomplete
-                                        options={items}
-                                        getOptionLabel={(option: any) => `${option.codigoInterno} — ${option.descripcion}`}
-                                        value={items.find((it: any) => it.id === line.itemId) || null}
-                                        onChange={(_e, val: any) => handleItemChange(idx, val)}
-                                        size="small"
-                                        sx={{ flex: '3 1 260px' }}
-                                        renderInput={(params) => (
-                                            <TextField
-                                                {...params}
-                                                label="Material *"
-                                                placeholder="Buscar código o descripción..."
-                                                InputLabelProps={{ sx: { color: colors.textDim } }}
-                                                InputProps={{ ...params.InputProps, sx: { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
-                                            />
+                    <Box ref={linesContainerRef} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, maxHeight: '380px', overflowY: 'auto', pr: 0.5, scrollBehavior: 'smooth' }}>
+                        {lines.map((line, idx) => {
+                            const selectedItem = items.find((it: any) => it.id === line.itemId);
+                            const uSec = selectedItem?.unidadSecundaria;
+                            const uPrinc = selectedItem?.unidadPrincipal || 'kg';
+                            const labelSec = uSec ? (uSec.trim().charAt(0).toUpperCase() + uSec.trim().slice(1)) : 'Bultos / Cajas';
+                            const labelPrinc = uPrinc.toLowerCase() === 'kg' ? 'Kg Recibidos *' : `${uPrinc.trim().charAt(0).toUpperCase() + uPrinc.trim().slice(1)} Recibidos *`;
+
+                            // Si se seleccionó un proveedor, filtrar solo los materiales de ese proveedor
+                            const availableItems = supplierId
+                                ? items.filter((it: any) => it.supplierId === supplierId)
+                                : items;
+
+                            // Preservar el item ya seleccionado en la línea en caso de haber sido elegido previamente
+                            const lineOptions = selectedItem && !availableItems.some((it: any) => it.id === selectedItem.id)
+                                ? [selectedItem, ...availableItems]
+                                : availableItems;
+
+                            return (
+                                <Paper
+                                    key={idx}
+                                    id={`remito-line-card-${idx}`}
+                                    sx={{
+                                        p: 1.5,
+                                        bgcolor: 'rgba(255,255,255,0.02)',
+                                        border: `1px solid ${colors.border}`,
+                                        borderRadius: 2.5,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: 1.5
+                                    }}
+                                >
+                                    <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+                                        {/* Selector de Material */}
+                                        <Autocomplete
+                                            options={lineOptions}
+                                            noOptionsText={supplierId ? "No hay materiales registrados para este proveedor" : "No hay materiales"}
+                                            getOptionLabel={(option: any) => `${option.codigoInterno} — ${option.descripcion}`}
+                                            value={selectedItem || null}
+                                            onChange={(_e, val: any) => {
+                                                handleItemChange(idx, val);
+                                                if (val) {
+                                                    setTimeout(() => focusCell(idx, 'lotNumber'), 50);
+                                                }
+                                            }}
+                                            size="small"
+                                            autoHighlight
+                                            sx={{ flex: '3 1 260px' }}
+                                            renderInput={(params) => (
+                                                <TextField
+                                                    {...params}
+                                                    label="Material *"
+                                                    placeholder={supplierId ? "Buscar entre materiales del proveedor..." : "Buscar código o descripción..."}
+                                                    InputLabelProps={{ sx: { color: colors.textDim } }}
+                                                    inputProps={{
+                                                        ...params.inputProps,
+                                                        id: `input-remito-line-${idx}-material`,
+                                                        onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
+                                                            if (params.inputProps.onKeyDown) {
+                                                                params.inputProps.onKeyDown(e);
+                                                            }
+                                                            if (e.key === 'Enter') {
+                                                                if (line.itemId) {
+                                                                    e.preventDefault();
+                                                                    focusCell(idx, 'lotNumber');
+                                                                }
+                                                            }
+                                                        }
+                                                    }}
+                                                    InputProps={{ ...params.InputProps, sx: { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
+                                                />
+                                            )}
+                                        />
+
+                                        {/* Partida / Lote */}
+                                        <TextField
+                                            label="Lote / Partida *"
+                                            placeholder="Ej: LOTE-5541"
+                                            size="small"
+                                            value={line.lotNumber}
+                                            onChange={(e) => updateLine(idx, 'lotNumber', e.target.value)}
+                                            InputLabelProps={{ sx: { color: colors.textDim } }}
+                                            inputProps={{
+                                                id: `input-remito-line-${idx}-lotNumber`,
+                                                onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        if (line.lotNumber && line.lotNumber.trim().length > 0) {
+                                                            focusCell(idx, 'posicionId');
+                                                        }
+                                                    }
+                                                }
+                                            }}
+                                            sx={{ flex: '1.5 1 140px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
+                                        />
+
+                                        {/* Posición Destino Directa (Autocompletable / Escribible) */}
+                                        {(() => {
+                                            const currentPosId = line.posicionId || defaultPosId;
+                                            const selectedPos = positionOptions.find((p: any) => p.id === currentPosId || p.codigo?.toUpperCase() === currentPosId?.toUpperCase()) || null;
+
+                                            return (
+                                                <Autocomplete
+                                                    options={positionOptions}
+                                                    getOptionLabel={(option: any) => typeof option === 'string' ? option : (option?.codigo || '')}
+                                                    value={selectedPos}
+                                                    onChange={(_e, val: any) => {
+                                                        const newPosId = val ? val.id : '';
+                                                        updateLine(idx, 'posicionId', newPosId);
+                                                        if (val) {
+                                                            setTimeout(() => focusCell(idx, 'qtySecundaria'), 50);
+                                                        }
+                                                    }}
+                                                    isOptionEqualToValue={(option: any, value: any) => option?.id === value?.id || option?.codigo === value?.codigo}
+                                                    size="small"
+                                                    autoHighlight
+                                                    disabled={!depositoId}
+                                                    sx={{ flex: '2 1 180px' }}
+                                                    renderOption={(props, option: any) => (
+                                                        <Box component="li" {...props} key={option.id}>
+                                                            📍 {option.codigo}
+                                                        </Box>
+                                                    )}
+                                                    renderInput={(params) => (
+                                                        <TextField
+                                                            {...params}
+                                                            label="Ubicación Destino *"
+                                                            placeholder="Escribir ubicación..."
+                                                            InputLabelProps={{ sx: { color: colors.textDim } }}
+                                                            inputProps={{
+                                                                ...params.inputProps,
+                                                                id: `input-remito-line-${idx}-posicionId`,
+                                                                onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
+                                                                    if (params.inputProps.onKeyDown) {
+                                                                        params.inputProps.onKeyDown(e);
+                                                                    }
+                                                                    if (e.key === 'Enter') {
+                                                                        const curPos = line.posicionId || defaultPosId;
+                                                                        if (curPos) {
+                                                                            e.preventDefault();
+                                                                            focusCell(idx, 'qtySecundaria');
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }}
+                                                            InputProps={{
+                                                                ...params.InputProps,
+                                                                sx: { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 }
+                                                            }}
+                                                        />
+                                                    )}
+                                                />
+                                            );
+                                        })()}
+
+                                        {/* Bultos / Cajas */}
+                                        <TextField
+                                            label={labelSec}
+                                            type="number"
+                                            size="small"
+                                            placeholder="0"
+                                            value={line.qtySecundaria}
+                                            onChange={(e) => handleCajasChange(idx, e.target.value)}
+                                            InputLabelProps={{ sx: { color: colors.textDim } }}
+                                            inputProps={{
+                                                id: `input-remito-line-${idx}-qtySecundaria`,
+                                                step: 'any',
+                                                min: 0,
+                                                onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        const hasValue = line.qtySecundaria.trim().length > 0;
+                                                        if (hasValue || !uSec) {
+                                                            focusCell(idx, 'qtyPrincipal');
+                                                        }
+                                                    }
+                                                }
+                                            }}
+                                            sx={{ flex: '1 1 100px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
+                                        />
+
+                                        {/* Kilos Recibidos */}
+                                        <TextField
+                                            label={labelPrinc}
+                                            type="number"
+                                            size="small"
+                                            placeholder="0.0"
+                                            value={line.qtyPrincipal}
+                                            onChange={(e) => updateLine(idx, 'qtyPrincipal', e.target.value)}
+                                            InputLabelProps={{ sx: { color: colors.textDim } }}
+                                            inputProps={{
+                                                id: `input-remito-line-${idx}-qtyPrincipal`,
+                                                step: 'any',
+                                                min: 0,
+                                                onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        const kg = parseFloat(line.qtyPrincipal.replace(',', '.'));
+                                                        if (!isNaN(kg) && kg > 0) {
+                                                            if (idx < lines.length - 1) {
+                                                                focusCell(idx + 1, 'material');
+                                                            } else {
+                                                                addLine();
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }}
+                                            sx={{ flex: '1 1 120px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
+                                        />
+
+                                        {/* Botón Borrar Línea */}
+                                        {lines.length > 1 && (
+                                            <IconButton 
+                                                size="small" 
+                                                onClick={() => removeLine(idx)}
+                                                sx={{ color: colors.textDim, '&:hover': { color: colors.danger } }}
+                                            >
+                                                <DeleteIcon sx={{ fontSize: 18 }} />
+                                            </IconButton>
                                         )}
-                                    />
-
-                                    {/* Partida / Lote */}
-                                    <TextField
-                                        label="Lote / Partida"
-                                        placeholder="Ej: LOTE-5541"
-                                        size="small"
-                                        value={line.lotNumber}
-                                        onChange={(e) => updateLine(idx, 'lotNumber', e.target.value)}
-                                        InputLabelProps={{ sx: { color: colors.textDim } }}
-                                        sx={{ flex: '1.5 1 140px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
-                                    />
-
-                                    {/* Posición Destino Directa */}
-                                    <TextField
-                                        select
-                                        label="Ubicación Destino"
-                                        size="small"
-                                        value={line.posicionId}
-                                        onChange={(e) => updateLine(idx, 'posicionId', e.target.value)}
-                                        disabled={!depositoId}
-                                        sx={{ flex: '2 1 180px', '& .MuiInputLabel-root': { color: colors.textDim }, '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
-                                    >
-                                        <MenuItem value="">
-                                            <em>📍 Recepción General (ENTRADA)</em>
-                                        </MenuItem>
-                                        {availablePositions.map((p: any) => (
-                                            <MenuItem key={p.id} value={p.id}>
-                                                📍 {p.codigo}
-                                            </MenuItem>
-                                        ))}
-                                    </TextField>
-
-                                    {/* Bultos / Cajas */}
-                                    <TextField
-                                        label="Bultos / Cajas"
-                                        type="number"
-                                        size="small"
-                                        placeholder="0"
-                                        value={line.qtySecundaria}
-                                        onChange={(e) => handleCajasChange(idx, e.target.value)}
-                                        InputLabelProps={{ sx: { color: colors.textDim } }}
-                                        sx={{ flex: '1 1 100px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
-                                    />
-
-                                    {/* Kilos Recibidos */}
-                                    <TextField
-                                        label="Kg Recibidos *"
-                                        type="number"
-                                        size="small"
-                                        placeholder="0.0"
-                                        value={line.qtyPrincipal}
-                                        onChange={(e) => updateLine(idx, 'qtyPrincipal', e.target.value)}
-                                        InputLabelProps={{ sx: { color: colors.textDim } }}
-                                        sx={{ flex: '1 1 120px', '& .MuiOutlinedInput-root': { bgcolor: colors.inputBg, color: 'var(--text-white-dynamic, #fff)', borderRadius: 2 } }}
-                                    />
-
-                                    {/* Botón Borrar Línea */}
-                                    {lines.length > 1 && (
-                                        <IconButton 
-                                            size="small" 
-                                            onClick={() => removeLine(idx)}
-                                            sx={{ color: colors.textDim, '&:hover': { color: colors.danger } }}
-                                        >
-                                            <DeleteIcon sx={{ fontSize: 18 }} />
-                                        </IconButton>
-                                    )}
-                                </Box>
+                                    </Box>
 
                                 {/* Indicación de equivalencia y notas */}
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
@@ -455,7 +641,8 @@ export function NuevoRemitoEntradaModal({ onClose, onSuccess }: Props) {
                                     />
                                 </Box>
                             </Paper>
-                        ))}
+                        );
+                    })}
                     </Box>
                 </Box>
 

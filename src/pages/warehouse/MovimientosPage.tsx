@@ -126,6 +126,33 @@ export default function MovimientosPage() {
         setDespachoModal(true);
     };
 
+    const handleDespachoQtySecChange = (valStr: string) => {
+        setDespachoQtySec(valStr);
+        if (!despachoEntry) return;
+
+        const secNum = parseFloat(valStr.replace(',', '.'));
+        const maxSec = Number(despachoEntry.qtySecundaria || 0);
+        const maxPrinc = Number(despachoEntry.qtyPrincipal || 0);
+        let ratio: number | null = null;
+        const kpc = despachoEntry.batch?.item?.kilosPorCaja;
+        if (kpc != null && Number(kpc) > 0) {
+            ratio = Number(kpc);
+        } else if (maxSec > 0 && maxPrinc > 0) {
+            ratio = maxPrinc / maxSec;
+        }
+
+        if (!isNaN(secNum) && secNum > 0) {
+            if (maxSec > 0 && Math.abs(secNum - maxSec) < 0.001 && maxPrinc > 0) {
+                setDespachoQty(String(maxPrinc));
+            } else if (ratio != null) {
+                const calculated = Math.round(secNum * ratio * 100) / 100;
+                setDespachoQty(String(calculated));
+            }
+        } else if (!valStr.trim()) {
+            setDespachoQty('');
+        }
+    };
+
     const handleDespachoSubmit = async () => {
         if (!despachoEntry || !despachoQty) return;
         if (!despachoClient && !despachoClientName) { alert('Seleccioná un cliente'); return; }
@@ -752,29 +779,50 @@ export default function MovimientosPage() {
                         <Input label="Fecha" type="date" value={despachoFecha} onChange={setDespachoFecha} />
 
                         <div style={{ display: 'flex', gap: '8px' }}>
-                            <Input label={`Cantidad (${despachoEntry.batch.item.unidadPrincipal})`} type="number" value={despachoQty} onChange={setDespachoQty} style={{ flex: 1 }} />
                             {despachoEntry.batch.item.unidadSecundaria && (
                                 <div style={{ flex: 1 }}>
-                                    <Input label={`Sec. (${despachoEntry.batch.item.unidadSecundaria})`} type="text" value={despachoQtySec} onChange={setDespachoQtySec} />
-                                    {(() => {
-                                        const cajas = parseFloat(despachoQtySec);
-                                        if (isNaN(cajas) || cajas <= 0) return null;
-                                        let kilosEquiv: number | null = null;
-                                        const kpc = despachoEntry.batch.item.kilosPorCaja;
-                                        if (kpc != null && Number(kpc) > 0) {
-                                            kilosEquiv = Number(kpc) * cajas;
-                                        } else if (Number(despachoEntry.qtySecundaria) > 0) {
-                                            kilosEquiv = (Number(despachoEntry.qtyPrincipal) / Number(despachoEntry.qtySecundaria)) * cajas;
-                                        }
-                                        if (kilosEquiv == null) return null;
-                                        return (
-                                            <div style={{ fontSize: '10px', color: '#6366f1', marginTop: '4px', textAlign: 'right' }}>
-                                                ≈ {kilosEquiv.toFixed(2)} {despachoEntry.batch.item.unidadPrincipal}
-                                            </div>
-                                        );
-                                    })()}
+                                    <Input 
+                                        label={(() => {
+                                            const u = despachoEntry.batch.item.unidadSecundaria.trim();
+                                            return u.charAt(0).toUpperCase() + u.slice(1);
+                                        })()} 
+                                        type="text" 
+                                        value={despachoQtySec} 
+                                        onChange={handleDespachoQtySecChange} 
+                                        placeholder={despachoEntry.qtySecundaria != null ? `Disp: ${despachoEntry.qtySecundaria}` : undefined}
+                                    />
                                 </div>
                             )}
+                            <div style={{ flex: 1 }}>
+                                <Input 
+                                    label={(() => {
+                                        const u = (despachoEntry.batch?.item?.unidadPrincipal || 'kg').trim();
+                                        if (u.toLowerCase() === 'kg') return 'Kilos (kg)';
+                                        return u.charAt(0).toUpperCase() + u.slice(1);
+                                    })()} 
+                                    type="number" 
+                                    value={despachoQty} 
+                                    onChange={setDespachoQty} 
+                                    placeholder={despachoEntry.qtyPrincipal != null ? `Disp: ${Number(despachoEntry.qtyPrincipal).toFixed(1)}` : undefined}
+                                />
+                                {(() => {
+                                    const cajas = parseFloat(despachoQtySec);
+                                    if (isNaN(cajas) || cajas <= 0) return null;
+                                    let kilosEquiv: number | null = null;
+                                    const kpc = despachoEntry.batch.item.kilosPorCaja;
+                                    if (kpc != null && Number(kpc) > 0) {
+                                        kilosEquiv = Number(kpc) * cajas;
+                                    } else if (Number(despachoEntry.qtySecundaria) > 0) {
+                                        kilosEquiv = (Number(despachoEntry.qtyPrincipal) / Number(despachoEntry.qtySecundaria)) * cajas;
+                                    }
+                                    if (kilosEquiv == null) return null;
+                                    return (
+                                        <div style={{ fontSize: '10px', color: '#6366f1', marginTop: '4px', textAlign: 'right' }}>
+                                            ≈ {kilosEquiv.toFixed(2)} {despachoEntry.batch.item.unidadPrincipal} (editable)
+                                        </div>
+                                    );
+                                })()}
+                            </div>
                         </div>
 
                         <div style={{ fontSize: '11px', color: 'var(--text-subtle, #6b7280)', fontStyle: 'italic' }}>
