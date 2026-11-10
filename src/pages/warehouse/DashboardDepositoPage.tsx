@@ -511,6 +511,17 @@ export default function DashboardDepositoPage() {
 
     const qaSelectedItem = useMemo(() => items.find((i: any) => i.id === qaItem), [items, qaItem]);
 
+    const handleQaSecundariaChange = (val: string) => {
+        setQaSecundaria(val);
+        const kpc = qaSelectedItem?.kilosPorCaja;
+        if (kpc != null && Number(kpc) > 0) {
+            const num = parseFloat(val.replace(',', '.'));
+            if (!isNaN(num) && num > 0) {
+                setQaPrincipal(String(Math.round(num * Number(kpc) * 100) / 100));
+            }
+        }
+    };
+
     const handleQuickAddSubmit = async () => {
         if (isQuickAdding) return;
         if (!qaDepot || !qaPosition || !qaItem || !qaSupplier || !qaLot || !qaPrincipal) {
@@ -2318,21 +2329,21 @@ export default function DashboardDepositoPage() {
 
                     <Box sx={{ display: 'flex', gap: 1.5 }}>
                         <TextField 
+                            label={`Unidades (${qaSelectedItem?.unidadSecundaria || 'un'})`} 
+                            type="number" 
+                            fullWidth 
+                            size="small"
+                            value={qaSecundaria} 
+                            onChange={(e) => handleQaSecundariaChange(e.target.value)} 
+                            InputProps={{ sx: { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }} 
+                        />
+                        <TextField 
                             label={`Kilos (${qaSelectedItem?.unidadPrincipal || 'kg'})`} 
                             type="number" 
                             fullWidth 
                             size="small"
                             value={qaPrincipal} 
                             onChange={(e) => setQaPrincipal(e.target.value)} 
-                            InputProps={{ sx: { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }} 
-                        />
-                        <TextField 
-                            label={`Unidades (${qaSelectedItem?.unidadSecundaria || 'un'})`} 
-                            type="number" 
-                            fullWidth 
-                            size="small"
-                            value={qaSecundaria} 
-                            onChange={(e) => setQaSecundaria(e.target.value)} 
                             InputProps={{ sx: { bgcolor: colors.inputBg, color: '#fff', borderRadius: 2 } }} 
                         />
                     </Box>

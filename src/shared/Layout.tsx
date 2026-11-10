@@ -92,6 +92,8 @@ const navGroups: NavGroup[] = [
                 label: '🚚 Operaciones',
                 isSubGroup: true,
                 items: [
+                    { to: '/deposito/tareas', label: '📋 Tareas & Pedidos' },
+                    { to: '/deposito/programacion', label: '🗓️ Planificación Semanal' },
                     { to: '/stock', label: '📋 Stock' },
                     { to: '/movimientos', label: '🔄 Movimientos' },
                     { to: '/remitos-entrada', label: '📥 Entrada de mercadería' },
@@ -142,6 +144,7 @@ const navGroups: NavGroup[] = [
         items: [
             { to: '/compras/materiales-criticos-dashboard', label: '⚡ Tablero de Compras' },
             { to: '/compras/ordenes-compra', label: '📋 Órdenes de Compra' },
+            { to: '/compras/pedidos-deposito', label: '🚚 Pedidos a Depósito' },
             { to: '/compras/diente-de-sierra', label: '📈 Gráfico Diente de Sierra' },
             { to: '/reporte-consumo-detallado', label: '📊 Consumo de Materiales' },
             {
@@ -315,7 +318,7 @@ export default function Layout() {
 
         const sectorRoutes: Record<string, string[]> = {
             DEPOSITO: [
-                '/deposito/dashboard', '/deposito/centro-comando', '/stock', '/movimientos', '/deposito/picking',
+                '/deposito/dashboard', '/deposito/centro-comando', '/deposito/tareas', '/stock', '/movimientos', '/deposito/picking',
                 '/deposito/picking-produccion',
                 '/remitos-entrada', '/remitos-salida',
                 '/deposito/capacidad',
@@ -328,6 +331,8 @@ export default function Layout() {
             ],
             COMPRAS: [
                 '/compras/dashboard',
+                '/compras/pedidos-deposito',
+                '/deposito/tareas',
                 '/reporte-consumo-detallado',
                 '/compras/faltantes-produccion',
                 '/compras/materiales-criticos-dashboard',

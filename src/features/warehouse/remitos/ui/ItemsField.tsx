@@ -210,8 +210,8 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                         setValue(`lines.${index}.unidadPrincipal`, newValue.unidadPrincipal);
                                         setValue(`lines.${index}.unidadSecundaria`, newValue.unidadSecundaria);
                                         setValue(`lines.${index}.purchaseOrderLinks`, []);
-                                        // Focus the qtyPrincipal field of this row automatically after selecting a material
-                                        focusField(index, 'qtyPrincipal');
+                                        // Focus the qtySecundaria field of this row automatically after selecting a material
+                                        focusField(index, 'qtySecundaria');
                                     }}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
@@ -221,7 +221,7 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                                 const currentItemId = watch(`lines.${index}.itemId`);
                                                 if (currentItemId) {
                                                     e.preventDefault();
-                                                    focusField(index, 'qtyPrincipal');
+                                                    focusField(index, 'qtySecundaria');
                                                 }
                                             }
                                         }
@@ -247,6 +247,43 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                             <Box>
                                 <TextField
                                     type="number"
+                                    label={labelSecundaria}
+                                    fullWidth
+                                    size="small"
+                                    disabled={!itemId}
+                                    placeholder={!itemId ? 'Seleccionar item primero' : ''}
+                                    inputProps={{
+                                        step: 'any',
+                                        'data-row-index': index,
+                                        'data-field-name': 'qtySecundaria'
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            focusField(index, 'qtyPrincipal');
+                                        }
+                                    }}
+                                    InputLabelProps={{ shrink: true }}
+                                    {...register(`lines.${index}.qtySecundaria` as const, {
+                                        onChange: (e) => {
+                                            const val = e.target.value;
+                                            const item = allItems.find((it: any) => it.id === itemId);
+                                            const ratio = (item?.kilosPorCaja && Number(item.kilosPorCaja) > 0)
+                                                ? Number(item.kilosPorCaja)
+                                                : (item?.factorConversion && Number(item.factorConversion) > 0 ? Number(item.factorConversion) : null);
+                                            if (ratio) {
+                                                const boxes = Number(val);
+                                                if (!isNaN(boxes) && boxes > 0) {
+                                                    setValue(`lines.${index}.qtyPrincipal`, (boxes * ratio).toFixed(2));
+                                                }
+                                            }
+                                        }
+                                    })}
+                                />
+                            </Box>
+                            <Box>
+                                <TextField
+                                    type="number"
                                     label={labelPrincipal}
                                     fullWidth
                                     size="small"
@@ -261,34 +298,11 @@ export const ItemsField = ({ supplierId }: { supplierId?: string }) => {
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
                                             e.preventDefault();
-                                            focusField(index, 'qtySecundaria');
-                                        }
-                                    }}
-                                    InputLabelProps={{ shrink: true }}
-                                    {...register(`lines.${index}.qtyPrincipal` as const)}
-                                />
-                            </Box>
-                            <Box>
-                                <TextField
-                                    type="number"
-                                    label={labelSecundaria}
-                                    fullWidth
-                                    size="small"
-                                    disabled={!itemId}
-                                    placeholder={!itemId ? 'Seleccionar item primero' : ''}
-                                    inputProps={{
-                                        step: 'any',
-                                        'data-row-index': index,
-                                        'data-field-name': 'qtySecundaria'
-                                    }}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault();
                                             focusField(index, 'lotNumber');
                                         }
                                     }}
                                     InputLabelProps={{ shrink: true }}
-                                    {...register(`lines.${index}.qtySecundaria` as const)}
+                                    {...register(`lines.${index}.qtyPrincipal` as const)}
                                 />
                             </Box>
                             <Box>

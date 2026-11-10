@@ -251,7 +251,30 @@ export default function MovimientosPage() {
     const updatePendingItem = (index: number, field: 'qtyP' | 'qtyS', value: string) => {
         setPendingItems(prev => {
             const next = [...prev];
-            next[index] = { ...next[index], [field]: value };
+            const cur = next[index];
+            if (field === 'qtyS') {
+                const cajas = parseFloat(value.replace(',', '.'));
+                let newQtyP = cur.qtyP;
+                if (!isNaN(cajas) && cajas > 0) {
+                    let ratio: number | null = null;
+                    if (cur.kilosPorCaja != null && Number(cur.kilosPorCaja) > 0) {
+                        ratio = Number(cur.kilosPorCaja);
+                    } else if (Number(cur.totalSecundaria) > 0 && Number(cur.totalPrincipal) > 0) {
+                        ratio = Number(cur.totalPrincipal) / Number(cur.totalSecundaria);
+                    }
+                    if (ratio != null) {
+                        const maxSec = Number(cur.totalSecundaria || 0);
+                        if (maxSec > 0 && Math.abs(cajas - maxSec) < 0.001) {
+                            newQtyP = String(cur.maxP);
+                        } else {
+                            newQtyP = String(Math.round(cajas * ratio * 100) / 100);
+                        }
+                    }
+                }
+                next[index] = { ...cur, qtyS: value, qtyP: newQtyP };
+            } else {
+                next[index] = { ...cur, [field]: value };
+            }
             return next;
         });
     };
@@ -299,6 +322,18 @@ export default function MovimientosPage() {
             refetchRight();
         } catch (e: any) {
             alert(e?.message || e?.data?.message || 'Error en traslado');
+        }
+    };
+
+    const handleQaSecundariaChange = (val: string) => {
+        setQaSecundaria(val);
+        const selected = items.find((i: any) => i.id === qaItem);
+        const kpc = selected?.kilosPorCaja;
+        if (kpc != null && Number(kpc) > 0) {
+            const num = parseFloat(val.replace(',', '.'));
+            if (!isNaN(num) && num > 0) {
+                setQaPrincipal(String(Math.round(num * Number(kpc) * 100) / 100));
+            }
         }
     };
 
@@ -668,8 +703,28 @@ export default function MovimientosPage() {
                         </div>
                         <Input label="Lote" value={qaLot} onChange={setQaLot} />
                         <div style={{ display: 'flex', gap: '12px' }}>
-                            <Input label="Cantidad Principal" type="number" value={qaPrincipal} onChange={setQaPrincipal} style={{ flex: 1 }} />
-                            <Input label="Secundaria" type="number" value={qaSecundaria} onChange={setQaSecundaria} style={{ flex: 1 }} />
+                            <Input 
+                                label={(() => {
+                                    const selected = items.find((i: any) => i.id === qaItem);
+                                    const u = selected?.unidadSecundaria?.trim();
+                                    return u ? `Secundaria (${u})` : 'Secundaria';
+                                })()} 
+                                type="number" 
+                                value={qaSecundaria} 
+                                onChange={handleQaSecundariaChange} 
+                                style={{ flex: 1 }} 
+                            />
+                            <Input 
+                                label={(() => {
+                                    const selected = items.find((i: any) => i.id === qaItem);
+                                    const u = selected?.unidadPrincipal?.trim();
+                                    return u ? `Cantidad Principal (${u})` : 'Cantidad Principal';
+                                })()} 
+                                type="number" 
+                                value={qaPrincipal} 
+                                onChange={setQaPrincipal} 
+                                style={{ flex: 1 }} 
+                            />
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
                             <Btn variant="secondary" onClick={() => setQuickAddModal(false)}>Cancelar</Btn>
@@ -705,15 +760,9 @@ export default function MovimientosPage() {
                                 </div>
 
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-subtle, #6b7280)', marginBottom: '4px', textTransform: 'uppercase' }}>
-                                            {item.unidadP} (Max: {item.maxP})
-                                        </label>
-                                        <Input value={item.qtyP} type="number" onChange={(val) => updatePendingItem(idx, 'qtyP', val)} />
-                                    </div>
                                     <div style={{ flex: 1 }}>
                                         <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-subtle, #6b7280)', marginBottom: '4px', textTransform: 'uppercase' }}>
-                                            {item.unidadS}
+                                            {item.unidadS || 'Secundaria'}
                                         </label>
                                         <Input value={item.qtyS} type="text" onChange={(val) => updatePendingItem(idx, 'qtyS', val)} />
                                         {(() => {
@@ -727,11 +776,17 @@ export default function MovimientosPage() {
                                             }
                                             if (kilosEquiv == null) return null;
                                             return (
-                                                <div style={{ fontSize: '10px', color: '#6366f1', marginTop: '4px', textAlign: 'right' }}>
+                                                <div style={{ fontSize: '10px', color: '#6366f1', marginTop: '4px', textAlign: 'left' }}>
                                                     ≈ {kilosEquiv.toFixed(2)} {item.unidadP}
                                                 </div>
                                             );
                                         })()}
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-subtle, #6b7280)', marginBottom: '4px', textTransform: 'uppercase' }}>
+                                            {item.unidadP} (Max: {item.maxP})
+                                        </label>
+                                        <Input value={item.qtyP} type="number" onChange={(val) => updatePendingItem(idx, 'qtyP', val)} />
                                     </div>
                                 </div>
                             </div>

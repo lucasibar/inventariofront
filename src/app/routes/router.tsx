@@ -20,7 +20,8 @@ const StockPage = lazy(() => import('../../pages/warehouse/StockPage'));
 const MovimientosPage = lazy(() => import('../../pages/warehouse/MovimientosPage'));
 const RemitosEntradaPage = lazy(() => import('../../pages/warehouse/RemitosEntradaPage'));
 const RemitosSalidaPage = lazy(() => import('../../pages/warehouse/RemitosSalidaPage'));
-const WorkspaceTasksPage = lazy(() => import('../../pages/warehouse/WorkspaceTasksPage'));
+const TareasDepositoPage = lazy(() => import('../../pages/warehouse/TareasDepositoPage'));
+const ProgramacionTareasPage = lazy(() => import('../../pages/warehouse/ProgramacionTareasPage'));
 const ReporteConsumoDetalladoPage = lazy(() => import('../../pages/warehouse/ReporteConsumoDetalladoPage'));
 const DashboardGeneralDepositoPage = lazy(() => import('../../pages/warehouse/DashboardGeneralDepositoPage'));
 const DashboardDepositoPage = lazy(() => import('../../pages/warehouse/DashboardDepositoPage'));
@@ -175,6 +176,9 @@ export const router = createBrowserRouter([
             children: [
               { path: "deposito/dashboard", element: <LazyRoute element={DashboardGeneralDepositoPage} /> },
               { path: "deposito/centro-comando", element: <LazyRoute element={DashboardDepositoPage} /> },
+              { path: "deposito/tareas", element: <LazyRoute element={TareasDepositoPage} /> },
+              { path: "deposito/programacion", element: <LazyRoute element={ProgramacionTareasPage} /> },
+              { path: "deposito/planificacion", element: <LazyRoute element={ProgramacionTareasPage} /> },
               { path: "deposito/picking", element: <LazyRoute element={PickingHiladoPage} /> },
               { path: "deposito/picking-produccion", element: <Navigate to="/deposito/picking" replace /> },
               { path: "deposito/informes-produccion", element: <LazyRoute element={InformeProduccionDepositoPage} /> },
@@ -183,7 +187,7 @@ export const router = createBrowserRouter([
               { path: "reporte-consumo-detallado", element: <LazyRoute element={ReporteConsumoDetalladoPage} /> },
               { path: "stock", element: <LazyRoute element={StockPage} /> },
               { path: "movimientos", element: <LazyRoute element={MovimientosPage} /> },
-              { path: "tasks", element: <LazyRoute element={WorkspaceTasksPage} /> },
+              { path: "tasks", element: <Navigate to="/deposito/tareas" replace /> },
               { path: "deposito/materiales-estancados", element: <LazyRoute element={MaterialesEstancadosPage} /> },
               { path: "deposito/completitud-materiales", element: <LazyRoute element={MaterialesCompletitudPage} /> },
               { path: "deposito/informes", element: <LazyRoute element={InformesInventariadoPage} /> },
@@ -198,6 +202,7 @@ export const router = createBrowserRouter([
             element: <SectorGuard allowedSectors={['COMPRAS']} />,
             children: [
               { path: "compras/dashboard", element: <LazyRoute element={DashboardComprasPage} /> },
+              { path: "compras/pedidos-deposito", element: <LazyRoute element={TareasDepositoPage} /> },
               { path: "compras/faltantes-produccion", element: <LazyRoute element={OrdenesProduccionPage} props={{ sectorMode: 'COMPRAS' }} /> },
               { path: "compras/materiales-criticos", element: <LazyRoute element={MaterialesCriticosPage} /> },
               { path: "compras/materiales-criticos-dashboard", element: <LazyRoute element={MaterialesCriticosDashboardPage} /> },

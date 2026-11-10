@@ -11,11 +11,12 @@ import {
     type OperatorProductivity,
 } from '../../features/hr/api/hr.api';
 import { PageHeader, Card, Table, Btn, Modal, Input, Badge } from '../../shared/ui';
-import { ALL_SECTORS } from '../../shared/types/roles';
+import { ALL_SECTORS, HR_SECTORS_LIST } from '../../shared/types/roles';
+import { ProductividadDepositoTab } from './components/ProductividadDepositoTab';
 
 export default function RRHHDashboardPage() {
-    // Current active tab: 'directorio' | 'productividad'
-    const [activeTab, setActiveTab] = useState<'directorio' | 'productividad'>('directorio');
+    // Current active tab: 'directorio' | 'productividad' | 'deposito'
+    const [activeTab, setActiveTab] = useState<'directorio' | 'productividad' | 'deposito'>('directorio');
 
     // --- Tab 1: Directorio State ---
     const [searchTerm, setSearchTerm] = useState('');
@@ -41,7 +42,7 @@ export default function RRHHDashboardPage() {
     const [newForm, setNewForm] = useState({
         legajo: '',
         fullName: '',
-        primarySectorCode: 'PRODUCCION',
+        sectorKey: 'DEPOSITO_HILADO',
         active: true,
     });
 
@@ -49,7 +50,7 @@ export default function RRHHDashboardPage() {
     const [editForm, setEditForm] = useState({
         legajo: '',
         fullName: '',
-        primarySectorCode: '',
+        sectorKey: 'DEPOSITO_HILADO',
         active: true,
     });
 
@@ -68,12 +69,39 @@ export default function RRHHDashboardPage() {
     });
 
     // Sector mapping helper
-    const getSectorLabel = (code: string | null) => {
+    const getSectorLabel = (code: string | null, subSector?: string | null) => {
         if (!code) return { label: 'Sin Asignar', icon: '❓', color: '#6b7280' };
-        const found = ALL_SECTORS.find((s) => s.key === code.toUpperCase() || s.label.toUpperCase() === code.toUpperCase());
+        const c = code.toUpperCase();
+        const sub = (subSector || '').toUpperCase();
+
+        if (c === 'DEPOSITO' || c === 'DEPOSITO_HILADO' || c === 'DEPOSITO_PACKAGING') {
+            if (sub === 'HILADO' || c === 'DEPOSITO_HILADO') {
+                return { label: 'Depósito - Hilado', icon: '🧵', color: '#6366f1' };
+            }
+            if (sub === 'PACKAGING' || c === 'DEPOSITO_PACKAGING') {
+                return { label: 'Depósito - Packaging e Insumos', icon: '📦', color: '#ec4899' };
+            }
+            return { label: 'Depósito General', icon: '🏭', color: '#6366f1' };
+        }
+        if (c === '3000' || c === 'PRODUCCION' || c === 'TEJEDURIA') {
+            return { label: 'Tejeduría', icon: '⚙️', color: '#f59e0b' };
+        }
+        const found = HR_SECTORS_LIST.find((s) => s.key === c);
         if (found) return { label: found.label, icon: found.icon, color: '#3b82f6' };
-        if (code === '3000' || code === 'TEJEDURIA') return { label: 'Tejeduría / Prod.', icon: '⚙️', color: '#f59e0b' };
+        const foundOld = ALL_SECTORS.find((s) => s.key === c as any);
+        if (foundOld) return { label: foundOld.label, icon: foundOld.icon, color: '#3b82f6' };
         return { label: code, icon: '🏢', color: '#6366f1' };
+    };
+
+    // Sembrar operarios iniciales (Dilan y Diego)
+    const handleSeedDepotEmployees = async () => {
+        try {
+            await createEmployee({ legajo: '1', fullName: 'Dilan', primarySectorCode: 'DEPOSITO', subSector: 'HILADO', active: true }).unwrap();
+            await createEmployee({ legajo: '2', fullName: 'Diego', primarySectorCode: 'DEPOSITO', subSector: 'PACKAGING', active: true }).unwrap();
+            alert('¡Operarios Dilan (Depósito Hilado) y Diego (Depósito Packaging) agregados con éxito!');
+        } catch (err: any) {
+            alert(err?.data?.message || 'Error al crear operarios iniciales');
+        }
     };
 
     // Handlers
@@ -82,15 +110,17 @@ export default function RRHHDashboardPage() {
             alert('El número de legajo es obligatorio.');
             return;
         }
+        const secOption = HR_SECTORS_LIST.find((s) => s.key === newForm.sectorKey);
         try {
             await createEmployee({
                 legajo: newForm.legajo.trim(),
                 fullName: newForm.fullName.trim() || undefined,
-                primarySectorCode: newForm.primarySectorCode || undefined,
+                primarySectorCode: secOption?.category || newForm.sectorKey,
+                subSector: secOption?.subSector || undefined,
                 active: newForm.active,
             }).unwrap();
             setShowNewModal(false);
-            setNewForm({ legajo: '', fullName: '', primarySectorCode: 'PRODUCCION', active: true });
+            setNewForm({ legajo: '', fullName: '', sectorKey: 'DEPOSITO_HILADO', active: true });
         } catch (err: any) {
             alert(err?.data?.message || 'Error al crear el empleado');
         }
@@ -98,10 +128,16 @@ export default function RRHHDashboardPage() {
 
     const openEdit = (emp: Employee) => {
         setEditingEmployee(emp);
+        let currentSectorKey = emp.primarySectorCode || 'TEJEDURIA';
+        if (emp.primarySectorCode === 'DEPOSITO') {
+            currentSectorKey = emp.subSector === 'PACKAGING' ? 'DEPOSITO_PACKAGING' : 'DEPOSITO_HILADO';
+        } else if (emp.primarySectorCode === '3000' || emp.primarySectorCode === 'PRODUCCION') {
+            currentSectorKey = 'TEJEDURIA';
+        }
         setEditForm({
             legajo: emp.legajo,
             fullName: emp.fullName || '',
-            primarySectorCode: emp.primarySectorCode || '',
+            sectorKey: currentSectorKey,
             active: emp.active,
         });
     };
@@ -112,13 +148,15 @@ export default function RRHHDashboardPage() {
             alert('El número de legajo es obligatorio.');
             return;
         }
+        const secOption = HR_SECTORS_LIST.find((s) => s.key === editForm.sectorKey);
         try {
             await updateEmployee({
                 id: editingEmployee.id,
                 data: {
                     legajo: editForm.legajo.trim(),
                     fullName: editForm.fullName.trim() || undefined,
-                    primarySectorCode: editForm.primarySectorCode || undefined,
+                    primarySectorCode: secOption?.category || editForm.sectorKey,
+                    subSector: secOption?.subSector || (null as any),
                     active: editForm.active,
                 },
             }).unwrap();
@@ -147,12 +185,12 @@ export default function RRHHDashboardPage() {
         }
     };
 
-    // Columns for Directory Table
-    const employeeCols = ['Legajo', 'Nombre Completo', 'Sector / Área', 'Estado', 'Origen', 'Acciones'];
+    // Columns for Directory Table (limpias, sin campos innecesarios)
+    const employeeCols = ['Legajo', 'Nombre Completo', 'Sector Asignado', 'Estado', 'Acciones'];
 
     const employeeRows = useMemo(() => {
         return employees.map((emp) => {
-            const sec = getSectorLabel(emp.primarySectorCode);
+            const sec = getSectorLabel(emp.primarySectorCode, emp.subSector);
             return [
                 (
                     <span key="legajo" style={{ 
@@ -185,7 +223,7 @@ export default function RRHHDashboardPage() {
                 (
                     <div key="sector" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span>{sec.icon}</span>
-                        <span style={{ fontSize: '13px', color: 'var(--text-primary, #f3f4f6)' }}>{sec.label}</span>
+                        <span style={{ fontSize: '13px', color: 'var(--text-primary, #f3f4f6)', fontWeight: 600 }}>{sec.label}</span>
                     </div>
                 ),
                 (
@@ -194,15 +232,10 @@ export default function RRHHDashboardPage() {
                     </Badge>
                 ),
                 (
-                    <span key="source" style={{ fontSize: '11px', color: 'var(--text-subtle, #9ca3af)', textTransform: 'uppercase' }}>
-                        {emp.source || 'MANUAL'}
-                    </span>
-                ),
-                (
                     <div key="actions" style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                         <button
                             onClick={() => openEdit(emp)}
-                            title="Editar colaborador"
+                            title="Editar colaborador y cambiar sector"
                             style={{
                                 background: 'rgba(255,255,255,0.05)',
                                 border: '1px solid rgba(255,255,255,0.1)',
@@ -327,6 +360,26 @@ export default function RRHHDashboardPage() {
                 >
                     <span>⚡</span>
                     <span>Productividad & Calidad (Tejeduría)</span>
+                </button>
+                <button
+                    onClick={() => setActiveTab('deposito')}
+                    style={{
+                        padding: '10px 18px',
+                        background: activeTab === 'deposito' ? 'rgba(99,102,241,0.15)' : 'transparent',
+                        color: activeTab === 'deposito' ? '#818cf8' : 'var(--text-muted, #9ca3af)',
+                        border: activeTab === 'deposito' ? '1px solid #6366f1' : '1px solid transparent',
+                        borderRadius: '10px',
+                        fontWeight: 700,
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        transition: 'all 0.15s ease',
+                    }}
+                >
+                    <span>🏭</span>
+                    <span>Depósito (Utilidad & Tareas)</span>
                 </button>
             </div>
 
@@ -476,12 +529,11 @@ export default function RRHHDashboardPage() {
                                     }}
                                 >
                                     <option value="">Todos los sectores</option>
-                                    {ALL_SECTORS.map((s) => (
+                                    {HR_SECTORS_LIST.map((s) => (
                                         <option key={s.key} value={s.key}>
                                             {s.icon} {s.label}
                                         </option>
                                     ))}
-                                    <option value="3000">⚙️ Sector 3000 (Tejeduría)</option>
                                 </select>
                             </div>
 
@@ -547,11 +599,16 @@ export default function RRHHDashboardPage() {
                                 <div style={{ fontSize: '13px', marginBottom: '16px' }}>
                                     {searchTerm || sectorFilter || statusFilter !== 'all'
                                         ? 'Prueba modificando los filtros de búsqueda.'
-                                        : 'Aún no hay colaboradores dados de alta en el sistema.'}
+                                        : 'Aún no hay colaboradores dados de alta en el sistema. Puedes agregar a los operarios de depósito iniciales (Dilan y Diego) con un clic.'}
                                 </div>
-                                <Btn onClick={() => setShowNewModal(true)}>
-                                    + Registrar Primer Colaborador
-                                </Btn>
+                                <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
+                                    <Btn onClick={handleSeedDepotEmployees} style={{ background: '#10b981' }}>
+                                        🌱 Cargar Dilan (Hilado) y Diego (Packaging)
+                                    </Btn>
+                                    <Btn variant="secondary" onClick={() => setShowNewModal(true)}>
+                                        + Cargar Manualmente
+                                    </Btn>
+                                </div>
                             </div>
                         )}
                     </Card>
@@ -825,29 +882,32 @@ export default function RRHHDashboardPage() {
                 </>
             )}
 
+            {/* ================= TAB 3: RENDIMIENTO & UTILIDAD DEPÓSITO ================= */}
+            {activeTab === 'deposito' && <ProductividadDepositoTab />}
+
             {/* ================= MODAL: CREAR COLABORADOR ================= */}
             {showNewModal && (
                 <Modal title="Nuevo Colaborador" onClose={() => setShowNewModal(false)}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
                         <Input
                             label="N° de Legajo *"
-                            placeholder="Ej: 1042"
+                            placeholder="Ej: 1, 2, 1045..."
                             value={newForm.legajo}
                             onChange={(v) => setNewForm((p) => ({ ...p, legajo: v }))}
                         />
                         <Input
                             label="Nombre y Apellido"
-                            placeholder="Ej: Juan Carlos Pérez"
+                            placeholder="Ej: Dilan, Diego, Carlos Gómez..."
                             value={newForm.fullName}
                             onChange={(v) => setNewForm((p) => ({ ...p, fullName: v }))}
                         />
                         <div>
-                            <label style={{ display: 'block', color: 'var(--text-muted, #9ca3af)', fontSize: '13px', marginBottom: '8px' }}>
-                                Sector Primario
+                            <label style={{ display: 'block', color: 'var(--text-muted, #9ca3af)', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>
+                                Sector Asignado *
                             </label>
                             <select
-                                value={newForm.primarySectorCode}
-                                onChange={(e) => setNewForm((p) => ({ ...p, primarySectorCode: e.target.value }))}
+                                value={newForm.sectorKey}
+                                onChange={(e) => setNewForm((p) => ({ ...p, sectorKey: e.target.value }))}
                                 style={{
                                     width: '100%',
                                     background: 'var(--bg-primary, #0f1117)',
@@ -855,14 +915,14 @@ export default function RRHHDashboardPage() {
                                     color: 'var(--text-primary, #f3f4f6)',
                                     borderRadius: '8px',
                                     padding: '10px',
+                                    fontWeight: 600,
                                 }}
                             >
-                                {ALL_SECTORS.map((s) => (
+                                {HR_SECTORS_LIST.map((s) => (
                                     <option key={s.key} value={s.key}>
                                         {s.icon} {s.label}
                                     </option>
                                 ))}
-                                <option value="3000">⚙️ Sector 3000 (Tejeduría)</option>
                             </select>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
@@ -904,12 +964,12 @@ export default function RRHHDashboardPage() {
                             onChange={(v) => setEditForm((p) => ({ ...p, fullName: v }))}
                         />
                         <div>
-                            <label style={{ display: 'block', color: 'var(--text-muted, #9ca3af)', fontSize: '13px', marginBottom: '8px' }}>
-                                Sector Primario
+                            <label style={{ display: 'block', color: 'var(--text-muted, #9ca3af)', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>
+                                Sector Asignado *
                             </label>
                             <select
-                                value={editForm.primarySectorCode}
-                                onChange={(e) => setEditForm((p) => ({ ...p, primarySectorCode: e.target.value }))}
+                                value={editForm.sectorKey}
+                                onChange={(e) => setEditForm((p) => ({ ...p, sectorKey: e.target.value }))}
                                 style={{
                                     width: '100%',
                                     background: 'var(--bg-primary, #0f1117)',
@@ -917,15 +977,14 @@ export default function RRHHDashboardPage() {
                                     color: 'var(--text-primary, #f3f4f6)',
                                     borderRadius: '8px',
                                     padding: '10px',
+                                    fontWeight: 600,
                                 }}
                             >
-                                <option value="">Sin Asignar</option>
-                                {ALL_SECTORS.map((s) => (
+                                {HR_SECTORS_LIST.map((s) => (
                                     <option key={s.key} value={s.key}>
                                         {s.icon} {s.label}
                                     </option>
                                 ))}
-                                <option value="3000">⚙️ Sector 3000 (Tejeduría)</option>
                             </select>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>

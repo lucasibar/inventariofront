@@ -43,6 +43,20 @@ export function AdjustStockDialog({
     const unitP = item.unidadPrincipal || 'kg';
     const unitS = item.unidadSecundaria || 'un';
 
+    const handleSecundariaChange = (val: string) => {
+        setSecundaria(val);
+        const sNum = parseFloat(val.replace(',', '.'));
+        if (!isNaN(sNum) && sNum >= 0) {
+            const kpc = item.kilosPorCaja;
+            if (kpc != null && Number(kpc) > 0) {
+                setPrincipal(String(Math.round(sNum * Number(kpc) * 100) / 100));
+            } else if (Number(entry.qtySecundaria) > 0 && Number(entry.qtyPrincipal) > 0) {
+                const ratio = Number(entry.qtyPrincipal) / Number(entry.qtySecundaria);
+                setPrincipal(String(Math.round(sNum * ratio * 100) / 100));
+            }
+        }
+    };
+
     const handleSave = async () => {
         const pNum = Number(principal);
         if (isNaN(pNum) || pNum < 0) {
@@ -70,7 +84,7 @@ export function AdjustStockDialog({
         <Dialog
             open={open}
             onClose={onClose}
-            maxWidth="xs"
+            maxWidth="sm"
             fullWidth
             PaperProps={{
                 sx: {
@@ -101,27 +115,29 @@ export function AdjustStockDialog({
                     </Box>
                 </Box>
 
-                <TextField
-                    label={`Cantidad Principal (${unitP})`}
-                    type="number"
-                    fullWidth
-                    value={principal}
-                    onChange={(e) => setPrincipal(e.target.value)}
-                    helperText={`Actual: ${entry.qtyPrincipal} ${unitP}`}
-                    InputProps={{ sx: { bgcolor: 'rgba(255, 255, 255, 0.05)', color: '#fff', borderRadius: 2 } }}
-                    InputLabelProps={{ sx: { color: 'var(--text-muted, #9ca3af)' } }}
-                />
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                    <TextField
+                        label={`Cantidad Secundaria (${unitS})`}
+                        type="number"
+                        fullWidth
+                        value={secundaria}
+                        onChange={(e) => handleSecundariaChange(e.target.value)}
+                        helperText={entry.qtySecundaria != null ? `Actual: ${entry.qtySecundaria} ${unitS}` : 'Opcional'}
+                        InputProps={{ sx: { bgcolor: 'rgba(255, 255, 255, 0.05)', color: '#fff', borderRadius: 2 } }}
+                        InputLabelProps={{ sx: { color: 'var(--text-muted, #9ca3af)' } }}
+                    />
 
-                <TextField
-                    label={`Cantidad Secundaria (${unitS})`}
-                    type="number"
-                    fullWidth
-                    value={secundaria}
-                    onChange={(e) => setSecundaria(e.target.value)}
-                    helperText={entry.qtySecundaria != null ? `Actual: ${entry.qtySecundaria} ${unitS}` : 'Opcional'}
-                    InputProps={{ sx: { bgcolor: 'rgba(255, 255, 255, 0.05)', color: '#fff', borderRadius: 2 } }}
-                    InputLabelProps={{ sx: { color: 'var(--text-muted, #9ca3af)' } }}
-                />
+                    <TextField
+                        label={`Cantidad Principal (${unitP})`}
+                        type="number"
+                        fullWidth
+                        value={principal}
+                        onChange={(e) => setPrincipal(e.target.value)}
+                        helperText={`Actual: ${entry.qtyPrincipal} ${unitP}`}
+                        InputProps={{ sx: { bgcolor: 'rgba(255, 255, 255, 0.05)', color: '#fff', borderRadius: 2 } }}
+                        InputLabelProps={{ sx: { color: 'var(--text-muted, #9ca3af)' } }}
+                    />
+                </Box>
             </DialogContent>
 
             <DialogActions sx={{ p: 2, pt: 1 }}>

@@ -521,17 +521,6 @@ export function EstructurasPage() {
                                             </div>
                                             <div>
                                                 <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>
-                                                    Cantidad (UM1) *
-                                                </label>
-                                                <Input
-                                                    type="number"
-                                                    value={lineForm.cantidad}
-                                                    onChange={(val) => setLineForm({ ...lineForm, cantidad: val })}
-                                                    placeholder="Ej: 0.0425 o 1"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>
                                                     Cant. 2da UM (opc.)
                                                 </label>
                                                 <Input
@@ -539,6 +528,17 @@ export function EstructurasPage() {
                                                     value={lineForm.cantidadSecundaria}
                                                     onChange={(val) => setLineForm({ ...lineForm, cantidadSecundaria: val })}
                                                     placeholder="Opcional"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>
+                                                    Cantidad (UM1) *
+                                                </label>
+                                                <Input
+                                                    type="number"
+                                                    value={lineForm.cantidad}
+                                                    onChange={(val) => setLineForm({ ...lineForm, cantidad: val })}
+                                                    placeholder="Ej: 0.0425 o 1"
                                                 />
                                             </div>
                                             <div>

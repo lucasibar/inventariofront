@@ -298,6 +298,17 @@ export default function StockPage() {
 
     const qaSelectedItem = useMemo(() => items.find((i: any) => i.id === qaItem), [items, qaItem]);
 
+    const handleQaSecundariaChange = (val: string) => {
+        setQaSecundaria(val);
+        const kpc = qaSelectedItem?.kilosPorCaja;
+        if (kpc != null && Number(kpc) > 0) {
+            const num = parseFloat(val.replace(',', '.'));
+            if (!isNaN(num) && num > 0) {
+                setQaPrincipal(String(Math.round(num * Number(kpc) * 100) / 100));
+            }
+        }
+    };
+
     const handleQuickAddSubmit = async () => {
         if (isQuickAdding) return;
         if (!qaDepot || !qaPosition || !qaItem || !qaSupplier || !qaLot || !qaPrincipal) {
@@ -729,8 +740,8 @@ export default function StockPage() {
                         </div>
                         <Input label="Lote" value={qaLot} onChange={setQaLot} />
                         <div style={{ display: 'flex', gap: '8px' }}>
+                            <Input label={`Sec (${qaSelectedItem?.unidadSecundaria || 'Un'})`} type="number" value={qaSecundaria} onChange={handleQaSecundariaChange} style={{ flex: 1 }} />
                             <Input label={`Cant (${qaSelectedItem?.unidadPrincipal || 'Kg'})`} type="number" value={qaPrincipal} onChange={setQaPrincipal} style={{ flex: 1 }} />
-                            <Input label={`Sec (${qaSelectedItem?.unidadSecundaria || 'Un'})`} type="number" value={qaSecundaria} onChange={setQaSecundaria} style={{ flex: 1 }} />
                         </div>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>

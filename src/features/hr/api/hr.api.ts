@@ -5,6 +5,7 @@ export interface Employee {
     legajo: string;
     fullName: string | null;
     primarySectorCode: string | null;
+    subSector?: string | null;
     active: boolean;
     source: string | null;
     createdAt: string;
@@ -79,7 +80,7 @@ export const hrApi = api.injectEndpoints({
             },
             providesTags: ['Employees'],
         }),
-        createEmployee: build.mutation<Employee, { legajo: string; fullName?: string; primarySectorCode?: string; active?: boolean }>({
+        createEmployee: build.mutation<Employee, { legajo: string; fullName?: string; primarySectorCode?: string; sector?: string; subSector?: string; active?: boolean }>({
             query: (body) => ({
                 url: 'hr/employees',
                 method: 'POST',
@@ -87,7 +88,7 @@ export const hrApi = api.injectEndpoints({
             }),
             invalidatesTags: ['Employees'],
         }),
-        updateEmployee: build.mutation<Employee, { id: string; data: Partial<Employee> }>({
+        updateEmployee: build.mutation<Employee, { id: string; data: Partial<Employee> & { sector?: string } }>({
             query: ({ id, data }) => ({
                 url: `hr/employees/${id}`,
                 method: 'PATCH',
